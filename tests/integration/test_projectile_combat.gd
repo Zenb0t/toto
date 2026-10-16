@@ -125,12 +125,61 @@ func test_a_fireball_that_runs_out_of_range_still_explodes() -> void:
 	assert_eq(enemy.health.current, Enemy.DEFAULT_MAX_HEALTH - 1)
 
 
+func _swing(arc_degrees: float, sweep_seconds: float) -> SlashEffect:
+	var slash := Slash.new(Vector2.ZERO, Vector2.RIGHT, 60.0, arc_degrees, 1, Color.WHITE)
+	slash.sweep_seconds = sweep_seconds
+	var effect := SlashEffect.new(slash)
+	add_child_autofree(effect)
+	return effect
+
+
 func test_a_sword_slash_hits_enemies_in_front_but_not_behind() -> void:
 	var in_front := _spawn_enemy_at(Vector2(50, 0))
 	var behind := _spawn_enemy_at(Vector2(-50, 0))
 
-	add_child_autofree(SlashEffect.new(Slash.new(Vector2.ZERO, Vector2.RIGHT, 60.0, 90.0, 2, Color.WHITE)))
-	await wait_process_frames(1)
+	_swing(90.0, 0.0)
+	await wait_physics_frames(3)
 
-	assert_eq(in_front.health.current, Enemy.DEFAULT_MAX_HEALTH - 2)
+	assert_eq(in_front.health.current, Enemy.DEFAULT_MAX_HEALTH - 1)
 	assert_eq(behind.health.current, Enemy.DEFAULT_MAX_HEALTH)
+
+
+func test_a_sweep_reaches_the_far_edge_of_its_arc_only_at_the_end() -> void:
+	var far_edge := _spawn_enemy_at(Vector2.RIGHT.rotated(deg_to_rad(40)) * 45)
+
+	_swing(90.0, 0.4)
+	await wait_seconds(0.1)
+	var health_early := far_edge.health.current
+	await wait_seconds(0.4)
+
+	assert_eq(health_early, Enemy.DEFAULT_MAX_HEALTH)
+	assert_eq(far_edge.health.current, Enemy.DEFAULT_MAX_HEALTH - 1)
+
+
+func test_a_sweep_hits_each_enemy_only_once() -> void:
+	var enemy := _spawn_enemy_at(Vector2(45, 0))
+
+	_swing(180.0, 0.3)
+	await wait_seconds(0.5)
+
+	assert_eq(enemy.health.current, Enemy.DEFAULT_MAX_HEALTH - 1)
+
+
+func _lob(to_distance: float, blast_radius: float) -> void:
+	var shot := Shot.new(Vector2.ZERO, Vector2.RIGHT, SHOT_SPEED, 1, to_distance)
+	shot.lobbed = true
+	shot.blast_radius = blast_radius
+	var projectile: Projectile = PROJECTILE_SCENE.instantiate()
+	projectile.launch(shot)
+	add_child_autofree(projectile)
+
+
+func test_a_lob_flies_over_enemies_and_bursts_where_it_lands() -> void:
+	var in_the_way := _spawn_enemy_at(Vector2(80, 0))
+	var at_landing := _spawn_enemy_at(Vector2(ENEMY_DISTANCE, 0))
+
+	_lob(ENEMY_DISTANCE, 40.0)
+	await wait_seconds(FLIGHT_TIME)
+
+	assert_eq(in_the_way.health.current, Enemy.DEFAULT_MAX_HEALTH)
+	assert_eq(at_landing.health.current, Enemy.DEFAULT_MAX_HEALTH - 1)

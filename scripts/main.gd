@@ -92,10 +92,12 @@ func _create_progress() -> DungeonProgress:
 
 func _connect_controls() -> void:
 	_attack_button.aim_changed.connect(
-		func(direction: Vector2) -> void: _player.preview_aim(direction, _player.weapon.aim_shape()))
+		func(direction: Vector2, strength: float) -> void:
+			_player.preview_aim(direction, _player.weapon.aim_shape(), strength))
 	_attack_button.aim_released.connect(_on_attack_released)
 	_utility_button.aim_changed.connect(
-		func(direction: Vector2) -> void: _player.preview_aim(direction, _player.utility.aim_shape()))
+		func(direction: Vector2, _strength: float) -> void:
+			_player.preview_aim(direction, _player.utility.aim_shape()))
 	_weapon_switch.pressed.connect(_on_weapon_switch_pressed)
 	_utility_button.aim_released.connect(_on_utility_released)
 
@@ -125,7 +127,7 @@ func _move_input() -> Vector2:
 func _on_attack_released(release: AimGesture.Release) -> void:
 	_player.preview_aim(Vector2.ZERO)
 	if not release.is_auto:
-		_player.attack(release.direction)
+		_player.attack(release.direction, null, release.strength)
 		return
 	var target := _auto_aim_target()
 	if target == null:
@@ -187,7 +189,7 @@ func _on_attack_fired(attacks: Array) -> void:
 			projectile.launch(attack)
 			add_child(projectile)
 		elif attack is Slash:
-			add_child(SlashEffect.new(attack))
+			add_child(SlashEffect.new(attack, _player))
 
 
 # --- Equipment and tuning ------------------------------------------------------------------------

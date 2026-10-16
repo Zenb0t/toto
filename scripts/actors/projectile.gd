@@ -2,6 +2,12 @@ class_name Projectile
 extends Area2D
 ## Flies a Shot straight until it hits something or runs out of range.
 ## A plain shot damages what it hits; an explosive shot bursts into an Explosion instead.
+## A lobbed shot arcs over everything and bursts where it lands.
+
+## How high a lob arcs, relative to how far it travels, and never higher than LOB_MAX_HEIGHT.
+const LOB_HEIGHT_PER_DISTANCE := 0.35
+const LOB_MAX_HEIGHT := 90.0
+const SHADOW_COLOR := Color(0, 0, 0, 0.35)
 
 var _shot: Shot
 var _time_left := 0.0
@@ -17,6 +23,8 @@ func launch(shot: Shot) -> void:
 	_shot = shot
 	position = shot.origin
 	_time_left = shot.lifetime()
+	if shot.lobbed:
+		collision_mask = 0
 
 
 func _physics_process(delta: float) -> void:
@@ -24,10 +32,24 @@ func _physics_process(delta: float) -> void:
 	_time_left -= delta
 	if _time_left <= 0.0:
 		_finish()
+	elif _shot.lobbed:
+		queue_redraw()
 
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, _shot.size, _shot.color)
+	if not _shot.lobbed:
+		draw_circle(Vector2.ZERO, _shot.size, _shot.color)
+		return
+	draw_circle(Vector2.ZERO, _shot.size * 0.8, SHADOW_COLOR)
+	draw_circle(Vector2(0, -_lob_height()), _shot.size, _shot.color)
+
+
+## Height above the ground along a parabola: zero at launch and landing, highest halfway.
+func _lob_height() -> float:
+	var lifetime := _shot.lifetime()
+	var progress := 1.0 - _time_left / lifetime if lifetime > 0.0 else 1.0
+	var peak := minf(_shot.travel_range * LOB_HEIGHT_PER_DISTANCE, LOB_MAX_HEIGHT)
+	return 4.0 * peak * progress * (1.0 - progress)
 
 
 func _on_body_entered(body: Node2D) -> void:

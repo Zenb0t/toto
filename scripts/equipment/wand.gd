@@ -26,8 +26,12 @@ func knobs() -> Array[Knob]:
 	return result
 
 
-func attacks(origin: Vector2, direction: Vector2) -> Array:
+func attacks(origin: Vector2, direction: Vector2, _aim_distance: float) -> Array:
 	return [Shot.new(Weapon.muzzle(origin, direction), direction, shot_speed, shot_damage, shot_range)]
+
+
+func aim_range() -> float:
+	return shot_range
 
 
 func aim_shape() -> AimShape:

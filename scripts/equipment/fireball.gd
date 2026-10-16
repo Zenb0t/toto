@@ -1,9 +1,10 @@
 class_name Fireball
 extends Weapon
-## A slow projectile that explodes on impact, or when it runs out of range, hurting everything in the blast.
+## Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot, the fireball arcs over
+## walls and enemies, and it explodes where it lands, hurting everything in the blast.
 
-var shot_speed := 220.0
-var shot_range := 450.0
+var shot_speed := 300.0
+var shot_range := 400.0
 var damage := 2
 var blast_radius := 70.0
 
@@ -20,21 +21,27 @@ func _init() -> void:
 func knobs() -> Array[Knob]:
 	var result := super.knobs()
 	result.append_array([
-		Knob.new("shot_speed", "Shot speed", 60, 800, 10),
-		Knob.new("shot_range", "Range", 100, 1000, 10),
+		Knob.new("shot_speed", "Throw speed", 60, 800, 10),
+		Knob.new("shot_range", "Max range", 100, 1000, 10),
 		Knob.new("damage", "Damage", 1, 5, 1),
 		Knob.new("blast_radius", "Blast radius", 20, 200, 5),
 	])
 	return result
 
 
-func attacks(origin: Vector2, direction: Vector2) -> Array:
-	var shot := Shot.new(Weapon.muzzle(origin, direction), direction, shot_speed, damage, shot_range)
+## Lands exactly where aimed, never farther than the max range.
+func attacks(origin: Vector2, direction: Vector2, aim_distance: float) -> Array:
+	var shot := Shot.new(origin, direction, shot_speed, damage, clampf(aim_distance, 0.0, shot_range))
+	shot.lobbed = true
 	shot.blast_radius = blast_radius
 	shot.size = 9.0
 	shot.color = color
 	return [shot]
 
 
+func aim_range() -> float:
+	return shot_range
+
+
 func aim_shape() -> AimShape:
-	return AimShape.line(shot_range, blast_radius)
+	return AimShape.lob(shot_range, blast_radius)

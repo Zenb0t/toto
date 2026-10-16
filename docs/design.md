@@ -25,7 +25,7 @@ Anything that doesn't help answer that is deferred.
 | Loot sources | Guaranteed chest per cleared room, plus rare enemy drops | Predictable pacing, with occasional surprises |
 | Dungeon | One small handcrafted layout (`TestDungeon`). Same every run; only the loot varies | Playtests stay comparable |
 | Rooms | Entering a room with enemies locks its doors until they're all defeated | Forces fights and gives clear pacing |
-| Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire | Proven on touch screens |
+| Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance | Proven on touch screens |
 | Movement | Floating stick: it appears wherever the left thumb lands | Standard for mobile action games |
 
 ## Equipment
@@ -35,8 +35,8 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | Weapon | Behaviour | Aim shape |
 | --- | --- | --- |
 | Wand (starter) | One magic bolt | Line |
-| Sword | Short melee arc in front of you; hits everything inside it | Cone |
-| Fireball | Slow projectile that explodes on impact or at the end of its range | Line + blast circle |
+| Sword | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
+| Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot; arcs over walls and enemies and explodes where it lands | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
 
 Utilities (first ideas, not final): dash, shield, heal.

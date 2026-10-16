@@ -27,8 +27,14 @@ func knobs() -> Array[Knob]:
 
 
 ## The Shots and Slashes one attack produces, from the attacker's centre toward the aim.
-func attacks(_origin: Vector2, _direction: Vector2) -> Array:
+## aim_distance is how far away the player aimed (weapons that target a spot use it; others ignore it).
+func attacks(_origin: Vector2, _direction: Vector2, _aim_distance: float) -> Array:
 	return []
+
+
+## The farthest this weapon reaches: a full-strength drag aims this far.
+func aim_range() -> float:
+	return 0.0
 
 
 func aim_shape() -> AimShape:

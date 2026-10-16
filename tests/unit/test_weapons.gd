@@ -4,7 +4,7 @@ const ORIGIN := Vector2(10, 20)
 
 
 func test_the_wand_fires_one_bolt_from_in_front_of_the_player() -> void:
-	var attacks := Wand.new().attacks(ORIGIN, Vector2(0, -5))
+	var attacks := Wand.new().attacks(ORIGIN, Vector2(0, -5), 0.0)
 
 	assert_eq(attacks.size(), 1)
 	var bolt: Shot = attacks[0]
@@ -18,7 +18,7 @@ func test_a_shot_flies_for_as_long_as_its_range_allows() -> void:
 	wand.shot_speed = 200.0
 	wand.shot_range = 500.0
 
-	var bolt: Shot = wand.attacks(ORIGIN, Vector2.RIGHT)[0]
+	var bolt: Shot = wand.attacks(ORIGIN, Vector2.RIGHT, 0.0)[0]
 
 	assert_eq(bolt.lifetime(), 2.5)
 
@@ -26,20 +26,39 @@ func test_a_shot_flies_for_as_long_as_its_range_allows() -> void:
 func test_the_sword_swings_an_arc_from_the_player() -> void:
 	var sword := Sword.new()
 
-	var swing: Slash = sword.attacks(ORIGIN, Vector2.RIGHT)[0]
+	var swing: Slash = sword.attacks(ORIGIN, Vector2.RIGHT, 0.0)[0]
 
 	assert_eq(swing.origin, ORIGIN)
 	assert_eq(swing.reach, sword.reach)
 	assert_eq(swing.arc_degrees, sword.arc_degrees)
 
 
-func test_the_fireball_explodes_with_its_blast_radius() -> void:
+func test_the_fireball_is_lobbed_to_land_where_it_was_aimed() -> void:
 	var fireball := Fireball.new()
 
-	var shot: Shot = fireball.attacks(ORIGIN, Vector2.RIGHT)[0]
+	var shot: Shot = fireball.attacks(ORIGIN, Vector2.RIGHT, 150.0)[0]
 
+	assert_true(shot.lobbed)
 	assert_true(shot.explodes())
+	assert_eq(shot.travel_range, 150.0)
 	assert_eq(shot.blast_radius, fireball.blast_radius)
+
+
+func test_the_fireball_never_lands_beyond_its_max_range() -> void:
+	var fireball := Fireball.new()
+
+	var shot: Shot = fireball.attacks(ORIGIN, Vector2.RIGHT, fireball.shot_range * 3.0)[0]
+
+	assert_eq(shot.travel_range, fireball.shot_range)
+
+
+func test_the_sword_sweeps_for_its_sweep_time() -> void:
+	var sword := Sword.new()
+	sword.sweep_seconds = 0.3
+
+	var swing: Slash = sword.attacks(ORIGIN, Vector2.RIGHT, 0.0)[0]
+
+	assert_eq(swing.sweep_seconds, 0.3)
 
 
 func test_the_crossbow_fans_its_bolts_around_the_aim() -> void:
@@ -48,7 +67,7 @@ func test_the_crossbow_fans_its_bolts_around_the_aim() -> void:
 	crossbow.spread_degrees = 40.0
 
 	var directions: Array[Vector2] = []
-	for bolt: Shot in crossbow.attacks(ORIGIN, Vector2.RIGHT):
+	for bolt: Shot in crossbow.attacks(ORIGIN, Vector2.RIGHT, 0.0):
 		directions.append(bolt.direction)
 
 	assert_eq(directions.size(), 3)
@@ -61,7 +80,7 @@ func test_each_weapon_previews_its_own_shape() -> void:
 	assert_eq(Wand.new().aim_shape().kind, AimShape.Kind.LINE)
 	assert_eq(Sword.new().aim_shape().kind, AimShape.Kind.CONE)
 	assert_eq(Crossbow.new().aim_shape().kind, AimShape.Kind.FAN)
-	assert_gt(Fireball.new().aim_shape().end_radius, 0.0)
+	assert_eq(Fireball.new().aim_shape().kind, AimShape.Kind.LOB)
 
 
 func test_every_weapon_has_a_unique_id() -> void:

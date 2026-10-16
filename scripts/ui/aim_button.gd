@@ -2,13 +2,15 @@ class_name AimButton
 extends Control
 ## Round action button with Brawl Stars style aiming: tap for auto-aim, drag to aim, release to fire.
 
-signal aim_changed(direction: Vector2)  ## Zero while the finger is still inside the dead zone.
+## direction is zero while the finger is still inside the dead zone; strength is how far it was dragged (0..1).
+signal aim_changed(direction: Vector2, strength: float)
 signal aim_released(release: AimGesture.Release)
 
 ## How far the finger must move before a press counts as manual aim instead of a tap, in viewport pixels.
 const DEFAULT_DEAD_ZONE := 32.0
 const NO_TOUCH := -1
-const KNOB_TRAVEL := 0.6  ## How far the knob moves when aiming, relative to the button radius.
+const KNOB_TRAVEL := 0.6  ## How far the knob moves at full strength, relative to the button radius.
+const MIN_KNOB_TRAVEL := 0.25  ## Where the knob sits just past the dead zone, so aiming is always visible.
 const MIN_FONT_SIZE := 14
 const FONT_SIZE_PER_RADIUS := 0.2
 const LABEL_COLOR := Color(1, 1, 1, 0.85)
@@ -48,7 +50,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PAUSED and _touch_index != NO_TOUCH:
 		_touch_index = NO_TOUCH
 		_gesture.cancel()
-		aim_changed.emit(Vector2.ZERO)
+		aim_changed.emit(Vector2.ZERO, 0.0)
 		queue_redraw()
 
 
@@ -57,15 +59,15 @@ func _input(event: InputEvent) -> void:
 		_on_touch(event)
 	elif event is InputEventScreenDrag and event.index == _touch_index:
 		_gesture.move_to(event.position)
-		aim_changed.emit(_gesture.direction())
+		aim_changed.emit(_gesture.direction(), _gesture.strength())
 		queue_redraw()
 
 
 func _on_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed and _touch_index == NO_TOUCH and _contains(event.position):
 		_touch_index = event.index
-		_gesture.begin(_global_center())
-		aim_changed.emit(Vector2.ZERO)
+		_gesture.begin(_global_center(), _radius())
+		aim_changed.emit(Vector2.ZERO, 0.0)
 		get_viewport().set_input_as_handled()
 		queue_redraw()
 	elif not event.pressed and event.index == _touch_index:
@@ -81,7 +83,8 @@ func _draw() -> void:
 	if _cooldown_ratio > 0.0:
 		var sweep := TAU * _cooldown_ratio
 		draw_arc(center, radius * 0.5, -PI / 2.0, -PI / 2.0 + sweep, 32, Color(0, 0, 0, 0.6), radius, true)
-	var knob := center + _gesture.direction() * radius * KNOB_TRAVEL
+	var knob_reach := lerpf(MIN_KNOB_TRAVEL, KNOB_TRAVEL, _gesture.strength())
+	var knob := center + _gesture.direction() * radius * knob_reach
 	draw_circle(knob, radius * 0.35, Color(color, 0.9))
 	var font := ThemeDB.fallback_font
 	var font_size := maxi(MIN_FONT_SIZE, roundi(radius * FONT_SIZE_PER_RADIUS))

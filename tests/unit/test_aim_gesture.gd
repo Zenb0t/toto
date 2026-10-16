@@ -59,3 +59,32 @@ func test_gesture_ends_on_release() -> void:
 	gesture.release()
 
 	assert_false(gesture.is_active())
+
+
+func test_strength_grows_with_how_far_the_finger_is_dragged() -> void:
+	var gesture := AimGesture.new(DEAD_ZONE)
+	gesture.begin(BUTTON, 120.0)
+
+	gesture.move_to(BUTTON + Vector2(70, 0))
+	var halfway := gesture.strength()
+	gesture.move_to(BUTTON + Vector2(200, 0))
+	var past_full := gesture.strength()
+
+	assert_almost_eq(halfway, 0.5, 0.001)
+	assert_eq(past_full, 1.0)
+
+
+func test_a_tap_has_no_strength() -> void:
+	var gesture := AimGesture.new(DEAD_ZONE)
+	gesture.begin(BUTTON, 120.0)
+	gesture.move_to(BUTTON + Vector2(5, 0))
+
+	assert_eq(gesture.strength(), 0.0)
+
+
+func test_releasing_reports_the_strength_of_the_drag() -> void:
+	var gesture := AimGesture.new(DEAD_ZONE)
+	gesture.begin(BUTTON, 120.0)
+	gesture.move_to(BUTTON + Vector2(0, -120))
+
+	assert_eq(gesture.release().strength, 1.0)

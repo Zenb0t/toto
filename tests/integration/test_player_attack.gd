@@ -137,3 +137,39 @@ func test_a_sword_swings_from_the_player_instead_of_shooting() -> void:
 	var swing: Slash = get_signal_parameters(player, "attack_fired")[0][0]
 	assert_eq(swing.origin, player.global_position)
 	assert_eq(swing.direction, Vector2.UP)
+
+
+func _lobber() -> Fireball:
+	var fireball := Fireball.new()
+	fireball.windup = 0.0
+	fireball.shot_range = 400.0
+	return fireball
+
+
+func test_a_half_strength_drag_lobs_half_the_max_range() -> void:
+	var player := _player()
+	player.equip_weapon(_lobber())
+	watch_signals(player)
+
+	player.attack(Vector2.RIGHT, null, 0.5)
+
+	assert_eq(_fired_shot(player).travel_range, 200.0)
+
+
+func test_an_auto_aimed_lob_lands_on_its_target() -> void:
+	var player := _player()
+	var fireball := _lobber()
+	fireball.windup = 0.2
+	player.equip_weapon(fireball)
+	var target := Node2D.new()
+	target.position = Vector2(150, 0)
+	add_child_autofree(target)
+	watch_signals(player)
+
+	player.attack(Vector2.RIGHT, target)
+	target.position = Vector2(0, 250)
+	await wait_seconds(fireball.windup + MARGIN)
+
+	var shot := _fired_shot(player)
+	assert_almost_eq(shot.travel_range, 250.0, 1.0)
+	assert_almost_eq(shot.direction, Vector2.DOWN, Vector2(0.01, 0.01))

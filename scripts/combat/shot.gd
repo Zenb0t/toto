@@ -12,6 +12,8 @@ var damage: int
 var travel_range: float
 ## Above zero, the shot explodes on impact (or at the end of its range) and damages every enemy in the blast.
 var blast_radius := 0.0
+## A lobbed shot arcs over walls and enemies and only bursts where it lands (at the end of its range).
+var lobbed := false
 var size := DEFAULT_SIZE
 var color := DEFAULT_COLOR
 

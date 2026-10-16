@@ -1,9 +1,9 @@
 class_name AimShape
 extends RefCounted
 ## What an ability's aim preview looks like: a line (optionally ending in a blast circle),
-## a cone for melee arcs, or a fan of lines for spreads.
+## a cone for melee arcs, a fan of lines for spreads, or a lob whose landing spot follows the drag distance.
 
-enum Kind { LINE, CONE, FAN }
+enum Kind { LINE, CONE, FAN, LOB }
 
 var kind := Kind.LINE
 var length := 0.0
@@ -24,6 +24,15 @@ static func cone(reach: float, arc_degrees: float) -> AimShape:
 	shape.kind = Kind.CONE
 	shape.length = reach
 	shape.spread_degrees = arc_degrees
+	return shape
+
+
+## length is the farthest throw; the preview lands at length * aim strength.
+static func lob(max_range: float, blast_radius: float) -> AimShape:
+	var shape := AimShape.new()
+	shape.kind = Kind.LOB
+	shape.length = max_range
+	shape.end_radius = blast_radius
 	return shape
 
 

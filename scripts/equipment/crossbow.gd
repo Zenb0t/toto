@@ -30,7 +30,7 @@ func knobs() -> Array[Knob]:
 	return result
 
 
-func attacks(origin: Vector2, direction: Vector2) -> Array:
+func attacks(origin: Vector2, direction: Vector2, _aim_distance: float) -> Array:
 	var shots: Array = []
 	for angle in Spread.angles_degrees(bolts, spread_degrees):
 		var bolt_direction := direction.normalized().rotated(deg_to_rad(angle))
@@ -39,6 +39,10 @@ func attacks(origin: Vector2, direction: Vector2) -> Array:
 		shot.color = color
 		shots.append(shot)
 	return shots
+
+
+func aim_range() -> float:
+	return shot_range
 
 
 func aim_shape() -> AimShape:
