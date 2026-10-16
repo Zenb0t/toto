@@ -77,3 +77,16 @@ func test_the_pose_copies_what_the_actor_shows() -> void:
 	await wait_process_frames(1)
 
 	assert_true(model.is_shown_open())
+
+
+func test_a_released_model_stays_when_its_actor_goes() -> void:
+	var actor := _actor_at(Vector2(32, 32))
+	var model := Node3D.new()
+	_puppets.add(actor, model)
+
+	assert_eq(_puppets.release(actor), model)
+	actor.queue_free()
+	await wait_process_frames(2)
+
+	assert_true(is_instance_valid(model))
+	assert_eq(_puppets.count(), 0)

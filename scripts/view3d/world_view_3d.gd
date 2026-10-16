@@ -16,6 +16,8 @@ const HERO_HIT_COLOR := Color(1.0, 0.35, 0.3)
 const HIT_TEXT_SIZE := 0.6
 ## Slower than this (pixels per second) counts as standing still, for the run animation.
 const MOVING_SPEED := 10.0
+## How long a fallen monster stays on the floor.
+const CORPSE_SECONDS := 1.4
 ## The camera shakes briefly when the hero is hit, this far at first (in cells), settling over SHAKE_SECONDS.
 const SHAKE_DISTANCE := 0.12
 const SHAKE_SECONDS := 0.18
@@ -65,6 +67,11 @@ func add_player(player: Player) -> void:
 	_show_hits(player, player.health, stand_in, HERO_HIT_COLOR)
 	player.health.damaged.connect(func(_amount: int) -> void: _shake_left = SHAKE_SECONDS)
 	player.attack_fired.connect(func(_attacks: Array) -> void: stand_in.play_attack())
+	# The hero's body hides when it dies; its model stays in view to fall.
+	player.died.connect(func() -> void:
+		var model := _fall(player, -1.0)
+		if model != null:
+			model.visible = true)
 	_puppets.add(player, stand_in, func(model: CharacterModel) -> void:
 		model.face(player.facing)
 		model.hold(player.weapon.id)
@@ -79,7 +86,8 @@ func add_enemy(enemy: Enemy) -> void:
 	enemy.attack_fired.connect(func(_attacks: Array) -> void: stand_in.play_attack())
 	_show_hits(enemy, enemy.health, stand_in, ENEMY_HIT_COLOR)
 	enemy.defeated.connect(func(_defeated: Enemy) -> void:
-		add_child(DeathBurst.new(monster.color, WorldSpace.to_3d(enemy.global_position), monster.size)))
+		add_child(DeathBurst.new(monster.color, WorldSpace.to_3d(enemy.global_position), monster.size))
+		_fall(enemy, CORPSE_SECONDS))
 	_puppets.add(enemy, stand_in, func(model: CharacterModel) -> void:
 		model.face(enemy.facing)
 		model.hold(enemy.weapon.id)
@@ -106,6 +114,14 @@ func add_drop(drop: ItemDrop) -> void:
 func add_potion(drop: PotionDrop) -> void:
 	_puppets.add(drop, LootModel.new(), func(model: LootModel) -> void:
 		model.show_potion(drop.potion))
+
+
+## The actor's model stops following it and plays its death where it stands (see CharacterModel.play_death).
+func _fall(actor: Node2D, linger_seconds: float) -> CharacterModel:
+	var model: CharacterModel = _puppets.release(actor)
+	if model != null:
+		model.play_death(linger_seconds)
+	return model
 
 
 ## Every hit flashes the model and pops its damage above the actor.

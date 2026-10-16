@@ -222,7 +222,7 @@ phases, each played on a phone before the next:
 2. **Map look** (done, see below): flagstones, stone walls with caps, columns, moving water and lava,
    torches, the stairs' arch, soft fog.
 3. **Characters** (first pass done): KayKit Adventurers (CC0, by Kay Lousberg), rigged and animated. See
-   Characters below. Still open: models of their own for goblins, orcs, dwarves and ogres; death animations.
+   Characters below. Still open: models of their own for goblins, orcs, dwarves and ogres.
 4. **Polish**: ~~hit flashes, damage numbers~~ (a hit model flashes white and its damage rises above it:
    white over enemies, red over the hero; a defeated monster bursts into chunks in its colour; the camera
    jolts briefly when the hero is hit~~); particles for spells, sound.
@@ -295,7 +295,8 @@ Mage, Rogue and hooded Rogue, and four skeletons, all on one rig, with weapons a
   spellbook for the cloud, a wand for the rest) and an attack animation (a slice, a two-handed slice, a
   crossbow shot, a spell cast).
 - Characters stand idle, run while moving, play their attack when it is released, and flinch when hit.
-  Animations only run while the character is in sight.
+  When they die they fall where they stand: a monster's body lingers a moment (with the burst of chunks),
+  the hero's stays down until the summary. Animations only run while the character is in sight.
 - Size: the animations are imported once (with the Knight) and shared, so the five models add about 2 MB
   to the phone download.
 

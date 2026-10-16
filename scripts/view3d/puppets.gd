@@ -27,6 +27,15 @@ func add(actor: Node2D, model: Node3D, pose := Callable()) -> void:
 	_follow(puppet)
 
 
+## Stops following an actor and hands its model over (to play out a death, say). Null if not followed.
+func release(actor: Node2D) -> Node3D:
+	for puppet in _puppets:
+		if puppet.actor == actor:
+			_puppets.erase(puppet)
+			return puppet.model
+	return null
+
+
 func count() -> int:
 	return _puppets.size()
 

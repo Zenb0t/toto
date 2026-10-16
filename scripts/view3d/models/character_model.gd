@@ -21,6 +21,7 @@ const SKIN_PARTS: Array[String] = ["Head", "Arm"]
 const IDLE := "Idle"
 const RUN := "Running_A"
 const HIT := "Hit_A"
+const DEATH := "Death_A"
 const LOOPING: Array[String] = [IDLE, RUN]
 const BLEND_SECONDS := 0.12
 ## Attacks play faster than authored: the game's swings are quick.
@@ -114,6 +115,18 @@ func play_hit() -> void:
 		return
 	_animations.play(HIT, BLEND_SECONDS)
 	_action_left = HIT_SECONDS
+
+
+## Falls down, and stays down. With linger_seconds, the model goes away that long afterwards.
+func play_death(linger_seconds := -1.0) -> void:
+	_animations.play(DEATH, BLEND_SECONDS)
+	_action_left = INF
+	if _health_fill != null:
+		for child in get_children():
+			if child is MeshInstance3D:
+				child.hide()
+	if linger_seconds >= 0.0:
+		get_tree().create_timer(linger_seconds).timeout.connect(queue_free)
 
 
 func current_animation() -> String:

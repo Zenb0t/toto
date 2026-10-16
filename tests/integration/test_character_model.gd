@@ -64,3 +64,13 @@ func test_skeletons_share_the_adventurers_animations() -> void:
 	await wait_process_frames(2)
 
 	assert_eq(skeleton.current_animation(), CharacterModel.RUN)
+
+
+func test_a_fallen_character_stays_down() -> void:
+	var model := _model()
+
+	model.play_death()
+	model.show_moving(true)
+	await wait_process_frames(3)
+
+	assert_eq(model.current_animation(), CharacterModel.DEATH)
