@@ -46,7 +46,7 @@ item's name and colour. The starter gear is a **Wand** (one magic bolt) and a **
 (melee arc, explosions, spreads) arrive with the item pool in step 5.
 
 **Tuning.** Feel matters more than anything at this stage, so the numbers that shape it are editable in-game
-(pause menu → Tune gameplay), saved on the device, and exportable as JSON. Defaults live in the classes
+(pause menu → Tune gameplay), saved on the device, and sent to Claude as JSON with one tap. Defaults live in the classes
 (`Weapon`, `Utility`, `Player`, `Enemy`), and the tuning screen reads them, so there is one source of truth.
 When a playtest settles on better values, they get copied into those defaults.
 
@@ -70,4 +70,4 @@ Art and audio, procedural generation, rarity tiers, stat depth, meta-progression
 7. Enemy types: rusher, ranged, tank
 8. ~~Web export for playtesting on a phone~~
 9. ~~Pause menu with a touch layout editor (move and resize controls, saved on the device)~~
-10. ~~In-game tuning screen with export (copy, or send to Claude from the phone playtest page)~~
+10. ~~In-game tuning screen with Send to Claude (from the phone playtest page)~~

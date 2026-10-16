@@ -31,12 +31,13 @@ var _tuning: Tuning
 var _rows := {}  # param key -> Row
 
 @onready var _columns: Array[VBoxContainer] = [$Scroll/Columns/Left, $Scroll/Columns/Right]
-@onready var _status: Label = $Bar/Status
+@onready var _send_button: Button = $Bar/Send
 
 
 func _ready() -> void:
 	$Bar/Reset.pressed.connect(_on_reset_pressed)
-	$Bar/Export.pressed.connect(_on_export_pressed)
+	_send_button.pressed.connect(func() -> void: TuningSender.send(_tuning.export_text()))
+	_send_button.visible = TuningSender.is_available()
 	$Bar/Done.pressed.connect(_on_done_pressed)
 	hide()
 
@@ -46,7 +47,6 @@ func open(tuning: Tuning) -> void:
 	if _rows.is_empty():
 		_build_rows()
 	_refresh_all()
-	_status.text = ""
 	show()
 
 
@@ -65,14 +65,6 @@ func _on_reset_pressed() -> void:
 	_tuning.reset()
 	_refresh_all()
 	tuning_changed.emit(_tuning)
-
-
-func _on_export_pressed() -> void:
-	match TuningExport.share(_tuning.export_text()):
-		TuningExport.Result.COPIED_TO_CLIPBOARD:
-			_status.text = "Copied to clipboard"
-		TuningExport.Result.OPENED_PAGE_DIALOG:
-			_status.text = ""
 
 
 func _on_done_pressed() -> void:

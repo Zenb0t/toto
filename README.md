@@ -23,7 +23,7 @@ the one you picked with the slider. Done saves the layout on the device, so it s
 
 **Tune gameplay** exposes the numbers that shape the feel (move speed, the weapon's cooldown, wind-up, shot
 speed, range and damage, the dash, enemy speed and health). Changes apply live and are saved on Done.
-**Export** shares them as JSON: in the phone playtest page you can copy them or send them straight to Claude.
+**Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
 Entering a room with enemies locks its doors until you defeat them all. Clear the dungeon to win. If you die, you start over.
 
@@ -54,7 +54,7 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 - `scripts/settings` – saved settings: `ControlLayout`, `GameSettings` (what is saved, and how) on top of
   `SettingsStore` (sections in a ConfigFile)
 - `scripts/ui` – touch widgets (`TouchStick`, `AimButton`, `TouchControls`), `PauseMenu`, `LayoutEditor`,
-  `TuningPanel`, `TuningExport`
+  `TuningPanel`, `TuningSender`
 - `scripts/actors` – `Player`, `Enemy`, `Projectile`. The player holds no input code
 - `scripts/main.gd` – composition root: wires controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests

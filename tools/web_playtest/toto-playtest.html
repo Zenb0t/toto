@@ -121,46 +121,22 @@
   @media (orientation: portrait) and (pointer: coarse) {
     .rotate { display: grid; }
   }
-  /* Export dialog: the game hands its tuning text to the page, which can copy it or send it to Claude. */
-  .export {
+  /* Toast: the page confirms tuning sends from the game's Tune screen. */
+  .toast {
     position: fixed;
-    inset: 0;
+    left: 50%;
+    bottom: max(16px, env(safe-area-inset-bottom, 0px));
     z-index: 4;
-    display: grid;
-    place-items: center;
-    padding-block: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-bottom, 0px));
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    background: rgb(13 11 18 / 0.85);
-  }
-  .export-card {
-    display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
-    gap: 10px;
-    width: min(40rem, 100%);
-    max-height: 100%;
-    padding: 16px;
-    border-radius: 12px;
-    background: var(--ground);
-    border: 1px solid var(--stone);
-  }
-  .export h2 { margin: 0; font-family: var(--display); font-size: 1.3rem; }
-  .export-help { margin: 0; font-size: 0.85rem; color: var(--muted); }
-  .export textarea {
-    min-height: 6rem;
-    resize: none;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid var(--stone);
-    background: #17141d;
+    transform: translateX(-50%);
+    max-width: calc(100% - 32px);
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: var(--stone);
     color: var(--ink);
-    font: 0.8rem/1.4 ui-monospace, "Courier New", monospace;
-    -webkit-user-select: text;
-    user-select: text;
+    font-size: 0.95rem;
+    pointer-events: none;
   }
-  .export-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-  .export-actions button { padding: 10px 20px; font-size: 1rem; }
-  button.secondary { background: var(--stone); color: var(--ink); }
+  .toast.error { background: var(--danger); }
   [hidden] { display: none !important; }
   .panel { overflow-y: auto; }
   /* Phones held sideways are short: tighten everything so the Play button stays on screen. */
@@ -196,19 +172,7 @@
 
 <div class="rotate" aria-hidden="true">Turn your phone sideways to play.</div>
 
-<section class="export" id="export" role="dialog" aria-modal="true" aria-labelledby="export-title" hidden>
-  <div class="export-card">
-    <h2 id="export-title">Tuning values</h2>
-    <p class="export-help" id="export-help">Copy them and paste them into your chat with Claude.</p>
-    <textarea id="export-text" readonly spellcheck="false" aria-label="Tuning values as JSON"></textarea>
-    <div class="export-actions">
-      <button id="export-send" type="button" hidden>Send to Claude</button>
-      <button id="export-copy" type="button" class="secondary">Copy</button>
-      <button id="export-close" type="button" class="secondary">Back to game</button>
-    </div>
-    <p class="status" id="export-status" role="status"></p>
-  </div>
-</section>
+<p class="toast" id="toast" role="status" hidden></p>
 
 <script>
   // The host serves only web file types, so the engine (gzipped) and the game data are published under
@@ -315,70 +279,46 @@
 
   playButton.addEventListener('click', start);
 
-  // --- Tuning export: the game calls window.totoShowExport(text) from its Tune screen. ---
-  const exportPanel = document.getElementById('export');
-  const exportText = document.getElementById('export-text');
-  const exportHelp = document.getElementById('export-help');
-  const exportStatus = document.getElementById('export-status');
-  const sendButton = document.getElementById('export-send');
-  let tuningStore = null;  // The artifact database, when this page is opened on claude.ai.
+  // --- Tuning: the game's "Send to Claude" button calls window.totoSendTuning(text). ---
+  const toast = document.getElementById('toast');
+  const TOAST_MS = 3500;
+  let toastTimer = 0;
+  let tuningStorePromise = null;  // Resolves to the artifact database on claude.ai, or null elsewhere.
 
-  async function connectTuningStore() {
-    try {
-      tuningStore = window.claude ? await window.claude.use('db') : null;
-    } catch (_) {
-      tuningStore = null;
-    }
-    if (tuningStore) {
-      sendButton.hidden = false;
-      exportHelp.textContent = 'Send them to Claude, or copy them into your chat.';
-    }
+  function showToast(message, isError) {
+    toast.textContent = message;
+    toast.classList.toggle('error', Boolean(isError));
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, TOAST_MS);
   }
 
-  async function copyExport() {
-    try {
-      await navigator.clipboard.writeText(exportText.value);
-      exportStatus.textContent = 'Copied.';
-    } catch (_) {
-      exportText.focus();
-      exportText.select();
-      const copied = document.execCommand && document.execCommand('copy');
-      exportStatus.textContent = copied ? 'Copied.' : 'Text selected. Use your phone\'s Copy.';
+  function tuningStore() {
+    if (!tuningStorePromise) {
+      tuningStorePromise = window.claude ? window.claude.use('db').catch(() => null) : Promise.resolve(null);
     }
+    return tuningStorePromise;
   }
 
-  async function sendExport() {
-    sendButton.disabled = true;
-    exportStatus.textContent = 'Sending…';
+  window.totoSendTuning = async function (text) {
+    showToast('Sending…');
+    const store = await tuningStore();
+    if (!store) {
+      showToast('Sending only works when this page is open on claude.ai.', true);
+      return;
+    }
     try {
-      const tuning = JSON.parse(exportText.value);
-      await tuningStore.collection('tunings').add({
-        text: exportText.value,
+      const tuning = JSON.parse(text);
+      await store.collection('tunings').add({
+        text,
         changed: Array.isArray(tuning.changed) ? tuning.changed : [],
         savedAt: new Date().toISOString(),
       });
-      exportStatus.textContent = 'Sent. Ask Claude to read your latest tuning.';
+      showToast('Sent to Claude. Ask Claude to read your latest tuning.');
     } catch (error) {
-      exportStatus.textContent = 'Could not send (' + ((error && error.code) || 'error') + '). Copy it instead.';
-    } finally {
-      sendButton.disabled = false;
+      showToast('Could not send (' + ((error && error.code) || 'error') + '). Try again.', true);
     }
-  }
-
-  function closeExport() {
-    exportPanel.hidden = true;
-    document.getElementById('canvas').focus();
-  }
-
-  window.totoShowExport = function (text) {
-    exportText.value = text;
-    exportStatus.textContent = '';
-    exportPanel.hidden = false;
   };
 
-  sendButton.addEventListener('click', sendExport);
-  document.getElementById('export-copy').addEventListener('click', copyExport);
-  document.getElementById('export-close').addEventListener('click', closeExport);
-  exportPanel.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeExport(); });
-  connectTuningStore();
+  tuningStore();  // Connect early so the first send is quick.
 </script>

@@ -37,13 +37,9 @@ theme_override_font_sizes/font_size = 32
 text = "Tune gameplay"
 vertical_alignment = 1
 
-[node name="Status" type="Label" parent="Bar"]
+[node name="Spacer" type="Control" parent="Bar"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
-theme_override_font_sizes/font_size = 20
-horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="Reset" type="Button" parent="Bar"]
 custom_minimum_size = Vector2(130, 72)
@@ -52,12 +48,12 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 26
 text = "Reset"
 
-[node name="Export" type="Button" parent="Bar"]
-custom_minimum_size = Vector2(150, 72)
+[node name="Send" type="Button" parent="Bar"]
+custom_minimum_size = Vector2(200, 72)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 26
-text = "Export"
+text = "Send to Claude"
 
 [node name="Done" type="Button" parent="Bar"]
 custom_minimum_size = Vector2(130, 72)
