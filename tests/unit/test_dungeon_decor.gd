@@ -95,3 +95,43 @@ func test_torchlight_falls_only_on_open_floor_and_fades_with_distance() -> void:
 	assert_gt(light[Vector2i(6, 1)], light[Vector2i(6, 3)])
 	assert_does_not_have(light, Vector2i(6, 0), "not on the wall itself")
 	assert_does_not_have(light, Vector2i(1, 4), "out of reach")
+
+
+func test_banners_hang_on_walls_above_open_floor_and_never_where_a_torch_is() -> void:
+	var map := DungeonMapParser.new().parse(DungeonGenerator.new().generate(5))
+	var walls := _walls(map)
+	var banners := DungeonDecor.banner_cells(map, walls)
+	var torches := DungeonDecor.torch_cells(map, walls)
+
+	assert_gt(banners.size(), 0)
+	for cell in banners:
+		assert_true(map.is_open(cell + Vector2i.DOWN), str(cell))
+		assert_does_not_have(torches, cell)
+
+
+func test_clutter_lies_along_walls_and_never_in_the_way_of_the_game() -> void:
+	var map := DungeonMapParser.new().parse(DungeonGenerator.new().generate(5))
+
+	var clutter := DungeonDecor.clutter_cells(map, 4)
+
+	assert_gt(clutter.size(), 3)
+	for cell: Vector2i in clutter:
+		assert_false(map.is_open(cell + Vector2i.UP), "a wall above %s" % cell)
+		assert_true(map.is_standable(cell))
+		assert_does_not_have(map.enemy_spawns, cell)
+		assert_does_not_have(map.loot_cells, cell)
+		assert_ne(cell, map.exit_cell)
+		assert_between(clutter[cell], 0, 3)
+
+
+func test_a_long_wall_inside_a_room_stays_a_wall() -> void:
+	var map := DungeonMapParser.new().parse("""
+##########
+#P.......#
+#........#
+#.######.#
+#........#
+##########
+""")
+
+	assert_eq(DungeonDecor.pillar_cells(map, _walls(map)), [] as Array[Vector2i])

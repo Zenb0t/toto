@@ -1,8 +1,8 @@
 class_name MapView3D
 extends Node3D
 ## What stands on the floor: the walls (stone, with a lighter cap that overhangs a little, like Brawl Stars'
-## blocks), pillars as round columns, the doors of locked rooms, torches on the walls and the arch over the
-## stairs. Like the fog on
+## blocks), pillars as round columns, the doors of locked rooms, torches and banners on the walls, small
+## things lying along them (candles, bottles, coins) and the arch over the stairs. Like the fog on
 ## the floor, what the player has never seen isn't shown, and what is out of sight is dimmed.
 ## Owns no game rules: it is told the map, which doors are closed and what is seen.
 
@@ -38,6 +38,8 @@ var _has_block := {}  # Vector2i -> true, for walls, pillars and doors
 var _door_cells := {}  # Vector2i -> true
 var _closed_doors := {}  # Vector2i -> true
 var _torches := {}  # wall cell -> TorchModel
+var _banners := {}  # wall cell -> Node3D
+var _clutter := {}  # floor cell -> Node3D
 var _shown := {}  # Vector2i -> the brightness last shown, so a refresh only touches what changed
 var _exploration: Exploration
 var _cut_cells := {}  # Vector2i -> true, walls cut down in front of the hero
@@ -75,9 +77,24 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i]) -> void:
 	_blocks.instance_count = _block_cells.size()
 	_caps.instance_count = _block_cells.size() + _column_cells.size()
 	_columns.instance_count = _column_cells.size()
-	for torch: Node in _torches.values():
-		torch.queue_free()
+	for prop: Node in _torches.values() + _banners.values() + _clutter.values():
+		prop.queue_free()
 	_torches.clear()
+	_banners.clear()
+	_clutter.clear()
+	for cell in DungeonDecor.banner_cells(map, wall_cells):
+		var kind := PropModel.BANNERS[floori(DungeonDecor.noise(cell, 10) * PropModel.BANNERS.size())]
+		var banner := PropModel.make(kind, PropModel.BANNER_SIZE)
+		banner.position = WorldSpace.to_3d(DungeonView.cell_center(cell)) + Vector3(0, -PropModel.BANNER_DROP, 0.5)
+		add_child(banner)
+		_banners[cell] = banner
+	var kinds := DungeonDecor.clutter_cells(map, PropModel.CLUTTER.size())
+	for cell: Vector2i in kinds:
+		var thing := PropModel.make(PropModel.CLUTTER[kinds[cell]])
+		thing.position = WorldSpace.to_3d(DungeonView.cell_center(cell)) + Vector3(0, 0, -0.2)
+		thing.rotation.y = DungeonDecor.noise(cell, 11) * TAU
+		add_child(thing)
+		_clutter[cell] = thing
 	_stairs_cell = map.exit_cell
 	for cell in DungeonDecor.torch_cells(map, wall_cells):
 		var torch := TorchModel.new()
@@ -184,6 +201,11 @@ func _refresh(everything := false) -> void:
 	for cell: Vector2i in _torches:
 		_torches[cell].show_on_wall(cell, _height_at(cell), brightness(cell))
 	_stairs.show_at(_stairs_cell, _ground_brightness(_stairs_cell))
+	for cell: Vector2i in _banners:
+		_banners[cell].visible = brightness(cell) > HIDDEN
+		_banners[cell].scale.y = PropModel.SCALE * PropModel.BANNER_SIZE * _height_at(cell)
+	for cell: Vector2i in _clutter:
+		_clutter[cell].visible = _ground_brightness(cell) > HIDDEN
 
 
 ## The wall's body, below its cap.

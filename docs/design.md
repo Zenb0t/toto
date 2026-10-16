@@ -253,10 +253,16 @@ deterministic), so it costs nothing to store and never changes how the game play
   little differently, set in dark grout with a light bevel; one in 14 is cracked. Open doorways show a
   wooden threshold.
 - **Walls**: stone blocks with a lighter cap that overhangs a little (Brawl Stars' blocks), each block's
-  stone a slightly different shade. Walls standing inside a room (pillars, vault statues) are round
-  columns. Closed doors are wooden blocks.
-- **Torches** hang on walls that face the camera, spread out along them, and throw a warm pool of light on
-  the floor below (only on floor: it never spills over walls). Their flames flicker while in sight.
+  stone a slightly different shade. Small blocks of wall standing free inside a room (pillars, vault statues,
+  at most 4 cells) are round columns; longer walls inside a room stay walls. Closed doors are wooden blocks.
+- **Torches** (KayKit's mounted torch, with a flickering flame) hang on walls that face the camera, spread
+  out along them, and throw a warm pool of light on the floor below (only on floor: it never spills over
+  walls). **Banners** hang between some of them.
+- **Clutter**: one floor cell in nine along a wall has something small on it (a candle, a bottle, coins),
+  never where monsters, loot or the stairs are. Walking over it is fine: it is only looks.
+- **Chests** are KayKit's, and their lid swings open.
+- **Items on the floor** stay hidden until their cell has been seen, then stay shown (like the fog's map
+  memory).
 - **Water and lava** move: slow waves with highlights (`shaders/liquid.gdshader`), lava slower and hotter.
 - **Stairs** stand under a stone arch trimmed in gold.
 - **Cutaway**: walls right in front of the hero (the two cells toward the camera, three wide) drop to a low

@@ -280,7 +280,8 @@ func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 
 
 ## Fog of war: the player sees through open floor, water and lava, not walls or closed doors. Enemies out of
-## sight are hidden; the map they have seen stays drawn, dimmed.
+## sight are hidden; the map they have seen stays drawn, dimmed, with the items seen on it (like Dungeon
+## Crawl's map memory). Items not seen yet are hidden.
 func _update_sight() -> void:
 	var origin := DungeonView.world_to_cell(_player.global_position)
 	if origin != _sight_origin:
@@ -292,6 +293,8 @@ func _update_sight() -> void:
 	for enemies: Array in _enemies_by_room.values():
 		for enemy: Enemy in enemies:
 			enemy.visible = _exploration.is_visible(DungeonView.world_to_cell(enemy.global_position))
+	for pickup: PickupArea in get_tree().get_nodes_in_group(PickupArea.GROUP):
+		pickup.visible = _exploration.is_seen(DungeonView.world_to_cell(pickup.global_position))
 
 
 func _burn_whoever_stands_in_lava(delta: float) -> void:

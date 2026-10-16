@@ -4,8 +4,11 @@ extends RefCounted
 ## cracks are, which walls stand as pillars, and where torches hang. Pure and deterministic: the same map
 ## always looks the same, without storing anything. Changes nothing about how the game plays.
 
-## Every so many cells along a wall, at most one torch.
+## Every so many cells along a wall, at most one torch, and one banner between torches.
 const TORCH_SPACING := 6
+const BANNER_OFFSET := 3
+## One floor cell along a wall in this many has something lying on it (a candle, a bottle, coins).
+const CLUTTER_ONE_IN := 9
 ## One floor tile in this many is cracked.
 const CRACK_ONE_IN := 14
 ## How far a torch's light reaches across the floor, in cells.
@@ -36,22 +39,57 @@ static func crack(cell: Vector2i) -> PackedVector2Array:
 	return PackedVector2Array([start, bend, end])
 
 
-## Walls standing inside a room (pillars, statues): every cell around them is part of the room or of
-## another wall around it, never the solid rock outside.
+## Pillars and statues standing in a room are at most this many cells (the generator's are 2x2).
+const PILLAR_MAX_CELLS := 4
+const NEIGHBOURS_4: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+
+
+## Walls standing free inside a room (pillars, statues): small blocks of wall with nothing but the room or
+## each other around them, never the solid rock outside. Longer walls inside a room (a vault's chamber)
+## stay walls.
 static func pillar_cells(map: DungeonMap, wall_cells: Array[Vector2i]) -> Array[Vector2i]:
 	var walls := {}
 	for cell in wall_cells:
 		walls[cell] = true
-	var pillars: Array[Vector2i] = []
+	var inside := {}
 	for cell in wall_cells:
-		var inside := true
-		for step in NEIGHBOURS_8:
-			if not map.is_open(cell + step) and not walls.has(cell + step):
-				inside = false
-				break
-		if inside:
-			pillars.append(cell)
+		if NEIGHBOURS_8.all(func(step: Vector2i) -> bool: return map.is_open(cell + step) or walls.has(cell + step)):
+			inside[cell] = true
+	var pillars: Array[Vector2i] = []
+	var grouped := {}
+	for start: Vector2i in inside:
+		if grouped.has(start):
+			continue
+		var block := _connected(start, inside)
+		for cell in block:
+			grouped[cell] = true
+		if block.size() <= PILLAR_MAX_CELLS and _stands_free(block, walls):
+			pillars.append_array(block)
 	return pillars
+
+
+## The cells of a set connected to start (side by side).
+static func _connected(start: Vector2i, cells: Dictionary) -> Array[Vector2i]:
+	var block: Array[Vector2i] = [start]
+	var frontier: Array[Vector2i] = [start]
+	while not frontier.is_empty():
+		var cell: Vector2i = frontier.pop_back()
+		for step in NEIGHBOURS_4:
+			var next := cell + step
+			if cells.has(next) and next not in block:
+				block.append(next)
+				frontier.append(next)
+	return block
+
+
+## Whether a block of wall stands free: no wall next to it (corners included) that isn't part of it.
+static func _stands_free(block: Array[Vector2i], walls: Dictionary) -> bool:
+	for cell in block:
+		for step in NEIGHBOURS_8:
+			var next := cell + step
+			if walls.has(next) and next not in block:
+				return false
+	return true
 
 
 ## Walls with a torch: they face the camera (open floor right below them, not a door), they aren't
@@ -66,6 +104,37 @@ static func torch_cells(map: DungeonMap, wall_cells: Array[Vector2i]) -> Array[V
 		if posmod(cell.x, TORCH_SPACING) == posmod(cell.y * 3, TORCH_SPACING):
 			torches.append(cell)
 	return torches
+
+
+## Walls with a banner: like torches, on walls facing the camera, halfway between the torches, and only
+## some of those spots.
+static func banner_cells(map: DungeonMap, wall_cells: Array[Vector2i]) -> Array[Vector2i]:
+	var pillars := pillar_cells(map, wall_cells)
+	var banners: Array[Vector2i] = []
+	for cell in wall_cells:
+		var below := cell + Vector2i.DOWN
+		if not map.is_open(below) or map.is_door(below) or cell in pillars:
+			continue
+		if posmod(cell.x, TORCH_SPACING) == posmod(cell.y * 3 + BANNER_OFFSET, TORCH_SPACING) and noise(cell, 7) < 0.5:
+			banners.append(cell)
+	return banners
+
+
+## Floor cells along a wall (the wall above them) with something small lying on them, and which thing (an
+## index into the caller's list of kinds). Never on doorways, the stairs or where loot or monsters start.
+static func clutter_cells(map: DungeonMap, kinds: int) -> Dictionary:
+	var clutter := {}
+	var busy := {map.exit_cell: true, map.player_spawn: true}
+	for cell in map.loot_cells + map.enemy_spawns:
+		busy[cell] = true
+	for cell in map.open_cells():
+		if busy.has(cell) or not map.is_standable(cell) or map.is_door(cell):
+			continue
+		if map.is_open(cell + Vector2i.UP) or not map.is_clear_of_doors(cell):
+			continue
+		if noise(cell, 8) * CLUTTER_ONE_IN < 1.0:
+			clutter[cell] = floori(noise(cell, 9) * kinds) % kinds
+	return clutter
 
 
 ## How warmly torchlight falls on each open cell: 1 right below a torch, fading to 0 at TORCH_REACH.

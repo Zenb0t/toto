@@ -60,9 +60,10 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 
 ## Credits
 
-Characters and weapons: [KayKit Adventurers](https://kaylousberg.itch.io/kaykit-adventurers) and
-[KayKit Skeletons](https://kaylousberg.itch.io/kaykit-skeletons) by Kay Lousberg (CC0), in `assets/` with
-their licenses.
+Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.itch.io/kaykit-adventurers),
+[KayKit Skeletons](https://kaylousberg.itch.io/kaykit-skeletons) and
+[KayKit Dungeon Remastered](https://kaylousberg.itch.io/kaykit-dungeon-remastered) by Kay Lousberg (CC0), in
+`assets/` with their licenses.
 
 ## Layout
 

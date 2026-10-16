@@ -7,12 +7,15 @@ signal player_exited
 
 ## The player's physics layer (see player.tscn).
 const PLAYER_LAYER := 2
+## Every chest and item on the floor is in this group, so the fog can hide what hasn't been seen yet.
+const GROUP := &"pickups"
 
 var radius: float
 
 
 func _init(pickup_radius: float) -> void:
 	radius = pickup_radius
+	add_to_group(GROUP)
 	collision_layer = 0
 	collision_mask = 1 << (PLAYER_LAYER - 1)
 	var shape := CollisionShape2D.new()
