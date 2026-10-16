@@ -52,5 +52,10 @@ func aim_distance(strength: float) -> float:
 	return shot_range * pow(clampf(strength, 0.0, 1.0), aim_curve)
 
 
+## Lobs from afar, out of reach of its own blast.
+func ideal_distance() -> float:
+	return aim_range() * 0.75
+
+
 func aim_shape() -> AimShape:
 	return AimShape.lob(shot_range, blast_radius)

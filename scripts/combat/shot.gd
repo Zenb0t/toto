@@ -14,6 +14,8 @@ var travel_range: float
 var blast_radius := 0.0
 ## A lobbed shot arcs over walls and enemies and only bursts where it lands (at the end of its range).
 var lobbed := false
+## Enemies' shots hurt the player; the player's hurt enemies. (A blast hurts everyone either way.)
+var hurts_player := false
 var size := DEFAULT_SIZE
 var color := DEFAULT_COLOR
 

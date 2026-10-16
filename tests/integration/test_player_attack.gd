@@ -174,3 +174,51 @@ func test_an_auto_aimed_lob_lands_on_its_target() -> void:
 	var shot := _fired_shot(player)
 	assert_almost_eq(shot.travel_range, 250.0, 1.0)
 	assert_almost_eq(shot.direction, Vector2.DOWN, Vector2(0.01, 0.01))
+
+
+func _player_with(utility: Utility) -> Player:
+	var player := _player()
+	player.equip_utility(utility)
+	return player
+
+
+func test_a_raised_shield_blocks_damage() -> void:
+	var player := _player_with(Shield.new())
+
+	player.use_utility(Vector2.RIGHT)
+	player.take_damage(3)
+
+	assert_eq(player.health.current, Player.MAX_HEALTH)
+
+
+func test_damage_gets_through_again_once_the_shield_drops() -> void:
+	var shield := Shield.new()
+	shield.duration = 0.2
+	var player := _player_with(shield)
+
+	player.use_utility(Vector2.RIGHT)
+	await wait_seconds(shield.duration + MARGIN)
+	player.take_damage(3)
+
+	assert_eq(player.health.current, Player.MAX_HEALTH - 3)
+
+
+func test_healing_restores_health_but_never_above_the_maximum() -> void:
+	var heal := Heal.new()
+	heal.amount = 3
+	var player := _player_with(heal)
+	player.take_damage(2)
+
+	player.use_utility(Vector2.RIGHT)
+
+	assert_eq(player.health.current, Player.MAX_HEALTH)
+
+
+func test_a_heal_cannot_be_used_again_during_its_cooldown() -> void:
+	var player := _player_with(Heal.new())
+	player.take_damage(6)
+	player.use_utility(Vector2.RIGHT)
+
+	player.use_utility(Vector2.RIGHT)
+
+	assert_eq(player.health.current, Player.MAX_HEALTH - 6 + Heal.new().amount)

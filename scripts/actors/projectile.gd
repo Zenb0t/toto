@@ -8,6 +8,10 @@ extends Area2D
 const LOB_HEIGHT_PER_DISTANCE := 0.35
 const LOB_MAX_HEIGHT := 90.0
 const SHADOW_COLOR := Color(0, 0, 0, 0.35)
+## Physics layers (see the actor scenes): what a straight shot can bump into.
+const WALL_LAYER_BIT := 1
+const PLAYER_LAYER_BIT := 2
+const ENEMY_LAYER_BIT := 4
 
 var _shot: Shot
 var _time_left := 0.0
@@ -25,6 +29,8 @@ func launch(shot: Shot) -> void:
 	_time_left = shot.lifetime()
 	if shot.lobbed:
 		collision_mask = 0
+	else:
+		collision_mask = WALL_LAYER_BIT | (PLAYER_LAYER_BIT if shot.hurts_player else ENEMY_LAYER_BIT)
 
 
 func _physics_process(delta: float) -> void:

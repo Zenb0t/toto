@@ -119,8 +119,8 @@ func test_every_weapon_has_a_unique_id() -> void:
 
 
 func test_the_dash_preview_shows_how_far_one_dash_goes() -> void:
-	var utility := Utility.new()
-	utility.dash_speed = 600.0
-	utility.dash_duration = 0.2
+	var dash := Dash.new()
+	dash.dash_speed = 600.0
+	dash.dash_duration = 0.2
 
-	assert_eq(utility.aim_range(), 120.0)
+	assert_eq(dash.aim_range(), 120.0)

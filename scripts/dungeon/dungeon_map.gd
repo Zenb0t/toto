@@ -13,6 +13,7 @@ var room_count: int
 var _room_by_cell: Dictionary  # Vector2i -> int
 var _doors_by_room: Dictionary  # int -> Array[Vector2i]
 var _door_cells: Dictionary  # Vector2i -> true
+var _enemy_weapon_by_cell: Dictionary  # Vector2i -> weapon id
 
 
 func _init(
@@ -21,7 +22,7 @@ func _init(
 	doors_by_room: Dictionary,
 	door_cells: Dictionary,
 	player_spawn_cell: Vector2i,
-	enemy_spawn_cells: Array[Vector2i],
+	enemy_weapon_by_cell: Dictionary,
 	number_of_rooms: int,
 ) -> void:
 	size = grid_size
@@ -29,8 +30,14 @@ func _init(
 	_doors_by_room = doors_by_room
 	_door_cells = door_cells
 	player_spawn = player_spawn_cell
-	enemy_spawns = enemy_spawn_cells
+	_enemy_weapon_by_cell = enemy_weapon_by_cell
+	enemy_spawns.assign(enemy_weapon_by_cell.keys())
 	room_count = number_of_rooms
+
+
+## The weapon id the enemy spawning at cell carries.
+func enemy_weapon_at(cell: Vector2i) -> String:
+	return _enemy_weapon_by_cell.get(cell, "")
 
 
 func is_walkable(cell: Vector2i) -> bool:

@@ -1,7 +1,8 @@
 class_name SlashEffect
 extends Node2D
-## Performs a Slash: the blade sweeps across the arc and hits each enemy within reach once, as it passes.
-## With an anchor (the player), the swing follows it while sweeping.
+## Performs a Slash: the blade sweeps across the arc and hits each foe within reach once, as it passes:
+## enemies for the player's swings, the player for an enemy's. With an anchor (the swinger), the swing
+## follows it while sweeping.
 
 const FADE_SECONDS := 0.12
 const ARC_POINTS := 24
@@ -14,7 +15,7 @@ var _slash: Slash
 var _anchor: Node2D
 var _elapsed := 0.0
 var _swept_to: float  # Degrees relative to the aim, from -arc/2 to +arc/2.
-var _already_hit := {}  # Enemy instance id -> true
+var _already_hit := {}  # Foe instance id -> true
 
 
 func _init(slash: Slash, anchor: Node2D = null) -> void:
@@ -44,17 +45,18 @@ func _blade_angle() -> float:
 	return lerpf(-_slash.arc_degrees / 2.0, _slash.arc_degrees / 2.0, _sweep_progress())
 
 
-## Hits enemies inside the slice of the arc the blade crossed since the last frame.
+## Hits foes inside the slice of the arc the blade crossed since the last frame.
 func _hit_between(from_degrees: float, to_degrees: float) -> void:
 	var slice_direction := _slash.direction.rotated(deg_to_rad((from_degrees + to_degrees) / 2.0))
 	var slice_width := to_degrees - from_degrees + BLADE_DEGREES
-	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
-		if _already_hit.has(enemy.get_instance_id()):
+	var foes := Player.GROUP if _slash.hurts_player else Enemy.GROUP
+	var foe_radius := Player.RADIUS if _slash.hurts_player else Enemy.RADIUS
+	for foe: Node2D in get_tree().get_nodes_in_group(foes):
+		if _already_hit.has(foe.get_instance_id()):
 			continue
-		var reach := _slash.reach + Enemy.RADIUS
-		if HitShapes.in_arc(global_position, slice_direction, reach, slice_width, enemy.global_position):
-			_already_hit[enemy.get_instance_id()] = true
-			enemy.take_damage(_slash.damage)
+		if HitShapes.in_arc(global_position, slice_direction, _slash.reach + foe_radius, slice_width, foe.global_position):
+			_already_hit[foe.get_instance_id()] = true
+			foe.take_damage(_slash.damage)
 
 
 func _draw() -> void:

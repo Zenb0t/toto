@@ -46,5 +46,10 @@ func aim_range() -> float:
 	return shot_range
 
 
+## Strongest up close, where several bolts land on the same target.
+func ideal_distance() -> float:
+	return aim_range() * 0.35
+
+
 func aim_shape() -> AimShape:
 	return AimShape.fan(shot_range, spread_degrees, bolts)

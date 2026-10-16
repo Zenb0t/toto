@@ -64,8 +64,8 @@ func test_a_chest_only_opens_once() -> void:
 	assert_signal_emit_count(chest, "opened", 1)
 
 
-func test_a_dropped_weapon_notices_the_player_stepping_on_and_off() -> void:
-	var drop: WeaponDrop = _place(WeaponDrop.new(Sword.new()))
+func test_a_dropped_item_notices_the_player_stepping_on_and_off() -> void:
+	var drop: ItemDrop = _place(ItemDrop.new(Sword.new()))
 	watch_signals(drop)
 	var player := _spawn_player_at(Vector2.ZERO)
 	await wait_physics_frames(3)

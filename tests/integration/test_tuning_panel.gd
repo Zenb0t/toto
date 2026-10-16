@@ -96,7 +96,7 @@ func test_shows_only_the_groups_it_was_asked_for() -> void:
 	var panel: TuningPanel = PANEL_SCENE.instantiate()
 	add_child_autofree(panel)
 
-	panel.open(tuning, GameTuning.visible_groups(tuning, "sword"))
+	panel.open(tuning, GameTuning.visible_groups(tuning, "sword", GameTuning.DEFAULT_UTILITY_ID))
 
 	assert_not_null(panel.find_child("sword_reach", true, false))
 	assert_null(panel.find_child(WINDUP_ROW, true, false))

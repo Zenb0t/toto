@@ -40,5 +40,10 @@ func aim_range() -> float:
 	return reach
 
 
+## Sword fighters rush in: they want to be well inside their reach.
+func ideal_distance() -> float:
+	return reach * 0.6
+
+
 func aim_shape() -> AimShape:
 	return AimShape.cone(reach, arc_degrees)

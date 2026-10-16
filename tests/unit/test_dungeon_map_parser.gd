@@ -2,7 +2,7 @@ extends GutTest
 
 const TWO_ROOMS := """
 #######
-#P.+.e#
+#P.+.s#
 #######
 """
 
@@ -52,6 +52,19 @@ func test_spawn_markers_are_walkable_floor() -> void:
 	assert_eq(map.enemy_spawns, [Vector2i(5, 1)] as Array[Vector2i])
 	assert_true(map.is_walkable(map.player_spawn))
 	assert_ne(map.room_at(Vector2i(5, 1)), DungeonMap.NO_ROOM)
+
+
+func test_each_enemy_letter_arms_its_enemy_with_a_weapon() -> void:
+	var map := _parser.parse("""
+#######
+#Pswcf#
+#######
+""")
+
+	assert_eq(map.enemy_weapon_at(Vector2i(2, 1)), "sword")
+	assert_eq(map.enemy_weapon_at(Vector2i(3, 1)), "wand")
+	assert_eq(map.enemy_weapon_at(Vector2i(4, 1)), "crossbow")
+	assert_eq(map.enemy_weapon_at(Vector2i(5, 1)), "fireball")
 
 
 func test_cells_touching_a_door_are_not_clear_of_doors() -> void:

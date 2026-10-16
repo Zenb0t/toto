@@ -39,10 +39,15 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (eased, so short drags give fine control up close); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
 
-Utilities (first ideas, not final): dash, shield, heal.
+| Utility | Behaviour | Aim |
+| --- | --- | --- |
+| Dash (starter) | A quick burst of speed where you aim | Line as long as one dash |
+| Shield | Blocks all damage (your own blasts included) for a moment | None: tap anywhere |
+| Heal | Restores some health; slow to recharge | None: tap anywhere |
 
-**Model (step 4).** `Weapon` and `Utility` are plain data objects. The player owns *when* (cooldown, wind-up,
-auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s). The buttons show the equipped
+**Model (step 4).** `Weapon` and `Utility` are plain data objects (both `Item`s). Whoever wields a weapon owns
+*when* (a `Wielder`: cooldown, wind-up, auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s).
+A utility turns an aim into a `UtilityEffect` (dash, shield time, healing) that the player applies. The buttons show the equipped
 item's name and colour. The starter gear is a **Wand** (one magic bolt) and a **Dash**. New behaviours
 (melee arc, explosions, spreads) are attack kinds: a weapon returns `Shot`s (projectiles, optionally
 explosive) and `Slash`es (melee arcs), and the world carries them out.
@@ -61,24 +66,43 @@ When a playtest settles on better values, they get copied into those defaults.
 - **Chests.** Clearing a room leaves a chest at its centre. Walking onto it opens it and drops a weapon.
   The open chest stays, so you can see which rooms you have looted.
 - **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot, default 10%) to drop a weapon.
-- **What drops.** Weapons only for now, picked at random but never the one you hold (a duplicate is no choice).
-- **Compare and swap.** Standing on a drop shows a card: the weapon's name and one-line description, what it
-  replaces, and **Take** / **Leave**. Taking it leaves your old weapon on the floor in its place, so a swap can be
+- **What drops.** Chests hold a random weapon or utility you don't already hold (a duplicate is no choice).
+  An enemy's rare drop is the weapon it fought with (or a random find if you already hold that one).
+  On the floor, weapons are round and utilities square.
+- **Compare and swap.** Standing on a drop shows a card: the item's name and one-line description, what it
+  replaces (what you hold in the same slot), and **Take** / **Leave**. Taking it leaves your old item on the floor in its place, so a swap can be
   undone; the card only returns after you step off and on again, so nothing is swapped by accident.
-- **Runs start with the Wand.** The HUD weapon switch stays as a testing aid for tuning each weapon, but the
+- **Runs start with the Wand and the Dash.** The HUD weapon switch stays as a testing aid for tuning each weapon, but the
   choice is no longer saved.
 
 `LootTable` holds the rules (pure, given a seeded random generator). `Chest` and `WeaponDrop` only notice the
 player; `main.gd` decides what drops and does the swap.
 
-## Enemies (planned)
+## Enemies
 
-Three types, each answered best by different gear: **rusher** (melee chaser, the current enemy),
-**ranged**, and **tank**.
+Enemies carry **the same weapons as the player**, and the weapon decides how they fight (`EnemyTactics`, from
+`Weapon.ideal_distance`):
+
+| Weapon | Behaviour |
+| --- | --- |
+| Sword | Rushes in and swings |
+| Crossbow | Gets close, then fires its fan |
+| Wand | Keeps to mid range and shoots |
+| Fireball | Hangs back and lobs; backs away if you get close. Its blast hurts other enemies too |
+
+Within their comfortable range they circle the player instead of standing still. Their attacks are fair by
+design: an enemy is slower between attacks than the player with the same weapon, and before each attack it
+**stops and shows where it will go** (a red preview), with its aim locked, so stepping aside dodges it. Both
+are tunable (Tune → Enemies: attack slowness, telegraph). Enemy attacks hurt only the player; the player's hurt
+only enemies; blasts hurt everyone. Enemies no longer hurt on contact.
+
+The map says what each enemy carries (`s` sword, `w` wand, `c` crossbow, `f` fireball), so playtests stay
+comparable; deeper rooms have tougher mixes. Tank-style enemies (more health, slower) are still an idea.
 
 ## Explicitly deferred
 
-Art and audio, procedural generation, rarity tiers, stat depth, meta-progression, multiplayer.
+Art and audio, procedural generation (planned next for room layouts; earlier experiments are in git
+history), rarity tiers, stat depth, meta-progression, multiplayer.
 
 ## Roadmap
 
@@ -86,9 +110,9 @@ Art and audio, procedural generation, rarity tiers, stat depth, meta-progression
 2. ~~Fixed test dungeon with room locks~~
 3. ~~Touch controls (move stick, aim buttons, auto-aim)~~
 4. ~~Equipment model: weapon and utility data drive what the buttons do~~
-5. First item pool: ~~sword, fireball, crossbow~~ + utilities
-6. Loot: ~~room chests, rare drops, replace-on-pickup compare~~ (weapons only so far)
-7. Enemy types: rusher, ranged, tank
+5. ~~First item pool: sword, fireball, crossbow, shield, heal~~
+6. ~~Loot: room chests, rare drops, replace-on-pickup compare~~
+7. Enemy types: ~~armed with the player's weapons, behaviour per weapon, telegraphed attacks~~; tank still open
 8. ~~Web export for playtesting on a phone~~
 9. ~~Pause menu with a touch layout editor (move and resize controls, saved on the device)~~
 10. ~~In-game tuning screen with Send to Claude (from the phone playtest page)~~
