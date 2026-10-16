@@ -98,3 +98,23 @@ func test_items_lie_on_safe_floor_away_from_the_start_and_the_chest_spot() -> vo
 			assert_ne(room, map.room_at(map.player_spawn), "seed %d" % seed_value)
 			assert_ne(cell, map.room_center(room), "seed %d" % seed_value)
 	assert_gt(items, SEEDS / 2)
+
+
+func _average_monster_health(floor_number: int) -> float:
+	var total := 0.0
+	var count := 0
+	for seed_value in 15:
+		var map := _parser.parse(DungeonGenerator.new().generate(seed_value, floor_number))
+		for cell in map.enemy_spawns:
+			total += Bestiary.by_id(map.monster_at(cell)).max_health
+			count += 1
+	return total / count
+
+
+func test_deeper_floors_hold_tougher_monsters() -> void:
+	assert_gt(_average_monster_health(3), _average_monster_health(1))
+	assert_gt(_average_monster_health(5), _average_monster_health(3))
+
+
+func test_a_seed_makes_the_same_floor_every_time() -> void:
+	assert_eq(DungeonGenerator.new().generate(42, 3), DungeonGenerator.new().generate(42, 3))

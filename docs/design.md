@@ -24,7 +24,7 @@ Anything that doesn't help answer that is deferred.
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
 | Loot sources | Guaranteed chest per cleared room, plus rare enemy drops | Predictable pacing, with occasional surprises |
 | Dungeon | Generated each run from a seed shown in the pause menu (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
-| Goal | Find the stairs out. They sit in the room farthest from the start and only work once that room is clear. Other rooms are optional | Rewards exploring for loot vs. heading for the exit |
+| Goal | Go down 5 floors and out. Each floor's stairs sit in the room farthest from the start and only work once that room is clear. Other rooms are optional | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent |
 | Rooms | Entering a room with enemies locks its doors until they're all defeated | Forces fights and gives clear pacing |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance | Proven on touch screens |
 | Movement | Floating stick: it appears wherever the left thumb lands | Standard for mobile action games |
@@ -139,6 +139,20 @@ tusks (orcs, ogres), a beard (dwarves); the red ring on the floor marks every on
 **By depth** (`DungeonDifficulty`): kobolds, goblins and bandits near the start; then human casters and archers,
 and orcs; then orc wizards and dwarves; ogres deepest. Deeper rooms also hold more monsters.
 
+## Floors (the descent)
+
+Like Dungeon Crawl, a run is a descent: **5 floors**, each a new dungeon, each more dangerous than the last.
+The stairs (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
+fifth floor they lead out, and the run is won. Dying, or restarting from the menu, starts over from floor 1.
+
+Taking the stairs carries the run down (`RunState`): the weapon and utility held, health as it is (no free
+healing between floors: potions are the only healing), and the potion belt. Everything else (the map, the
+monsters, chests) is new. The HUD shows the floor; the pause menu shows the floor and its seed.
+
+**Danger** (`DungeonDifficulty.danger`): one level per floor down, plus half a level per room away from the
+start. So rooms on one floor differ less than floors do: floor 1 tops out with orcs, floor 3 brings orc
+wizards and dwarves, floor 5 ogres. Out-of-depth rooms still roll two levels deeper.
+
 ## Dungeon generation
 
 Dungeon Crawl Stone Soup is the model for the dungeon itself: random levels with hand-made vaults mixed in,
@@ -215,7 +229,7 @@ phases, each played on a phone before the next:
 
 ## Explicitly deferred
 
-Audio, multiple floors, rarity tiers, stat depth, meta-progression, multiplayer.
+Audio, rarity tiers, stat depth, meta-progression, multiplayer.
 
 ## Roadmap
 
@@ -231,3 +245,5 @@ Audio, multiple floors, rarity tiers, stat depth, meta-progression, multiplayer.
 9. ~~Pause menu with a touch layout editor (move and resize controls, saved on the device)~~
 10. ~~In-game tuning screen with Send to Claude (from the phone playtest page)~~
 12. Graphics (see Graphics): ~~camera and blockout~~; map look, characters, polish still open
+13. ~~Dungeon Crawl progression: potions instead of Heal, a bestiary of fantasy races (tank included), Blink
+    and Frost Nova, 5 floors~~

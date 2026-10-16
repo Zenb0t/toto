@@ -1,20 +1,23 @@
 extends Node2D
-## Composition root: generates the run's dungeon, spawns actors, routes touch intents to the player,
-## applies the room-lock, loot and exit rules, and connects the pause menu's settings screens.
+## Composition root: generates the floor's dungeon, spawns actors, routes touch intents to the player,
+## applies the room-lock, loot and stairs rules, and connects the pause menu's settings screens.
+## The scene is one floor: the stairs carry the run (RunState) down to a freshly loaded scene.
 ## The 2D world under this node runs the game; WorldView3D shows it in 3D, with the 2D plane on its floor.
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 const RESTART_DELAY_SECONDS := 1.5
-## Every run starts with one, like Dungeon Crawl's starting kit.
-const STARTING_POTION_ID := "healing"
+## How long "down to floor N" shows before the next floor loads.
+const DESCEND_DELAY_SECONDS := 0.8
 ## Where a chest's potion lands, tried in order: beside the chest, on safe floor.
 const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 ## How often line of sight is worked out again.
 const SIGHT_UPDATE_SECONDS := 0.1
 
 var _seed: int
+## The run so far: which floor this is, and what the player brought down.
+var _run := RunState.take_carried()
 var _map: DungeonMap
 var _pathfinder: Pathfinder
 var _run_over := false
@@ -32,8 +35,8 @@ var _enemies_by_room := {}  # int -> Array[Enemy]
 var _settings := GameSettings.new()
 var _layout: ControlLayout
 var _tuning: Tuning
-var _weapon_id := GameTuning.DEFAULT_WEAPON_ID
-var _utility_id := GameTuning.DEFAULT_UTILITY_ID
+var _weapon_id := _run.weapon_id
+var _utility_id := _run.utility_id
 var _rng := RandomNumberGenerator.new()
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
 var _belt := PotionBelt.new()
@@ -55,7 +58,7 @@ var _belt := PotionBelt.new()
 func _ready() -> void:
 	_rng.randomize()
 	_seed = _rng.randi()
-	_map = DungeonMapParser.new().parse(DungeonGenerator.new().generate(_seed))
+	_map = DungeonMapParser.new().parse(DungeonGenerator.new().generate(_seed, _run.floor_number))
 	_pathfinder = Pathfinder.new(_map)
 	_view = DungeonView.new()
 	add_child(_view)
@@ -67,7 +70,7 @@ func _ready() -> void:
 	_world.show_world(self, _view.wall_cells(), _map.door_cells())
 	_tuning = _settings.load_tuning()
 	_layout = _settings.load_layout()
-	_pause_menu.show_seed(_seed)
+	_pause_menu.show_seed(_seed, _run.floor_number)
 
 	_player = _spawn_player()
 	_spawn_enemies()
@@ -76,7 +79,7 @@ func _ready() -> void:
 	_update_sight()
 	_progress = _create_progress()
 	_belt.changed.connect(_refresh_potions)
-	_belt.add(STARTING_POTION_ID)
+	_belt.load_dict(_run.potions)
 	_connect_controls()
 	_connect_menu()
 	_apply_tuning(_tuning)
@@ -100,6 +103,7 @@ func _physics_process(delta: float) -> void:
 
 func _spawn_player() -> Player:
 	var player: Player = PLAYER_SCENE.instantiate()
+	player.health = Health.restored(_run.max_health, _run.health)
 	player.position = DungeonView.cell_center(_map.player_spawn)
 	player.attack_fired.connect(_spawn_attacks.bind(player))
 	player.health_changed.connect(func(_current: int, _maximum: int) -> void: _refresh_hud())
@@ -218,13 +222,13 @@ func _combat_room() -> int:
 # --- Rooms and combat ----------------------------------------------------------------------------
 
 ## Lock a room only once the player is a full tile past its doorway, so a closing door can't trap them in it.
-## Stepping on the exit ends the run, once its room is clear.
+## Stepping on the stairs, once their room is clear, leads down (or out, from the last floor).
 func _track_player_room() -> void:
 	var cell := DungeonView.world_to_cell(_player.global_position)
 	if _map.is_clear_of_doors(cell):
 		_progress.enter_room(_map.room_at(cell))
 	if cell == _map.exit_cell and _progress.is_cleared(_map.room_at(cell)):
-		_end_run("You found the way out!")
+		_take_stairs()
 
 
 func _on_room_locked(room: int) -> void:
@@ -473,8 +477,26 @@ func _warn_if_failed(error: Error, what: String) -> void:
 # --- Run state -----------------------------------------------------------------------------------
 
 func _refresh_hud() -> void:
-	if not _run_over:
-		_hud.text = "HP %d/%d    Find the stairs out" % [_player.health.current, _player.health.maximum]
+	if _run_over:
+		return
+	var goal := "Find the way out" if _run.is_last_floor() else "Find the stairs down"
+	_hud.text = "Floor %d/%d    HP %d/%d    %s" % [
+		_run.floor_number, RunState.FLOOR_COUNT, _player.health.current, _player.health.maximum, goal]
+
+
+## Down to the next floor with everything the player holds, or out of the dungeon from the last one.
+func _take_stairs() -> void:
+	if _run.is_last_floor():
+		_end_run("You escaped the dungeon!")
+		return
+	if _run_over:
+		return
+	_run_over = true
+	var next := _run.next_floor(_weapon_id, _utility_id, _player.health.current, _belt.to_dict())
+	_hud.text = "Down to floor %d..." % next.floor_number
+	await get_tree().create_timer(DESCEND_DELAY_SECONDS).timeout
+	RunState.carry(next)
+	_restart()
 
 
 func _end_run(message: String) -> void:

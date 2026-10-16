@@ -9,7 +9,7 @@ const MAX_ENEMIES := 6
 ## optional, so reading the danger and walking away is a choice.
 const OUT_OF_DEPTH_CHANCE := 0.15
 const OUT_OF_DEPTH_EXTRA := 2
-## Monster letters (see Bestiary) that may appear at each depth; a letter listed twice is twice as likely.
+## Monster letters (see Bestiary) that may appear at each danger level (see danger()); a letter listed twice is twice as likely.
 ## The last entry covers anything deeper.
 const POOLS_BY_DEPTH := [
 	["k", "k", "g", "s"],
@@ -21,6 +21,12 @@ const POOLS_BY_DEPTH := [
 	["o", "W", "d", "O", "f"],
 	["W", "d", "O", "O", "o"],
 ]
+
+
+## How dangerous a room is: one level per floor down, plus half a level per room away from the start, so
+## rooms on one floor differ less than floors do (Dungeon Crawl's monsters, too, follow the floor's depth).
+static func danger(room_depth: int, floor_number: int) -> int:
+	return (floor_number - 1) + ceili(room_depth / 2.0)
 
 
 ## The depth a room's enemies are picked for: usually its own, sometimes deeper.

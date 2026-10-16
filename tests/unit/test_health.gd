@@ -68,3 +68,15 @@ func test_negative_damage_is_ignored() -> void:
 	health.take_damage(-4)
 
 	assert_eq(health.current, 10)
+
+
+func test_restored_health_resumes_where_it_was_left() -> void:
+	var health := Health.restored(10, 4)
+
+	assert_eq(health.current, 4)
+	assert_eq(health.maximum, 10)
+
+
+func test_restored_health_stays_within_its_limits() -> void:
+	assert_eq(Health.restored(10, 25).current, 10)
+	assert_eq(Health.restored(10, 0).current, 1, "never restored dead")

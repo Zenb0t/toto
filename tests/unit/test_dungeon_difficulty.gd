@@ -76,3 +76,15 @@ func test_now_and_then_a_room_holds_enemies_from_deeper_in() -> void:
 	assert_eq(rolls.keys().size(), 2)
 	assert_has(rolls, 2)
 	assert_has(rolls, 2 + DungeonDifficulty.OUT_OF_DEPTH_EXTRA)
+
+
+func test_each_floor_down_is_more_dangerous() -> void:
+	for floor_number in range(1, RunState.FLOOR_COUNT):
+		assert_gt(DungeonDifficulty.danger(1, floor_number + 1), DungeonDifficulty.danger(1, floor_number))
+
+
+func test_rooms_on_one_floor_differ_less_than_floors_do() -> void:
+	assert_eq(DungeonDifficulty.danger(1, 1), 1)
+	assert_eq(DungeonDifficulty.danger(2, 1), 1)
+	assert_eq(DungeonDifficulty.danger(6, 1), 3)
+	assert_eq(DungeonDifficulty.danger(1, 3), 3)

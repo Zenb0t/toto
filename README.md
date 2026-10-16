@@ -31,14 +31,17 @@ distance, field of view, look-ahead and wall height). Every weapon has
 its own settings; the screen shows the equipped one's. Changes apply live and are saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
-Every run is a new dungeon (its seed is shown in the pause menu), inspired by Dungeon Crawl Stone Soup: oddly
+A run is a descent through 5 floors, each a new dungeon (its seed is shown in the pause menu), inspired by
+Dungeon Crawl Stone Soup: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map. Items sometimes lie on the floor, and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
 chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
 weapon wants; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
-their weapon. Rooms get tougher the deeper you go. Find the gold stairs (in the room farthest from the start,
-usable once it is clear) to win. If you die, you start over with the Wand and the Dash.
+their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
+farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
+fifth floor's stairs lead out. If you die, you start over on floor 1 with the Wand, the Dash and a Potion of
+Healing.
 
 ## Play on a phone
 
@@ -89,5 +92,6 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
   and closed doors on it, and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
   the floor texture shows). `models/` holds the placeholder models
-- `scripts/main.gd` – composition root: wires controls to the player and applies the room rules
+- `scripts/run` – `RunState`: what a run carries down the stairs (floor, gear, health, potions)
+- `scripts/main.gd` – composition root (one floor): wires controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests

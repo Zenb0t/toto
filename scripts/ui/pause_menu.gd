@@ -23,9 +23,9 @@ func _ready() -> void:
 	_show_panel(false)
 
 
-## The run's dungeon seed, so a map worth keeping (or a broken one) can be reported.
-func show_seed(seed_value: int) -> void:
-	_seed_label.text = "Dungeon seed %d" % seed_value
+## The floor's dungeon seed, so a map worth keeping (or a broken one) can be reported.
+func show_seed(seed_value: int, floor_number := 1) -> void:
+	_seed_label.text = "Floor %d · dungeon seed %d" % [floor_number, seed_value]
 
 
 ## True from open() until close(), including while a sub-screen is showing.

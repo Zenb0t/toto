@@ -33,3 +33,10 @@ func heal(amount: int) -> void:
 		return
 	current = mini(current + amount, maximum)
 	changed.emit(current, maximum)
+
+
+## Health that has already taken some damage: current of maximum (clamped to 1..maximum).
+static func restored(max_health: int, current_health: int) -> Health:
+	var health := Health.new(max_health)
+	health.current = clampi(current_health, 1, max_health)
+	return health

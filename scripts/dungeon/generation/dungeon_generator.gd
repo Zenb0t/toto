@@ -33,7 +33,8 @@ const EXIT := ">"
 const LOOT := "*"
 
 
-func generate(seed_value: int) -> String:
+## floor_number: 1 for the top floor; deeper floors hold tougher monsters (see DungeonDifficulty.danger).
+func generate(seed_value: int, floor_number := 1) -> String:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var graph := RoomGraph.grow(GRID, rng.randi_range(MIN_ROOMS, MAX_ROOMS), rng.randi_range(0, MAX_EXTRA_LINKS), rng)
@@ -41,7 +42,7 @@ func generate(seed_value: int) -> String:
 	for slot in graph.slots:
 		rooms[slot] = _shape_room(slot == graph.start_slot(), room_bounds(slot), rng)
 	var corridors := _connect(graph, rooms, rng)
-	return _draw(graph, rooms, corridors, rng)
+	return _draw(graph, rooms, corridors, floor_number, rng)
 
 
 static func map_size() -> Vector2i:
@@ -144,7 +145,9 @@ func _corridor_at(across: int, first: Dictionary, second: Dictionary, horizontal
 	return corridor
 
 
-func _draw(graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, rng: RandomNumberGenerator) -> String:
+func _draw(
+		graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, floor_number: int, rng: RandomNumberGenerator
+) -> String:
 	var size := map_size()
 	var rows: Array[Array] = []
 	for y in size.y:
@@ -169,7 +172,7 @@ func _draw(graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, rng: Rand
 			var loot_cell := _spawn_cells(rooms[slot], 1, taken, rng)[0]
 			rows[loot_cell.y][loot_cell.x] = LOOT
 			taken.append(loot_cell)
-		var depth := DungeonDifficulty.rolled_depth(graph.depth_of(slot), rng)
+		var depth := DungeonDifficulty.rolled_depth(DungeonDifficulty.danger(graph.depth_of(slot), floor_number), rng)
 		var letters := DungeonDifficulty.enemy_letters(depth, rng)
 		for cell in _spawn_cells(rooms[slot], letters.size(), taken, rng):
 			rows[cell.y][cell.x] = letters.pop_back()
