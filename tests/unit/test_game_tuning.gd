@@ -56,16 +56,36 @@ func test_the_quick_switch_visits_every_weapon_and_wraps_around() -> void:
 	assert_eq(current, GameTuning.DEFAULT_WEAPON_ID)
 
 
-func test_the_tune_screen_shows_only_the_equipped_weapon_and_utility() -> void:
+func _section(title: String, sections: Array[TuningSection]) -> TuningSection:
+	for section in sections:
+		if section.title == title:
+			return section
+	return null
+
+
+func test_every_knob_belongs_to_exactly_one_entry_of_the_tune_menu() -> void:
 	var tuning := GameTuning.create()
+	var listed: Array[String] = []
+	for section in GameTuning.sections("wand", "dash"):
+		listed.append_array(section.groups)
 
-	var groups := GameTuning.visible_groups(tuning, "fireball", "shield")
+	for param in tuning.params():
+		assert_eq(listed.count(param.group), 1, param.key)
 
-	assert_has(groups, GameTuning.weapon_group("fireball"))
-	assert_does_not_have(groups, GameTuning.weapon_group("wand"))
-	assert_has(groups, GameTuning.utility_group("shield"))
-	assert_does_not_have(groups, GameTuning.utility_group("dash"))
-	assert_has(groups, "Player")
+
+func test_every_weapon_has_its_own_page_under_weapons_with_the_equipped_one_marked() -> void:
+	var weapons := _section("Weapons", GameTuning.sections("fireball", "shield"))
+
+	assert_true(weapons.has_submenu())
+	assert_eq(weapons.groups.size(), GameTuning.weapon_ids().size())
+	assert_string_contains(weapons.label_of(GameTuning.weapon_group("fireball")), "equipped")
+	assert_eq(weapons.label_of(GameTuning.weapon_group("sword")), "Sword")
+
+
+func test_enemies_open_straight_onto_their_knobs() -> void:
+	var enemies := _section("Enemies", GameTuning.sections("wand", "dash"))
+
+	assert_false(enemies.has_submenu())
 
 
 func test_every_default_is_a_value_its_knob_accepts() -> void:
@@ -128,7 +148,7 @@ func test_each_potion_keeps_its_own_settings() -> void:
 	tuning.set_value(GameTuning.key("healing", "amount"), 7)
 
 	assert_eq((GameTuning.potion(tuning, "healing") as HealingPotion).amount, 7)
-	assert_has(GameTuning.visible_groups(tuning, "wand", "dash"), GameTuning.potion_group("healing"))
+	assert_eq(GameTuning.potion(tuning, "haste").id, "haste")
 
 
 func test_healing_potions_turn_up_more_often_than_the_others() -> void:

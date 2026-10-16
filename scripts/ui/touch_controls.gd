@@ -1,7 +1,11 @@
 class_name TouchControls
 extends CanvasLayer
 ## Places the move stick and the action buttons according to a ControlLayout, and keeps them placed
-## when the screen size changes (rotation, browser resize).
+## when the screen size changes (rotation, browser resize). While playing with keyboard and mouse the stick
+## hides and the buttons only show what is equipped, its cooldown and the key that uses it.
+
+const ATTACK_KEY_HINT := "click"
+const UTILITY_KEY_HINT := "right click / space"
 
 @onready var move_stick: TouchStick = $MoveStick
 @onready var attack_button: AimButton = $AttackButton
@@ -18,6 +22,15 @@ func _ready() -> void:
 func apply_layout(layout: ControlLayout) -> void:
 	_layout = layout
 	_arrange()
+
+
+## Off while playing with keyboard and mouse.
+func use_touch(enabled: bool) -> void:
+	move_stick.accepts_touch = enabled
+	attack_button.accepts_touch = enabled
+	utility_button.accepts_touch = enabled
+	attack_button.hint = "" if enabled else ATTACK_KEY_HINT
+	utility_button.hint = "" if enabled else UTILITY_KEY_HINT
 
 
 func _arrange() -> void:

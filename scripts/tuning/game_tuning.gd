@@ -19,6 +19,12 @@ const CAMERA_DISTANCE := "camera.distance"
 const CAMERA_FIELD_OF_VIEW := "camera.field_of_view"
 const CAMERA_LOOK_AHEAD := "camera.look_ahead"
 const CAMERA_WALL_HEIGHT := "camera.wall_height"
+const PLAYER_GROUP := "Player"
+const ENEMIES_GROUP := "Enemies"
+const LOOT_GROUP := "Loot"
+const CONTROLS_GROUP := "Controls"
+const CAMERA_GROUP := "Camera"
+const EQUIPPED_MARK := "  (equipped)"
 const DEFAULT_WEAPON_ID := "wand"
 const DEFAULT_UTILITY_ID := "dash"
 
@@ -93,7 +99,7 @@ static func potion_group(potion_id: String) -> String:
 
 static func create() -> Tuning:
 	var params: Array[Tuning.Param] = [
-		Tuning.Param.new(PLAYER_MOVE_SPEED, "Move speed", "Player", 60, 300, 5, Player.DEFAULT_MOVE_SPEED),
+		Tuning.Param.new(PLAYER_MOVE_SPEED, "Move speed", PLAYER_GROUP, 60, 300, 5, Player.DEFAULT_MOVE_SPEED),
 	]
 	for each in weapons():
 		params.append_array(_item_params(each, weapon_group(each.id)))
@@ -102,50 +108,49 @@ static func create() -> Tuning:
 	for each in potions():
 		params.append_array(_item_params(each, potion_group(each.id)))
 	params.append_array([
-		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", "Enemies", 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
-		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", "Enemies", 0.25, 4, 0.05, 1.0, true),
+		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", ENEMIES_GROUP, 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
+		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, 1.0, true),
 		Tuning.Param.new(
-			ENEMY_COOLDOWN_MULTIPLIER, "Attack slowness (x)", "Enemies", 1, 5, 0.1, Enemy.DEFAULT_COOLDOWN_MULTIPLIER),
+			ENEMY_COOLDOWN_MULTIPLIER, "Attack slowness (x)", ENEMIES_GROUP, 1, 5, 0.1, Enemy.DEFAULT_COOLDOWN_MULTIPLIER),
 		Tuning.Param.new(
-			ENEMY_TELEGRAPH, "Telegraph (s)", "Enemies", 0, 1.5, 0.05, Enemy.DEFAULT_TELEGRAPH_SECONDS),
+			ENEMY_TELEGRAPH, "Telegraph (s)", ENEMIES_GROUP, 0, 1.5, 0.05, Enemy.DEFAULT_TELEGRAPH_SECONDS),
 		Tuning.Param.new(
-			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", "Loot", 0, 1, 0.05, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
+			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
 		Tuning.Param.new(
-			LOOT_POTION_DROP_CHANCE, "Enemy potion chance", "Loot", 0, 1, 0.05, LootTable.DEFAULT_POTION_DROP_CHANCE),
+			LOOT_POTION_DROP_CHANCE, "Enemy potion chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_POTION_DROP_CHANCE),
 		Tuning.Param.new(
-			LOOT_CHEST_POTION_CHANCE, "Chest potion chance", "Loot", 0, 1, 0.05, LootTable.DEFAULT_CHEST_POTION_CHANCE),
+			LOOT_CHEST_POTION_CHANCE, "Chest potion chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_CHEST_POTION_CHANCE),
 		Tuning.Param.new(
-			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", "Controls", 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
+			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(
-			CONTROLS_UTILITY_DEAD_ZONE, "Utility dead zone", "Controls", 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
+			CONTROLS_UTILITY_DEAD_ZONE, "Utility dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(
-			CAMERA_PITCH, "Tilt (90 = top-down)", "Camera", 30, 90, 1, CameraFraming.DEFAULT_PITCH_DEGREES),
+			CAMERA_PITCH, "Tilt (90 = top-down)", CAMERA_GROUP, 30, 90, 1, CameraFraming.DEFAULT_PITCH_DEGREES),
 		Tuning.Param.new(
-			CAMERA_DISTANCE, "Distance (cells)", "Camera", 6, 30, 0.5, CameraFraming.DEFAULT_DISTANCE),
+			CAMERA_DISTANCE, "Distance (cells)", CAMERA_GROUP, 6, 30, 0.5, CameraFraming.DEFAULT_DISTANCE),
 		Tuning.Param.new(
-			CAMERA_FIELD_OF_VIEW, "Field of view", "Camera", 15, 75, 1, CameraFraming.DEFAULT_FIELD_OF_VIEW),
+			CAMERA_FIELD_OF_VIEW, "Field of view", CAMERA_GROUP, 15, 75, 1, CameraFraming.DEFAULT_FIELD_OF_VIEW),
 		Tuning.Param.new(
-			CAMERA_LOOK_AHEAD, "Look ahead (cells)", "Camera", 0, 5, 0.25, CameraFraming.DEFAULT_LOOK_AHEAD),
+			CAMERA_LOOK_AHEAD, "Look ahead (cells)", CAMERA_GROUP, 0, 5, 0.25, CameraFraming.DEFAULT_LOOK_AHEAD),
 		Tuning.Param.new(
-			CAMERA_WALL_HEIGHT, "Wall height (cells)", "Camera", 0.2, 2, 0.05, MapView3D.DEFAULT_WALL_HEIGHT),
+			CAMERA_WALL_HEIGHT, "Wall height (cells)", CAMERA_GROUP, 0.2, 2, 0.05, MapView3D.DEFAULT_WALL_HEIGHT),
 	])
 	return Tuning.new(params)
 
 
-## Every group except the items that are not equipped, so the Tune screen shows what is in play.
-static func visible_groups(tuning: Tuning, equipped_weapon_id: String, equipped_utility_id: String) -> Array[String]:
-	var hidden: Array[String] = []
-	for id in weapon_ids():
-		if id != equipped_weapon_id:
-			hidden.append(weapon_group(id))
-	for id in utility_ids():
-		if id != equipped_utility_id:
-			hidden.append(utility_group(id))
-	var groups: Array[String] = []
-	for param in tuning.params():
-		if param.group not in groups and param.group not in hidden:
-			groups.append(param.group)
-	return groups
+## The Tune screen's menu: every group of knobs, sorted into sections. Weapons and utilities each get an
+## entry under their section, with the equipped one marked.
+static func sections(equipped_weapon_id: String, equipped_utility_id: String) -> Array[TuningSection]:
+	return [
+		TuningSection.new(PLAYER_GROUP, [PLAYER_GROUP]),
+		_items_section("Weapons", weapons(), weapon_group, equipped_weapon_id),
+		_items_section("Utilities", utilities(), utility_group, equipped_utility_id),
+		_items_section("Potions", potions(), potion_group, ""),
+		TuningSection.new(ENEMIES_GROUP, [ENEMIES_GROUP]),
+		TuningSection.new(LOOT_GROUP, [LOOT_GROUP]),
+		TuningSection.new(CONTROLS_GROUP, [CONTROLS_GROUP]),
+		TuningSection.new(CAMERA_GROUP, [CAMERA_GROUP]),
+	]
 
 
 ## Unknown ids fall back to the starter weapon, so a stale saved choice can't break a run.
@@ -229,6 +234,17 @@ static func camera_framing(tuning: Tuning) -> CameraFraming:
 
 static func wall_height(tuning: Tuning) -> float:
 	return tuning.value(CAMERA_WALL_HEIGHT)
+
+
+## items: Items or Potions; group_of: their id -> their group.
+static func _items_section(title: String, items: Array, group_of: Callable, equipped_id: String) -> TuningSection:
+	var groups: Array[String] = []
+	var labels := {}
+	for each: Object in items:
+		var group: String = group_of.call(each.id)
+		groups.append(group)
+		labels[group] = each.display_name + (EQUIPPED_MARK if each.id == equipped_id else "")
+	return TuningSection.new(title, groups, labels)
 
 
 static func _ids(items: Array) -> Array[String]:

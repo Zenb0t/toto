@@ -14,6 +14,8 @@ const MIN_KNOB_TRAVEL := 0.25  ## Where the knob sits just past the dead zone, s
 const MIN_FONT_SIZE := 14
 const FONT_SIZE_PER_RADIUS := 0.2
 const LABEL_COLOR := Color(1, 1, 1, 0.85)
+const HINT_COLOR := Color(1, 1, 1, 0.6)
+const HINT_FONT_SCALE := 0.75
 
 ## Set from the equipped item.
 @export var label := "":
@@ -24,6 +26,18 @@ const LABEL_COLOR := Color(1, 1, 1, 0.85)
 	set(value):
 		color = value
 		queue_redraw()
+## A small line under the label, such as the key that does the same thing.
+var hint := "":
+	set(value):
+		hint = value
+		queue_redraw()
+## Off, the button ignores touches (another way of playing is in use) but still shows the item and its cooldown.
+var accepts_touch := true:
+	set(value):
+		accepts_touch = value
+		set_process_input(value)
+		if not value:
+			_forget_touch()
 
 var dead_zone := DEFAULT_DEAD_ZONE:
 	set(value):
@@ -47,11 +61,18 @@ func set_cooldown_ratio(ratio: float) -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_PAUSED and _touch_index != NO_TOUCH:
-		_touch_index = NO_TOUCH
-		_gesture.cancel()
-		aim_changed.emit(Vector2.ZERO, 0.0)
-		queue_redraw()
+	if what == NOTIFICATION_PAUSED:
+		_forget_touch()
+
+
+## Lets go of a press without firing (the game paused under the finger, or touch was turned off).
+func _forget_touch() -> void:
+	if _touch_index == NO_TOUCH:
+		return
+	_touch_index = NO_TOUCH
+	_gesture.cancel()
+	aim_changed.emit(Vector2.ZERO, 0.0)
+	queue_redraw()
 
 
 func _input(event: InputEvent) -> void:
@@ -91,6 +112,11 @@ func _draw() -> void:
 	var text_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
 	var baseline := center + Vector2(-text_size.x / 2.0, text_size.y * 0.35)
 	draw_string(font, baseline, label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, LABEL_COLOR)
+	if hint != "":
+		var hint_size := roundi(font_size * HINT_FONT_SCALE)
+		var hint_width := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_CENTER, -1, hint_size).x
+		var hint_baseline := center + Vector2(-hint_width / 2.0, text_size.y * 0.35 + font_size * 1.1)
+		draw_string(font, hint_baseline, hint, HORIZONTAL_ALIGNMENT_CENTER, -1, hint_size, HINT_COLOR)
 
 
 func _radius() -> float:

@@ -18,7 +18,7 @@ Anything that doesn't help answer that is deferred.
 
 | Area | Decision | Why |
 | --- | --- | --- |
-| Platform | Mobile (landscape). Develop on desktop with mouse-emulated touch | Brawl Stars-style touch play is the target |
+| Platform | Mobile (landscape). Also playable with keyboard and mouse: the game follows whichever was used last (see Keyboard and mouse) | Brawl Stars-style touch play is the target; playtesting on a computer shouldn't feel like using a phone with a mouse |
 | Build identity | No heroes. Your build is your equipment, and equipment comes from RNG | DCSS-style "make do with what you find" |
 | Equipment slots | **Weapon** (attack button) + **Utility** (second button, on a cooldown) | Smallest set where builds feel different |
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
@@ -75,13 +75,41 @@ item's name and colour. The starter gear is **Magic Missile** (one magic bolt) a
 explosive) and `Slash`es (melee arcs), and the world carries them out.
 
 **Per-item tuning.** Each item declares its tunable fields as `Knob`s; tuning keys are `<item id>.<field>`, so
-every weapon keeps its own settings. A HUD button cycles weapons for testing, and the Tune screen shows the
-equipped weapon's knobs only.
+every weapon keeps its own settings. A HUD button (or Q) cycles weapons for testing.
 
 **Tuning.** Feel matters more than anything at this stage, so the numbers that shape it are editable in-game
 (pause menu → Tune gameplay), saved on the device, and sent to Claude as JSON with one tap. Defaults live in the classes
 (`Weapon`, `Utility`, `Player`, `Enemy`), and the tuning screen reads them, so there is one source of truth.
 When a playtest settles on better values, they get copied into those defaults.
+
+**Tune screen menus.** The knobs are sorted into sections (`GameTuning.sections`): Player, Weapons, Utilities,
+Potions, Enemies, Loot, Controls, Camera. A section with one group of knobs opens straight onto them; Weapons,
+Utilities and Potions first list every item, so any of them can be tuned, not only the one equipped (which is
+marked). Back or Esc goes up a page. Entries holding changed knobs are marked in gold, and Reset resets what the
+page shows (Reset all, from the top menu).
+
+## Keyboard and mouse
+
+Touch stays the target, but a computer gets its own controls rather than a mouse pretending to be a finger:
+
+| Input | Action |
+| --- | --- |
+| WASD or arrow keys | Move |
+| Mouse | Aim: the attack goes toward the cursor, and spot-aimed weapons (Fireball, Mephitic Cloud) land on it |
+| Left button | Attack; held, it shows the aim and keeps attacking whenever the weapon is ready |
+| Right button or Space | Utility, toward the cursor |
+| 1, 2, 3 | Drink a potion (in the potion bar's order) |
+| E | Take the item on the floor |
+| Q | Next weapon (testing aid) |
+| Esc | Pause menu; in the Tune screen, back |
+
+`InputMode` decides which kind of play is in use: phones start with touch, computers with keyboard and mouse, and
+then whatever was used last wins (a key or click, or a touch). Godot copies clicks into touches and touches into
+clicks so both kinds of widget keep working; those copies are marked as emulated and never switch the mode. With
+keyboard and mouse, the stick hides and the two action buttons stay as indicators (item, cooldown and key), and
+the potion bar shows each potion's key. Clicks on HUD buttons (potions, Take, the menu) never attack. The cursor is
+turned into a point on the floor through the 3D camera (`WorldView3D.plane_point_at`), and `MouseAim` turns it into
+the same aim a touch drag gives, so weapons don't know how they were aimed.
 
 ## Loot (step 6)
 

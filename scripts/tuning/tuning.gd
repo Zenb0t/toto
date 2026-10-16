@@ -69,6 +69,12 @@ func reset() -> void:
 		_values[each.key] = each.default_value
 
 
+## Brings back the defaults of the given knobs only.
+func reset_keys(keys: Array[String]) -> void:
+	for key in keys:
+		_values[key] = param(key).default_value
+
+
 func is_changed(key: String) -> bool:
 	return not is_equal_approx(_values[key], param(key).default_value)
 

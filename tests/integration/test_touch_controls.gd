@@ -193,3 +193,42 @@ func test_a_drag_past_a_smaller_dead_zone_aims_manually() -> void:
 	var release := _last_release(button)
 	assert_false(release.is_auto)
 	assert_almost_eq(release.direction, Vector2.RIGHT, Vector2(0.01, 0.01))
+
+
+func test_with_touch_off_the_attack_button_ignores_touches() -> void:
+	var button := _aim_button()
+	button.accepts_touch = false
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER, true)
+	_touch(BUTTON_CENTER, false)
+	await wait_process_frames(2)
+
+	assert_signal_not_emitted(button, "aim_released")
+
+
+func test_turning_touch_off_mid_drag_lets_go_without_firing() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(0, -120))
+	await wait_process_frames(1)
+
+	button.accepts_touch = false
+	_touch(BUTTON_CENTER + Vector2(0, -120), false)
+	await wait_process_frames(1)
+
+	assert_signal_not_emitted(button, "aim_released")
+	assert_eq(get_signal_parameters(button, "aim_changed")[0], Vector2.ZERO)
+
+
+func test_with_touch_off_the_stick_hides_and_stays_still() -> void:
+	var stick := _stick()
+	stick.accepts_touch = false
+
+	_touch(Vector2(100, 100), true)
+	_drag(Vector2(180, 100))
+	await wait_process_frames(1)
+
+	assert_false(stick.visible)
+	assert_eq(stick.current_strength(), Vector2.ZERO)

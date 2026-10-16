@@ -21,6 +21,15 @@ var rest_center := Vector2.ZERO:
 		rest_center = value
 		queue_redraw()
 
+## Off, the stick is hidden and ignores touches (another way of playing is in use).
+var accepts_touch := true:
+	set(value):
+		accepts_touch = value
+		visible = value
+		set_process_input(value)
+		if not value:
+			_forget_touch()
+
 var _touch_index := NO_TOUCH
 var _origin := Vector2.ZERO
 var _finger := Vector2.ZERO
@@ -37,10 +46,16 @@ func current_strength() -> Vector2:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_PAUSED and _touch_index != NO_TOUCH:
-		_touch_index = NO_TOUCH
-		strength_changed.emit(Vector2.ZERO)
-		queue_redraw()
+	if what == NOTIFICATION_PAUSED:
+		_forget_touch()
+
+
+func _forget_touch() -> void:
+	if _touch_index == NO_TOUCH:
+		return
+	_touch_index = NO_TOUCH
+	strength_changed.emit(Vector2.ZERO)
+	queue_redraw()
 
 
 func _input(event: InputEvent) -> void:

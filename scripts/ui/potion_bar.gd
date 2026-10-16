@@ -10,18 +10,19 @@ const FONT_SIZE := 20
 
 
 ## potions: every kind, in the order to show them; only those held get a button.
-func show_belt(belt: PotionBelt, potions: Array[Potion]) -> void:
+## show_keys: whether to show the number key that drinks each kind (the first kind is 1).
+func show_belt(belt: PotionBelt, potions: Array[Potion], show_keys := false) -> void:
 	for child in get_children():
 		child.queue_free()
-	for potion in potions:
-		var count := belt.count(potion.id)
+	for slot in potions.size():
+		var count := belt.count(potions[slot].id)
 		if count > 0:
-			add_child(_button(potion, count))
+			add_child(_button(potions[slot], count, ("%d: " % (slot + 1)) if show_keys else ""))
 
 
-func _button(potion: Potion, count: int) -> Button:
+func _button(potion: Potion, count: int, key_prefix: String) -> Button:
 	var button := Button.new()
-	button.text = "%s ×%d" % [potion.button_label, count]
+	button.text = "%s%s ×%d" % [key_prefix, potion.button_label, count]
 	button.custom_minimum_size = BUTTON_SIZE
 	button.focus_mode = Control.FOCUS_NONE
 	button.add_theme_font_size_override("font_size", FONT_SIZE)

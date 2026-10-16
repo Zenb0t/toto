@@ -19,6 +19,8 @@ const ARRIVAL_FADE_SECONDS := 1.0
 const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 ## How often line of sight is worked out again.
 const SIGHT_UPDATE_SECONDS := 0.1
+const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Cleared rooms leave a chest.  Gold stairs lead down.  II: menu."
+const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item.  Q: next weapon.  Esc: menu."
 
 var _seed: int
 ## The run so far: which floor this is, and what the player brought down.
@@ -49,6 +51,7 @@ var _experience := Experience.new(_run.experience)
 
 @onready var _hud_layer: CanvasLayer = $Hud
 @onready var _hud: Label = $Hud/Status
+@onready var _help: Label = $Hud/Help
 @onready var _weapon_switch: Button = $Hud/WeaponSwitch
 @onready var _loot_card: LootCard = $Hud/LootCard
 @onready var _potion_bar: PotionBar = $Hud/PotionBar
@@ -57,6 +60,7 @@ var _experience := Experience.new(_run.experience)
 @onready var _move_stick: TouchStick = $TouchControls/MoveStick
 @onready var _attack_button: AimButton = $TouchControls/AttackButton
 @onready var _utility_button: AimButton = $TouchControls/UtilityButton
+@onready var _keyboard_mouse: KeyboardMouseControls = $KeyboardMouse
 @onready var _pause_menu: PauseMenu = $Overlay/PauseMenu
 @onready var _layout_editor: LayoutEditor = $Overlay/LayoutEditor
 @onready var _tuning_panel: TuningPanel = $Overlay/TuningPanel
@@ -89,15 +93,19 @@ func _ready() -> void:
 	_belt.changed.connect(_refresh_potions)
 	_belt.load_dict(_run.potions)
 	_connect_controls()
+	_connect_keyboard_mouse()
 	_connect_menu()
 	_apply_tuning(_tuning)
 	_touch_controls.apply_layout(_layout)
+	_show_input_mode(_keyboard_mouse.mode)
 	_refresh_hud()
 	_greet()
 
 
 func _physics_process(delta: float) -> void:
 	_player.move(_move_input())
+	if _keyboard_mouse.is_attack_held() and not _run_over:
+		_attack_toward_cursor()
 	_apply_terrain(delta)
 	_sight_update_left -= delta
 	if _sight_update_left <= 0.0:
@@ -173,6 +181,17 @@ func _connect_controls() -> void:
 	_potion_bar.drink_requested.connect(_drink)
 
 
+func _connect_keyboard_mouse() -> void:
+	_keyboard_mouse.mode_changed.connect(_show_input_mode)
+	_keyboard_mouse.attack_held_changed.connect(func(held: bool) -> void:
+		if not held:
+			_player.preview_aim(Vector2.ZERO))
+	_keyboard_mouse.utility_requested.connect(_use_utility_toward_cursor)
+	_keyboard_mouse.potion_requested.connect(func(slot: int) -> void: _drink(GameTuning.potion_ids()[slot]))
+	_keyboard_mouse.take_requested.connect(_on_take_pressed)
+	_keyboard_mouse.weapon_switch_requested.connect(_on_weapon_switch_pressed)
+
+
 func _connect_menu() -> void:
 	_pause_menu.opened.connect(func() -> void: get_tree().paused = true)
 	_pause_menu.closed.connect(func() -> void: get_tree().paused = false)
@@ -188,12 +207,37 @@ func _connect_menu() -> void:
 
 # --- Input routing -------------------------------------------------------------------------------
 
-## Touch stick first; WASD as a desktop fallback.
+## Touch stick first; the movement keys otherwise.
 func _move_input() -> Vector2:
 	var touch := _move_stick.current_strength()
 	if touch != Vector2.ZERO:
 		return touch
-	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	return _keyboard_mouse.move_strength()
+
+
+## The touch controls show only while playing by touch; with keyboard and mouse the HUD names the keys.
+func _show_input_mode(mode: InputMode.Kind) -> void:
+	var touch := mode == InputMode.Kind.TOUCH
+	_touch_controls.use_touch(touch)
+	_help.text = TOUCH_HELP if touch else KEYBOARD_MOUSE_HELP
+	_player.preview_aim(Vector2.ZERO)
+	_refresh_potions()
+
+
+## While the mouse button is held, the attack follows the cursor and fires whenever the weapon is ready.
+func _attack_toward_cursor() -> void:
+	var aim := MouseAim.toward(_player.global_position, _cursor_on_plane(), _player.weapon, _player.facing)
+	_player.preview_aim(aim.direction, _player.weapon.aim_shape(), aim.strength)
+	_player.attack(aim.direction, null, aim.strength)
+
+
+func _use_utility_toward_cursor() -> void:
+	if not _run_over:
+		_player.use_utility(MouseAim.direction(_player.global_position, _cursor_on_plane(), _player.facing))
+
+
+func _cursor_on_plane() -> Vector2:
+	return _world.plane_point_at(_keyboard_mouse.cursor())
 
 
 func _on_attack_released(release: AimGesture.Release) -> void:
@@ -380,7 +424,7 @@ func _drink(potion_id: String) -> void:
 
 
 func _refresh_potions() -> void:
-	_potion_bar.show_belt(_belt, GameTuning.potions())
+	_potion_bar.show_belt(_belt, GameTuning.potions(), _keyboard_mouse.is_keyboard_mouse())
 
 
 ## Drawn above the map but below the actors. Loot appears from inside physics callbacks (a hit, a step),
@@ -476,7 +520,7 @@ func _on_weapon_switch_pressed() -> void:
 
 func _on_tuning_requested() -> void:
 	_hud_layer.hide()
-	_tuning_panel.open(_tuning, GameTuning.visible_groups(_tuning, _weapon_id, _utility_id))
+	_tuning_panel.open(_tuning, GameTuning.sections(_weapon_id, _utility_id))
 
 
 func _on_tuning_finished(tuning: Tuning) -> void:

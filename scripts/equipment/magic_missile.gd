@@ -10,7 +10,7 @@ var shot_damage := 1
 
 func _init() -> void:
 	id = "wand"
-	display_name = "MagicMissile"
+	display_name = "Magic Missile"
 	description = "A single bolt of magic."
 	button_label = "MISSILE"
 	color = Color(1, 0.8, 0.3)

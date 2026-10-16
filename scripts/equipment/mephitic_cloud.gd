@@ -51,6 +51,10 @@ func aim_distance(strength: float) -> float:
 	return shot_range * pow(clampf(strength, 0.0, 1.0), aim_curve)
 
 
+func strength_for_distance(distance: float) -> float:
+	return pow(clampf(distance / shot_range, 0.0, 1.0), 1.0 / aim_curve)
+
+
 func needs_line_of_sight() -> bool:
 	return false
 

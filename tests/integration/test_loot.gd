@@ -95,7 +95,7 @@ func test_the_loot_card_compares_the_found_weapon_with_the_held_one() -> void:
 	assert_true(card.visible)
 	assert_eq(card.get_node("Panel/Rows/FoundName").text, "Fireball")
 	assert_eq(card.get_node("Panel/Rows/FoundDescription").text, Fireball.new().description)
-	assert_eq(card.get_node("Panel/Rows/Replaces").text, "Replaces your MagicMissile")
+	assert_eq(card.get_node("Panel/Rows/Replaces").text, "Replaces your Magic Missile")
 
 
 func test_the_loot_card_reports_take_and_leave() -> void:

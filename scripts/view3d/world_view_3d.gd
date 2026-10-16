@@ -138,6 +138,11 @@ func _show_hits(actor: Node2D, health: Health, model: CharacterModel, color: Col
 		add_child(FloatingText.new(str(amount), color, WorldSpace.to_3d(actor.global_position), HIT_TEXT_SIZE)))
 
 
+## The point of the 2D plane shown under a spot of the screen (like the mouse cursor).
+func plane_point_at(screen_point: Vector2) -> Vector2:
+	return WorldSpace.floor_point(_camera.project_ray_origin(screen_point), _camera.project_ray_normal(screen_point))
+
+
 ## A message rising from a spot on the 2D plane.
 func float_text(at: Vector2, message: String, color: Color) -> void:
 	add_child(FloatingText.new(message, color, WorldSpace.to_3d(at)))
