@@ -3,13 +3,13 @@ extends Node2D
 ## Draws a DungeonMap and gives its walls, doors and deep water collision. Owns no game rules.
 
 const TILE_SIZE := 32
-## Floor tiles are flagstones that alternate between two shades, so distances read at a glance; each stone
-## is tinted a little differently (see DungeonDecor) and set in darker grout.
-const FLOOR_COLOR := Color(0.4, 0.37, 0.43)
-const FLOOR_ALT_COLOR := Color(0.36, 0.33, 0.39)
+## Built floors are flagstones that alternate between two shades (the branch's, see BranchLook), so
+## distances read at a glance; each stone is tinted a little differently (see DungeonDecor) and set in
+## grout. Cave floors are bare earth or rock: blotchy, speckled, no grout.
 const STONE_TINT := 0.035
-const GROUT_COLOR := Color(0.2, 0.18, 0.22)
 const GROUT_WIDTH := 1.5
+const EARTH_SPECK_COLOR := Color(0, 0, 0, 0.18)
+const EARTH_SPECKS := 3
 const BEVEL_LIGHT := Color(1, 1, 1, 0.08)
 const BEVEL_DARK := Color(0, 0, 0, 0.18)
 const CRACK_COLOR := Color(0.16, 0.14, 0.18, 0.45)
@@ -30,6 +30,7 @@ const STAIRS_COLOR := Color(0.95, 0.75, 0.3)
 const STAIRS_STEPS := 4
 
 var _map: DungeonMap
+var _look := BranchLook.dungeon()
 var _doors := {}  # Vector2i -> Door
 
 
@@ -41,8 +42,9 @@ static func world_to_cell(world_position: Vector2) -> Vector2i:
 	return Vector2i((world_position / TILE_SIZE).floor())
 
 
-func show_map(map: DungeonMap) -> void:
+func show_map(map: DungeonMap, look := BranchLook.dungeon()) -> void:
 	_map = map
+	_look = look
 	_build_colliders(wall_cells(), WALL_LAYER)
 	_build_colliders(_map.cells_with(DungeonMap.Terrain.WATER), WATER_LAYER)
 	_build_doors()
@@ -71,10 +73,16 @@ func _draw() -> void:
 	if _map == null:
 		return
 	for cell in _map.open_cells():
-		_draw_flagstone(cell)
+		if _look.flagstones:
+			_draw_flagstone(cell)
+		else:
+			_draw_earth(cell)
 	for cell in wall_cells():
 		draw_rect(_tile_rect(cell), WALL_COLOR)
-	var light := DungeonDecor.torch_light(_map, DungeonDecor.torch_cells(_map, wall_cells()))
+	var torches: Array[Vector2i] = []
+	if _look.torches:
+		torches = DungeonDecor.torch_cells(_map, wall_cells())
+	var light := DungeonDecor.torch_light(_map, torches)
 	for cell: Vector2i in light:
 		draw_rect(_tile_rect(cell), Color(TORCH_LIGHT_COLOR, TORCH_LIGHT_COLOR.a * light[cell]))
 	if _map.exit_cell != DungeonMap.NO_CELL:
@@ -83,8 +91,8 @@ func _draw() -> void:
 
 func _draw_flagstone(cell: Vector2i) -> void:
 	var tile := _tile_rect(cell)
-	draw_rect(tile, GROUT_COLOR)
-	var base := FLOOR_COLOR if (cell.x + cell.y) % 2 == 0 else FLOOR_ALT_COLOR
+	draw_rect(tile, _look.grout_color)
+	var base := _look.floor_color if (cell.x + cell.y) % 2 == 0 else _look.floor_alt_color
 	var tint := DungeonDecor.tint(cell) * STONE_TINT
 	var stone := tile.grow(-GROUT_WIDTH)
 	draw_rect(stone, Color(base.r + tint, base.g + tint, base.b + tint))
@@ -98,6 +106,19 @@ func _draw_flagstone(cell: Vector2i) -> void:
 		for point in crack:
 			points.append(stone.position + point * stone.size)
 		draw_polyline(points, CRACK_COLOR, 1.0)
+
+
+## Bare ground: the two colours mixed in soft blotches (each cell blends its neighbours' noise), with a few
+## specks of grit.
+func _draw_earth(cell: Vector2i) -> void:
+	var blotch := DungeonDecor.noise(cell, 12)
+	for step in DungeonDecor.NEIGHBOURS_4:
+		blotch += DungeonDecor.noise(cell + step, 12)
+	var tile := _tile_rect(cell)
+	draw_rect(tile, _look.floor_color.lerp(_look.floor_alt_color, blotch / 5.0))
+	for i in EARTH_SPECKS:
+		var speck := Vector2(DungeonDecor.noise(cell, 13 + i), DungeonDecor.noise(cell, 23 + i)) * (TILE_SIZE - 3)
+		draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
 
 
 ## Steps shrinking toward the bottom, so the exit reads as a way down.

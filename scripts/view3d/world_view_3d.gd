@@ -31,6 +31,7 @@ var _map := MapView3D.new()
 var _puppets := Puppets.new()
 var _hero: Node2D
 var _shake_left := 0.0
+var _environment := Environment.new()
 
 
 func _init() -> void:
@@ -42,9 +43,11 @@ func _init() -> void:
 
 
 ## plane: the root of the 2D world, drawn on the floor from now on. Call once this view is in the tree.
-func show_world(plane: CanvasItem, map: DungeonMap, wall_cells: Array[Vector2i]) -> void:
+## look: the branch's (see BranchLook): its walls, what lies about, and the colour of its light.
+func show_world(plane: CanvasItem, map: DungeonMap, wall_cells: Array[Vector2i], look: BranchLook) -> void:
 	_ground.lay_down(plane)
-	_map.show_map(map, wall_cells)
+	_map.show_map(map, wall_cells, look)
+	_environment.ambient_light_color = look.ambient_color
 	_camera.current = true
 
 
@@ -165,11 +168,10 @@ func _add_lighting() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = LIGHT_ROTATION_DEGREES
 	add_child(sun)
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_CLEAR_COLOR
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = AMBIENT_COLOR
-	environment.ambient_light_energy = AMBIENT_ENERGY
+	_environment.background_mode = Environment.BG_CLEAR_COLOR
+	_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	_environment.ambient_light_color = AMBIENT_COLOR
+	_environment.ambient_light_energy = AMBIENT_ENERGY
 	var world_environment := WorldEnvironment.new()
-	world_environment.environment = environment
+	world_environment.environment = _environment
 	add_child(world_environment)

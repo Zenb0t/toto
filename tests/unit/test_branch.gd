@@ -37,3 +37,11 @@ func test_caves_have_no_flagstones() -> void:
 	for branch in Branch.all():
 		if branch.cave_share > 0.5:
 			assert_false(branch.look.flagstones, branch.id)
+
+
+func test_every_kind_of_clutter_can_be_made() -> void:
+	for branch in Branch.all():
+		for kind in branch.look.clutter:
+			var thing := DecorModel.make(kind, 0.5)
+			assert_not_null(thing, "%s: %s" % [branch.id, kind])
+			thing.free()

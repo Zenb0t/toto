@@ -1,14 +1,13 @@
 class_name MapView3D
 extends Node3D
-## What stands on the floor: the walls (stone, with a lighter cap that overhangs a little, like Brawl Stars'
-## blocks), pillars as round columns, the doors of locked rooms, torches and banners on the walls, small
-## things lying along them (candles, bottles, coins) and the arch over the stairs. Like the fog on
+## What stands on the floor: the walls (with a lighter cap that overhangs a little, like Brawl Stars'
+## blocks, in the branch's colours, see BranchLook), pillars (carved columns in built places, plain rock in
+## caves), the doors of locked rooms, torches and banners on the walls where the branch has them, small
+## things lying along them (see DecorModel) and the arch over the stairs. Like the fog on
 ## the floor, what the player has never seen isn't shown, and what is out of sight is dimmed.
 ## Owns no game rules: it is told the map, which doors are closed and what is seen.
 
 const DEFAULT_WALL_HEIGHT := 1.0
-const WALL_COLOR := Color(0.42, 0.39, 0.47)
-const CAP_COLOR := Color(0.64, 0.6, 0.7)
 const CAP_THICKNESS := 0.16
 const CAP_OVERHANG := 0.05
 const DOOR_COLOR := Color(0.55, 0.35, 0.2)
@@ -16,6 +15,9 @@ const DOOR_CAP_COLOR := Color(0.78, 0.52, 0.28)
 const COLUMN_RADIUS := 0.36
 ## How much each stone block's colour varies, so walls don't look flat.
 const STONE_TINT := 0.06
+## The share of blocks streaked with the branch's veins (ore, moss), and how strongly.
+const VEIN_SHARE := 0.22
+const VEIN_STRENGTH := 0.45
 ## Brightness of a block the player remembers but can't see right now.
 const REMEMBERED_BRIGHTNESS := 0.35
 const HIDDEN := 0.0
@@ -43,6 +45,7 @@ var _clutter := {}  # floor cell -> Node3D
 var _shown := {}  # Vector2i -> the brightness last shown, so a refresh only touches what changed
 var _exploration: Exploration
 var _cut_cells := {}  # Vector2i -> true, walls cut down in front of the hero
+var _look := BranchLook.dungeon()
 var _stairs_cell := DungeonMap.NO_CELL
 var _stairs := StairsModel.new()
 var _blocks := _multimesh(ModelParts.box(Vector3.ONE))
@@ -59,8 +62,12 @@ func _init() -> void:
 
 
 ## wall_cells: the walls to stand up (those next to open cells).
-func show_map(map: DungeonMap, wall_cells: Array[Vector2i]) -> void:
-	var pillars := DungeonDecor.pillar_cells(map, wall_cells)
+func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.dungeon()) -> void:
+	_look = look
+	# Caves have no carved columns: their pillars are plain rock, like their walls.
+	var pillars: Array[Vector2i] = []
+	if look.flagstones:
+		pillars = DungeonDecor.pillar_cells(map, wall_cells)
 	_column_cells = pillars
 	_block_cells.clear()
 	for cell in wall_cells:
@@ -82,21 +89,27 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i]) -> void:
 	_torches.clear()
 	_banners.clear()
 	_clutter.clear()
-	for cell in DungeonDecor.banner_cells(map, wall_cells):
+	var banner_cells: Array[Vector2i] = []
+	if look.banners:
+		banner_cells = DungeonDecor.banner_cells(map, wall_cells)
+	for cell in banner_cells:
 		var kind := PropModel.BANNERS[floori(DungeonDecor.noise(cell, 10) * PropModel.BANNERS.size())]
 		var banner := PropModel.make(kind, PropModel.BANNER_SIZE)
 		banner.position = WorldSpace.to_3d(DungeonView.cell_center(cell)) + Vector3(0, -PropModel.BANNER_DROP, 0.5)
 		add_child(banner)
 		_banners[cell] = banner
-	var kinds := DungeonDecor.clutter_cells(map, PropModel.CLUTTER.size())
+	var kinds := DungeonDecor.clutter_cells(map, look.clutter.size())
 	for cell: Vector2i in kinds:
-		var thing := PropModel.make(PropModel.CLUTTER[kinds[cell]])
+		var thing := DecorModel.make(look.clutter[kinds[cell]], DungeonDecor.noise(cell, 14))
 		thing.position = WorldSpace.to_3d(DungeonView.cell_center(cell)) + Vector3(0, 0, -0.2)
 		thing.rotation.y = DungeonDecor.noise(cell, 11) * TAU
 		add_child(thing)
 		_clutter[cell] = thing
 	_stairs_cell = map.exit_cell
-	for cell in DungeonDecor.torch_cells(map, wall_cells):
+	var torch_cells: Array[Vector2i] = []
+	if look.torches:
+		torch_cells = DungeonDecor.torch_cells(map, wall_cells)
+	for cell in torch_cells:
 		var torch := TorchModel.new()
 		add_child(torch)
 		_torches[cell] = torch
@@ -188,8 +201,8 @@ func _refresh(everything := false) -> void:
 			continue
 		_shown[cell] = shade
 		var is_door := _door_cells.has(cell)
-		_place_block(i, cell, shade, DOOR_COLOR if is_door else WALL_COLOR)
-		_place_cap(i, cell, shade, DOOR_CAP_COLOR if is_door else CAP_COLOR, 1.0 + CAP_OVERHANG * 2.0)
+		_place_block(i, cell, shade, DOOR_COLOR if is_door else _wall_color(cell))
+		_place_cap(i, cell, shade, DOOR_CAP_COLOR if is_door else _look.cap_color, 1.0 + CAP_OVERHANG * 2.0)
 	for j in _column_cells.size():
 		var cell := _column_cells[j]
 		var shade := brightness(cell)
@@ -197,7 +210,7 @@ func _refresh(everything := false) -> void:
 			continue
 		_shown[cell] = shade
 		_place_column(j, cell, shade)
-		_place_cap(_block_cells.size() + j, cell, shade, CAP_COLOR, COLUMN_RADIUS * 2.4)
+		_place_cap(_block_cells.size() + j, cell, shade, _look.cap_color, COLUMN_RADIUS * 2.4)
 	for cell: Vector2i in _torches:
 		_torches[cell].show_on_wall(cell, _height_at(cell), brightness(cell))
 	_stairs.show_at(_stairs_cell, _ground_brightness(_stairs_cell))
@@ -224,7 +237,7 @@ func _place_cap(index: int, cell: Vector2i, shade: float, color: Color, width: f
 func _place_column(index: int, cell: Vector2i, shade: float) -> void:
 	var height := _height_at(cell) - CAP_THICKNESS
 	_columns.set_instance_transform(index, _upright(cell, Vector3(1.0, height, 1.0), height / 2.0, shade))
-	_columns.set_instance_color(index, _stone(WALL_COLOR, cell, shade))
+	_columns.set_instance_color(index, _stone(_look.wall_color, cell, shade))
 
 
 func _height_at(cell: Vector2i) -> float:
@@ -235,6 +248,13 @@ func _height_at(cell: Vector2i) -> float:
 func _upright(cell: Vector2i, size: Vector3, center_height: float, shade: float) -> Transform3D:
 	var shown_size := size if shade > HIDDEN else Vector3.ZERO
 	return Transform3D(Basis.from_scale(shown_size), WorldSpace.to_3d(DungeonView.cell_center(cell), center_height))
+
+
+## The branch's wall colour, streaked with its veins (ore in the Mines, moss in the Lair) on some blocks.
+func _wall_color(cell: Vector2i) -> Color:
+	if _look.vein_color.a > 0.0 and DungeonDecor.noise(cell, 15) < VEIN_SHARE:
+		return _look.wall_color.lerp(Color(_look.vein_color, 1.0), VEIN_STRENGTH)
+	return _look.wall_color
 
 
 func _stone(color: Color, cell: Vector2i, shade: float) -> Color:

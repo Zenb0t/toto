@@ -67,11 +67,11 @@ func _ready() -> void:
 	_view = DungeonView.new()
 	add_child(_view)
 	move_child(_view, 0)
-	_view.show_map(_map)
+	_view.show_map(_map, _branch().look)
 	_fog = FogView.new(_map.size, _view.drawn_cells())
 	_world = WorldView3D.new()
 	add_child(_world)
-	_world.show_world(self, _map, _view.wall_cells())
+	_world.show_world(self, _map, _view.wall_cells(), _branch().look)
 	_tuning = _settings.load_tuning()
 	_layout = _settings.load_layout()
 	_pause_menu.show_seed(_seed, _run.floor_number)
@@ -494,12 +494,17 @@ func _grow_from(monster: Monster) -> void:
 		_world.float_text(_player.global_position, "LEVEL %d!" % _experience.level(), LEVEL_UP_COLOR)
 
 
+## The branch this floor is in (see Branch).
+func _branch() -> Branch:
+	return Branch.for_floor(_run.floor_number)
+
+
 func _refresh_hud() -> void:
 	if _run_over:
 		return
 	var goal := "Find the way out" if _run.is_last_floor() else "Find the stairs down"
 	_hud.text = "%s (floor %d/%d)    Level %d (%d%%)    HP %d/%d    %s" % [
-		Branch.for_floor(_run.floor_number).display_name, _run.floor_number, RunState.FLOOR_COUNT,
+		_branch().display_name, _run.floor_number, RunState.FLOOR_COUNT,
 		_experience.level(), roundi(_experience.progress() * 100), _player.health.current,
 		_player.health.maximum, goal]
 
