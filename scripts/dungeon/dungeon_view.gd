@@ -3,18 +3,29 @@ extends Node2D
 ## Draws a DungeonMap and gives its walls, doors and deep water collision. Owns no game rules.
 
 const TILE_SIZE := 32
-## Floor tiles alternate between two shades, so distances read at a glance.
-const FLOOR_COLOR := Color(0.36, 0.33, 0.4)
-const FLOOR_ALT_COLOR := Color(0.32, 0.29, 0.36)
+## Floor tiles are flagstones that alternate between two shades, so distances read at a glance; each stone
+## is tinted a little differently (see DungeonDecor) and set in darker grout.
+const FLOOR_COLOR := Color(0.4, 0.37, 0.43)
+const FLOOR_ALT_COLOR := Color(0.36, 0.33, 0.39)
+const STONE_TINT := 0.035
+const GROUT_COLOR := Color(0.2, 0.18, 0.22)
+const GROUT_WIDTH := 1.5
+const BEVEL_LIGHT := Color(1, 1, 1, 0.08)
+const BEVEL_DARK := Color(0, 0, 0, 0.18)
+const CRACK_COLOR := Color(0.16, 0.14, 0.18, 0.45)
+## The warm pool of light on the floor below each torch (see DungeonDecor.torch_light), at its brightest.
+const TORCH_LIGHT_COLOR := Color(1.0, 0.68, 0.32, 0.22)
 const WALL_COLOR := Color(0.1, 0.09, 0.12)
 const WALL_LAYER := 1
 ## Deep water stops bodies (on this layer) but not shots (which only collide with walls and their targets).
 const WATER_LAYER := 5
-const WATER_COLOR := Color(0.16, 0.3, 0.55)
-const WATER_RIPPLE_COLOR := Color(0.35, 0.55, 0.85, 0.5)
-const LAVA_COLOR := Color(0.75, 0.25, 0.08)
-const LAVA_GLOW_COLOR := Color(1.0, 0.6, 0.15, 0.6)
-const LOOT_MARK_COLOR := Color(1, 1, 1, 0.08)
+## Liquids move (see LiquidView): deep water slowly, lava more slowly still.
+const WATER_COLOR := Color(0.12, 0.26, 0.5)
+const WATER_SHINE_COLOR := Color(0.45, 0.7, 0.95)
+const WATER_SPEED := 1.0
+const LAVA_COLOR := Color(0.7, 0.18, 0.05)
+const LAVA_SHINE_COLOR := Color(1.0, 0.75, 0.25)
+const LAVA_SPEED := 0.45
 const STAIRS_COLOR := Color(0.95, 0.75, 0.3)
 const STAIRS_STEPS := 4
 
@@ -35,6 +46,8 @@ func show_map(map: DungeonMap) -> void:
 	_build_colliders(wall_cells(), WALL_LAYER)
 	_build_colliders(_map.cells_with(DungeonMap.Terrain.WATER), WATER_LAYER)
 	_build_doors()
+	add_child(LiquidView.new(_map.cells_with(DungeonMap.Terrain.WATER), WATER_COLOR, WATER_SHINE_COLOR, WATER_SPEED))
+	add_child(LiquidView.new(_map.cells_with(DungeonMap.Terrain.LAVA), LAVA_COLOR, LAVA_SHINE_COLOR, LAVA_SPEED))
 	queue_redraw()
 
 
@@ -58,22 +71,33 @@ func _draw() -> void:
 	if _map == null:
 		return
 	for cell in _map.open_cells():
-		draw_rect(_tile_rect(cell), FLOOR_COLOR if (cell.x + cell.y) % 2 == 0 else FLOOR_ALT_COLOR)
-	for cell in _map.cells_with(DungeonMap.Terrain.WATER):
-		_draw_liquid(_tile_rect(cell), WATER_COLOR, WATER_RIPPLE_COLOR)
-	for cell in _map.cells_with(DungeonMap.Terrain.LAVA):
-		_draw_liquid(_tile_rect(cell), LAVA_COLOR, LAVA_GLOW_COLOR)
+		_draw_flagstone(cell)
 	for cell in wall_cells():
 		draw_rect(_tile_rect(cell), WALL_COLOR)
+	var light := DungeonDecor.torch_light(_map, DungeonDecor.torch_cells(_map, wall_cells()))
+	for cell: Vector2i in light:
+		draw_rect(_tile_rect(cell), Color(TORCH_LIGHT_COLOR, TORCH_LIGHT_COLOR.a * light[cell]))
 	if _map.exit_cell != DungeonMap.NO_CELL:
 		_draw_stairs(_tile_rect(_map.exit_cell))
 
 
-## A flat colour with a short highlight, so liquid reads differently from floor even without art.
-func _draw_liquid(tile: Rect2, base: Color, highlight: Color) -> void:
-	draw_rect(tile, base)
-	var y := tile.position.y + tile.size.y * 0.4
-	draw_line(Vector2(tile.position.x + 6.0, y), Vector2(tile.end.x - 10.0, y), highlight, 2.0)
+func _draw_flagstone(cell: Vector2i) -> void:
+	var tile := _tile_rect(cell)
+	draw_rect(tile, GROUT_COLOR)
+	var base := FLOOR_COLOR if (cell.x + cell.y) % 2 == 0 else FLOOR_ALT_COLOR
+	var tint := DungeonDecor.tint(cell) * STONE_TINT
+	var stone := tile.grow(-GROUT_WIDTH)
+	draw_rect(stone, Color(base.r + tint, base.g + tint, base.b + tint))
+	draw_line(stone.position, Vector2(stone.end.x, stone.position.y), BEVEL_LIGHT, 1.0)
+	draw_line(stone.position, Vector2(stone.position.x, stone.end.y), BEVEL_LIGHT, 1.0)
+	draw_line(Vector2(stone.position.x, stone.end.y), stone.end, BEVEL_DARK, 1.0)
+	draw_line(Vector2(stone.end.x, stone.position.y), stone.end, BEVEL_DARK, 1.0)
+	var crack := DungeonDecor.crack(cell)
+	if not crack.is_empty():
+		var points := PackedVector2Array()
+		for point in crack:
+			points.append(stone.position + point * stone.size)
+		draw_polyline(points, CRACK_COLOR, 1.0)
 
 
 ## Steps shrinking toward the bottom, so the exit reads as a way down.

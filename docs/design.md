@@ -208,7 +208,8 @@ The target is Brawl Stars' camera and map feel with fantasy characters (humans, 
 phases, each played on a phone before the next:
 
 1. **Camera and blockout** (done): a 3D view with placeholder shapes, to judge the camera.
-2. **Map look**: tiles, wall art, water and lava, props (barrels, crates, torches), a nicer fog.
+2. **Map look** (done, see below): flagstones, stone walls with caps, columns, moving water and lava,
+   torches, the stairs' arch, soft fog.
 3. **Characters**: rigged, animated low-poly models (free CC0 packs such as KayKit or Quaternius), with
    idle, run, attack, hit and death animations timed to wind-ups and cooldowns. What the races mean
    (looks only, factions by depth, or their own stats) is still open.
@@ -232,6 +233,23 @@ phases, each played on a phone before the next:
   Tune → Camera.
 - **Placeholders**: characters are capsules with a head, eyes (which way they face) and the weapon in its
   colour; enemies have a health bar. Lobbed fireballs fly high above their shadow.
+
+**Map look** (phase 2). Everything is decided per cell from the map (`DungeonDecor`, pure and
+deterministic), so it costs nothing to store and never changes how the game plays:
+
+- **Floor**: flagstones in two alternating shades (distances still read at a glance), each stone tinted a
+  little differently, set in dark grout with a light bevel; one in 14 is cracked. Open doorways show a
+  wooden threshold.
+- **Walls**: stone blocks with a lighter cap that overhangs a little (Brawl Stars' blocks), each block's
+  stone a slightly different shade. Walls standing inside a room (pillars, vault statues) are round
+  columns. Closed doors are wooden blocks.
+- **Torches** hang on walls that face the camera, spread out along them, and throw a warm pool of light on
+  the floor below (only on floor: it never spills over walls). Their flames flicker while in sight.
+- **Water and lava** move: slow waves with highlights (`shaders/liquid.gdshader`), lava slower and hotter.
+- **Stairs** stand under a stone arch trimmed in gold.
+- **Fog** is a one-pixel-per-cell picture stretched smoothly over the map, so its edges fade across a cell.
+  A wall counts as in sight when an open cell beside it is (sight grazing along a wall would otherwise
+  leave it dimmed while you stand next to it).
 
 ## Explicitly deferred
 

@@ -63,7 +63,8 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`)
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` exit,
   `~` water, `L` lava, `*` floor item), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
-  lava damage (`LavaBurn`), room-lock rules
+  lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
+  torches and their light), moving liquids (`LiquidView`), room-lock rules
   (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `RoomGraph`
   (which rooms and links), `RoomShapes` (floor plans and pillars), `Vaults` (hand-made set pieces),

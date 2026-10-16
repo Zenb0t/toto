@@ -30,9 +30,9 @@ func _init() -> void:
 
 
 ## plane: the root of the 2D world, drawn on the floor from now on. Call once this view is in the tree.
-func show_world(plane: CanvasItem, wall_cells: Array[Vector2i], door_cells: Array[Vector2i]) -> void:
+func show_world(plane: CanvasItem, map: DungeonMap, wall_cells: Array[Vector2i]) -> void:
 	_ground.lay_down(plane)
-	_map.show_map(wall_cells, door_cells)
+	_map.show_map(map, wall_cells)
 	_camera.current = true
 
 

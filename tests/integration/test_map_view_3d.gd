@@ -1,15 +1,33 @@
 extends GutTest
 
-const NEAR_WALL := Vector2i(2, 0)
-const FAR_WALL := Vector2i(60, 0)
-const DOOR := Vector2i(4, 0)
+const NEAR_WALL := Vector2i(5, 0)
+const FAR_WALL := Vector2i(62, 0)
+const DOOR := Vector2i(2, 0)
+const PILLAR := Vector2i(29, 2)
+## A long hall, with a door in its top wall and a pillar in the middle.
+const HALL_WIDTH := 64
+
+
+func _hall() -> DungeonMap:
+	var rows := PackedStringArray([
+		"##+" + "#".repeat(HALL_WIDTH - 3),
+		"#P" + ".".repeat(HALL_WIDTH - 3) + "#",
+		"#" + ".".repeat(28) + "#" + ".".repeat(HALL_WIDTH - 31) + "#",
+		"#" + ".".repeat(HALL_WIDTH - 2) + "#",
+		"#".repeat(HALL_WIDTH),
+	])
+	return DungeonMapParser.new().parse("\n".join(rows))
 
 
 func _map_view() -> MapView3D:
 	var view: MapView3D = autofree(MapView3D.new())
-	var walls: Array[Vector2i] = [NEAR_WALL, FAR_WALL]
-	var doors: Array[Vector2i] = [DOOR]
-	view.show_map(walls, doors)
+	var map := _hall()
+	var walls: Array[Vector2i] = []
+	for y in map.size.y:
+		for x in map.size.x:
+			if not map.is_open(Vector2i(x, y)):
+				walls.append(Vector2i(x, y))
+	view.show_map(map, walls)
 	return view
 
 
@@ -58,7 +76,31 @@ func test_a_door_stands_only_while_it_is_closed() -> void:
 	assert_false(view.is_standing(DOOR), "open again")
 
 
+func test_a_pillar_stands_like_a_wall() -> void:
+	var view := _map_view()
+
+	view.show_exploration(_looking_from(Vector2i(30, 3)))
+
+	assert_true(view.is_standing(PILLAR))
+
+
+func test_walls_facing_the_camera_get_torches() -> void:
+	assert_gt(_map_view().torch_count(), 0)
+
+
 func test_floor_cells_have_no_block() -> void:
 	var view := _map_view()
 
 	assert_false(view.is_standing(Vector2i(3, 3)))
+
+
+func test_a_wall_beside_floor_in_sight_is_lit_even_if_sight_grazes_past_it() -> void:
+	var view := _map_view()
+	var exploration := Exploration.new()
+	var floor_only := func(cell: Vector2i) -> bool: return cell.y > 0
+	exploration.look_from(Vector2i(10, 1), floor_only)
+	assert_false(exploration.is_visible(Vector2i(20, 0)), "the wall itself isn't in the line of sight")
+
+	view.show_exploration(exploration)
+
+	assert_eq(view.brightness(Vector2i(20, 0)), MapView3D.LIT)
