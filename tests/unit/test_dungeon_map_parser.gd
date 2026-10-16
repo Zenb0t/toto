@@ -54,17 +54,24 @@ func test_spawn_markers_are_walkable_floor() -> void:
 	assert_ne(map.room_at(Vector2i(5, 1)), DungeonMap.NO_ROOM)
 
 
-func test_each_enemy_letter_arms_its_enemy_with_a_weapon() -> void:
+func test_each_enemy_letter_spawns_its_monster() -> void:
 	var map := _parser.parse("""
 #######
-#Pswcf#
+#PkoOs#
 #######
 """)
 
-	assert_eq(map.enemy_weapon_at(Vector2i(2, 1)), "sword")
-	assert_eq(map.enemy_weapon_at(Vector2i(3, 1)), "wand")
-	assert_eq(map.enemy_weapon_at(Vector2i(4, 1)), "crossbow")
-	assert_eq(map.enemy_weapon_at(Vector2i(5, 1)), "fireball")
+	assert_eq(map.monster_at(Vector2i(2, 1)), "kobold")
+	assert_eq(map.monster_at(Vector2i(3, 1)), "orc")
+	assert_eq(map.monster_at(Vector2i(4, 1)), "ogre")
+	assert_eq(map.monster_at(Vector2i(5, 1)), "bandit")
+	assert_eq(map.enemy_spawns.size(), 4)
+
+
+func test_every_monster_letter_is_read_as_an_enemy() -> void:
+	var map := _parser.parse("#".repeat(14) + "\n#P" + "".join(Bestiary.letters()) + "#\n" + "#".repeat(14))
+
+	assert_eq(map.enemy_spawns.size(), Bestiary.all().size())
 
 
 func test_cells_touching_a_door_are_not_clear_of_doors() -> void:

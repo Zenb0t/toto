@@ -17,7 +17,7 @@ func test_untouched_tuning_builds_the_default_utility_and_values() -> void:
 	assert_eq(dash.cooldown, Dash.new().cooldown)
 	assert_eq(GameTuning.player_move_speed(tuning), Player.DEFAULT_MOVE_SPEED)
 	assert_eq(GameTuning.enemy_move_speed(tuning), Enemy.DEFAULT_MOVE_SPEED)
-	assert_eq(GameTuning.enemy_max_health(tuning), Enemy.DEFAULT_MAX_HEALTH)
+	assert_eq(GameTuning.enemy_health_multiplier(tuning), 1.0)
 	assert_eq(GameTuning.weapon_dead_zone(tuning), AimButton.DEFAULT_DEAD_ZONE)
 	assert_eq(GameTuning.utility_dead_zone(tuning), AimButton.DEFAULT_DEAD_ZONE)
 

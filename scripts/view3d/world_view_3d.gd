@@ -56,8 +56,12 @@ func add_player(player: Player) -> void:
 		model.hold(player.weapon.color))
 
 
+## The model shows the enemy's race, in its colour and size.
 func add_enemy(enemy: Enemy) -> void:
-	_puppets.add(enemy, CharacterModel.new(Enemy.BODY_COLOR, true), func(model: CharacterModel) -> void:
+	var monster := enemy.monster
+	var stand_in := CharacterModel.new(monster.color, true, monster.race)
+	stand_in.scale = Vector3.ONE * monster.size
+	_puppets.add(enemy, stand_in, func(model: CharacterModel) -> void:
 		model.face(enemy.facing)
 		model.hold(enemy.weapon.color)
 		model.show_health(float(enemy.health.current) / enemy.health.maximum))

@@ -1,6 +1,6 @@
 class_name Enemy
 extends CharacterBody2D
-## An armed enemy: idles until told to chase, then fights its target with its weapon the way the weapon
+## An armed monster (see Bestiary): idles until told to chase, then fights its target with its weapon the way the weapon
 ## wants (see EnemyTactics). Before each attack it stops and shows where the attack will go, and its aim
 ## stays put, so the player can see it coming and get out of the way.
 ## With navigation, an enemy that can't see its target walks around walls to find it, and only attacks
@@ -32,6 +32,8 @@ const REPATH_SECONDS := 0.4
 const WAYPOINT_REACHED := 6.0
 
 var health := Health.new(DEFAULT_MAX_HEALTH)
+## What kind of monster this is. Set with become() before it joins the world.
+var monster: Monster = Bestiary.by_id("bandit")
 ## Where it looks: at its target while fighting, where it is going otherwise, and along its aim while
 ## winding up an attack.
 var facing := Vector2.DOWN
@@ -60,6 +62,21 @@ func _ready() -> void:
 ## Must be called before the enemy is added to the tree.
 func set_max_health(max_health: int) -> void:
 	health = Health.new(max_health)
+
+
+## Makes this enemy a monster of a kind: its size, health (times health_multiplier) and weapon.
+## Must be called before the enemy is added to the tree.
+func become(kind: Monster, health_multiplier := 1.0) -> void:
+	monster = kind
+	set_max_health(maxi(1, roundi(kind.max_health * health_multiplier)))
+	var body := CircleShape2D.new()
+	body.radius = body_radius()
+	$CollisionShape2D.shape = body
+
+
+## How far from its centre attacks hit it.
+func body_radius() -> float:
+	return RADIUS * monster.size
 
 
 func arm(new_weapon: Weapon) -> void:
@@ -132,14 +149,15 @@ func _release(attacks: Array) -> void:
 		return
 	for attack: Variant in attacks:
 		attack.hurts_player = true
+		attack.damage += monster.damage_bonus
 	attack_fired.emit(attacks)
 
 
 func _draw() -> void:
 	if _wielder.is_winding_up():
 		AimPreview.draw(self, weapon.aim_shape(), _wielder.aim_direction(), _wielder.aim_distance(), TELEGRAPH_COLOR)
-	draw_circle(Vector2.ZERO, RADIUS, Color(BODY_COLOR, BASE_FILL_ALPHA))
-	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, BODY_COLOR, BASE_RING_WIDTH, true)
+	draw_circle(Vector2.ZERO, body_radius(), Color(BODY_COLOR, BASE_FILL_ALPHA))
+	draw_arc(Vector2.ZERO, body_radius(), 0.0, TAU, 32, BODY_COLOR, BASE_RING_WIDTH, true)
 
 
 func _on_died() -> void:

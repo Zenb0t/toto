@@ -112,8 +112,30 @@ design: an enemy is slower between attacks than the player with the same weapon,
 are tunable (Tune → Enemies: attack slowness, telegraph). Enemy attacks hurt only the player; the player's hurt
 only enemies; blasts hurt everyone. Enemies no longer hurt on contact.
 
-The map says what each enemy carries (`s` sword, `w` wand, `c` crossbow, `f` fireball), so playtests stay
-comparable; deeper rooms have tougher mixes. Tank-style enemies (more health, slower) are still an idea.
+**Monsters** (`Bestiary`). Like Dungeon Crawl, the dungeon has peoples rather than generic enemies. Each
+monster is a race with its own health, pace, size and strength, carrying one of the player's weapons (which
+still decides how it fights). The map letter names the monster, so playtests stay comparable.
+
+| Letter | Monster | Weapon | Health | Speed | Size | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| `k` | Kobold | Sword | 2 | 1.25× | small | Quick and frail, comes in numbers |
+| `g` | Goblin | Wand | 2 | 1.1× | small | |
+| `a` | Goblin archer | Crossbow | 2 | 1.1× | small | |
+| `s` | Bandit (human) | Sword | 3 | 1× | | |
+| `w` | Apprentice (human) | Wand | 3 | 1× | | |
+| `c` | Crossbowman (human) | Crossbow | 3 | 1× | | |
+| `f` | Pyromancer (human) | Fireball | 3 | 1× | | |
+| `o` | Orc | Sword | 5 | 1× | large | |
+| `W` | Orc wizard | Fireball | 4 | 0.95× | large | |
+| `d` | Dwarf | Crossbow | 8 | 0.7× | | The tank: slow and sturdy |
+| `O` | Ogre | Sword | 14 | 0.6× | huge | +2 damage on every hit |
+
+Size is the body attacks hit, so an ogre is easier to hit than a kobold. Tune → Enemies scales every
+monster's health at once (Health ×). Models show the race: colour, size, pointy ears (kobolds, goblins),
+tusks (orcs, ogres), a beard (dwarves); the red ring on the floor marks every one as a foe.
+
+**By depth** (`DungeonDifficulty`): kobolds, goblins and bandits near the start; then human casters and archers,
+and orcs; then orc wizards and dwarves; ogres deepest. Deeper rooms also hold more monsters.
 
 ## Dungeon generation
 
@@ -137,8 +159,8 @@ wrong.
    its edge so corridors always open onto floor.
 3. **Corridors**: three cells wide with a door at each end, where both rooms have a straight wall facing
    each other. If two odd shapes can't be joined cleanly, they become rectangles.
-4. **Difficulty** (`DungeonDifficulty`): by depth (rooms from the start). Near the start, two or so swords
-   and wands; deeper, more enemies (up to six), crossbows, then fireballs. 15% of rooms are **out of depth**:
+4. **Difficulty** (`DungeonDifficulty`): by depth (rooms from the start). Near the start, two or so kobolds
+   and goblins; deeper, more monsters (up to six), and tougher ones (see Monsters). 15% of rooms are **out of depth**:
    their enemies are picked as if two rooms deeper. Rooms are optional, so walking away is a real choice.
 5. **Floor loot** (`*`): vault treasure, and half of the dead ends (rooms with one way in) hide an item, picked
    like a chest's. Exploring pays.

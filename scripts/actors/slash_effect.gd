@@ -50,11 +50,10 @@ func _hit_between(from_degrees: float, to_degrees: float) -> void:
 	var slice_direction := _slash.direction.rotated(deg_to_rad((from_degrees + to_degrees) / 2.0))
 	var slice_width := to_degrees - from_degrees + BLADE_DEGREES
 	var foes := Player.GROUP if _slash.hurts_player else Enemy.GROUP
-	var foe_radius := Player.RADIUS if _slash.hurts_player else Enemy.RADIUS
 	for foe: Node2D in get_tree().get_nodes_in_group(foes):
 		if _already_hit.has(foe.get_instance_id()):
 			continue
-		if HitShapes.in_arc(global_position, slice_direction, _slash.reach + foe_radius, slice_width, foe.global_position):
+		if HitShapes.in_arc(global_position, slice_direction, _slash.reach + foe.body_radius(), slice_width, foe.global_position):
 			_already_hit[foe.get_instance_id()] = true
 			foe.take_damage(_slash.damage)
 

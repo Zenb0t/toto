@@ -112,6 +112,11 @@ func utility_cooldown_ratio() -> float:
 	return _utility_cooldown.remaining_ratio()
 
 
+## How far from its centre attacks hit it.
+func body_radius() -> float:
+	return RADIUS
+
+
 func is_shielded() -> bool:
 	return _shield_time_left > 0.0
 

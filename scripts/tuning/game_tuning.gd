@@ -6,7 +6,7 @@ extends RefCounted
 
 const PLAYER_MOVE_SPEED := "player.move_speed"
 const ENEMY_MOVE_SPEED := "enemy.move_speed"
-const ENEMY_MAX_HEALTH := "enemy.max_health"
+const ENEMY_HEALTH_MULTIPLIER := "enemy.health_multiplier"
 const ENEMY_COOLDOWN_MULTIPLIER := "enemy.cooldown_multiplier"
 const ENEMY_TELEGRAPH := "enemy.telegraph"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
@@ -100,7 +100,7 @@ static func create() -> Tuning:
 		params.append_array(_item_params(each, potion_group(each.id)))
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", "Enemies", 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
-		Tuning.Param.new(ENEMY_MAX_HEALTH, "Health", "Enemies", 1, 10, 1, Enemy.DEFAULT_MAX_HEALTH, true),
+		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", "Enemies", 0.25, 4, 0.05, 1.0, true),
 		Tuning.Param.new(
 			ENEMY_COOLDOWN_MULTIPLIER, "Attack slowness (x)", "Enemies", 1, 5, 0.1, Enemy.DEFAULT_COOLDOWN_MULTIPLIER),
 		Tuning.Param.new(
@@ -190,8 +190,9 @@ static func enemy_move_speed(tuning: Tuning) -> float:
 	return tuning.value(ENEMY_MOVE_SPEED)
 
 
-static func enemy_max_health(tuning: Tuning) -> int:
-	return roundi(tuning.value(ENEMY_MAX_HEALTH))
+## How much tougher than their kind's health enemies are (1 = as listed in the Bestiary).
+static func enemy_health_multiplier(tuning: Tuning) -> float:
+	return tuning.value(ENEMY_HEALTH_MULTIPLIER)
 
 
 static func enemy_drop_chance(tuning: Tuning) -> float:

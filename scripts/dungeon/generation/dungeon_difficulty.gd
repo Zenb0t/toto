@@ -1,19 +1,25 @@
 class_name DungeonDifficulty
 extends RefCounted
-## How tough a room is, by how far it is from the start (its depth, in rooms). Pure.
-## Near the start: a couple of swords and wands. Deeper: more enemies, crossbows, then fireballs.
+## How tough a room is, by its depth: how far it is from the start, in rooms. Pure.
+## Like Dungeon Crawl, the monsters change with depth: kobolds and goblins near the start, then humans,
+## orcs and orc wizards, sturdy dwarves, and finally ogres. Deeper rooms also hold more of them.
 
 const MAX_ENEMIES := 6
 ## Like Dungeon Crawl's out-of-depth monsters: now and then a room holds enemies from deeper in. Rooms are
 ## optional, so reading the danger and walking away is a choice.
 const OUT_OF_DEPTH_CHANCE := 0.15
 const OUT_OF_DEPTH_EXTRA := 2
-## Enemy map letters (see DungeonMapParser) that may appear at each depth; the last entry covers anything deeper.
+## Monster letters (see Bestiary) that may appear at each depth; a letter listed twice is twice as likely.
+## The last entry covers anything deeper.
 const POOLS_BY_DEPTH := [
-	["s", "s", "w"],
-	["s", "w", "w", "c"],
-	["s", "w", "c", "c", "f"],
-	["s", "w", "c", "f", "f"],
+	["k", "k", "g", "s"],
+	["k", "g", "a", "s", "w"],
+	["g", "a", "s", "w", "c", "o"],
+	["s", "c", "a", "o", "o", "f"],
+	["o", "c", "f", "W", "d"],
+	["o", "W", "d", "d", "f", "c"],
+	["o", "W", "d", "O", "f"],
+	["W", "d", "O", "O", "o"],
 ]
 
 

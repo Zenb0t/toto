@@ -4,7 +4,8 @@ extends RefCounted
 ##   #  wall      .  floor      +  door
 ##   P  player spawn (on floor)     >  exit (on floor; optional)     *  an item lying on the floor
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
-##   Enemy spawns (on floor), by the weapon they carry:  s  sword   w  wand   c  crossbow   f  fireball
+##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
+##   w apprentice  c crossbowman  f pyromancer  o orc  W orc wizard  d dwarf  O ogre
 
 const WALL := "#"
 const FLOOR := "."
@@ -14,8 +15,6 @@ const EXIT := ">"
 const LOOT := "*"
 const WATER := "~"
 const LAVA := "L"
-## Enemy spawn symbols and the weapon id each enemy carries.
-const ENEMY_WEAPONS := {"s": "sword", "w": "wand", "c": "crossbow", "f": "fireball"}
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 
 
@@ -24,7 +23,7 @@ func parse(ascii: String) -> DungeonMap:
 	var size := Vector2i(rows[0].length(), rows.size())
 	assert(Array(rows).all(func(row: String) -> bool: return row.length() == size.x), "every row must be the same width")
 
-	var enemy_symbols := ENEMY_WEAPONS.keys()
+	var enemy_symbols := Bestiary.letters()
 	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, LOOT, WATER, LAVA] + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
 	var player_cells := _cells_matching(rows, [PLAYER])
@@ -43,7 +42,7 @@ func parse(ascii: String) -> DungeonMap:
 		_doors_by_room(door_cells, room_by_cell),
 		_as_set(door_cells),
 		player_cells[0],
-		_enemy_weapons_by_cell(rows),
+		_monsters_by_cell(rows),
 		room_count,
 		exit_cells[0] if not exit_cells.is_empty() else DungeonMap.NO_CELL,
 		_terrain_by_cell(rows),
@@ -60,11 +59,11 @@ func _terrain_by_cell(rows: PackedStringArray) -> Dictionary:
 	return terrain
 
 
-func _enemy_weapons_by_cell(rows: PackedStringArray) -> Dictionary:
-	var weapons := {}
-	for cell in _cells_matching(rows, ENEMY_WEAPONS.keys()):
-		weapons[cell] = ENEMY_WEAPONS[rows[cell.y][cell.x]]
-	return weapons
+func _monsters_by_cell(rows: PackedStringArray) -> Dictionary:
+	var monsters := {}
+	for cell in _cells_matching(rows, Bestiary.letters()):
+		monsters[cell] = Bestiary.by_letter(rows[cell.y][cell.x]).id
+	return monsters
 
 
 func _cells_matching(rows: PackedStringArray, symbols: Array) -> Array[Vector2i]:

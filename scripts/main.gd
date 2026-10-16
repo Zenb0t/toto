@@ -114,8 +114,9 @@ func _spawn_enemies() -> void:
 		var room := _map.room_at(cell)
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
-		enemy.set_max_health(GameTuning.enemy_max_health(_tuning))
-		enemy.arm(GameTuning.enemy_weapon(_tuning, _map.enemy_weapon_at(cell)))
+		var monster := Bestiary.by_id(_map.monster_at(cell))
+		enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
+		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
 		enemy.navigation = _pathfinder
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
@@ -410,7 +411,7 @@ func _apply_tuning(tuning: Tuning) -> void:
 	_utility_button.dead_zone = GameTuning.utility_dead_zone(tuning)
 	for enemies: Array in _enemies_by_room.values():
 		for enemy: Enemy in enemies:
-			enemy.move_speed = GameTuning.enemy_move_speed(tuning)
+			enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier
 			enemy.arm(GameTuning.enemy_weapon(tuning, enemy.weapon.id))
 
 

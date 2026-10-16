@@ -58,7 +58,7 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 ## Layout
 
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`)
-- `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their weapon, `>` exit,
+- `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` exit,
   `~` water, `L` lava, `*` floor item), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
   lava damage (`LavaBurn`), room-lock rules
   (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
@@ -71,6 +71,8 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `UtilityEffect`), when a weapon fires
   (`Wielder`: cooldown and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
+- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength) and the
+  `Bestiary` that lists them with their map letters
 - `scripts/potions` – consumables: `Potion` (`HealingPotion`, `HastePotion`, `MightPotion`) and the `PotionBelt`
   that carries them
 - `scripts/loot` – `LootTable`: what drops (pure rules, given a random generator)
