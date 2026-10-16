@@ -16,6 +16,8 @@ var blast_radius := 0.0
 var lobbed := false
 ## Enemies' shots hurt the player; the player's hurt enemies. (A blast hurts everyone either way.)
 var hurts_player := false
+## Who or what let it out, as a death message would name it ("an orc wizard", "your own Fireball").
+var source := ""
 ## A piercing shot passes through whoever it hits (hitting each once) and only stops at walls.
 var pierces := false
 ## How many times the shot bounces off walls before it stops.

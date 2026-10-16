@@ -19,6 +19,8 @@ var health := Player.MAX_HEALTH
 var max_health := Player.MAX_HEALTH
 var potions := STARTING_POTIONS.duplicate()
 var experience := 0
+## Monsters slain on every floor so far. Counted as the run goes (the run state is the run so far).
+var kills := 0
 
 
 ## Leaves state for the next scene to pick up.
@@ -52,4 +54,5 @@ func next_floor(
 	next.max_health = hero_health.maximum
 	next.potions = held_potions.duplicate()
 	next.experience = experience_points
+	next.kills = kills
 	return next

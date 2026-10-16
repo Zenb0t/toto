@@ -27,6 +27,8 @@ const BASE_FILL_ALPHA := 0.25
 const BASE_RING_WIDTH := 2.5
 
 var health := Health.new(MAX_HEALTH)
+## What last hurt the hero: what killed them, once they are dead.
+var last_hurt_by := ""
 var facing := Vector2.RIGHT
 var move_speed := DEFAULT_MOVE_SPEED
 var weapon: Weapon:
@@ -130,9 +132,12 @@ func is_mighty() -> bool:
 	return _might_time_left > 0.0
 
 
-func take_damage(amount: int) -> void:
-	if not is_shielded():
-		health.take_damage(amount)
+## source: what dealt it, as a death message would name it (see Shot.source).
+func take_damage(amount: int, source := "") -> void:
+	if is_shielded() or amount <= 0:
+		return
+	last_hurt_by = source
+	health.take_damage(amount)
 
 
 func _physics_process(delta: float) -> void:
@@ -157,6 +162,8 @@ func _physics_process(delta: float) -> void:
 func _release(attacks: Array) -> void:
 	if attacks.is_empty():
 		return
+	for attack: Variant in attacks:
+		attack.source = "your own %s" % weapon.display_name
 	if is_mighty():
 		for attack: Variant in attacks:
 			attack.damage += _might_bonus

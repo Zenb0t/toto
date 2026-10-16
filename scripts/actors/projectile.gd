@@ -81,7 +81,7 @@ func _on_body_entered(body: Node2D) -> void:
 	if _shot.pulls and body.has_method("pull_toward"):
 		body.pull_toward(_shot.origin)
 	elif not _shot.explodes():
-		body.take_damage(_shot.damage)
+		body.take_damage(_shot.damage, _shot.source)
 	if not _shot.pierces:
 		_finish()
 
@@ -107,11 +107,12 @@ func _finish() -> void:
 		return
 	_spent = true
 	if _shot.explodes():
-		var explosion := Explosion.new(_shot.blast_radius, _shot.damage, _shot.color)
+		var explosion := Explosion.new(_shot.blast_radius, _shot.damage, _shot.color, _shot.source)
 		explosion.position = position
 		get_parent().add_child.call_deferred(explosion)
 	if _shot.leaves_cloud():
 		var cloud := PoisonCloud.new(_shot.cloud_radius, _shot.damage, _shot.cloud_seconds, _shot.hurts_player)
+		cloud.source = _shot.source
 		cloud.position = position
 		get_parent().add_child.call_deferred(cloud)
 	queue_free()

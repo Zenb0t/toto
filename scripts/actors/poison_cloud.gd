@@ -11,6 +11,8 @@ var _radius: float
 var _damage: int
 var _seconds: float
 var _hurts_player: bool
+## Who threw it (see Shot.source).
+var source := ""
 var _elapsed := 0.0
 var _until_tick := 0.0
 
@@ -37,7 +39,7 @@ func _hurt_foes_inside() -> void:
 	var foes := Player.GROUP if _hurts_player else Enemy.GROUP
 	for foe: Node2D in get_tree().get_nodes_in_group(foes):
 		if HitShapes.in_circle(global_position, _radius + foe.body_radius(), foe.global_position):
-			foe.take_damage(_damage)
+			foe.take_damage(_damage, source)
 
 
 ## Puffs that drift around the middle and thin out as the cloud dissipates.

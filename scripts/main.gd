@@ -7,7 +7,8 @@ extends Node2D
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
-const RESTART_DELAY_SECONDS := 1.5
+## How long the end of a run shows in the game before its summary.
+const SUMMARY_DELAY_SECONDS := 1.2
 ## How long "down to floor N" shows before the next floor loads.
 const DESCEND_DELAY_SECONDS := 0.8
 const LEVEL_UP_COLOR := Color(1.0, 0.85, 0.35)
@@ -55,6 +56,7 @@ var _experience := Experience.new(_run.experience)
 @onready var _pause_menu: PauseMenu = $Overlay/PauseMenu
 @onready var _layout_editor: LayoutEditor = $Overlay/LayoutEditor
 @onready var _tuning_panel: TuningPanel = $Overlay/TuningPanel
+@onready var _run_summary: RunSummaryPanel = $Overlay/RunSummary
 
 
 func _ready() -> void:
@@ -109,7 +111,7 @@ func _spawn_player() -> Player:
 	player.position = DungeonView.cell_center(_map.player_spawn)
 	player.attack_fired.connect(_spawn_attacks.bind(player))
 	player.health_changed.connect(func(_current: int, _maximum: int) -> void: _refresh_hud())
-	player.died.connect(func() -> void: _end_run("You died..."))
+	player.died.connect(func() -> void: _end_run(RunSummary.Ending.DIED))
 	add_child(player)
 	_world.add_player(player)
 	return player
@@ -176,6 +178,7 @@ func _connect_menu() -> void:
 	_pause_menu.tuning_requested.connect(_on_tuning_requested)
 	_tuning_panel.tuning_changed.connect(_apply_tuning)
 	_tuning_panel.finished.connect(_on_tuning_finished)
+	_run_summary.play_again_pressed.connect(_restart)
 
 
 # --- Input routing -------------------------------------------------------------------------------
@@ -251,6 +254,7 @@ func _on_room_cleared(room: int) -> void:
 func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
 	_enemies_by_room[room].erase(enemy)
 	_progress.record_defeat(room)
+	_run.kills += 1
 	_grow_from(enemy.monster)
 	_refresh_hud()
 	if LootTable.rolls_enemy_drop(GameTuning.enemy_drop_chance(_tuning), _rng):
@@ -302,7 +306,7 @@ func _burn(actor: Node2D, delta: float) -> void:
 	var in_lava := _map.terrain_at(cell) == DungeonMap.Terrain.LAVA
 	var damage := _lava.damage_due(actor.get_instance_id(), in_lava, delta)
 	if damage > 0:
-		actor.take_damage(damage)
+		actor.take_damage(damage, "lava")
 
 
 # --- Loot ----------------------------------------------------------------------------------------
@@ -499,7 +503,7 @@ func _refresh_hud() -> void:
 ## Down to the next floor with everything the player holds, or out of the dungeon from the last one.
 func _take_stairs() -> void:
 	if _run.is_last_floor():
-		_end_run("You escaped the dungeon!")
+		_end_run(RunSummary.Ending.ESCAPED)
 		return
 	if _run_over:
 		return
@@ -511,13 +515,16 @@ func _take_stairs() -> void:
 	_restart()
 
 
-func _end_run(message: String) -> void:
+## A moment to see what happened, then the run's summary, until the player starts over.
+func _end_run(ending: RunSummary.Ending) -> void:
 	if _run_over:
 		return
 	_run_over = true
-	_hud.text = message
-	await get_tree().create_timer(RESTART_DELAY_SECONDS).timeout
-	_restart()
+	_hud.text = RunSummary.title(ending)
+	await get_tree().create_timer(SUMMARY_DELAY_SECONDS).timeout
+	get_tree().paused = true
+	_hud_layer.hide()
+	_run_summary.show_summary(ending, RunSummary.lines(_run, _experience.level(), ending, _player.last_hurt_by))
 
 
 func _restart() -> void:

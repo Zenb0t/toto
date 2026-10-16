@@ -55,7 +55,7 @@ func _hit_between(from_degrees: float, to_degrees: float) -> void:
 			continue
 		if HitShapes.in_arc(global_position, slice_direction, _slash.reach + foe.body_radius(), slice_width, foe.global_position):
 			_already_hit[foe.get_instance_id()] = true
-			foe.take_damage(_slash.damage)
+			foe.take_damage(_slash.damage, _slash.source)
 
 
 func _draw() -> void:

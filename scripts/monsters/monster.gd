@@ -35,3 +35,9 @@ func _init(
 	damage_bonus = extra_damage
 	race = people
 	color = race_color
+
+
+## "a kobold", "an orc wizard": how a message names one of them.
+static func with_article(name: String) -> String:
+	var article := "an" if name.to_lower()[0] in ["a", "e", "i", "o", "u"] else "a"
+	return "%s %s" % [article, name.to_lower()]

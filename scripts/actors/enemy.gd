@@ -97,7 +97,7 @@ func chase(target: Node2D) -> void:
 	_target = target
 
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, _source := "") -> void:
 	health.take_damage(amount)
 
 
@@ -191,6 +191,7 @@ func _release(attacks: Array) -> void:
 	for attack: Variant in attacks:
 		attack.hurts_player = true
 		attack.damage += monster.damage_bonus
+		attack.source = Monster.with_article(monster.display_name)
 	attack_fired.emit(attacks)
 
 

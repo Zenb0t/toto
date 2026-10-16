@@ -9,12 +9,15 @@ var _radius: float
 var _damage: int
 var _color: Color
 var _time_left := FADE_SECONDS
+var _source: String
 
 
-func _init(radius: float, damage: int, color: Color) -> void:
+## source: who threw it (see Shot.source).
+func _init(radius: float, damage: int, color: Color, source := "") -> void:
 	_radius = radius
 	_damage = damage
 	_color = color
+	_source = source
 
 
 func _ready() -> void:
@@ -33,7 +36,7 @@ func _process(delta: float) -> void:
 func _hurt_group(group: StringName) -> void:
 	for body: Node2D in get_tree().get_nodes_in_group(group):
 		if HitShapes.in_circle(global_position, _radius + body.body_radius(), body.global_position):
-			body.take_damage(_damage)
+			body.take_damage(_damage, _source)
 
 
 func _draw() -> void:

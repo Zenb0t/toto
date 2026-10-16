@@ -19,7 +19,7 @@ func _ready() -> void:
 	var foes := Player.GROUP if _nova.hurts_player else Enemy.GROUP
 	for foe: Node2D in get_tree().get_nodes_in_group(foes):
 		if HitShapes.in_circle(global_position, _nova.radius + foe.body_radius(), foe.global_position):
-			foe.take_damage(_nova.damage)
+			foe.take_damage(_nova.damage, _nova.source)
 			if foe.has_method("slow"):
 				foe.slow(_nova.slow_multiplier, _nova.slow_seconds)
 

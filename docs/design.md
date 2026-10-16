@@ -260,6 +260,14 @@ deterministic), so it costs nothing to store and never changes how the game play
   A wall counts as in sight when an open cell beside it is (sight grazing along a wall would otherwise
   leave it dimmed while you stand next to it).
 
+## End of a run
+
+Like Dungeon Crawl's tombstone, a run ends with a summary instead of an instant restart: "You died" (or
+"You escaped the dungeon!"), what killed you and on which floor ("Killed by an orc wizard on floor 3 of 5"),
+the level reached and the monsters slain, and a **Play again** button. Every attack carries its source
+(the monster's name, "your own Fireball", "lava"), and the hero remembers what hurt them last. Kills are
+counted across floors (`RunState`); the lines are written by `RunSummary` (pure).
+
 ## Explicitly deferred
 
 Audio, rarity tiers, stat depth, meta-progression, multiplayer.

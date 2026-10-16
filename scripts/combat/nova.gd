@@ -12,6 +12,8 @@ var slow_seconds: float
 var color: Color
 ## An enemy's burst would hurt the player; the player's hurts enemies.
 var hurts_player := false
+## Who or what let it out, as a death message would name it ("an orc wizard", "your own Fireball").
+var source := ""
 
 
 func _init(burst_radius: float, burst_damage: int, slowed_to: float, slow_time: float, burst_color: Color) -> void:
