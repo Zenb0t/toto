@@ -6,12 +6,15 @@ signal attack_fired(origin: Vector2, direction: Vector2)
 signal health_changed(current: int, maximum: int)
 signal died
 
-const SPEED := 220.0
+const SPEED := 160.0
 const MAX_HEALTH := 10
 const RADIUS := 12.0
 const BODY_COLOR := Color(0.35, 0.75, 1.0)
 const AIM_PREVIEW_COLOR := Color(1, 1, 1, 0.3)
-const ATTACK_INTERVAL := 0.35
+const ATTACK_INTERVAL := 0.5
+## Delay between releasing the button and the shot leaving, so attacks feel deliberate.
+const ATTACK_WINDUP := 0.15
+const WINDUP_COLOR := Color(1.0, 0.85, 0.4, 0.8)
 # Temporary utility until equipment exists.
 const DASH_SPEED := 900.0
 const DASH_DURATION := 0.15
@@ -27,6 +30,8 @@ var _dash_cooldown := Cooldown.new(DASH_INTERVAL)
 var _dash_direction := Vector2.ZERO
 var _dash_time_left := 0.0
 var _aim_preview := Vector2.ZERO
+var _windup_direction := Vector2.ZERO
+var _windup_time_left := 0.0
 
 
 func _ready() -> void:
@@ -40,11 +45,13 @@ func move(strength: Vector2) -> void:
 	_move_input = strength.limit_length(1.0)
 
 
+## Starts an attack. The shot leaves after a short wind-up; taps during the cooldown are ignored.
 func attack(direction: Vector2) -> void:
 	if direction == Vector2.ZERO or not _attack_cooldown.try_trigger():
 		return
 	facing = direction.normalized()
-	attack_fired.emit(global_position, facing)
+	_windup_direction = facing
+	_windup_time_left = ATTACK_WINDUP
 
 
 func dash(direction: Vector2) -> void:
@@ -76,6 +83,7 @@ func take_damage(amount: int) -> void:
 func _physics_process(delta: float) -> void:
 	_attack_cooldown.tick(delta)
 	_dash_cooldown.tick(delta)
+	_advance_windup(delta)
 	if _dash_time_left > 0.0:
 		_dash_time_left -= delta
 		velocity = _dash_direction * DASH_SPEED
@@ -87,7 +95,17 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
+func _advance_windup(delta: float) -> void:
+	if _windup_time_left <= 0.0:
+		return
+	_windup_time_left -= delta
+	if _windup_time_left <= 0.0:
+		attack_fired.emit(global_position, _windup_direction)
+
+
 func _draw() -> void:
+	if _windup_time_left > 0.0:
+		draw_line(Vector2.ZERO, _windup_direction * (RADIUS + 28.0), WINDUP_COLOR, RADIUS * 1.4)
 	if _aim_preview != Vector2.ZERO:
 		draw_line(Vector2.ZERO, _aim_preview, AIM_PREVIEW_COLOR, RADIUS * 1.2)
 	draw_circle(Vector2.ZERO, RADIUS, BODY_COLOR)
