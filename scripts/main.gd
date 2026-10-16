@@ -189,6 +189,8 @@ func _on_attack_fired(shots: Array[Shot]) -> void:
 func _apply_tuning(tuning: Tuning) -> void:
 	_player.move_speed = GameTuning.player_move_speed(tuning)
 	_equip(GameTuning.weapon(tuning), GameTuning.utility(tuning))
+	_attack_button.dead_zone = GameTuning.weapon_dead_zone(tuning)
+	_utility_button.dead_zone = GameTuning.utility_dead_zone(tuning)
 	for enemies: Array in _enemies_by_room.values():
 		for enemy: Enemy in enemies:
 			enemy.move_speed = GameTuning.enemy_move_speed(tuning)

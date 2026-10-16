@@ -165,3 +165,31 @@ func test_pausing_mid_aim_cancels_the_shot_instead_of_leaving_the_button_stuck()
 
 	assert_signal_emit_count(button, "aim_released", 1)
 	assert_true(_last_release(button).is_auto)
+
+
+func test_a_short_drag_inside_a_larger_dead_zone_still_counts_as_a_tap() -> void:
+	var button := _aim_button()
+	button.dead_zone = 60.0
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(40, 0))
+	_touch(BUTTON_CENTER + Vector2(40, 0), false)
+	await wait_process_frames(2)
+
+	assert_true(_last_release(button).is_auto)
+
+
+func test_a_drag_past_a_smaller_dead_zone_aims_manually() -> void:
+	var button := _aim_button()
+	button.dead_zone = 10.0
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(20, 0))
+	_touch(BUTTON_CENTER + Vector2(20, 0), false)
+	await wait_process_frames(2)
+
+	var release := _last_release(button)
+	assert_false(release.is_auto)
+	assert_almost_eq(release.direction, Vector2.RIGHT, Vector2(0.01, 0.01))

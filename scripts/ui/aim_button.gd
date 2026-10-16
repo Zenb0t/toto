@@ -5,7 +5,8 @@ extends Control
 signal aim_changed(direction: Vector2)  ## Zero while the finger is still inside the dead zone.
 signal aim_released(release: AimGesture.Release)
 
-const DEAD_ZONE := 18.0
+## How far the finger must move before a press counts as manual aim instead of a tap, in viewport pixels.
+const DEFAULT_DEAD_ZONE := 30.0
 const NO_TOUCH := -1
 const KNOB_TRAVEL := 0.6  ## How far the knob moves when aiming, relative to the button radius.
 const MIN_FONT_SIZE := 14
@@ -22,7 +23,12 @@ const LABEL_COLOR := Color(1, 1, 1, 0.85)
 		color = value
 		queue_redraw()
 
-var _gesture := AimGesture.new(DEAD_ZONE)
+var dead_zone := DEFAULT_DEAD_ZONE:
+	set(value):
+		dead_zone = value
+		_gesture = AimGesture.new(value)
+
+var _gesture := AimGesture.new(DEFAULT_DEAD_ZONE)
 var _touch_index := NO_TOUCH
 var _cooldown_ratio := 0.0
 

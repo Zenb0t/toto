@@ -25,6 +25,8 @@ func test_untouched_tuning_keeps_the_default_speeds_and_health() -> void:
 	assert_eq(GameTuning.player_move_speed(tuning), Player.DEFAULT_MOVE_SPEED)
 	assert_eq(GameTuning.enemy_move_speed(tuning), Enemy.DEFAULT_MOVE_SPEED)
 	assert_eq(GameTuning.enemy_max_health(tuning), Enemy.DEFAULT_MAX_HEALTH)
+	assert_eq(GameTuning.weapon_dead_zone(tuning), AimButton.DEFAULT_DEAD_ZONE)
+	assert_eq(GameTuning.utility_dead_zone(tuning), AimButton.DEFAULT_DEAD_ZONE)
 
 
 func test_tweaked_values_reach_the_gear() -> void:

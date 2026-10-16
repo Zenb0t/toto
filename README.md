@@ -22,7 +22,7 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 **Tune gameplay** exposes the numbers that shape the feel (move speed, the weapon's cooldown, wind-up, shot
-speed, range and damage, the dash, enemy speed and health). Changes apply live and are saved on Done.
+speed, range and damage, the dash, enemy speed and health, and each button's aim dead zone). Changes apply live and are saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
 Entering a room with enemies locks its doors until you defeat them all. Clear the dungeon to win. If you die, you start over.

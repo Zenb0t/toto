@@ -14,6 +14,8 @@ const UTILITY_DASH_DURATION := "utility.dash_duration"
 const UTILITY_COOLDOWN := "utility.cooldown"
 const ENEMY_MOVE_SPEED := "enemy.move_speed"
 const ENEMY_MAX_HEALTH := "enemy.max_health"
+const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
+const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
 
 
 static func create() -> Tuning:
@@ -33,6 +35,10 @@ static func create() -> Tuning:
 		Tuning.Param.new(UTILITY_COOLDOWN, "Cooldown (s)", utility_group, 0.2, 5.0, 0.1, utility.cooldown),
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", "Enemies", 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_MAX_HEALTH, "Health", "Enemies", 1, 10, 1, Enemy.DEFAULT_MAX_HEALTH, true),
+		Tuning.Param.new(
+			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", "Controls", 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
+		Tuning.Param.new(
+			CONTROLS_UTILITY_DEAD_ZONE, "Utility dead zone", "Controls", 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 	]
 	return Tuning.new(params)
 
@@ -65,3 +71,11 @@ static func enemy_move_speed(tuning: Tuning) -> float:
 
 static func enemy_max_health(tuning: Tuning) -> int:
 	return roundi(tuning.value(ENEMY_MAX_HEALTH))
+
+
+static func weapon_dead_zone(tuning: Tuning) -> float:
+	return tuning.value(CONTROLS_WEAPON_DEAD_ZONE)
+
+
+static func utility_dead_zone(tuning: Tuning) -> float:
+	return tuning.value(CONTROLS_UTILITY_DEAD_ZONE)
