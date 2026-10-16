@@ -8,6 +8,8 @@ signal attack_fired(attacks: Array)
 signal health_changed(current: int, maximum: int)
 signal died
 
+## The player is in this group, so area attacks (like the fireball's blast) can find them.
+const GROUP := &"players"
 const DEFAULT_MOVE_SPEED := 140.0
 const MAX_HEALTH := 10
 const RADIUS := 12.0
@@ -39,6 +41,7 @@ var _windup_time_left := 0.0
 
 func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
+	add_to_group(GROUP)
 	health.changed.connect(func(current: int, maximum: int) -> void: health_changed.emit(current, maximum))
 	health.died.connect(_on_died)
 
@@ -82,7 +85,7 @@ func use_utility(direction: Vector2) -> void:
 
 
 ## Shows where an ability will go, in the ability's own shape. Pass a zero direction to hide it.
-## strength (0..1) places the landing spot of shapes that aim at a distance.
+## strength (0..1) places the landing spot of shapes that aim at a distance, as the weapon will when it fires.
 func preview_aim(direction: Vector2, shape: AimShape = null, strength := 1.0) -> void:
 	_aim_direction = direction.normalized()
 	_aim_shape = shape
@@ -129,7 +132,7 @@ func _advance_windup(delta: float) -> void:
 
 
 func _fire() -> void:
-	var aim_distance := _windup_strength * weapon.aim_range()
+	var aim_distance := weapon.aim_distance(_windup_strength)
 	if is_instance_valid(_windup_target):
 		aim_distance = global_position.distance_to(_windup_target.global_position)
 	_windup_target = null
@@ -157,7 +160,7 @@ func _draw_aim_preview(direction: Vector2, shape: AimShape) -> void:
 			var wedge := ArcPolygon.wedge(direction, shape.length, shape.spread_degrees, AIM_PREVIEW_ARC_POINTS)
 			draw_colored_polygon(wedge, AIM_PREVIEW_COLOR)
 		AimShape.Kind.LOB:
-			var landing := direction * shape.length * _aim_strength
+			var landing := direction * weapon.aim_distance(_aim_strength)
 			draw_line(Vector2.ZERO, landing, AIM_PREVIEW_COLOR, AIM_PREVIEW_WIDTH)
 			draw_circle(landing, shape.end_radius, AIM_PREVIEW_COLOR)
 		AimShape.Kind.FAN:

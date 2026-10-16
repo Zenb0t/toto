@@ -146,14 +146,15 @@ func _lobber() -> Fireball:
 	return fireball
 
 
-func test_a_half_strength_drag_lobs_half_the_max_range() -> void:
+func test_a_drag_lobs_as_far_as_the_weapon_aims_for_that_strength() -> void:
 	var player := _player()
-	player.equip_weapon(_lobber())
+	var fireball := _lobber()
+	player.equip_weapon(fireball)
 	watch_signals(player)
 
 	player.attack(Vector2.RIGHT, null, 0.5)
 
-	assert_eq(_fired_shot(player).travel_range, 200.0)
+	assert_almost_eq(_fired_shot(player).travel_range, fireball.aim_distance(0.5), 0.001)
 
 
 func test_an_auto_aimed_lob_lands_on_its_target() -> void:

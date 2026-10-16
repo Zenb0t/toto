@@ -37,6 +37,11 @@ func aim_range() -> float:
 	return 0.0
 
 
+## How far away a manual drag of the given strength (0..1) aims. Linear unless a weapon needs finer control.
+func aim_distance(strength: float) -> float:
+	return clampf(strength, 0.0, 1.0) * aim_range()
+
+
 func aim_shape() -> AimShape:
 	return AimShape.line(0.0)
 

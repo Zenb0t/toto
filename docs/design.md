@@ -36,7 +36,7 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | --- | --- | --- |
 | Wand (starter) | One magic bolt | Line |
 | Sword | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
-| Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot; arcs over walls and enemies and explodes where it lands | Landing circle at the dragged distance |
+| Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (eased, so short drags give fine control up close); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
 
 Utilities (first ideas, not final): dash, shield, heal.

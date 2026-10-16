@@ -1,6 +1,7 @@
 extends GutTest
 
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
+const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 const ENEMY_DISTANCE := 200.0
 const SHOT_SPEED := 400.0
@@ -183,3 +184,28 @@ func test_a_lob_flies_over_enemies_and_bursts_where_it_lands() -> void:
 
 	assert_eq(in_the_way.health.current, Enemy.DEFAULT_MAX_HEALTH)
 	assert_eq(at_landing.health.current, Enemy.DEFAULT_MAX_HEALTH - 1)
+
+
+func _spawn_player_at(position: Vector2) -> Player:
+	var player: Player = PLAYER_SCENE.instantiate()
+	player.position = position
+	add_child_autofree(player)
+	return player
+
+
+func test_a_lob_that_lands_on_the_thrower_hurts_them() -> void:
+	var thrower := _spawn_player_at(Vector2(20, 0))
+
+	_lob(10.0, 40.0)
+	await wait_seconds(0.2)
+
+	assert_eq(thrower.health.current, Player.MAX_HEALTH - 1)
+
+
+func test_a_lob_that_lands_far_away_leaves_the_thrower_unharmed() -> void:
+	var thrower := _spawn_player_at(Vector2.ZERO)
+
+	_lob(ENEMY_DISTANCE, 40.0)
+	await wait_seconds(FLIGHT_TIME)
+
+	assert_eq(thrower.health.current, Player.MAX_HEALTH)

@@ -1,6 +1,7 @@
 class_name Explosion
 extends Node2D
-## Damages every enemy within its radius the moment it appears, then fades out.
+## Damages every enemy and player within its radius the moment it appears, then fades out.
+## It doesn't care who threw it: standing in your own blast hurts.
 
 const FADE_SECONDS := 0.25
 
@@ -17,9 +18,8 @@ func _init(radius: float, damage: int, color: Color) -> void:
 
 
 func _ready() -> void:
-	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
-		if HitShapes.in_circle(global_position, _radius + Enemy.RADIUS, enemy.global_position):
-			enemy.take_damage(_damage)
+	_hurt_group(Enemy.GROUP, Enemy.RADIUS)
+	_hurt_group(Player.GROUP, Player.RADIUS)
 
 
 func _process(delta: float) -> void:
@@ -27,6 +27,13 @@ func _process(delta: float) -> void:
 	if _time_left <= 0.0:
 		queue_free()
 	queue_redraw()
+
+
+## Bodies are hit when the blast touches their edge, not only their centre.
+func _hurt_group(group: StringName, body_radius: float) -> void:
+	for body: Node2D in get_tree().get_nodes_in_group(group):
+		if HitShapes.in_circle(global_position, _radius + body_radius, body.global_position):
+			body.take_damage(_damage)
 
 
 func _draw() -> void:

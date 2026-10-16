@@ -1,12 +1,14 @@
 class_name Fireball
 extends Weapon
 ## Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot, the fireball arcs over
-## walls and enemies, and it explodes where it lands, hurting everything in the blast.
+## walls and enemies, and it explodes where it lands, hurting everything in the blast (the thrower included).
 
 var shot_speed := 300.0
 var shot_range := 400.0
 var damage := 2
 var blast_radius := 70.0
+## Above 1, short drags land closer to the player, leaving more of the drag for aiming nearby.
+var aim_curve := 2.0
 
 
 func _init() -> void:
@@ -25,6 +27,7 @@ func knobs() -> Array[Knob]:
 		Knob.new("shot_range", "Max range", 100, 1000, 10),
 		Knob.new("damage", "Damage", 1, 5, 1),
 		Knob.new("blast_radius", "Blast radius", 20, 200, 5),
+		Knob.new("aim_curve", "Aim curve", 1.0, 3.0, 0.1),
 	])
 	return result
 
@@ -41,6 +44,11 @@ func attacks(origin: Vector2, direction: Vector2, aim_distance: float) -> Array:
 
 func aim_range() -> float:
 	return shot_range
+
+
+## Eased so the first half of the drag covers only the nearest part of the range (a quarter at the default curve).
+func aim_distance(strength: float) -> float:
+	return shot_range * pow(clampf(strength, 0.0, 1.0), aim_curve)
 
 
 func aim_shape() -> AimShape:

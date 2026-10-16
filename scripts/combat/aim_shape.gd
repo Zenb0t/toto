@@ -27,7 +27,7 @@ static func cone(reach: float, arc_degrees: float) -> AimShape:
 	return shape
 
 
-## length is the farthest throw; the preview lands at length * aim strength.
+## length is the farthest throw; the preview lands where the weapon's aim_distance() puts it.
 static func lob(max_range: float, blast_radius: float) -> AimShape:
 	var shape := AimShape.new()
 	shape.kind = Kind.LOB
