@@ -14,6 +14,9 @@ const GROUND_LEAD := 2.0
 const ENEMY_HIT_COLOR := Color(1.0, 0.95, 0.85)
 const HERO_HIT_COLOR := Color(1.0, 0.35, 0.3)
 const HIT_TEXT_SIZE := 0.6
+## The camera shakes briefly when the hero is hit, this far at first (in cells), settling over SHAKE_SECONDS.
+const SHAKE_DISTANCE := 0.12
+const SHAKE_SECONDS := 0.18
 
 ## Where the camera sits. Takes effect on the next frame.
 var framing := CameraFraming.new()
@@ -23,6 +26,7 @@ var _ground := GroundView.new()
 var _map := MapView3D.new()
 var _puppets := Puppets.new()
 var _hero: Node2D
+var _shake_left := 0.0
 
 
 func _init() -> void:
@@ -57,6 +61,7 @@ func add_player(player: Player) -> void:
 	_hero = player
 	var stand_in := CharacterModel.new(Player.BODY_COLOR)
 	_show_hits(player, player.health, stand_in, HERO_HIT_COLOR)
+	player.health.damaged.connect(func(_amount: int) -> void: _shake_left = SHAKE_SECONDS)
 	_puppets.add(player, stand_in, func(model: CharacterModel) -> void:
 		model.face(player.facing)
 		model.hold(player.weapon.color))
@@ -68,6 +73,8 @@ func add_enemy(enemy: Enemy) -> void:
 	var stand_in := CharacterModel.new(monster.color, true, monster.race)
 	stand_in.scale = Vector3.ONE * monster.size
 	_show_hits(enemy, enemy.health, stand_in, ENEMY_HIT_COLOR)
+	enemy.defeated.connect(func(_defeated: Enemy) -> void:
+		add_child(DeathBurst.new(monster.color, WorldSpace.to_3d(enemy.global_position), monster.size)))
 	_puppets.add(enemy, stand_in, func(model: CharacterModel) -> void:
 		model.face(enemy.facing)
 		model.hold(enemy.weapon.color)
@@ -109,16 +116,25 @@ func float_text(at: Vector2, message: String, color: Color) -> void:
 	add_child(FloatingText.new(message, color, WorldSpace.to_3d(at)))
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not is_instance_valid(_hero):
 		return
 	_map.show_hero_at(DungeonView.world_to_cell(_hero.global_position))
 	var focus := WorldSpace.to_3d(_hero.global_position)
-	_camera.position = framing.eye(focus)
+	_camera.position = framing.eye(focus) + _shake(delta)
 	_camera.rotation = Vector3(-deg_to_rad(framing.pitch_degrees), 0.0, 0.0)
 	_camera.fov = framing.field_of_view
 	var lead := (framing.look_ahead + GROUND_LEAD) * DungeonView.TILE_SIZE
 	_ground.show_around(_hero.global_position + Vector2(0.0, -lead))
+
+
+## A small random jolt that fades out (looks only).
+func _shake(delta: float) -> Vector3:
+	if _shake_left <= 0.0:
+		return Vector3.ZERO
+	_shake_left -= delta
+	var strength := SHAKE_DISTANCE * maxf(_shake_left, 0.0) / SHAKE_SECONDS
+	return Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) * strength
 
 
 func _add_lighting() -> void:
