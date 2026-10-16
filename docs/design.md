@@ -38,7 +38,17 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | Fireball | Slow projectile that explodes in an area on impact | Line + impact circle |
 | Crossbow | A spread of bolts | Fan of lines |
 
-Utilities (first ideas, not final): dash, shield, heal. A dash currently stands in on the utility button.
+Utilities (first ideas, not final): dash, shield, heal.
+
+**Model (step 4).** `Weapon` and `Utility` are plain data objects. The player owns *when* (cooldown, wind-up,
+auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s). The buttons show the equipped
+item's name and colour. The starter gear is a **Wand** (one magic bolt) and a **Dash**. New behaviours
+(melee arc, explosions, spreads) arrive with the item pool in step 5.
+
+**Tuning.** Feel matters more than anything at this stage, so the numbers that shape it are editable in-game
+(pause menu → Tune gameplay), saved on the device, and exportable as JSON. Defaults live in the classes
+(`Weapon`, `Utility`, `Player`, `Enemy`), and the tuning screen reads them, so there is one source of truth.
+When a playtest settles on better values, they get copied into those defaults.
 
 ## Enemies (planned)
 
@@ -54,9 +64,10 @@ Art and audio, procedural generation, rarity tiers, stat depth, meta-progression
 1. ~~Design doc~~
 2. ~~Fixed test dungeon with room locks~~
 3. ~~Touch controls (move stick, aim buttons, auto-aim)~~
-4. Equipment model: weapon and utility data drive what the buttons do
+4. ~~Equipment model: weapon and utility data drive what the buttons do~~
 5. First item pool: sword, fireball, crossbow + utilities
 6. Loot: room chests, rare drops, replace-on-pickup compare
 7. Enemy types: rusher, ranged, tank
 8. ~~Web export for playtesting on a phone~~
 9. ~~Pause menu with a touch layout editor (move and resize controls, saved on the device)~~
+10. ~~In-game tuning screen with export (copy, or send to Claude from the phone playtest page)~~

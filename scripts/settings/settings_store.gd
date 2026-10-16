@@ -1,10 +1,9 @@
 class_name SettingsStore
 extends RefCounted
-## Saves player settings to disk. Missing or unreadable files never break the game: they load as defaults.
+## Saves player settings to disk as named sections of key/value pairs.
+## Missing or unreadable files never break the game: they read as empty, and callers fall back to defaults.
 
 const DEFAULT_PATH := "user://settings.cfg"
-const _SECTION := "touch_controls"
-const _KEY := "layout"
 
 var _path: String
 
@@ -13,16 +12,22 @@ func _init(path := DEFAULT_PATH) -> void:
 	_path = path
 
 
-func load_layout() -> ControlLayout:
+func load_section(section: String) -> Dictionary:
 	var config := ConfigFile.new()
-	if config.load(_path) != OK:
-		return ControlLayout.new()
-	var data: Variant = config.get_value(_SECTION, _KEY, {})
-	return ControlLayout.from_dict(data) if data is Dictionary else ControlLayout.new()
+	if config.load(_path) != OK or not config.has_section(section):
+		return {}
+	var data := {}
+	for key in config.get_section_keys(section):
+		data[key] = config.get_value(section, key)
+	return data
 
 
-func save_layout(layout: ControlLayout) -> Error:
+## Replaces one section and keeps the others.
+func save_section(section: String, data: Dictionary) -> Error:
 	var config := ConfigFile.new()
-	config.load(_path)  # Keep any other sections; a missing file is fine.
-	config.set_value(_SECTION, _KEY, layout.to_dict())
+	config.load(_path)  # A missing file is fine: it is created on save.
+	if config.has_section(section):
+		config.erase_section(section)
+	for key: String in data:
+		config.set_value(section, key, data[key])
 	return config.save(_path)

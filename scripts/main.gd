@@ -1,6 +1,6 @@
 extends Node2D
 ## Composition root: builds the test dungeon, spawns actors, routes touch intents to the player,
-## and applies the room-lock rules.
+## applies the room-lock rules, and connects the pause menu's settings screens.
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
@@ -12,8 +12,9 @@ var _view: DungeonView
 var _progress: DungeonProgress
 var _player: Player
 var _enemies_by_room := {}  # int -> Array[Enemy]
-var _settings := SettingsStore.new()
+var _settings := GameSettings.new()
 var _layout: ControlLayout
+var _tuning: Tuning
 
 @onready var _hud_layer: CanvasLayer = $Hud
 @onready var _hud: Label = $Hud/Status
@@ -23,6 +24,7 @@ var _layout: ControlLayout
 @onready var _utility_button: AimButton = $TouchControls/UtilityButton
 @onready var _pause_menu: PauseMenu = $Overlay/PauseMenu
 @onready var _layout_editor: LayoutEditor = $Overlay/LayoutEditor
+@onready var _tuning_panel: TuningPanel = $Overlay/TuningPanel
 
 
 func _ready() -> void:
@@ -31,13 +33,15 @@ func _ready() -> void:
 	add_child(_view)
 	move_child(_view, 0)
 	_view.show_map(_map)
+	_tuning = _settings.load_tuning()
+	_layout = _settings.load_layout()
 
 	_player = _spawn_player()
 	_spawn_enemies()
 	_progress = _create_progress()
 	_connect_controls()
 	_connect_menu()
-	_layout = _settings.load_layout()
+	_apply_tuning(_tuning)
 	_touch_controls.apply_layout(_layout)
 	_refresh_hud()
 
@@ -45,7 +49,7 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	_player.move(_move_input())
 	_attack_button.set_cooldown_ratio(_player.attack_cooldown_ratio())
-	_utility_button.set_cooldown_ratio(_player.dash_cooldown_ratio())
+	_utility_button.set_cooldown_ratio(_player.utility_cooldown_ratio())
 	_track_player_room()
 
 
@@ -66,6 +70,7 @@ func _spawn_enemies() -> void:
 		var room := _map.room_at(cell)
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
+		enemy.set_max_health(GameTuning.enemy_max_health(_tuning))
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
 		add_child(enemy)
 		_enemies_by_room.get_or_add(room, []).append(enemy)
@@ -84,10 +89,10 @@ func _create_progress() -> DungeonProgress:
 
 func _connect_controls() -> void:
 	_attack_button.aim_changed.connect(
-		func(direction: Vector2) -> void: _player.preview_aim(direction * Projectile.RANGE))
+		func(direction: Vector2) -> void: _player.preview_aim(direction * _player.weapon.aim_range()))
 	_attack_button.aim_released.connect(_on_attack_released)
 	_utility_button.aim_changed.connect(
-		func(direction: Vector2) -> void: _player.preview_aim(direction * Player.DASH_DISTANCE))
+		func(direction: Vector2) -> void: _player.preview_aim(direction * _player.utility.aim_range()))
 	_utility_button.aim_released.connect(_on_utility_released)
 
 
@@ -98,6 +103,9 @@ func _connect_menu() -> void:
 	_pause_menu.customize_requested.connect(_on_customize_requested)
 	_layout_editor.layout_changed.connect(_touch_controls.apply_layout)
 	_layout_editor.finished.connect(_on_layout_finished)
+	_pause_menu.tuning_requested.connect(_on_tuning_requested)
+	_tuning_panel.tuning_changed.connect(_apply_tuning)
+	_tuning_panel.finished.connect(_on_tuning_finished)
 
 
 # --- Input routing -------------------------------------------------------------------------------
@@ -124,7 +132,7 @@ func _on_attack_released(release: AimGesture.Release) -> void:
 
 func _on_utility_released(release: AimGesture.Release) -> void:
 	_player.preview_aim(Vector2.ZERO)
-	_player.dash(release.direction if not release.is_auto else _player.facing)
+	_player.use_utility(release.direction if not release.is_auto else _player.facing)
 
 
 ## Closest enemy in the room the player is fighting in (or standing in), at any distance. Null if none.
@@ -168,10 +176,32 @@ func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
 	_refresh_hud()
 
 
-func _on_attack_fired(origin: Vector2, direction: Vector2) -> void:
-	var projectile: Projectile = PROJECTILE_SCENE.instantiate()
-	projectile.launch(origin, direction)
-	add_child(projectile)
+func _on_attack_fired(shots: Array[Shot]) -> void:
+	for shot in shots:
+		var projectile: Projectile = PROJECTILE_SCENE.instantiate()
+		projectile.launch(shot)
+		add_child(projectile)
+
+
+# --- Equipment and tuning ------------------------------------------------------------------------
+
+## Applies everything that can change mid-run. The rest (like enemy health) waits for the next run.
+func _apply_tuning(tuning: Tuning) -> void:
+	_player.move_speed = GameTuning.player_move_speed(tuning)
+	_equip(GameTuning.weapon(tuning), GameTuning.utility(tuning))
+	for enemies: Array in _enemies_by_room.values():
+		for enemy: Enemy in enemies:
+			enemy.move_speed = GameTuning.enemy_move_speed(tuning)
+
+
+## The buttons always show what is equipped.
+func _equip(weapon: Weapon, utility: Utility) -> void:
+	_player.equip_weapon(weapon)
+	_player.equip_utility(utility)
+	_attack_button.label = weapon.button_label
+	_attack_button.color = weapon.color
+	_utility_button.label = utility.button_label
+	_utility_button.color = utility.color
 
 
 # --- Menu ----------------------------------------------------------------------------------------
@@ -185,10 +215,26 @@ func _on_layout_finished(layout: ControlLayout) -> void:
 	_hud_layer.show()
 	_layout = layout
 	_touch_controls.apply_layout(layout)
-	var error := _settings.save_layout(layout)
-	if error != OK:
-		push_warning("Could not save the control layout: %s" % error_string(error))
+	_warn_if_failed(_settings.save_layout(layout), "the control layout")
 	_pause_menu.return_to_panel()
+
+
+func _on_tuning_requested() -> void:
+	_hud_layer.hide()
+	_tuning_panel.open(_tuning)
+
+
+func _on_tuning_finished(tuning: Tuning) -> void:
+	_hud_layer.show()
+	_tuning = tuning
+	_apply_tuning(tuning)
+	_warn_if_failed(_settings.save_tuning(tuning), "the tuning")
+	_pause_menu.return_to_panel()
+
+
+func _warn_if_failed(error: Error, what: String) -> void:
+	if error != OK:
+		push_warning("Could not save %s: %s" % [what, error_string(error)])
 
 
 # --- Run state -----------------------------------------------------------------------------------

@@ -1,32 +1,30 @@
 class_name Player
 extends CharacterBody2D
-## The hero. Contains no input code: whoever controls it calls move(), attack() and dash().
+## The hero. Contains no input code: whoever controls it calls move(), attack() and use_utility().
+## What those do comes from the equipped Weapon and Utility.
 
-signal attack_fired(origin: Vector2, direction: Vector2)
+signal attack_fired(shots: Array[Shot])
 signal health_changed(current: int, maximum: int)
 signal died
 
-const SPEED := 140.0
+const DEFAULT_MOVE_SPEED := 140.0
 const MAX_HEALTH := 10
 const RADIUS := 12.0
 const BODY_COLOR := Color(0.35, 0.75, 1.0)
 const AIM_PREVIEW_COLOR := Color(1, 1, 1, 0.3)
-const ATTACK_INTERVAL := 0.8
-## Delay between releasing the button and the shot leaving, so attacks feel deliberate.
-const ATTACK_WINDUP := 0.3
 const WINDUP_COLOR := Color(1.0, 0.85, 0.4, 0.8)
-# Temporary utility until equipment exists.
-const DASH_SPEED := 650.0
-const DASH_DURATION := 0.18
-const DASH_DISTANCE := DASH_SPEED * DASH_DURATION
-const DASH_INTERVAL := 1.5
+## Shots start just past the facing tick, in front of the body rather than inside it.
+const MUZZLE_DISTANCE := RADIUS + 6.0
 
 var health := Health.new(MAX_HEALTH)
 var facing := Vector2.RIGHT
+var move_speed := DEFAULT_MOVE_SPEED
+var weapon := Weapon.new()
+var utility := Utility.new()
 
 var _move_input := Vector2.ZERO
-var _attack_cooldown := Cooldown.new(ATTACK_INTERVAL)
-var _dash_cooldown := Cooldown.new(DASH_INTERVAL)
+var _attack_cooldown := Cooldown.new(weapon.cooldown)
+var _utility_cooldown := Cooldown.new(utility.cooldown)
 var _dash_direction := Vector2.ZERO
 var _dash_time_left := 0.0
 var _aim_preview := Vector2.ZERO
@@ -41,12 +39,22 @@ func _ready() -> void:
 	health.died.connect(_on_died)
 
 
+func equip_weapon(new_weapon: Weapon) -> void:
+	weapon = new_weapon
+	_attack_cooldown = Cooldown.new(new_weapon.cooldown)
+
+
+func equip_utility(new_utility: Utility) -> void:
+	utility = new_utility
+	_utility_cooldown = Cooldown.new(new_utility.cooldown)
+
+
 ## strength: 0..1 vector from a stick or keys.
 func move(strength: Vector2) -> void:
 	_move_input = strength.limit_length(1.0)
 
 
-## Starts an attack. The shot leaves after a short wind-up; taps during the cooldown are ignored.
+## Starts an attack. The shot leaves after the weapon's wind-up; taps during the cooldown are ignored.
 ## With a target (auto-aim), the aim keeps tracking it during the wind-up so the delay doesn't cause misses.
 func attack(direction: Vector2, target: Node2D = null) -> void:
 	if direction == Vector2.ZERO or not _attack_cooldown.try_trigger():
@@ -54,15 +62,17 @@ func attack(direction: Vector2, target: Node2D = null) -> void:
 	facing = direction.normalized()
 	_windup_direction = facing
 	_windup_target = target
-	_windup_time_left = ATTACK_WINDUP
+	_windup_time_left = weapon.windup
+	if _windup_time_left <= 0.0:
+		_fire()
 
 
-func dash(direction: Vector2) -> void:
-	if direction == Vector2.ZERO or not _dash_cooldown.try_trigger():
+func use_utility(direction: Vector2) -> void:
+	if direction == Vector2.ZERO or not _utility_cooldown.try_trigger():
 		return
 	facing = direction.normalized()
 	_dash_direction = facing
-	_dash_time_left = DASH_DURATION
+	_dash_time_left = utility.dash_duration
 
 
 ## Shows where an ability will go. Pass a zero vector to hide it.
@@ -75,8 +85,8 @@ func attack_cooldown_ratio() -> float:
 	return _attack_cooldown.remaining_ratio()
 
 
-func dash_cooldown_ratio() -> float:
-	return _dash_cooldown.remaining_ratio()
+func utility_cooldown_ratio() -> float:
+	return _utility_cooldown.remaining_ratio()
 
 
 func take_damage(amount: int) -> void:
@@ -85,13 +95,13 @@ func take_damage(amount: int) -> void:
 
 func _physics_process(delta: float) -> void:
 	_attack_cooldown.tick(delta)
-	_dash_cooldown.tick(delta)
+	_utility_cooldown.tick(delta)
 	_advance_windup(delta)
 	if _dash_time_left > 0.0:
 		_dash_time_left -= delta
-		velocity = _dash_direction * DASH_SPEED
+		velocity = _dash_direction * utility.dash_speed
 	else:
-		velocity = _move_input * SPEED
+		velocity = _move_input * move_speed
 		if _move_input.length() > 0.1:
 			facing = _move_input.normalized()
 	move_and_slide()
@@ -106,13 +116,14 @@ func _advance_windup(delta: float) -> void:
 		facing = _windup_direction
 	_windup_time_left -= delta
 	if _windup_time_left <= 0.0:
-		_windup_target = null
-		attack_fired.emit(_muzzle_position(), _windup_direction)
+		_fire()
 
 
-## Shots start just past the aim tick, in front of the body rather than inside it.
-func _muzzle_position() -> Vector2:
-	return global_position + _windup_direction * (RADIUS + 6.0)
+func _fire() -> void:
+	_windup_target = null
+	_windup_time_left = 0.0
+	var muzzle := global_position + _windup_direction * MUZZLE_DISTANCE
+	attack_fired.emit(weapon.shots(muzzle, _windup_direction))
 
 
 func _draw() -> void:

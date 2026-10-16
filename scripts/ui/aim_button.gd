@@ -12,8 +12,15 @@ const MIN_FONT_SIZE := 14
 const FONT_SIZE_PER_RADIUS := 0.2
 const LABEL_COLOR := Color(1, 1, 1, 0.85)
 
-@export var label := ""
-@export var color := Color(1.0, 0.8, 0.3)
+## Set from the equipped item.
+@export var label := "":
+	set(value):
+		label = value
+		queue_redraw()
+@export var color := Color(1.0, 0.8, 0.3):
+	set(value):
+		color = value
+		queue_redraw()
 
 var _gesture := AimGesture.new(DEAD_ZONE)
 var _touch_index := NO_TOUCH

@@ -4,14 +4,15 @@ extends CharacterBody2D
 
 signal defeated(enemy: Enemy)
 
-const SPEED := 80.0
-const MAX_HEALTH := 3
+const DEFAULT_MOVE_SPEED := 80.0
+const DEFAULT_MAX_HEALTH := 3
 const CONTACT_DAMAGE := 1
 const CONTACT_INTERVAL := 0.8
 const RADIUS := 11.0
 const BODY_COLOR := Color(0.9, 0.35, 0.3)
 
-var health := Health.new(MAX_HEALTH)
+var health := Health.new(DEFAULT_MAX_HEALTH)
+var move_speed := DEFAULT_MOVE_SPEED
 var _target: Node2D
 var _contact_cooldown := Cooldown.new(CONTACT_INTERVAL)
 
@@ -20,6 +21,11 @@ func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
 	health.changed.connect(func(_current: int, _maximum: int) -> void: queue_redraw())
 	health.died.connect(_on_died)
+
+
+## Must be called before the enemy is added to the tree.
+func set_max_health(max_health: int) -> void:
+	health = Health.new(max_health)
 
 
 func chase(target: Node2D) -> void:
@@ -33,7 +39,7 @@ func take_damage(amount: int) -> void:
 func _physics_process(delta: float) -> void:
 	_contact_cooldown.tick(delta)
 	if is_instance_valid(_target):
-		velocity = global_position.direction_to(_target.global_position) * SPEED
+		velocity = global_position.direction_to(_target.global_position) * move_speed
 	else:
 		velocity = Vector2.ZERO
 	move_and_slide()

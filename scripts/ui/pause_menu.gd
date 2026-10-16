@@ -6,6 +6,7 @@ extends Control
 signal opened
 signal closed
 signal customize_requested
+signal tuning_requested
 signal restart_requested
 
 @onready var _open_button: Button = $OpenButton
@@ -15,7 +16,8 @@ signal restart_requested
 func _ready() -> void:
 	_open_button.pressed.connect(open)
 	$Panel/Items/Resume.pressed.connect(close)
-	$Panel/Items/Customize.pressed.connect(_on_customize_pressed)
+	$Panel/Items/Customize.pressed.connect(_open_sub_screen.bind(customize_requested))
+	$Panel/Items/Tune.pressed.connect(_open_sub_screen.bind(tuning_requested))
 	$Panel/Items/Restart.pressed.connect(restart_requested.emit)
 	_show_panel(false)
 
@@ -50,9 +52,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
-func _on_customize_pressed() -> void:
+func _open_sub_screen(requested: Signal) -> void:
 	_panel.visible = false
-	customize_requested.emit()
+	requested.emit()
 
 
 func _show_panel(panel_visible: bool) -> void:
