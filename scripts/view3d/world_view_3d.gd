@@ -88,6 +88,11 @@ func add_potion(drop: PotionDrop) -> void:
 		model.show_potion(drop.potion))
 
 
+## A message rising from a spot on the 2D plane.
+func float_text(at: Vector2, message: String, color: Color) -> void:
+	add_child(FloatingText.new(message, color, WorldSpace.to_3d(at)))
+
+
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_hero):
 		return

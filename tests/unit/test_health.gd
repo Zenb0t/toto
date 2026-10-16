@@ -80,3 +80,12 @@ func test_restored_health_resumes_where_it_was_left() -> void:
 func test_restored_health_stays_within_its_limits() -> void:
 	assert_eq(Health.restored(10, 25).current, 10)
 	assert_eq(Health.restored(10, 0).current, 1, "never restored dead")
+
+
+func test_raising_the_maximum_heals_as_much() -> void:
+	var health := Health.restored(10, 6)
+
+	health.raise_maximum(2)
+
+	assert_eq(health.maximum, 12)
+	assert_eq(health.current, 8)

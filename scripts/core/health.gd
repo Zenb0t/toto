@@ -40,3 +40,12 @@ static func restored(max_health: int, current_health: int) -> Health:
 	var health := Health.new(max_health)
 	health.current = clampi(current_health, 1, max_health)
 	return health
+
+
+## Raises the maximum and the current health by the same amount (growing tougher heals that much too).
+func raise_maximum(amount: int) -> void:
+	if is_dead() or amount <= 0:
+		return
+	maximum += amount
+	current += amount
+	changed.emit(current, maximum)

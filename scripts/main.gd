@@ -10,6 +10,7 @@ const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 const RESTART_DELAY_SECONDS := 1.5
 ## How long "down to floor N" shows before the next floor loads.
 const DESCEND_DELAY_SECONDS := 0.8
+const LEVEL_UP_COLOR := Color(1.0, 0.85, 0.35)
 ## Where a chest's potion lands, tried in order: beside the chest, on safe floor.
 const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 ## How often line of sight is worked out again.
@@ -40,6 +41,7 @@ var _utility_id := _run.utility_id
 var _rng := RandomNumberGenerator.new()
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
 var _belt := PotionBelt.new()
+var _experience := Experience.new(_run.experience)
 
 @onready var _hud_layer: CanvasLayer = $Hud
 @onready var _hud: Label = $Hud/Status
@@ -249,6 +251,7 @@ func _on_room_cleared(room: int) -> void:
 func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
 	_enemies_by_room[room].erase(enemy)
 	_progress.record_defeat(room)
+	_grow_from(enemy.monster)
 	_refresh_hud()
 	if LootTable.rolls_enemy_drop(GameTuning.enemy_drop_chance(_tuning), _rng):
 		var drop_id := LootTable.enemy_drop_id(enemy.weapon.id, GameTuning.item_ids(), _held_ids(), _rng)
@@ -476,12 +479,21 @@ func _warn_if_failed(error: Error, what: String) -> void:
 
 # --- Run state -----------------------------------------------------------------------------------
 
+## Every kill is worth the monster's toughness in experience; each level makes the hero tougher.
+func _grow_from(monster: Monster) -> void:
+	var levels := _experience.gain(monster.max_health)
+	if levels > 0:
+		_player.health.raise_maximum(levels * Experience.HEALTH_PER_LEVEL)
+		_world.float_text(_player.global_position, "LEVEL %d!" % _experience.level(), LEVEL_UP_COLOR)
+
+
 func _refresh_hud() -> void:
 	if _run_over:
 		return
 	var goal := "Find the way out" if _run.is_last_floor() else "Find the stairs down"
-	_hud.text = "Floor %d/%d    HP %d/%d    %s" % [
-		_run.floor_number, RunState.FLOOR_COUNT, _player.health.current, _player.health.maximum, goal]
+	_hud.text = "Floor %d/%d    Level %d (%d%%)    HP %d/%d    %s" % [
+		_run.floor_number, RunState.FLOOR_COUNT, _experience.level(), roundi(_experience.progress() * 100),
+		_player.health.current, _player.health.maximum, goal]
 
 
 ## Down to the next floor with everything the player holds, or out of the dungeon from the last one.
@@ -492,7 +504,7 @@ func _take_stairs() -> void:
 	if _run_over:
 		return
 	_run_over = true
-	var next := _run.next_floor(_weapon_id, _utility_id, _player.health.current, _belt.to_dict())
+	var next := _run.next_floor(_weapon_id, _utility_id, _player.health, _belt.to_dict(), _experience.points)
 	_hud.text = "Down to floor %d..." % next.floor_number
 	await get_tree().create_timer(DESCEND_DELAY_SECONDS).timeout
 	RunState.carry(next)

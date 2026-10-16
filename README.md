@@ -40,7 +40,7 @@ chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and oft
 weapon wants; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
-fifth floor's stairs lead out. If you die, you start over on floor 1 with the Wand, the Dash and a Potion of
+fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 with the Wand, the Dash and a Potion of
 Healing.
 
 ## Play on a phone
@@ -92,6 +92,7 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
   and closed doors on it, and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
   the floor texture shows). `models/` holds the placeholder models
-- `scripts/run` – `RunState`: what a run carries down the stairs (floor, gear, health, potions)
+- `scripts/run` – `RunState`: what a run carries down the stairs (floor, gear, health, potions, experience);
+  `Experience`: levels from kills, each adding maximum health
 - `scripts/main.gd` – composition root (one floor): wires controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests

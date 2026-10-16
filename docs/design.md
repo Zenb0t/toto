@@ -146,8 +146,14 @@ The stairs (gold, in the room farthest from the start, usable once that room is 
 fifth floor they lead out, and the run is won. Dying, or restarting from the menu, starts over from floor 1.
 
 Taking the stairs carries the run down (`RunState`): the weapon and utility held, health as it is (no free
-healing between floors: potions are the only healing), and the potion belt. Everything else (the map, the
+healing between floors: potions are the only healing), the potion belt and experience. Everything else (the map, the
 monsters, chests) is new. The HUD shows the floor; the pause menu shows the floor and its seed.
+
+**Experience** (`Experience`). Like Dungeon Crawl's experience levels (or Brawl Stars' power cubes),
+defeating monsters makes the hero tougher, so the descent stays winnable without free healing. A kill is worth
+the monster's health in points (a kobold 2, an ogre 14); going from level n to n+1 takes 5×n points; each
+level adds 2 to maximum health (and heals those 2), up to level 10. Levels carry down the stairs. The HUD
+shows the level and the progress toward the next; "LEVEL n!" rises over the hero.
 
 **Danger** (`DungeonDifficulty.danger`): one level per floor down, plus half a level per room away from the
 start. So rooms on one floor differ less than floors do: floor 1 tops out with orcs, floor 3 brings orc
