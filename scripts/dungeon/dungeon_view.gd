@@ -3,7 +3,9 @@ extends Node2D
 ## Draws a DungeonMap and gives its walls, doors and deep water collision. Owns no game rules.
 
 const TILE_SIZE := 32
-const FLOOR_COLOR := Color(0.23, 0.21, 0.26)
+## Floor tiles alternate between two shades, so distances read at a glance.
+const FLOOR_COLOR := Color(0.36, 0.33, 0.4)
+const FLOOR_ALT_COLOR := Color(0.32, 0.29, 0.36)
 const WALL_COLOR := Color(0.1, 0.09, 0.12)
 const WALL_LAYER := 1
 ## Deep water stops bodies (on this layer) but not shots (which only collide with walls and their targets).
@@ -30,7 +32,7 @@ static func world_to_cell(world_position: Vector2) -> Vector2i:
 
 func show_map(map: DungeonMap) -> void:
 	_map = map
-	_build_colliders(_wall_cells_touching_open(), WALL_LAYER)
+	_build_colliders(wall_cells(), WALL_LAYER)
 	_build_colliders(_map.cells_with(DungeonMap.Terrain.WATER), WATER_LAYER)
 	_build_doors()
 	queue_redraw()
@@ -39,7 +41,7 @@ func show_map(map: DungeonMap) -> void:
 ## Every cell this view draws: open cells and the walls around them.
 func drawn_cells() -> Array[Vector2i]:
 	var cells := _map.open_cells()
-	cells.append_array(_wall_cells_touching_open())
+	cells.append_array(wall_cells())
 	return cells
 
 
@@ -56,12 +58,12 @@ func _draw() -> void:
 	if _map == null:
 		return
 	for cell in _map.open_cells():
-		draw_rect(_tile_rect(cell), FLOOR_COLOR)
+		draw_rect(_tile_rect(cell), FLOOR_COLOR if (cell.x + cell.y) % 2 == 0 else FLOOR_ALT_COLOR)
 	for cell in _map.cells_with(DungeonMap.Terrain.WATER):
 		_draw_liquid(_tile_rect(cell), WATER_COLOR, WATER_RIPPLE_COLOR)
 	for cell in _map.cells_with(DungeonMap.Terrain.LAVA):
 		_draw_liquid(_tile_rect(cell), LAVA_COLOR, LAVA_GLOW_COLOR)
-	for cell in _wall_cells_touching_open():
+	for cell in wall_cells():
 		draw_rect(_tile_rect(cell), WALL_COLOR)
 	if _map.exit_cell != DungeonMap.NO_CELL:
 		_draw_stairs(_tile_rect(_map.exit_cell))
@@ -106,7 +108,8 @@ func _build_doors() -> void:
 		_doors[cell] = door
 
 
-func _wall_cells_touching_open() -> Array[Vector2i]:
+## The walls next to open cells: the only ones anyone can see or touch.
+func wall_cells() -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	for y in _map.size.y:
 		for x in _map.size.x:

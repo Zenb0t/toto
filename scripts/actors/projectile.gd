@@ -3,6 +3,7 @@ extends Area2D
 ## Flies a Shot straight until it hits something or runs out of range.
 ## A plain shot damages what it hits; an explosive shot bursts into an Explosion instead.
 ## A lobbed shot arcs over everything and bursts where it lands.
+## On the 2D plane (the floor) it draws only its shadow; the 3D view draws the shot itself, height() up.
 
 ## How high a lob arcs, relative to how far it travels, and never higher than LOB_MAX_HEIGHT.
 const LOB_HEIGHT_PER_DISTANCE := 0.35
@@ -33,6 +34,15 @@ func launch(shot: Shot) -> void:
 		collision_mask = WALL_LAYER_BIT | (PLAYER_LAYER_BIT if shot.hurts_player else ENEMY_LAYER_BIT)
 
 
+func shot() -> Shot:
+	return _shot
+
+
+## How high above its shadow the shot is, in pixels: zero for straight shots.
+func height() -> float:
+	return _lob_height() if _shot.lobbed else 0.0
+
+
 func _physics_process(delta: float) -> void:
 	position += _shot.direction * _shot.speed * delta
 	_time_left -= delta
@@ -43,11 +53,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _draw() -> void:
-	if not _shot.lobbed:
-		draw_circle(Vector2.ZERO, _shot.size, _shot.color)
-		return
 	draw_circle(Vector2.ZERO, _shot.size * 0.8, SHADOW_COLOR)
-	draw_circle(Vector2(0, -_lob_height()), _shot.size, _shot.color)
 
 
 ## Height above the ground along a parabola: zero at launch and landing, highest halfway.

@@ -18,6 +18,9 @@ const AIM_PREVIEW_COLOR := Color(1, 1, 1, 0.3)
 const WINDUP_COLOR := Color(1.0, 0.85, 0.4, 0.8)
 const SHIELD_COLOR := Color(0.7, 0.6, 1.0, 0.8)
 const SHIELD_RING_GAP := 6.0
+## The ring on the floor under the hero, in the hero's colour (the body itself is in the 3D view).
+const BASE_FILL_ALPHA := 0.25
+const BASE_RING_WIDTH := 2.5
 
 var health := Health.new(MAX_HEALTH)
 var facing := Vector2.RIGHT
@@ -141,8 +144,8 @@ func _draw() -> void:
 		draw_line(Vector2.ZERO, _wielder.aim_direction() * (RADIUS + 28.0), WINDUP_COLOR, RADIUS * 1.4)
 	if _aim_direction != Vector2.ZERO and _aim_shape != null:
 		AimPreview.draw(self, _aim_shape, _aim_direction, weapon.aim_distance(_aim_strength), AIM_PREVIEW_COLOR)
-	draw_circle(Vector2.ZERO, RADIUS, BODY_COLOR)
-	draw_line(Vector2.ZERO, facing * (RADIUS + 6.0), Color.WHITE, 3.0)
+	draw_circle(Vector2.ZERO, RADIUS, Color(BODY_COLOR, BASE_FILL_ALPHA))
+	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, BODY_COLOR, BASE_RING_WIDTH, true)
 	if is_shielded():
 		draw_arc(Vector2.ZERO, RADIUS + SHIELD_RING_GAP, 0.0, TAU, 32, SHIELD_COLOR, 3.0, true)
 

@@ -28,6 +28,7 @@ Anything that doesn't help answer that is deferred.
 | Rooms | Entering a room with enemies locks its doors until they're all defeated | Forces fights and gives clear pacing |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance | Proven on touch screens |
 | Movement | Floating stick: it appears wherever the left thumb lands | Standard for mobile action games |
+| Look | 3D shown over a 2D game: a fixed, tilted Brawl Stars-style camera; fantasy characters (humans, goblins, dwarfs) later | Brawl Stars' readability, with the game rules untouched |
 
 ## Equipment
 
@@ -143,9 +144,40 @@ see the player, and only shoot with a clear line; fireball throwers lob over cov
 Generation rules are tested on many seeds through the real parser: same seed, same map; every cell reachable;
 every room has a door; the start is quiet; the exit is guarded and away from the start.
 
+## Graphics (3D view)
+
+The target is Brawl Stars' camera and map feel with fantasy characters (humans, goblins, dwarfs...). Done in
+phases, each played on a phone before the next:
+
+1. **Camera and blockout** (done): a 3D view with placeholder shapes, to judge the camera.
+2. **Map look**: tiles, wall art, water and lava, props (barrels, crates, torches), a nicer fog.
+3. **Characters**: rigged, animated low-poly models (free CC0 packs such as KayKit or Quaternius), with
+   idle, run, attack, hit and death animations timed to wind-ups and cooldowns. What the races mean
+   (looks only, factions by depth, or their own stats) is still open.
+4. **Polish**: hit flashes, damage numbers, particles, screen shake.
+
+**The game stays 2D; only the view is 3D.** Physics, hit shapes, pathfinding, fog and every test work on the
+2D plane exactly as before. `WorldView3D` shows that plane in 3D:
+
+- **The floor is the 2D world.** Everything the 2D world draws is rendered into a texture that lies on the
+  floor, so ground marks come for free: the floor tiles, aim previews, red telegraphs, sword arcs, blasts,
+  lava and water, the fog. The main screen doesn't draw the 2D world itself (it is on its own canvas layer,
+  culled there). The texture covers a window around the camera, not the whole map, so it stays small
+  enough for a phone, and it moves in whole texels so the floor doesn't shimmer.
+- **What stands up is 3D.** Walls and closed doors are blocks (hidden until seen, dimmed when out of sight,
+  like the fog); heroes, enemies, chests, floor items and shots are 3D models that copy their 2D actor every
+  frame (`Puppets`). So in 2D, actors now draw only their marks on the ground: a team ring under heroes (blue)
+  and enemies (red), shadows under shots and chests, a glow under items.
+- **The camera** never turns. It looks down at the hero from the bottom of the screen, tilted 55°, from 17
+  cells away with a narrow 38° field of view, aimed 1.5 cells ahead so more of what's in front shows. Up on
+  the stick is still up on the screen, so the controls didn't change. All of it, and the wall height, is in
+  Tune → Camera.
+- **Placeholders**: characters are capsules with a head, eyes (which way they face) and the weapon in its
+  colour; enemies have a health bar. Lobbed fireballs fly high above their shadow.
+
 ## Explicitly deferred
 
-Art and audio, multiple floors, rarity tiers, stat depth, meta-progression, multiplayer.
+Audio, multiple floors, rarity tiers, stat depth, meta-progression, multiplayer.
 
 ## Roadmap
 
@@ -160,3 +192,4 @@ Art and audio, multiple floors, rarity tiers, stat depth, meta-progression, mult
 8. ~~Web export for playtesting on a phone~~
 9. ~~Pause menu with a touch layout editor (move and resize controls, saved on the device)~~
 10. ~~In-game tuning screen with Send to Claude (from the phone playtest page)~~
+12. Graphics (see Graphics): ~~camera and blockout~~; map look, characters, polish still open

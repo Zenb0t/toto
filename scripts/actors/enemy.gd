@@ -20,6 +20,9 @@ const DEFAULT_COOLDOWN_MULTIPLIER := 2.0
 const DEFAULT_TELEGRAPH_SECONDS := 0.4
 const RADIUS := 11.0
 const BODY_COLOR := Color(0.9, 0.35, 0.3)
+## The ring on the floor under the enemy (the body itself is in the 3D view).
+const BASE_FILL_ALPHA := 0.25
+const BASE_RING_WIDTH := 2.5
 const TELEGRAPH_COLOR := Color(1.0, 0.3, 0.25, 0.3)
 ## How far from its ideal distance an enemy is still happy, relative to that distance.
 const SLACK_SHARE := 0.25
@@ -29,6 +32,9 @@ const REPATH_SECONDS := 0.4
 const WAYPOINT_REACHED := 6.0
 
 var health := Health.new(DEFAULT_MAX_HEALTH)
+## Where it looks: at its target while fighting, where it is going otherwise, and along its aim while
+## winding up an attack.
+var facing := Vector2.DOWN
 var move_speed := DEFAULT_MOVE_SPEED
 ## Optional: without it, the enemy always heads straight for its target.
 var navigation: Pathfinder
@@ -48,7 +54,6 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	# Neighbours circle in different directions, so a group spreads out instead of moving as a blob.
 	_strafe_sign = 1.0 if get_instance_id() % 2 == 0 else -1.0
-	health.changed.connect(func(_current: int, _maximum: int) -> void: queue_redraw())
 	health.died.connect(_on_died)
 
 
@@ -80,8 +85,18 @@ func _physics_process(delta: float) -> void:
 			_fight(_target.global_position - global_position)
 		else:
 			_go_around_to(_target.global_position)
+	_update_facing()
 	move_and_slide()
 	queue_redraw()
+
+
+func _update_facing() -> void:
+	if _wielder.is_winding_up():
+		facing = _wielder.aim_direction()
+	elif is_instance_valid(_target) and _path.is_empty():
+		facing = global_position.direction_to(_target.global_position)
+	elif velocity != Vector2.ZERO:
+		facing = velocity.normalized()
 
 
 func _fight(to_target: Vector2) -> void:
@@ -123,10 +138,8 @@ func _release(attacks: Array) -> void:
 func _draw() -> void:
 	if _wielder.is_winding_up():
 		AimPreview.draw(self, weapon.aim_shape(), _wielder.aim_direction(), _wielder.aim_distance(), TELEGRAPH_COLOR)
-	draw_circle(Vector2.ZERO, RADIUS, BODY_COLOR)
-	draw_circle(Vector2.ZERO, RADIUS * 0.45, weapon.color)
-	var health_ratio := float(health.current) / health.maximum
-	draw_rect(Rect2(-RADIUS, -RADIUS - 8.0, RADIUS * 2.0 * health_ratio, 3.0), Color.WHITE)
+	draw_circle(Vector2.ZERO, RADIUS, Color(BODY_COLOR, BASE_FILL_ALPHA))
+	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, BODY_COLOR, BASE_RING_WIDTH, true)
 
 
 func _on_died() -> void:

@@ -102,3 +102,16 @@ func test_loot_ids_build_the_matching_kind_of_item() -> void:
 
 	assert_true(GameTuning.item(tuning, "sword") is Weapon)
 	assert_true(GameTuning.item(tuning, "heal") is Utility)
+
+
+func test_camera_knobs_shape_the_framing() -> void:
+	var tuning := GameTuning.create()
+
+	tuning.set_value(GameTuning.CAMERA_PITCH, 70)
+	tuning.set_value(GameTuning.CAMERA_DISTANCE, 12)
+	var framing := GameTuning.camera_framing(tuning)
+
+	assert_eq(framing.pitch_degrees, 70.0)
+	assert_eq(framing.distance, 12.0)
+	assert_eq(framing.field_of_view, CameraFraming.DEFAULT_FIELD_OF_VIEW)
+	assert_eq(GameTuning.wall_height(tuning), MapView3D.DEFAULT_WALL_HEIGHT)

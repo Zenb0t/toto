@@ -1,7 +1,8 @@
 # Toto
 
 A small real-time dungeon crawler for mobile: Dungeon Crawl Stone Soup's "the RNG shapes your build" meets
-Brawl Stars' twin-stick touch combat. Built with Godot 4.4.
+Brawl Stars' twin-stick touch combat. Built with Godot 4.4. It plays on a flat 2D plane and is shown in 3D, with
+a tilted Brawl Stars-style camera (placeholder models for now).
 
 Design decisions and the roadmap are in [`docs/design.md`](docs/design.md).
 
@@ -24,7 +25,8 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 **Tune gameplay** exposes the numbers that shape the feel (move speed, the weapon's cooldown, wind-up, shot
-speed, range and damage, the dash, enemy speed and health, and each button's aim dead zone). Every weapon has
+speed, range and damage, the dash, enemy speed and health, each button's aim dead zone, and the camera: tilt,
+distance, field of view, look-ahead and wall height). Every weapon has
 its own settings; the screen shows the equipped one's. Changes apply live and are saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
@@ -77,5 +79,10 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
   `TuningPanel`, `TuningSender`, `LootCard`
 - `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `SlashEffect`, and the loot on the floor
   (`PickupArea`, `Chest`, `ItemDrop`). The player holds no input code
+- `scripts/view3d` – how the game is shown: the 2D world runs the game and `WorldView3D` shows it in 3D.
+  `GroundView` lays the 2D plane on the floor (floor, aim previews, telegraphs, fog), `MapView3D` stands walls
+  and closed doors on it, and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
+  (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
+  the floor texture shows). `models/` holds the placeholder models
 - `scripts/main.gd` – composition root: wires controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests

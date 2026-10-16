@@ -12,6 +12,11 @@ const ENEMY_TELEGRAPH := "enemy.telegraph"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
 const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
 const LOOT_ENEMY_DROP_CHANCE := "loot.enemy_drop_chance"
+const CAMERA_PITCH := "camera.pitch"
+const CAMERA_DISTANCE := "camera.distance"
+const CAMERA_FIELD_OF_VIEW := "camera.field_of_view"
+const CAMERA_LOOK_AHEAD := "camera.look_ahead"
+const CAMERA_WALL_HEIGHT := "camera.wall_height"
 const DEFAULT_WEAPON_ID := "wand"
 const DEFAULT_UTILITY_ID := "dash"
 
@@ -78,6 +83,16 @@ static func create() -> Tuning:
 			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", "Controls", 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(
 			CONTROLS_UTILITY_DEAD_ZONE, "Utility dead zone", "Controls", 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
+		Tuning.Param.new(
+			CAMERA_PITCH, "Tilt (90 = top-down)", "Camera", 30, 90, 1, CameraFraming.DEFAULT_PITCH_DEGREES),
+		Tuning.Param.new(
+			CAMERA_DISTANCE, "Distance (cells)", "Camera", 6, 30, 0.5, CameraFraming.DEFAULT_DISTANCE),
+		Tuning.Param.new(
+			CAMERA_FIELD_OF_VIEW, "Field of view", "Camera", 15, 75, 1, CameraFraming.DEFAULT_FIELD_OF_VIEW),
+		Tuning.Param.new(
+			CAMERA_LOOK_AHEAD, "Look ahead (cells)", "Camera", 0, 5, 0.25, CameraFraming.DEFAULT_LOOK_AHEAD),
+		Tuning.Param.new(
+			CAMERA_WALL_HEIGHT, "Wall height (cells)", "Camera", 0.2, 2, 0.05, MapView3D.DEFAULT_WALL_HEIGHT),
 	])
 	return Tuning.new(params)
 
@@ -150,6 +165,19 @@ static func weapon_dead_zone(tuning: Tuning) -> float:
 
 static func utility_dead_zone(tuning: Tuning) -> float:
 	return tuning.value(CONTROLS_UTILITY_DEAD_ZONE)
+
+
+static func camera_framing(tuning: Tuning) -> CameraFraming:
+	var framing := CameraFraming.new()
+	framing.pitch_degrees = tuning.value(CAMERA_PITCH)
+	framing.distance = tuning.value(CAMERA_DISTANCE)
+	framing.field_of_view = tuning.value(CAMERA_FIELD_OF_VIEW)
+	framing.look_ahead = tuning.value(CAMERA_LOOK_AHEAD)
+	return framing
+
+
+static func wall_height(tuning: Tuning) -> float:
+	return tuning.value(CAMERA_WALL_HEIGHT)
 
 
 static func _ids(items: Array) -> Array[String]:

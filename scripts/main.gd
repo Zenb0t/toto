@@ -1,6 +1,7 @@
 extends Node2D
 ## Composition root: generates the run's dungeon, spawns actors, routes touch intents to the player,
 ## applies the room-lock, loot and exit rules, and connects the pause menu's settings screens.
+## The 2D world under this node runs the game; WorldView3D shows it in 3D, with the 2D plane on its floor.
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
@@ -20,6 +21,7 @@ var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
 var _view: DungeonView
+var _world: WorldView3D
 var _progress: DungeonProgress
 var _player: Player
 var _enemies_by_room := {}  # int -> Array[Enemy]
@@ -54,6 +56,9 @@ func _ready() -> void:
 	move_child(_view, 0)
 	_view.show_map(_map)
 	_fog = FogView.new(_view.drawn_cells())
+	_world = WorldView3D.new()
+	add_child(_world)
+	_world.show_world(self, _view.wall_cells(), _map.door_cells())
 	_tuning = _settings.load_tuning()
 	_layout = _settings.load_layout()
 	_pause_menu.show_seed(_seed)
@@ -92,6 +97,7 @@ func _spawn_player() -> Player:
 	player.health_changed.connect(func(_current: int, _maximum: int) -> void: _refresh_hud())
 	player.died.connect(func() -> void: _end_run("You died..."))
 	add_child(player)
+	_world.add_player(player)
 	return player
 
 
@@ -106,6 +112,7 @@ func _spawn_enemies() -> void:
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
 		add_child(enemy)
+		_world.add_enemy(enemy)
 		_enemies_by_room.get_or_add(room, []).append(enemy)
 
 
@@ -208,6 +215,7 @@ func _track_player_room() -> void:
 
 func _on_room_locked(room: int) -> void:
 	_view.set_room_closed(room, true)
+	_world.set_doors_closed(_map.doors_of_room(room), true)
 	_sight_origin = DungeonMap.NO_CELL
 	for enemy: Enemy in _enemies_by_room[room]:
 		enemy.chase(_player)
@@ -215,6 +223,7 @@ func _on_room_locked(room: int) -> void:
 
 func _on_room_cleared(room: int) -> void:
 	_view.set_room_closed(room, false)
+	_world.set_doors_closed(_map.doors_of_room(room), false)
 	_sight_origin = DungeonMap.NO_CELL
 	_spawn_chest(room)
 
@@ -235,6 +244,7 @@ func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 			var projectile: Projectile = PROJECTILE_SCENE.instantiate()
 			projectile.launch(attack)
 			add_child(projectile)
+			_world.add_projectile(projectile)
 		elif attack is Slash:
 			add_child(SlashEffect.new(attack, attacker))
 
@@ -248,6 +258,7 @@ func _update_sight() -> void:
 		var is_clear := func(cell: Vector2i) -> bool: return _map.is_see_through(cell) and not _view.is_door_closed(cell)
 		_exploration.look_from(origin, is_clear)
 		_fog.show_exploration(_exploration)
+		_world.show_exploration(_exploration)
 	for enemies: Array in _enemies_by_room.values():
 		for enemy: Enemy in enemies:
 			enemy.visible = _exploration.is_visible(DungeonView.world_to_cell(enemy.global_position))
@@ -275,6 +286,7 @@ func _spawn_chest(room: int) -> void:
 	chest.position = DungeonView.cell_center(_map.room_center(room))
 	chest.opened.connect(_open_chest.bind(chest.position))
 	_place_on_floor.call_deferred(chest)
+	_world.add_chest(chest)
 
 
 ## A chest holds a random weapon or utility the player doesn't already have, picked when it opens.
@@ -292,6 +304,7 @@ func _spawn_drop(at: Vector2, item_id: String) -> void:
 	drop.player_entered.connect(_offer.bind(drop))
 	drop.player_exited.connect(_on_drop_left.bind(drop))
 	_place_on_floor.call_deferred(drop)
+	_world.add_drop(drop)
 
 
 ## Drawn above the map but below the actors. Loot appears from inside physics callbacks (a hit, a step),
@@ -340,6 +353,8 @@ func _on_take_pressed() -> void:
 ## Applies everything that can change mid-run. The rest (like enemy health) waits for the next run.
 func _apply_tuning(tuning: Tuning) -> void:
 	_player.move_speed = GameTuning.player_move_speed(tuning)
+	_world.framing = GameTuning.camera_framing(tuning)
+	_world.set_wall_height(GameTuning.wall_height(tuning))
 	_equip(GameTuning.weapon(tuning, _weapon_id), GameTuning.utility(tuning, _utility_id))
 	_attack_button.dead_zone = GameTuning.weapon_dead_zone(tuning)
 	_utility_button.dead_zone = GameTuning.utility_dead_zone(tuning)
