@@ -261,7 +261,8 @@ deterministic), so it costs nothing to store and never changes how the game play
 - **Clutter**: one floor cell in nine along a wall has something small on it (a candle, a bottle, coins),
   never where monsters, loot or the stairs are. Walking over it is fine: it is only looks.
 - **Chests** are KayKit's, and their lid swings open.
-- **Items on the floor** stay hidden until their cell has been seen, then stay shown (like the fog's map
+- **Weapons on the floor** show the weapon itself (the model characters hold), floating and turning;
+  utilities are glowing cubes, potions flasks. **Items on the floor** stay hidden until their cell has been seen, then stay shown (like the fog's map
   memory).
 - **Water and lava** move: slow waves with highlights (`shaders/liquid.gdshader`), lava slower and hotter.
 - **Stairs** stand under a stone arch trimmed in gold.

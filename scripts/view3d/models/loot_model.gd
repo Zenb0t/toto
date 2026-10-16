@@ -1,9 +1,9 @@
 class_name LootModel
 extends Node3D
-## Placeholder for something on the floor: a gem (or a flask, for potions) in its colour that floats and
-## turns, with its name above it. Weapons are round gems, utilities cubes, like the marks on the floor.
+## Something on the floor, floating and turning, with its name above it: a weapon shows itself (the model
+## characters hold), a utility a glowing cube and a potion a flask, in their colours.
 
-enum Look { ROUND, CUBE, FLASK }
+enum Look { WEAPON, CUBE, FLASK }
 
 const FLOAT_HEIGHT := 0.55
 const BOB_HEIGHT := 0.08
@@ -11,6 +11,8 @@ const BOB_SPEED := 3.0
 const TURN_SPEED := 1.5
 const GEM_SIZE := 0.32
 const FLASK_NECK_COLOR := Color(0.85, 0.8, 0.7)
+## Weapon models are sized for a character's hand (see CharacterModel); on the floor, a bit bigger.
+const WEAPON_SCALE := 1.4
 const LABEL_HEIGHT := 1.15
 const LABEL_PIXEL_SIZE := 0.008
 const LABEL_FONT_SIZE := 40
@@ -18,6 +20,7 @@ const LABEL_FONT_SIZE := 40
 var _gem: Node3D
 var _label := Label3D.new()
 var _shown: Object
+var _weapon_id := ""
 var _time := 0.0
 
 
@@ -34,7 +37,8 @@ func _init() -> void:
 func show_item(item: Item) -> void:
 	if item != _shown:
 		_shown = item
-		_show(item.color, item.button_label, Look.ROUND if item is Weapon else Look.CUBE)
+		_weapon_id = item.id
+		_show(item.color, item.button_label, Look.WEAPON if item is Weapon else Look.CUBE)
 
 
 func show_potion(potion: Potion) -> void:
@@ -59,8 +63,13 @@ func _show(color: Color, label: String, look: Look) -> void:
 
 func _shape(color: Color, look: Look) -> Node3D:
 	match look:
-		Look.ROUND:
-			return ModelParts.part(ModelParts.sphere(GEM_SIZE / 2.0), color, Vector3.ZERO, true)
+		Look.WEAPON:
+			var weapon: Node3D = load(CharacterLook.WEAPONS_PATH % CharacterLook.weapon_model(_weapon_id)).instantiate()
+			weapon.scale = Vector3.ONE * CharacterModel.HEIGHT / CharacterModel.MODEL_HEIGHT * WEAPON_SCALE
+			weapon.rotation.z = PI / 2.0
+			var holder := Node3D.new()
+			holder.add_child(weapon)
+			return holder
 		Look.CUBE:
 			return ModelParts.part(ModelParts.box(Vector3.ONE * GEM_SIZE), color, Vector3.ZERO, true)
 	var flask := Node3D.new()
