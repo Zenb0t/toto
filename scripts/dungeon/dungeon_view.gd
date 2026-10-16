@@ -6,6 +6,8 @@ const TILE_SIZE := 32
 const FLOOR_COLOR := Color(0.23, 0.21, 0.26)
 const WALL_COLOR := Color(0.1, 0.09, 0.12)
 const WALL_LAYER := 1
+const STAIRS_COLOR := Color(0.95, 0.75, 0.3)
+const STAIRS_STEPS := 4
 
 var _map: DungeonMap
 var _doors := {}  # Vector2i -> Door
@@ -38,6 +40,18 @@ func _draw() -> void:
 		draw_rect(_tile_rect(cell), FLOOR_COLOR)
 	for cell in _wall_cells_touching_walkable():
 		draw_rect(_tile_rect(cell), WALL_COLOR)
+	if _map.exit_cell != DungeonMap.NO_CELL:
+		_draw_stairs(_tile_rect(_map.exit_cell))
+
+
+## Steps shrinking toward the bottom, so the exit reads as a way down.
+func _draw_stairs(tile: Rect2) -> void:
+	var step_height := tile.size.y / STAIRS_STEPS
+	for i in STAIRS_STEPS:
+		var inset := tile.size.x * 0.1 * i
+		var step := Rect2(tile.position.x + inset, tile.position.y + i * step_height,
+			tile.size.x - inset * 2.0, step_height - 2.0)
+		draw_rect(step, Color(STAIRS_COLOR, 1.0 - i * 0.2))
 
 
 func _build_wall_colliders() -> void:

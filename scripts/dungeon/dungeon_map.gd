@@ -4,11 +4,14 @@ extends RefCounted
 ## Rooms are areas of floor separated by doors; a door belongs to every room it touches.
 
 const NO_ROOM := -1
+const NO_CELL := Vector2i(-1, -1)
 
 var size: Vector2i
 var player_spawn: Vector2i
 var enemy_spawns: Array[Vector2i]
 var room_count: int
+## Where the stairs out are, or NO_CELL for a map without an exit.
+var exit_cell: Vector2i
 
 var _room_by_cell: Dictionary  # Vector2i -> int
 var _doors_by_room: Dictionary  # int -> Array[Vector2i]
@@ -24,6 +27,7 @@ func _init(
 	player_spawn_cell: Vector2i,
 	enemy_weapon_by_cell: Dictionary,
 	number_of_rooms: int,
+	exit: Vector2i = NO_CELL,
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -33,6 +37,7 @@ func _init(
 	_enemy_weapon_by_cell = enemy_weapon_by_cell
 	enemy_spawns.assign(enemy_weapon_by_cell.keys())
 	room_count = number_of_rooms
+	exit_cell = exit
 
 
 ## The weapon id the enemy spawning at cell carries.

@@ -28,10 +28,12 @@ speed, range and damage, the dash, enemy speed and health, and each button's aim
 its own settings; the screen shows the equipped one's. Changes apply live and are saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
-Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a chest with a
-random weapon or utility (Dash, Shield, Heal). Enemies carry the same weapons you do and fight the way their
+Every run is a new dungeon (its seed is shown in the pause menu) of oddly shaped rooms, some with pillars
+for cover. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
+chest with a random weapon or utility (Dash, Shield, Heal). Enemies carry the same weapons you do and fight the way their
 weapon wants; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
-their weapon. Clear the dungeon to win. If you die, you start over with the Wand and the Dash.
+their weapon. Rooms get tougher the deeper you go. Find the gold stairs (in the room farthest from the start,
+usable once it is clear) to win. If you die, you start over with the Wand and the Dash.
 
 ## Play on a phone
 
@@ -51,8 +53,11 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 ## Layout
 
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`)
-- `scripts/dungeon` – the ASCII map format (`DungeonMapParser`, `TestDungeon`; enemy letters pick their weapon), room-lock rules
+- `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their weapon, `>` is the exit),
+  enemy navigation (`Pathfinder`), room-lock rules
   (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
+- `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `RoomGraph`
+  (which rooms and links), `RoomShapes` (floor plans and pillars), `DungeonDifficulty` (enemies by depth)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`)
 - `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`Wand`, `Sword`,
   `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Heal`). Each declares its own tunable `Knob`s

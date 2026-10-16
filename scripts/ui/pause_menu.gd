@@ -11,6 +11,7 @@ signal restart_requested
 
 @onready var _open_button: Button = $OpenButton
 @onready var _panel: Control = $Panel
+@onready var _seed_label: Label = $Panel/Items/Seed
 
 
 func _ready() -> void:
@@ -20,6 +21,11 @@ func _ready() -> void:
 	$Panel/Items/Tune.pressed.connect(_open_sub_screen.bind(tuning_requested))
 	$Panel/Items/Restart.pressed.connect(restart_requested.emit)
 	_show_panel(false)
+
+
+## The run's dungeon seed, so a map worth keeping (or a broken one) can be reported.
+func show_seed(seed_value: int) -> void:
+	_seed_label.text = "Dungeon seed %d" % seed_value
 
 
 ## True from open() until close(), including while a sub-screen is showing.

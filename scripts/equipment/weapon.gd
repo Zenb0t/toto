@@ -30,6 +30,11 @@ func ideal_distance() -> float:
 	return aim_range() * 0.6
 
 
+## Whether an attack needs a clear line to its target. Lobbed weapons fly over walls.
+func needs_line_of_sight() -> bool:
+	return true
+
+
 ## aim_range() is the farthest this weapon reaches: a full-strength drag aims this far.
 ## How far away a manual drag of the given strength (0..1) aims. Linear unless a weapon needs finer control.
 func aim_distance(strength: float) -> float:

@@ -97,3 +97,19 @@ func test_the_center_of_an_l_shaped_room_is_still_on_its_floor() -> void:
 	var room := map.room_at(Vector2i(1, 1))
 
 	assert_eq(map.room_at(map.room_center(room)), room)
+
+
+func test_the_exit_is_walkable_floor() -> void:
+	var map := _parser.parse("""
+#####
+#P.>#
+#####
+""")
+
+	assert_eq(map.exit_cell, Vector2i(3, 1))
+	assert_true(map.is_walkable(map.exit_cell))
+	assert_eq(map.room_at(map.exit_cell), map.room_at(map.player_spawn))
+
+
+func test_a_map_may_have_no_exit() -> void:
+	assert_eq(_parser.parse(TWO_ROOMS).exit_cell, DungeonMap.NO_CELL)

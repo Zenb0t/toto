@@ -26,7 +26,7 @@ offset_top = 40.0
 offset_right = 900.0
 offset_bottom = 66.0
 theme_override_font_sizes/font_size = 13
-text = "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Cleared rooms leave a chest.  II: menu."
+text = "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Cleared rooms leave a chest.  Find the gold stairs.  II: menu."
 
 [node name="WeaponSwitch" type="Button" parent="Hud"]
 anchors_preset = 1

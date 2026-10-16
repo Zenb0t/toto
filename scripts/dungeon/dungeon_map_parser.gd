@@ -2,13 +2,14 @@ class_name DungeonMapParser
 extends RefCounted
 ## Turns an ASCII drawing into a DungeonMap.
 ##   #  wall      .  floor      +  door
-##   P  player spawn (on floor)
+##   P  player spawn (on floor)     >  exit (on floor; optional)
 ##   Enemy spawns (on floor), by the weapon they carry:  s  sword   w  wand   c  crossbow   f  fireball
 
 const WALL := "#"
 const FLOOR := "."
 const DOOR := "+"
 const PLAYER := "P"
+const EXIT := ">"
 ## Enemy spawn symbols and the weapon id each enemy carries.
 const ENEMY_WEAPONS := {"s": "sword", "w": "wand", "c": "crossbow", "f": "fireball"}
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
@@ -20,10 +21,12 @@ func parse(ascii: String) -> DungeonMap:
 	assert(Array(rows).all(func(row: String) -> bool: return row.length() == size.x), "every row must be the same width")
 
 	var enemy_symbols := ENEMY_WEAPONS.keys()
-	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER] + enemy_symbols)
+	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT] + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
 	var player_cells := _cells_matching(rows, [PLAYER])
 	assert(player_cells.size() == 1, "map needs exactly one player spawn")
+	var exit_cells := _cells_matching(rows, [EXIT])
+	assert(exit_cells.size() <= 1, "map has more than one exit")
 
 	var room_by_cell := _label_rooms(floor_cells)
 	var room_count := 0
@@ -38,6 +41,7 @@ func parse(ascii: String) -> DungeonMap:
 		player_cells[0],
 		_enemy_weapons_by_cell(rows),
 		room_count,
+		exit_cells[0] if not exit_cells.is_empty() else DungeonMap.NO_CELL,
 	)
 
 

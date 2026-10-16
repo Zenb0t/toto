@@ -1,13 +1,16 @@
 extends Node2D
-## Composition root: builds the test dungeon, spawns actors, routes touch intents to the player,
-## applies the room-lock and loot rules, and connects the pause menu's settings screens.
+## Composition root: generates the run's dungeon, spawns actors, routes touch intents to the player,
+## applies the room-lock, loot and exit rules, and connects the pause menu's settings screens.
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 const RESTART_DELAY_SECONDS := 1.5
 
+var _seed: int
 var _map: DungeonMap
+var _pathfinder: Pathfinder
+var _run_over := false
 var _view: DungeonView
 var _progress: DungeonProgress
 var _player: Player
@@ -34,14 +37,17 @@ var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if a
 
 
 func _ready() -> void:
-	_map = DungeonMapParser.new().parse(TestDungeon.LAYOUT)
+	_rng.randomize()
+	_seed = _rng.randi()
+	_map = DungeonMapParser.new().parse(DungeonGenerator.new().generate(_seed))
+	_pathfinder = Pathfinder.new(_map)
 	_view = DungeonView.new()
 	add_child(_view)
 	move_child(_view, 0)
 	_view.show_map(_map)
 	_tuning = _settings.load_tuning()
 	_layout = _settings.load_layout()
-	_rng.randomize()
+	_pause_menu.show_seed(_seed)
 
 	_player = _spawn_player()
 	_spawn_enemies()
@@ -79,6 +85,7 @@ func _spawn_enemies() -> void:
 		enemy.position = DungeonView.cell_center(cell)
 		enemy.set_max_health(GameTuning.enemy_max_health(_tuning))
 		enemy.arm(GameTuning.enemy_weapon(_tuning, _map.enemy_weapon_at(cell)))
+		enemy.navigation = _pathfinder
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
 		add_child(enemy)
@@ -92,7 +99,6 @@ func _create_progress() -> DungeonProgress:
 	var progress := DungeonProgress.new(counts)
 	progress.room_locked.connect(_on_room_locked)
 	progress.room_cleared.connect(_on_room_cleared)
-	progress.dungeon_cleared.connect(func() -> void: _end_run("Dungeon cleared!"))
 	return progress
 
 
@@ -168,10 +174,13 @@ func _combat_room() -> int:
 # --- Rooms and combat ----------------------------------------------------------------------------
 
 ## Lock a room only once the player is a full tile past its doorway, so a closing door can't trap them in it.
+## Stepping on the exit ends the run, once its room is clear.
 func _track_player_room() -> void:
 	var cell := DungeonView.world_to_cell(_player.global_position)
 	if _map.is_clear_of_doors(cell):
 		_progress.enter_room(_map.room_at(cell))
+	if cell == _map.exit_cell and _progress.is_cleared(_map.room_at(cell)):
+		_end_run("You found the way out!")
 
 
 func _on_room_locked(room: int) -> void:
@@ -341,11 +350,14 @@ func _warn_if_failed(error: Error, what: String) -> void:
 # --- Run state -----------------------------------------------------------------------------------
 
 func _refresh_hud() -> void:
-	_hud.text = "HP %d/%d    Enemies left: %d" % [
-		_player.health.current, _player.health.maximum, _progress.total_enemies_left()]
+	if not _run_over:
+		_hud.text = "HP %d/%d    Find the stairs out" % [_player.health.current, _player.health.maximum]
 
 
 func _end_run(message: String) -> void:
+	if _run_over:
+		return
+	_run_over = true
 	_hud.text = message
 	await get_tree().create_timer(RESTART_DELAY_SECONDS).timeout
 	_restart()

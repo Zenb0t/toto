@@ -130,3 +130,64 @@ func test_a_player_shield_blocks_an_enemy_shot() -> void:
 	await wait_seconds(0.5)
 
 	assert_eq(player.health.current, Player.MAX_HEALTH)
+
+
+## A wall splits the room, with a gap at the bottom. The enemy starts on the left, the player on the right.
+const WALLED := """
+###########
+#P...#....#
+#....#....#
+#....#....#
+#.........#
+###########
+"""
+
+
+func _walled_room() -> Pathfinder:
+	var map := DungeonMapParser.new().parse(WALLED)
+	var view := DungeonView.new()
+	add_child_autofree(view)
+	view.show_map(map)
+	return Pathfinder.new(map)
+
+
+func test_an_enemy_that_cannot_see_the_player_walks_around_the_wall() -> void:
+	var navigation := _walled_room()
+	var player := _spawn_player_at(DungeonView.cell_center(Vector2i(8, 1)))
+	var fighter := _spawn_enemy_at(DungeonView.cell_center(Vector2i(2, 2)), Sword.new())
+	fighter.navigation = navigation
+
+	fighter.chase(player)
+	await wait_seconds(3.0)
+
+	assert_gt(fighter.position.x, DungeonView.cell_center(Vector2i(5, 0)).x)
+
+
+func test_a_shooter_holds_fire_while_a_wall_is_in_the_way() -> void:
+	var navigation := _walled_room()
+	var player := _spawn_player_at(DungeonView.cell_center(Vector2i(8, 1)))
+	var shooter := _spawn_enemy_at(DungeonView.cell_center(Vector2i(2, 1)), _wand(0.1))
+	shooter.navigation = navigation
+	shooter.move_speed = 0.0
+	watch_signals(shooter)
+
+	shooter.chase(player)
+	await wait_seconds(0.6)
+
+	assert_signal_not_emitted(shooter, "attack_fired")
+
+
+func test_a_fireball_thrower_lobs_over_the_wall() -> void:
+	var navigation := _walled_room()
+	var player := _spawn_player_at(DungeonView.cell_center(Vector2i(8, 1)))
+	var fireball := Fireball.new()
+	fireball.windup = 0.1
+	fireball.shot_speed = 800.0
+	var thrower := _spawn_enemy_at(DungeonView.cell_center(Vector2i(2, 1)), fireball)
+	thrower.navigation = navigation
+	thrower.move_speed = 0.0
+
+	thrower.chase(player)
+	await wait_seconds(0.8)
+
+	assert_lt(player.health.current, Player.MAX_HEALTH)
