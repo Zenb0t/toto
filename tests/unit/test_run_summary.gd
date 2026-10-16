@@ -12,7 +12,8 @@ func _run_on_floor(floor_number: int, kills: int) -> RunState:
 func test_a_death_names_the_killer_and_the_floor() -> void:
 	var lines := RunSummary.lines(_run_on_floor(3, 12), 4, RunSummary.Ending.DIED, "an orc wizard")
 
-	assert_eq(lines[0], "Killed by an orc wizard on floor 3 of %d." % RunState.FLOOR_COUNT)
+	assert_eq(lines[0], "Killed by an orc wizard in the %s (floor 3 of %d)." % [
+		Branch.for_floor(3).display_name, RunState.FLOOR_COUNT])
 	assert_eq(lines[1], "Reached level 4.")
 	assert_eq(lines[2], "12 monsters slain.")
 

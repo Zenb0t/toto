@@ -38,9 +38,10 @@ static func enemy_count(depth: int) -> int:
 	return clampi(depth + 1, 2, MAX_ENEMIES)
 
 
-## The map letters of the enemies in a room at this depth (at least 1).
-static func enemy_letters(depth: int, rng: RandomNumberGenerator) -> Array[String]:
-	var pool: Array = POOLS_BY_DEPTH[clampi(depth - 1, 0, POOLS_BY_DEPTH.size() - 1)]
+## The map letters of the enemies in a room at this depth (at least 1). favoured: the letters of the monsters
+## living in this branch (see Branch.favoured), added twice to the pool, so they show up often.
+static func enemy_letters(depth: int, rng: RandomNumberGenerator, favoured: Array[String] = []) -> Array[String]:
+	var pool: Array = POOLS_BY_DEPTH[clampi(depth - 1, 0, POOLS_BY_DEPTH.size() - 1)] + favoured + favoured
 	var letters: Array[String] = []
 	for _i in enemy_count(depth):
 		letters.append(pool[rng.randi_range(0, pool.size() - 1)])

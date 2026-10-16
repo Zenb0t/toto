@@ -33,14 +33,16 @@ const EXIT := ">"
 const LOOT := "*"
 
 
-## floor_number: 1 for the top floor; deeper floors hold tougher monsters (see DungeonDifficulty.danger).
+## floor_number: 1 for the top floor; deeper floors hold tougher monsters (see DungeonDifficulty.danger),
+## and each floor is a branch of its own (see Branch): its rooms, vaults and monsters.
 func generate(seed_value: int, floor_number := 1) -> String:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
+	var branch := Branch.for_floor(floor_number)
 	var graph := RoomGraph.grow(GRID, rng.randi_range(MIN_ROOMS, MAX_ROOMS), rng.randi_range(0, MAX_EXTRA_LINKS), rng)
 	var rooms := {}  # slot -> {cell: map symbol}
 	for slot in graph.slots:
-		rooms[slot] = _shape_room(slot == graph.start_slot(), room_bounds(slot), rng)
+		rooms[slot] = _shape_room(slot == graph.start_slot(), room_bounds(slot), branch, rng)
 	var corridors := _connect(graph, rooms, rng)
 	return _draw(graph, rooms, corridors, floor_number, rng)
 
@@ -54,12 +56,13 @@ static func room_bounds(slot: Vector2i) -> Rect2i:
 	return Rect2i(Vector2i.ONE + slot * SLOT_SIZE, SLOT_SIZE).grow(-ROOM_MARGIN)
 
 
-## The start room is a plain rectangle. The rest are vaults, or random shapes with a few pillars.
-func _shape_room(is_start: bool, bounds: Rect2i, rng: RandomNumberGenerator) -> Dictionary:
+## The start room is a plain rectangle. The rest are the branch's vaults, or random shapes with a few
+## pillars.
+func _shape_room(is_start: bool, bounds: Rect2i, branch: Branch, rng: RandomNumberGenerator) -> Dictionary:
 	if is_start:
 		return _as_floor(RoomShapes.build(RoomShapes.Kind.RECT, bounds, rng))
 	if rng.randf() < VAULT_CHANCE:
-		return Vaults.stamp(Vaults.random_name(rng), bounds, rng)
+		return Vaults.stamp(branch.vaults[rng.randi_range(0, branch.vaults.size() - 1)], bounds, rng)
 	var shape := RoomShapes.build(RoomShapes.random_kind(rng), bounds, rng)
 	return _as_floor(RoomShapes.with_pillars(shape, rng.randi_range(0, MAX_PILLARS), rng))
 
@@ -173,7 +176,7 @@ func _draw(
 			rows[loot_cell.y][loot_cell.x] = LOOT
 			taken.append(loot_cell)
 		var depth := DungeonDifficulty.rolled_depth(DungeonDifficulty.danger(graph.depth_of(slot), floor_number), rng)
-		var letters := DungeonDifficulty.enemy_letters(depth, rng)
+		var letters := DungeonDifficulty.enemy_letters(depth, rng, Branch.for_floor(floor_number).favoured)
 		for cell in _spawn_cells(rooms[slot], letters.size(), taken, rng):
 			rows[cell.y][cell.x] = letters.pop_back()
 	return "\n".join(rows.map(func(row: Array) -> String: return "".join(PackedStringArray(row))))

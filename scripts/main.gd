@@ -498,9 +498,10 @@ func _refresh_hud() -> void:
 	if _run_over:
 		return
 	var goal := "Find the way out" if _run.is_last_floor() else "Find the stairs down"
-	_hud.text = "Floor %d/%d    Level %d (%d%%)    HP %d/%d    %s" % [
-		_run.floor_number, RunState.FLOOR_COUNT, _experience.level(), roundi(_experience.progress() * 100),
-		_player.health.current, _player.health.maximum, goal]
+	_hud.text = "%s (floor %d/%d)    Level %d (%d%%)    HP %d/%d    %s" % [
+		Branch.for_floor(_run.floor_number).display_name, _run.floor_number, RunState.FLOOR_COUNT,
+		_experience.level(), roundi(_experience.progress() * 100), _player.health.current,
+		_player.health.maximum, goal]
 
 
 ## Down to the next floor with everything the player holds, or out of the dungeon from the last one.
@@ -512,7 +513,7 @@ func _take_stairs() -> void:
 		return
 	_run_over = true
 	var next := _run.next_floor(_weapon_id, _utility_id, _player.health, _belt.to_dict(), _experience.points)
-	_hud.text = "Down to floor %d..." % next.floor_number
+	_hud.text = "Down to the %s..." % Branch.for_floor(next.floor_number).display_name
 	await get_tree().create_timer(DESCEND_DELAY_SECONDS).timeout
 	RunState.carry(next)
 	_restart()

@@ -25,7 +25,7 @@ func _ready() -> void:
 
 ## The floor's dungeon seed, so a map worth keeping (or a broken one) can be reported.
 func show_seed(seed_value: int, floor_number := 1) -> void:
-	_seed_label.text = "Floor %d · dungeon seed %d" % [floor_number, seed_value]
+	_seed_label.text = "%s (floor %d) · seed %d" % [Branch.for_floor(floor_number).display_name, floor_number, seed_value]
 
 
 ## True from open() until close(), including while a sub-screen is showing.

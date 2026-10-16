@@ -122,11 +122,6 @@ const DESIGNS := {
 }
 
 
-static func random_name(rng: RandomNumberGenerator) -> String:
-	var names := DESIGNS.keys()
-	return names[rng.randi_range(0, names.size() - 1)]
-
-
 ## The vault's cells as {cell: map symbol}, centred in bounds and randomly mirrored, so one design reads as up
 ## to four. Wall symbols are left out: they are simply not part of the room.
 static func stamp(vault_name: String, bounds: Rect2i, rng: RandomNumberGenerator) -> Dictionary:
