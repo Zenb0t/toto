@@ -37,13 +37,13 @@ static func all() -> Array[Branch]:
 		Branch.new("dungeon", "Dungeon", "D", 0.0,
 			["pillared_hall", "statue_gallery", "treasure_closet", "moat_island"], [], BranchLook.dungeon()),
 		Branch.new("lair", "Lair", "Lair", 0.75,
-			["pool", "moat_island", "pool"], ["g", "a", "k"], BranchLook.lair()),
+			["lake", "pool", "moat_island"], ["g", "a", "k"], BranchLook.lair()),
 		Branch.new("orcish_mines", "Orcish Mines", "Orc", 0.85,
-			["ember_corners", "lava_river", "treasure_closet"], ["o", "o", "W"], BranchLook.mines()),
+			["rubble_cavern", "rubble_cavern", "ember_corners", "lava_river"], ["o", "o", "W"], BranchLook.mines()),
 		Branch.new("crypt", "Crypt", "Crypt", 0.0,
-			["statue_gallery", "pillared_hall", "treasure_closet"], ["z", "z", "x", "m", "Z"], BranchLook.crypt()),
+			["catacomb", "catacomb", "statue_gallery", "treasure_closet"], ["z", "z", "x", "m", "Z"], BranchLook.crypt()),
 		Branch.new("depths", "Depths", "Depths", 0.3,
-			["lava_river", "ember_corners", "pillared_hall"], ["e", "O", "d", "W"], BranchLook.depths()),
+			["lava_lake", "lava_lake", "ember_corners", "pillared_hall"], ["e", "O", "d", "W"], BranchLook.depths()),
 	]
 
 

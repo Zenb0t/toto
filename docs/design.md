@@ -150,9 +150,29 @@ tusks (orcs, ogres), a beard (dwarves); the red ring on the floor marks every on
 orcs and necromancers; then orc wizards, dwarves and skeletons; deep elf mages, skeleton warriors and ogres
 deepest. Deeper rooms also hold more monsters.
 
+## Branches (areas)
+
+Like Dungeon Crawl's branches, each floor of the descent is a different place (`Branch`), with its own
+rooms, set pieces, inhabitants and look (`BranchLook`):
+
+| Floor | Branch | Rooms | Vaults | Lives there | Look |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Dungeon | Built | Pillared hall, statue gallery, treasure closet, moat island | (the depth's mix) | Grey flagstones, stone walls, torches and banners |
+| 2 | Lair | 75% caves | Lake, pool, moat island | Goblins, goblin archers, kobolds | Mossy earth, moss-capped rock, glowing mushrooms, grass, boulders; no torches |
+| 3 | Orcish Mines | 85% caves | Rubble cavern, ember corners, lava river | Orcs, orc wizards | Brown earth, rock veined with gold ore, boulders, coins; torches |
+| 4 | Crypt | Built | Catacomb (rows of tombs), statue gallery, treasure closet | The undead | Violet stone, coffins, bone piles, candles |
+| 5 | Depths | 30% caves | Lava lake (two causeways), ember corners, pillared hall | Deep elves, ogres, dwarves, orc wizards | Pale marble, sandstone caps, braziers |
+
+A branch's favoured monsters are added (twice) to every room's pool, on top of what the depth calls for,
+so the danger still grows floor by floor. **Caves** (`RoomShapes.cave`) are rough rectangles whose walls
+wander in and out in stretches of three cells, with rounded corners; the middle of each side stays straight
+so corridors can still meet it. Their floors are blotchy earth without grout, their pillars plain rock.
+The HUD, the pause menu and the run summary name the branch ("Killed by an orc in the Orcish Mines").
+
 ## Floors (the descent)
 
-Like Dungeon Crawl, a run is a descent: **5 floors**, each a new dungeon, each more dangerous than the last.
+Like Dungeon Crawl, a run is a descent: **5 floors**, each a new branch (see Branches), each more dangerous
+than the last.
 The stairs (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
 fifth floor they lead out, and the run is won. Dying, or restarting from the menu, starts over from floor 1.
 

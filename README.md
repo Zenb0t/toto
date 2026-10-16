@@ -31,7 +31,8 @@ distance, field of view, look-ahead and wall height). Every weapon has
 its own settings; the screen shows the equipped one's. Changes apply live and are saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
-A run is a descent through 5 floors, each a new dungeon (its seed is shown in the pause menu), inspired by
+A run is a descent through 5 floors, each a different branch (the Dungeon, the Lair's caves, the Orcish
+Mines, the Crypt, the Depths) and a new dungeon (its seed is shown in the pause menu), inspired by
 Dungeon Crawl Stone Soup: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
@@ -73,8 +74,9 @@ Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.
   lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
   torches and their light), moving liquids (`LiquidView`), room-lock rules
   (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
-- `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `RoomGraph`
-  (which rooms and links), `RoomShapes` (floor plans and pillars), `Vaults` (hand-made set pieces),
+- `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
+  `BranchLook` (what each floor is: Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
+  (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces),
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`)
 - `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`, `Battleaxe`, `LightningBolt`, `MephiticCloud`,
