@@ -79,6 +79,11 @@ func add_drop(drop: ItemDrop) -> void:
 		model.show_item(drop.item))
 
 
+func add_potion(drop: PotionDrop) -> void:
+	_puppets.add(drop, LootModel.new(), func(model: LootModel) -> void:
+		model.show_potion(drop.potion))
+
+
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_hero):
 		return

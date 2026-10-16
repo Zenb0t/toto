@@ -21,17 +21,9 @@ func test_a_shield_protects_for_its_duration_wherever_it_is_aimed() -> void:
 	assert_eq(effect.dash_seconds, 0.0)
 
 
-func test_a_heal_restores_its_amount() -> void:
-	var heal := Heal.new()
-	heal.amount = 4
-
-	assert_eq(heal.activate(Vector2.UP).heal_amount, 4)
-
-
 func test_only_the_dash_needs_an_aim_preview() -> void:
 	assert_not_null(Dash.new().aim_shape())
 	assert_null(Shield.new().aim_shape())
-	assert_null(Heal.new().aim_shape())
 
 
 func test_every_item_has_a_unique_id_and_a_description() -> void:

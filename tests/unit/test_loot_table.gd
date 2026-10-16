@@ -63,3 +63,20 @@ func test_enemies_always_drop_loot_at_full_chance() -> void:
 
 	for i in 200:
 		assert_true(LootTable.rolls_enemy_drop(1.0, rng))
+
+
+func test_potions_turn_up_as_often_as_their_weights_say() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var counts := {"common": 0, "rare": 0}
+
+	for _i in 4000:
+		counts[LootTable.pick_potion_id({"common": 3, "rare": 1}, rng)] += 1
+
+	assert_almost_eq(float(counts["common"]) / counts["rare"], 3.0, 0.4)
+
+
+func test_a_potion_with_no_competition_is_always_picked() -> void:
+	var rng := RandomNumberGenerator.new()
+
+	assert_eq(LootTable.pick_potion_id({"healing": 2}, rng), "healing")

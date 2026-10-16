@@ -101,7 +101,7 @@ func test_loot_ids_build_the_matching_kind_of_item() -> void:
 	var tuning := GameTuning.create()
 
 	assert_true(GameTuning.item(tuning, "sword") is Weapon)
-	assert_true(GameTuning.item(tuning, "heal") is Utility)
+	assert_true(GameTuning.item(tuning, "shield") is Utility)
 
 
 func test_camera_knobs_shape_the_framing() -> void:
@@ -115,3 +115,24 @@ func test_camera_knobs_shape_the_framing() -> void:
 	assert_eq(framing.distance, 12.0)
 	assert_eq(framing.field_of_view, CameraFraming.DEFAULT_FIELD_OF_VIEW)
 	assert_eq(GameTuning.wall_height(tuning), MapView3D.DEFAULT_WALL_HEIGHT)
+
+
+func test_heal_is_no_longer_a_utility_it_is_a_potion() -> void:
+	assert_does_not_have(GameTuning.utility_ids(), "heal")
+	assert_has(GameTuning.potion_ids(), "healing")
+
+
+func test_each_potion_keeps_its_own_settings() -> void:
+	var tuning := GameTuning.create()
+
+	tuning.set_value(GameTuning.key("healing", "amount"), 7)
+
+	assert_eq((GameTuning.potion(tuning, "healing") as HealingPotion).amount, 7)
+	assert_has(GameTuning.visible_groups(tuning, "wand", "dash"), GameTuning.potion_group("healing"))
+
+
+func test_healing_potions_turn_up_more_often_than_the_others() -> void:
+	var weights := GameTuning.potion_weights()
+
+	assert_gt(weights["healing"], weights["haste"])
+	assert_gt(weights["healing"], weights["might"])

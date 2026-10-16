@@ -7,6 +7,10 @@ const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 const RESTART_DELAY_SECONDS := 1.5
+## Every run starts with one, like Dungeon Crawl's starting kit.
+const STARTING_POTION_ID := "healing"
+## Where a chest's potion lands, tried in order: beside the chest, on safe floor.
+const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 ## How often line of sight is worked out again.
 const SIGHT_UPDATE_SECONDS := 0.1
 
@@ -32,11 +36,13 @@ var _weapon_id := GameTuning.DEFAULT_WEAPON_ID
 var _utility_id := GameTuning.DEFAULT_UTILITY_ID
 var _rng := RandomNumberGenerator.new()
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
+var _belt := PotionBelt.new()
 
 @onready var _hud_layer: CanvasLayer = $Hud
 @onready var _hud: Label = $Hud/Status
 @onready var _weapon_switch: Button = $Hud/WeaponSwitch
 @onready var _loot_card: LootCard = $Hud/LootCard
+@onready var _potion_bar: PotionBar = $Hud/PotionBar
 @onready var _touch_controls: TouchControls = $TouchControls
 @onready var _move_stick: TouchStick = $TouchControls/MoveStick
 @onready var _attack_button: AimButton = $TouchControls/AttackButton
@@ -69,6 +75,8 @@ func _ready() -> void:
 	add_child(_fog)
 	_update_sight()
 	_progress = _create_progress()
+	_belt.changed.connect(_refresh_potions)
+	_belt.add(STARTING_POTION_ID)
 	_connect_controls()
 	_connect_menu()
 	_apply_tuning(_tuning)
@@ -116,10 +124,14 @@ func _spawn_enemies() -> void:
 		_enemies_by_room.get_or_add(room, []).append(enemy)
 
 
-## Items lying around from the start (vault treasure, dead-end finds), picked like a chest's.
+## Things lying around from the start (vault treasure, dead-end finds): potions, or gear picked like a chest's.
 func _spawn_floor_loot() -> void:
 	for cell in _map.loot_cells:
-		_spawn_drop(DungeonView.cell_center(cell), LootTable.pick_item_id(GameTuning.item_ids(), _held_ids(), _rng))
+		var at := DungeonView.cell_center(cell)
+		if LootTable.rolls(LootTable.FLOOR_POTION_SHARE, _rng):
+			_spawn_potion(at, LootTable.pick_potion_id(GameTuning.potion_weights(), _rng))
+		else:
+			_spawn_drop(at, LootTable.pick_item_id(GameTuning.item_ids(), _held_ids(), _rng))
 
 
 func _create_progress() -> DungeonProgress:
@@ -144,6 +156,7 @@ func _connect_controls() -> void:
 	_utility_button.aim_released.connect(_on_utility_released)
 	_loot_card.take_pressed.connect(_on_take_pressed)
 	_loot_card.leave_pressed.connect(_close_offer)
+	_potion_bar.drink_requested.connect(_drink)
 
 
 func _connect_menu() -> void:
@@ -235,6 +248,8 @@ func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
 	if LootTable.rolls_enemy_drop(GameTuning.enemy_drop_chance(_tuning), _rng):
 		var drop_id := LootTable.enemy_drop_id(enemy.weapon.id, GameTuning.item_ids(), _held_ids(), _rng)
 		_spawn_drop(enemy.position, drop_id)
+	elif LootTable.rolls(GameTuning.potion_drop_chance(_tuning), _rng):
+		_spawn_potion(enemy.position, LootTable.pick_potion_id(GameTuning.potion_weights(), _rng))
 
 
 ## Carries out the Shots and Slashes of one attack, by the player or an enemy (the swing follows its swinger).
@@ -289,9 +304,21 @@ func _spawn_chest(room: int) -> void:
 	_world.add_chest(chest)
 
 
-## A chest holds a random weapon or utility the player doesn't already have, picked when it opens.
+## A chest holds a random weapon or utility the player doesn't already have, picked when it opens, and
+## sometimes a potion beside it.
 func _open_chest(at: Vector2) -> void:
 	_spawn_drop(at, LootTable.pick_item_id(GameTuning.item_ids(), _held_ids(), _rng))
+	if LootTable.rolls(GameTuning.chest_potion_chance(_tuning), _rng):
+		_spawn_potion(_spot_beside(at), LootTable.pick_potion_id(GameTuning.potion_weights(), _rng))
+
+
+## The centre of a safe floor cell next to a spot, or the spot itself if there is none.
+func _spot_beside(at: Vector2) -> Vector2:
+	var cell := DungeonView.world_to_cell(at)
+	for step in BESIDE:
+		if _map.is_standable(cell + step) and not _map.is_door(cell + step):
+			return DungeonView.cell_center(cell + step)
+	return at
 
 
 func _held_ids() -> Array[String]:
@@ -305,6 +332,29 @@ func _spawn_drop(at: Vector2, item_id: String) -> void:
 	drop.player_exited.connect(_on_drop_left.bind(drop))
 	_place_on_floor.call_deferred(drop)
 	_world.add_drop(drop)
+
+
+func _spawn_potion(at: Vector2, potion_id: String) -> void:
+	var drop := PotionDrop.new(GameTuning.potion(_tuning, potion_id))
+	drop.position = at
+	drop.player_entered.connect(_collect_potion.bind(drop))
+	_place_on_floor.call_deferred(drop)
+	_world.add_potion(drop)
+
+
+## Potions are picked up by walking over them, while the belt has room for that kind.
+func _collect_potion(drop: PotionDrop) -> void:
+	if _belt.add(drop.potion.id):
+		drop.queue_free()
+
+
+func _drink(potion_id: String) -> void:
+	if not _run_over and _belt.take(potion_id):
+		_player.drink(GameTuning.potion(_tuning, potion_id))
+
+
+func _refresh_potions() -> void:
+	_potion_bar.show_belt(_belt, GameTuning.potions())
 
 
 ## Drawn above the map but below the actors. Loot appears from inside physics callbacks (a hit, a step),

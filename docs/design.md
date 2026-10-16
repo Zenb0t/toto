@@ -45,7 +45,21 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | --- | --- | --- |
 | Dash (starter) | A quick burst of speed where you aim | Line as long as one dash |
 | Shield | Blocks all damage (your own blasts included) for a moment | None: tap anywhere |
-| Heal | Restores some health; slow to recharge | None: tap anywhere |
+
+**Potions** (consumables, like Dungeon Crawl's). Heal used to be a utility, but healing on a cooldown was too
+strong: it made every fight winnable by waiting. Healing is now only from potions, which run out.
+
+| Potion | Effect | How common |
+| --- | --- | --- |
+| Healing | Restores 4 health | 3 in 5 |
+| Haste | Move 1.5× faster for 6 s | 1 in 5 |
+| Might | Every attack does +1 damage for 8 s | 1 in 5 |
+
+You carry up to 3 of each kind in the potion belt (buttons under the weapon switch, one per kind held, with
+the count); tap one to drink it. Runs start with one Potion of Healing. Potions lie on the floor (half of the
+floor finds), sit beside chests (50%), and drop from enemies (15%, when they drop no gear). Walking over one
+picks it up; there is nothing to choose, unless that kind is full, then it stays where it is. While haste or
+might works, a ring in its colour shows on the floor around the hero. Each potion's numbers are in Tune.
 
 **Model (step 4).** `Weapon` and `Utility` are plain data objects (both `Item`s). Whoever wields a weapon owns
 *when* (a `Wielder`: cooldown, wind-up, auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s).

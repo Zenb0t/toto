@@ -203,22 +203,40 @@ func test_damage_gets_through_again_once_the_shield_drops() -> void:
 	assert_eq(player.health.current, Player.MAX_HEALTH - 3)
 
 
-func test_healing_restores_health_but_never_above_the_maximum() -> void:
-	var heal := Heal.new()
-	heal.amount = 3
-	var player := _player_with(heal)
+func test_a_healing_potion_restores_health_but_never_above_the_maximum() -> void:
+	var potion := HealingPotion.new()
+	potion.amount = 3
+	var player := _player()
 	player.take_damage(2)
 
-	player.use_utility(Vector2.RIGHT)
+	player.drink(potion)
 
 	assert_eq(player.health.current, Player.MAX_HEALTH)
 
 
-func test_a_heal_cannot_be_used_again_during_its_cooldown() -> void:
-	var player := _player_with(Heal.new())
-	player.take_damage(6)
-	player.use_utility(Vector2.RIGHT)
+func test_a_haste_potion_speeds_the_player_up_for_a_while() -> void:
+	var potion := HastePotion.new()
+	potion.speed_multiplier = 2.0
+	potion.duration = 0.3
+	var player := _player()
 
-	player.use_utility(Vector2.RIGHT)
+	player.drink(potion)
+	player.move(Vector2.RIGHT)
+	await wait_physics_frames(2)
 
-	assert_eq(player.health.current, Player.MAX_HEALTH - 6 + Heal.new().amount)
+	assert_almost_eq(player.velocity.x, player.move_speed * 2.0, 0.01)
+	await wait_seconds(potion.duration + MARGIN)
+	assert_almost_eq(player.velocity.x, player.move_speed, 0.01)
+
+
+func test_a_might_potion_makes_attacks_hit_harder() -> void:
+	var potion := MightPotion.new()
+	potion.bonus_damage = 2
+	var player := _player()
+	player.equip_weapon(_wand_with_windup(0.0))
+	watch_signals(player)
+
+	player.drink(potion)
+	player.attack(Vector2.RIGHT)
+
+	assert_eq(_fired_shot(player).damage, Wand.new().shot_damage + 2)

@@ -1,7 +1,7 @@
 class_name Player
 extends CharacterBody2D
-## The hero. Contains no input code: whoever controls it calls move(), attack() and use_utility().
-## What those do comes from the equipped Weapon and Utility.
+## The hero. Contains no input code: whoever controls it calls move(), attack(), use_utility() and drink().
+## What those do comes from the equipped Weapon and Utility, and the Potion drunk.
 
 ## The Shots and Slashes of one attack, for the world to carry out.
 signal attack_fired(attacks: Array)
@@ -18,6 +18,10 @@ const AIM_PREVIEW_COLOR := Color(1, 1, 1, 0.3)
 const WINDUP_COLOR := Color(1.0, 0.85, 0.4, 0.8)
 const SHIELD_COLOR := Color(0.7, 0.6, 1.0, 0.8)
 const SHIELD_RING_GAP := 6.0
+## Rings on the floor while a potion works, in the potion's colour.
+const HASTE_COLOR := Color(0.4, 0.9, 1.0, 0.8)
+const MIGHT_COLOR := Color(1.0, 0.55, 0.2, 0.8)
+const POTION_RING_GAP := 11.0
 ## The ring on the floor under the hero, in the hero's colour (the body itself is in the 3D view).
 const BASE_FILL_ALPHA := 0.25
 const BASE_RING_WIDTH := 2.5
@@ -37,6 +41,10 @@ var _dash_direction := Vector2.ZERO
 var _dash_speed := 0.0
 var _dash_time_left := 0.0
 var _shield_time_left := 0.0
+var _haste_multiplier := 1.0
+var _haste_time_left := 0.0
+var _might_bonus := 0
+var _might_time_left := 0.0
 var _aim_direction := Vector2.ZERO
 var _aim_shape: AimShape
 var _aim_strength := 1.0
@@ -74,12 +82,17 @@ func attack(direction: Vector2, target: Node2D = null, strength := 1.0) -> void:
 		_release(_wielder.advance(0.0, global_position))
 
 
-## Uses the utility toward direction (dash) or on the spot (shield, heal). Ignored during its cooldown.
+## Uses the utility toward direction (dash) or on the spot (shield). Ignored during its cooldown.
 func use_utility(direction: Vector2) -> void:
 	if direction == Vector2.ZERO or not _utility_cooldown.try_trigger():
 		return
 	facing = direction.normalized()
 	_apply(utility.activate(facing))
+
+
+## Drinks a potion: its effect starts at once. Whoever holds the potion belt decides whether there is one.
+func drink(potion: Potion) -> void:
+	_apply(potion.effect())
 
 
 ## Shows where an ability will go, in the ability's own shape. Pass a zero direction or no shape to hide it.
@@ -103,6 +116,14 @@ func is_shielded() -> bool:
 	return _shield_time_left > 0.0
 
 
+func is_hasted() -> bool:
+	return _haste_time_left > 0.0
+
+
+func is_mighty() -> bool:
+	return _might_time_left > 0.0
+
+
 func take_damage(amount: int) -> void:
 	if not is_shielded():
 		health.take_damage(amount)
@@ -111,6 +132,8 @@ func take_damage(amount: int) -> void:
 func _physics_process(delta: float) -> void:
 	_utility_cooldown.tick(delta)
 	_shield_time_left = maxf(_shield_time_left - delta, 0.0)
+	_haste_time_left = maxf(_haste_time_left - delta, 0.0)
+	_might_time_left = maxf(_might_time_left - delta, 0.0)
 	_release(_wielder.advance(delta, global_position))
 	if _wielder.is_winding_up():
 		facing = _wielder.aim_direction()
@@ -118,7 +141,7 @@ func _physics_process(delta: float) -> void:
 		_dash_time_left -= delta
 		velocity = _dash_direction * _dash_speed
 	else:
-		velocity = _move_input * move_speed
+		velocity = _move_input * move_speed * (_haste_multiplier if is_hasted() else 1.0)
 		if _move_input.length() > 0.1:
 			facing = _move_input.normalized()
 	move_and_slide()
@@ -126,8 +149,12 @@ func _physics_process(delta: float) -> void:
 
 
 func _release(attacks: Array) -> void:
-	if not attacks.is_empty():
-		attack_fired.emit(attacks)
+	if attacks.is_empty():
+		return
+	if is_mighty():
+		for attack: Variant in attacks:
+			attack.damage += _might_bonus
+	attack_fired.emit(attacks)
 
 
 func _apply(effect: UtilityEffect) -> void:
@@ -137,6 +164,12 @@ func _apply(effect: UtilityEffect) -> void:
 		_dash_time_left = effect.dash_seconds
 	_shield_time_left = maxf(_shield_time_left, effect.shield_seconds)
 	health.heal(effect.heal_amount)
+	if effect.haste_seconds > 0.0:
+		_haste_multiplier = effect.haste_multiplier
+		_haste_time_left = effect.haste_seconds
+	if effect.might_seconds > 0.0:
+		_might_bonus = effect.might_bonus
+		_might_time_left = effect.might_seconds
 
 
 func _draw() -> void:
@@ -148,6 +181,10 @@ func _draw() -> void:
 	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, BODY_COLOR, BASE_RING_WIDTH, true)
 	if is_shielded():
 		draw_arc(Vector2.ZERO, RADIUS + SHIELD_RING_GAP, 0.0, TAU, 32, SHIELD_COLOR, 3.0, true)
+	if is_hasted():
+		draw_arc(Vector2.ZERO, RADIUS + POTION_RING_GAP, -PI / 2.0, PI / 2.0, 16, HASTE_COLOR, 3.0, true)
+	if is_mighty():
+		draw_arc(Vector2.ZERO, RADIUS + POTION_RING_GAP, PI / 2.0, PI * 1.5, 16, MIGHT_COLOR, 3.0, true)
 
 
 func _on_died() -> void:

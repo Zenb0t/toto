@@ -15,7 +15,8 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 | Touch the left half of the screen and drag | Move (floating stick) |
 | Tap the **weapon** button | Auto-aim at the nearest enemy and attack |
 | Drag from the weapon button, then release | Aim manually and fire |
-| **Utility** button (DASH, SHIELD, HEAL) | Same tap / drag gesture; Shield and Heal don't need aiming |
+| **Utility** button (DASH, SHIELD...) | Same tap / drag gesture; Shield doesn't need aiming |
+| **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
 | **Weapon: …** (top right) | Testing aid: switch between Wand, Sword, Fireball and Crossbow |
 | **II** (top right) or Esc | Pause menu: resume, customize controls, tune gameplay, restart run |
@@ -34,7 +35,7 @@ Every run is a new dungeon (its seed is shown in the pause menu), inspired by Du
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map. Items sometimes lie on the floor, and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
-chest with a random weapon or utility (Dash, Shield, Heal). Enemies carry the same weapons you do and fight the way their
+chest with a random weapon or utility (Dash, Shield...), and often a potion. Enemies carry the same weapons you do and fight the way their
 weapon wants; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go. Find the gold stairs (in the room farthest from the start,
 usable once it is clear) to win. If you die, you start over with the Wand and the Dash.
@@ -70,6 +71,8 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `UtilityEffect`), when a weapon fires
   (`Wielder`: cooldown and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
+- `scripts/potions` – consumables: `Potion` (`HealingPotion`, `HastePotion`, `MightPotion`) and the `PotionBelt`
+  that carries them
 - `scripts/loot` – `LootTable`: what drops (pure rules, given a random generator)
 - `scripts/tuning` – `Tuning` (generic knobs with limits, defaults and JSON export), `Knob`, and `GameTuning`
   (which knobs exist and how they become gear)

@@ -1,7 +1,7 @@
 class_name GameTuning
 extends RefCounted
 ## The knobs exposed in the Tune screen, and how they become game objects.
-## Items (weapons, utilities) declare their own knobs; their tuning keys are "<item id>.<field>".
+## Items (weapons, utilities) and potions declare their own knobs; their tuning keys are "<id>.<field>".
 ## Defaults come from the classes themselves, so there is one source of truth for every value.
 
 const PLAYER_MOVE_SPEED := "player.move_speed"
@@ -12,6 +12,8 @@ const ENEMY_TELEGRAPH := "enemy.telegraph"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
 const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
 const LOOT_ENEMY_DROP_CHANCE := "loot.enemy_drop_chance"
+const LOOT_POTION_DROP_CHANCE := "loot.potion_drop_chance"
+const LOOT_CHEST_POTION_CHANCE := "loot.chest_potion_chance"
 const CAMERA_PITCH := "camera.pitch"
 const CAMERA_DISTANCE := "camera.distance"
 const CAMERA_FIELD_OF_VIEW := "camera.field_of_view"
@@ -27,7 +29,27 @@ static func weapons() -> Array[Weapon]:
 
 
 static func utilities() -> Array[Utility]:
-	return [Dash.new(), Shield.new(), Heal.new()]
+	return [Dash.new(), Shield.new()]
+
+
+## Every potion, in the order the potion belt shows them.
+static func potions() -> Array[Potion]:
+	return [HealingPotion.new(), HastePotion.new(), MightPotion.new()]
+
+
+static func potion_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for each in potions():
+		ids.append(each.id)
+	return ids
+
+
+## How often each potion turns up, relative to the others (potion id -> weight).
+static func potion_weights() -> Dictionary:
+	var weights := {}
+	for each in potions():
+		weights[each.id] = each.frequency
+	return weights
 
 
 static func weapon_ids() -> Array[String]:
@@ -62,6 +84,10 @@ static func utility_group(utility_id: String) -> String:
 	return "Utility: %s" % _new_utility(utility_id).display_name
 
 
+static func potion_group(potion_id: String) -> String:
+	return _new_potion(potion_id).display_name
+
+
 static func create() -> Tuning:
 	var params: Array[Tuning.Param] = [
 		Tuning.Param.new(PLAYER_MOVE_SPEED, "Move speed", "Player", 60, 300, 5, Player.DEFAULT_MOVE_SPEED),
@@ -70,6 +96,8 @@ static func create() -> Tuning:
 		params.append_array(_item_params(each, weapon_group(each.id)))
 	for each in utilities():
 		params.append_array(_item_params(each, utility_group(each.id)))
+	for each in potions():
+		params.append_array(_item_params(each, potion_group(each.id)))
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", "Enemies", 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_MAX_HEALTH, "Health", "Enemies", 1, 10, 1, Enemy.DEFAULT_MAX_HEALTH, true),
@@ -79,6 +107,10 @@ static func create() -> Tuning:
 			ENEMY_TELEGRAPH, "Telegraph (s)", "Enemies", 0, 1.5, 0.05, Enemy.DEFAULT_TELEGRAPH_SECONDS),
 		Tuning.Param.new(
 			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", "Loot", 0, 1, 0.05, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
+		Tuning.Param.new(
+			LOOT_POTION_DROP_CHANCE, "Enemy potion chance", "Loot", 0, 1, 0.05, LootTable.DEFAULT_POTION_DROP_CHANCE),
+		Tuning.Param.new(
+			LOOT_CHEST_POTION_CHANCE, "Chest potion chance", "Loot", 0, 1, 0.05, LootTable.DEFAULT_CHEST_POTION_CHANCE),
 		Tuning.Param.new(
 			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", "Controls", 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(
@@ -135,6 +167,13 @@ static func utility(tuning: Tuning, utility_id: String) -> Utility:
 	return result
 
 
+## Unknown ids fall back to healing.
+static func potion(tuning: Tuning, potion_id: String) -> Potion:
+	var result := _new_potion(potion_id)
+	_apply_knobs(result, tuning)
+	return result
+
+
 static func is_weapon(item_id: String) -> bool:
 	return item_id in weapon_ids()
 
@@ -157,6 +196,14 @@ static func enemy_max_health(tuning: Tuning) -> int:
 
 static func enemy_drop_chance(tuning: Tuning) -> float:
 	return tuning.value(LOOT_ENEMY_DROP_CHANCE)
+
+
+static func potion_drop_chance(tuning: Tuning) -> float:
+	return tuning.value(LOOT_POTION_DROP_CHANCE)
+
+
+static func chest_potion_chance(tuning: Tuning) -> float:
+	return tuning.value(LOOT_CHEST_POTION_CHANCE)
 
 
 static func weapon_dead_zone(tuning: Tuning) -> float:
@@ -201,7 +248,15 @@ static func _new_utility(utility_id: String) -> Utility:
 	return _new_utility(DEFAULT_UTILITY_ID)
 
 
-static func _item_params(fresh: Item, group: String) -> Array[Tuning.Param]:
+static func _new_potion(potion_id: String) -> Potion:
+	for each in potions():
+		if each.id == potion_id:
+			return each
+	return HealingPotion.new()
+
+
+## fresh: an Item or a Potion, as built with its defaults.
+static func _item_params(fresh: Object, group: String) -> Array[Tuning.Param]:
 	var params: Array[Tuning.Param] = []
 	for knob in fresh.knobs():
 		params.append(Tuning.Param.new(
@@ -210,8 +265,8 @@ static func _item_params(fresh: Item, group: String) -> Array[Tuning.Param]:
 	return params
 
 
-## Builds the item from tuning values, keeping whole-number fields (counts, damage) whole.
-static func _apply_knobs(built: Item, tuning: Tuning) -> void:
+## Builds an item or potion from tuning values, keeping whole-number fields (counts, damage) whole.
+static func _apply_knobs(built: Object, tuning: Tuning) -> void:
 	for knob in built.knobs():
 		var value := tuning.value(key(built.id, knob.field))
 		built.set(knob.field, roundi(value) if built.get(knob.field) is int else value)
