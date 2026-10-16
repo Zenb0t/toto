@@ -8,6 +8,9 @@ signal aim_released(release: AimGesture.Release)
 const DEAD_ZONE := 18.0
 const NO_TOUCH := -1
 const KNOB_TRAVEL := 0.6  ## How far the knob moves when aiming, relative to the button radius.
+const MIN_FONT_SIZE := 14
+const FONT_SIZE_PER_RADIUS := 0.2
+const LABEL_COLOR := Color(1, 1, 1, 0.85)
 
 @export var label := ""
 @export var color := Color(1.0, 0.8, 0.3)
@@ -25,6 +28,14 @@ func _ready() -> void:
 func set_cooldown_ratio(ratio: float) -> void:
 	if not is_equal_approx(ratio, _cooldown_ratio):
 		_cooldown_ratio = ratio
+		queue_redraw()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PAUSED and _touch_index != NO_TOUCH:
+		_touch_index = NO_TOUCH
+		_gesture.cancel()
+		aim_changed.emit(Vector2.ZERO)
 		queue_redraw()
 
 
@@ -60,8 +71,10 @@ func _draw() -> void:
 	var knob := center + _gesture.direction() * radius * KNOB_TRAVEL
 	draw_circle(knob, radius * 0.35, Color(color, 0.9))
 	var font := ThemeDB.fallback_font
-	var text_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, 16)
-	draw_string(font, center + Vector2(-text_size.x / 2.0, radius + 20.0), label, HORIZONTAL_ALIGNMENT_CENTER, -1, 16)
+	var font_size := maxi(MIN_FONT_SIZE, roundi(radius * FONT_SIZE_PER_RADIUS))
+	var text_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
+	var baseline := center + Vector2(-text_size.x / 2.0, text_size.y * 0.35)
+	draw_string(font, baseline, label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, LABEL_COLOR)
 
 
 func _radius() -> float:

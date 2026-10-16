@@ -47,6 +47,12 @@ func direction() -> Vector2:
 	return (_finger - _origin).normalized() if is_manual() else Vector2.ZERO
 
 
+## Forget the press without firing (e.g. the game paused under the finger).
+func cancel() -> void:
+	_active = false
+	_finger = _origin
+
+
 func release() -> Release:
 	var result := Release.new(not is_manual(), direction())
 	_active = false

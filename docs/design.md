@@ -58,4 +58,5 @@ Art and audio, procedural generation, rarity tiers, stat depth, meta-progression
 5. First item pool: sword, fireball, crossbow + utilities
 6. Loot: room chests, rare drops, replace-on-pickup compare
 7. Enemy types: rusher, ranged, tank
-8. Web export for playtesting on a phone
+8. ~~Web export for playtesting on a phone~~
+9. ~~Pause menu with a touch layout editor (move and resize controls, saved on the device)~~

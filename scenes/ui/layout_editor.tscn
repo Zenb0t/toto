@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/layout_editor.gd" id="1"]
+
+[node name="LayoutEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1")
+
+[node name="Bar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = 84.0
+grow_horizontal = 2
+theme_override_constants/separation = 16
+
+[node name="Hint" type="Label" parent="Bar"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Drag a control to move it. Tap one, then slide to resize."
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Selected" type="Label" parent="Bar"]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 24
+text = "ATTACK"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Size" type="HSlider" parent="Bar"]
+custom_minimum_size = Vector2(280, 72)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+min_value = 80.0
+max_value = 320.0
+step = 1.0
+value = 190.0
+
+[node name="Reset" type="Button" parent="Bar"]
+custom_minimum_size = Vector2(130, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "Reset"
+
+[node name="Done" type="Button" parent="Bar"]
+custom_minimum_size = Vector2(130, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "Done"

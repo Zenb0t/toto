@@ -3,6 +3,7 @@ extends GutTest
 
 const BUTTON_RECT := Rect2(400, 200, 100, 100)
 const BUTTON_CENTER := Vector2(450, 250)
+const TOUCH_CONTROLS_SCENE := preload("res://scenes/ui/touch_controls.tscn")
 
 
 ## Real touches arrive in window pixels and Godot maps them into the stretched viewport.
@@ -86,7 +87,7 @@ func test_stick_follows_the_thumb_from_wherever_it_landed() -> void:
 	var stick := _stick()
 
 	_touch(Vector2(100, 100), true)
-	_drag(Vector2(100 + TouchStick.RADIUS, 100))
+	_drag(Vector2(100 + stick.radius, 100))
 	await wait_process_frames(2)
 
 	assert_almost_eq(stick.current_strength(), Vector2.RIGHT, Vector2(0.01, 0.01))
@@ -109,10 +110,58 @@ func test_stick_and_button_work_at_the_same_time_with_two_fingers() -> void:
 	watch_signals(button)
 
 	_touch(Vector2(100, 100), true, 0)
-	_drag(Vector2(100, 100 + TouchStick.RADIUS), 0)
+	_drag(Vector2(100, 100 + stick.radius), 0)
 	_touch(BUTTON_CENTER, true, 1)
 	_touch(BUTTON_CENTER, false, 1)
 	await wait_process_frames(2)
 
 	assert_almost_eq(stick.current_strength(), Vector2.DOWN, Vector2(0.01, 0.01))
 	assert_signal_emit_count(button, "aim_released", 1)
+
+
+func test_buttons_answer_touches_where_the_layout_puts_them() -> void:
+	var controls: TouchControls = TOUCH_CONTROLS_SCENE.instantiate()
+	add_child_autofree(controls)
+	var layout := ControlLayout.new()
+	layout.set_center(ControlLayout.ATTACK, Vector2(0.5, 0.3))
+	controls.apply_layout(layout)
+	watch_signals(controls.attack_button)
+	var new_spot := layout.rect_in(ControlLayout.ATTACK, get_viewport().get_visible_rect().size).get_center()
+
+	_touch(new_spot, true)
+	_touch(new_spot, false)
+	await wait_process_frames(2)
+
+	assert_signal_emit_count(controls.attack_button, "aim_released", 1)
+
+
+func test_a_bigger_stick_needs_a_longer_thumb_drag_for_full_speed() -> void:
+	var controls: TouchControls = TOUCH_CONTROLS_SCENE.instantiate()
+	add_child_autofree(controls)
+	var layout := ControlLayout.new()
+	layout.set_diameter(ControlLayout.STICK, 300.0)
+	controls.apply_layout(layout)
+
+	_touch(Vector2(200, 400), true)
+	_drag(Vector2(275, 400))
+	await wait_process_frames(2)
+
+	assert_almost_eq(controls.move_stick.current_strength(), Vector2(0.5, 0), Vector2(0.01, 0.01))
+	_touch(Vector2(275, 400), false)
+
+
+func test_pausing_mid_aim_cancels_the_shot_instead_of_leaving_the_button_stuck() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(0, -120))
+	await wait_process_frames(2)
+
+	get_tree().paused = true
+	get_tree().paused = false
+	_touch(BUTTON_CENTER, true)
+	_touch(BUTTON_CENTER, false)
+	await wait_process_frames(2)
+
+	assert_signal_emit_count(button, "aim_released", 1)
+	assert_true(_last_release(button).is_auto)

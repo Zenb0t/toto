@@ -12,11 +12,17 @@ var _view: DungeonView
 var _progress: DungeonProgress
 var _player: Player
 var _enemies_by_room := {}  # int -> Array[Enemy]
+var _settings := SettingsStore.new()
+var _layout: ControlLayout
 
+@onready var _hud_layer: CanvasLayer = $Hud
 @onready var _hud: Label = $Hud/Status
+@onready var _touch_controls: TouchControls = $TouchControls
 @onready var _move_stick: TouchStick = $TouchControls/MoveStick
 @onready var _attack_button: AimButton = $TouchControls/AttackButton
 @onready var _utility_button: AimButton = $TouchControls/UtilityButton
+@onready var _pause_menu: PauseMenu = $Overlay/PauseMenu
+@onready var _layout_editor: LayoutEditor = $Overlay/LayoutEditor
 
 
 func _ready() -> void:
@@ -30,6 +36,9 @@ func _ready() -> void:
 	_spawn_enemies()
 	_progress = _create_progress()
 	_connect_controls()
+	_connect_menu()
+	_layout = _settings.load_layout()
+	_touch_controls.apply_layout(_layout)
 	_refresh_hud()
 
 
@@ -80,6 +89,15 @@ func _connect_controls() -> void:
 	_utility_button.aim_changed.connect(
 		func(direction: Vector2) -> void: _player.preview_aim(direction * Player.DASH_DISTANCE))
 	_utility_button.aim_released.connect(_on_utility_released)
+
+
+func _connect_menu() -> void:
+	_pause_menu.opened.connect(func() -> void: get_tree().paused = true)
+	_pause_menu.closed.connect(func() -> void: get_tree().paused = false)
+	_pause_menu.restart_requested.connect(_restart)
+	_pause_menu.customize_requested.connect(_on_customize_requested)
+	_layout_editor.layout_changed.connect(_touch_controls.apply_layout)
+	_layout_editor.finished.connect(_on_layout_finished)
 
 
 # --- Input routing -------------------------------------------------------------------------------
@@ -156,6 +174,23 @@ func _on_attack_fired(origin: Vector2, direction: Vector2) -> void:
 	add_child(projectile)
 
 
+# --- Menu ----------------------------------------------------------------------------------------
+
+func _on_customize_requested() -> void:
+	_hud_layer.hide()
+	_layout_editor.open(_layout)
+
+
+func _on_layout_finished(layout: ControlLayout) -> void:
+	_hud_layer.show()
+	_layout = layout
+	_touch_controls.apply_layout(layout)
+	var error := _settings.save_layout(layout)
+	if error != OK:
+		push_warning("Could not save the control layout: %s" % error_string(error))
+	_pause_menu.return_to_panel()
+
+
 # --- Run state -----------------------------------------------------------------------------------
 
 func _refresh_hud() -> void:
@@ -166,4 +201,9 @@ func _refresh_hud() -> void:
 func _end_run(message: String) -> void:
 	_hud.text = message
 	await get_tree().create_timer(RESTART_DELAY_SECONDS).timeout
+	_restart()
+
+
+func _restart() -> void:
+	get_tree().paused = false
 	get_tree().reload_current_scene()

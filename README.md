@@ -15,7 +15,11 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 | Tap **ATTACK** | Auto-aim at the nearest enemy and fire |
 | Drag from **ATTACK**, then release | Aim manually and fire |
 | **DASH** | Same tap / drag gesture (a stand-in for utility equipment) |
+| **II** (top right) or Esc | Pause menu: resume, customize controls, restart run |
 | WASD | Move (desktop only; a mouse is just one finger) |
+
+**Customize controls** pauses the game and lets you drag the stick and buttons where you want them, and resize
+the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 Entering a room with enemies locks its doors until you defeat them all. Clear the dungeon to win. If you die, you start over.
 
@@ -40,7 +44,8 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`, `TestDungeon`), room-lock rules
   (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`)
-- `scripts/ui` – touch widgets (`TouchStick`, `AimButton`)
+- `scripts/settings` – player settings: the touch layout model (`ControlLayout`) and saving it (`SettingsStore`)
+- `scripts/ui` – touch widgets (`TouchStick`, `AimButton`, `TouchControls`), `PauseMenu`, `LayoutEditor`
 - `scripts/actors` – `Player`, `Enemy`, `Projectile`. The player holds no input code
 - `scripts/main.gd` – composition root: wires controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests

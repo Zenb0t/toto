@@ -1,14 +1,25 @@
 class_name TouchStick
 extends Control
 ## Floating joystick: put a thumb anywhere inside this control and the stick appears under it.
+## While idle it shows a faint hint at its resting spot.
 
 signal strength_changed(strength: Vector2)
 
-const RADIUS := 70.0
+const DEFAULT_RADIUS := 95.0
 const NO_TOUCH := -1
 const BASE_COLOR := Color(1, 1, 1, 0.12)
 const KNOB_COLOR := Color(1, 1, 1, 0.45)
-const HINT_OFFSET := Vector2(140, -140)
+
+## How far the thumb travels for full speed. Also the drawn size of the stick.
+var radius := DEFAULT_RADIUS:
+	set(value):
+		radius = value
+		queue_redraw()
+## Where the idle hint is drawn, in this control's local coordinates.
+var rest_center := Vector2.ZERO:
+	set(value):
+		rest_center = value
+		queue_redraw()
 
 var _touch_index := NO_TOUCH
 var _origin := Vector2.ZERO
@@ -22,7 +33,14 @@ func _ready() -> void:
 func current_strength() -> Vector2:
 	if _touch_index == NO_TOUCH:
 		return Vector2.ZERO
-	return StickMath.strength(_origin, _finger, RADIUS)
+	return StickMath.strength(_origin, _finger, radius)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PAUSED and _touch_index != NO_TOUCH:
+		_touch_index = NO_TOUCH
+		strength_changed.emit(Vector2.ZERO)
+		queue_redraw()
 
 
 func _input(event: InputEvent) -> void:
@@ -49,9 +67,8 @@ func _on_touch(event: InputEventScreenTouch) -> void:
 
 func _draw() -> void:
 	if _touch_index == NO_TOUCH:
-		var hint := Vector2(0, size.y) + HINT_OFFSET
-		draw_circle(hint, RADIUS, BASE_COLOR)
+		draw_circle(rest_center, radius, BASE_COLOR)
 		return
 	var base := _origin - global_position
-	draw_circle(base, RADIUS, BASE_COLOR)
-	draw_circle(base + current_strength() * RADIUS, RADIUS * 0.45, KNOB_COLOR)
+	draw_circle(base, radius, BASE_COLOR)
+	draw_circle(base + current_strength() * radius, radius * 0.45, KNOB_COLOR)
