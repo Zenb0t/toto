@@ -1,65 +1,68 @@
 class_name CharacterModel
 extends Node3D
-## Placeholder hero or enemy: a capsule body with a round head, eyes that show which way it faces, and the
-## weapon in its hand in the weapon's colour. A race adds a feature (pointy ears, tusks, a beard) so the
-## peoples of the dungeon tell apart. Stands in until real models arrive.
+## A hero or monster in 3D: a KayKit Adventurers model (see CharacterLook) with its weapon in hand,
+## animated by what it does (standing, running, attacking, getting hurt), flashing white when hit, and,
+## for enemies, a health bar above its head.
 
-const BODY_RADIUS := 0.36
-const BODY_HEIGHT := 0.85
-const HEAD_RADIUS := 0.27
-const EYE_COLOR := Color(0.05, 0.05, 0.08)
-const WEAPON_SIZE := Vector3(0.12, 0.12, 0.55)
-const HEALTH_BAR_HEIGHT := 1.65
+## How tall a character stands, in cells, before its monster's size.
+const HEIGHT := 1.35
+## How tall the KayKit models are, in their own units.
+const MODEL_HEIGHT := 2.3
+const HAND_BONE := "handslot.r"
+## The gear each model keeps on: what makes it who it is. Its weapons go, so it can hold any other.
+const KEPT_GEAR: Array[String] = [
+	"Knight_Helmet", "Knight_Cape", "Barbarian_Hat", "Barbarian_Cape", "Mage_Hat", "Mage_Cape", "Rogue_Cape",
+]
+## Headgear, which a bareheaded look takes off (see CharacterLook.wears_hat).
+const HATS: Array[String] = ["Knight_Helmet", "Barbarian_Hat", "Mage_Hat"]
+## Skin is on the head and arms: what a race's tint colours.
+const SKIN_PARTS: Array[String] = ["Head", "Arm"]
+const IDLE := "Idle"
+const RUN := "Running_A"
+const HIT := "Hit_A"
+const LOOPING: Array[String] = [IDLE, RUN]
+const BLEND_SECONDS := 0.12
+## Attacks play faster than authored: the game's swings are quick.
+const ATTACK_SPEED := 1.6
+const HIT_SECONDS := 0.3
+const FLASH_SECONDS := 0.12
+const HEALTH_BAR_HEIGHT := HEIGHT + 0.3
 const HEALTH_BAR_SIZE := Vector2(0.8, 0.1)
 const HEALTH_COLOR := Color(0.95, 0.3, 0.25)
 const HEALTH_BACK_COLOR := Color(0.1, 0.08, 0.1, 0.8)
-const TUSK_COLOR := Color(0.95, 0.92, 0.8)
-const BEARD_COLOR := Color(0.55, 0.35, 0.2)
-## A hit model glows white for a moment.
-const FLASH_SECONDS := 0.12
+
+static var _shared_animations: AnimationLibrary
 
 ## Everything that turns with the character. The health bar stays level, so it isn't in here.
 var _body := Node3D.new()
-var _weapon: MeshInstance3D
+var _animations: AnimationPlayer
+var _weapon_slot := BoneAttachment3D.new()
+var _weapon_id := ""
+var _meshes: Array[MeshInstance3D] = []
 var _health_fill: MeshInstance3D
+var _moving := false
+var _action_left := 0.0
 var _flash_left := 0.0
 
 
-## With a health bar, the model shows how hurt it is (see show_health). race: see Monster.race.
-func _init(body_color: Color, with_health_bar := false, race := "") -> void:
+## With a health bar, the model shows how hurt it is (see show_health).
+func _init(look: CharacterLook, with_health_bar := false) -> void:
 	add_child(_body)
-	_body.add_child(ModelParts.part(
-		ModelParts.capsule(BODY_RADIUS, BODY_HEIGHT), body_color, Vector3(0, BODY_HEIGHT / 2.0, 0)))
-	var head_center := Vector3(0, BODY_HEIGHT + HEAD_RADIUS * 0.6, 0)
-	_body.add_child(ModelParts.part(ModelParts.sphere(HEAD_RADIUS), body_color.lightened(0.25), head_center))
-	for side: float in [-1.0, 1.0]:
-		var eye := head_center + Vector3(side * HEAD_RADIUS * 0.4, HEAD_RADIUS * 0.15, -HEAD_RADIUS * 0.9)
-		_body.add_child(ModelParts.part(ModelParts.box(Vector3(0.07, 0.1, 0.04)), EYE_COLOR, eye))
-	_add_race_feature(race, head_center, body_color)
-	_weapon = ModelParts.part(
-		ModelParts.box(WEAPON_SIZE), Color.WHITE, Vector3(BODY_RADIUS + 0.06, BODY_HEIGHT * 0.5, -0.25))
-	_body.add_child(_weapon)
+	var figure: Node3D = load(CharacterLook.MODELS_PATH % look.model).instantiate()
+	# The models face +Z; the game's front is -Z.
+	figure.rotation.y = PI
+	figure.scale = look.stretch * (HEIGHT / MODEL_HEIGHT)
+	_body.add_child(figure)
+	_dress(figure, look)
+	var skeleton: Skeleton3D = figure.find_child("Skeleton3D", true, false)
+	_weapon_slot.bone_name = HAND_BONE
+	skeleton.add_child(_weapon_slot)
+	_animations = _animation_player(figure)
+	_animations.play(IDLE)
 	if with_health_bar:
 		add_child(_bar(HEALTH_BACK_COLOR, 0))
 		_health_fill = _bar(HEALTH_COLOR, 1)
 		add_child(_health_fill)
-
-
-func _add_race_feature(race: String, head_center: Vector3, body_color: Color) -> void:
-	match race:
-		"kobold", "goblin", "elf":
-			for side: float in [-1.0, 1.0]:
-				var ear := ModelParts.part(ModelParts.box(Vector3(0.26, 0.07, 0.1)), body_color.darkened(0.15),
-					head_center + Vector3(side * HEAD_RADIUS * 1.05, HEAD_RADIUS * 0.3, 0))
-				ear.rotation.z = side * 0.5
-				_body.add_child(ear)
-		"orc", "ogre":
-			for side: float in [-1.0, 1.0]:
-				_body.add_child(ModelParts.part(ModelParts.box(Vector3(0.05, 0.12, 0.05)), TUSK_COLOR,
-					head_center + Vector3(side * HEAD_RADIUS * 0.35, -HEAD_RADIUS * 0.45, -HEAD_RADIUS * 0.85)))
-		"dwarf":
-			_body.add_child(ModelParts.part(ModelParts.box(Vector3(0.36, 0.34, 0.14)), BEARD_COLOR,
-				head_center + Vector3(0, -HEAD_RADIUS * 0.75, -HEAD_RADIUS * 0.7)))
 
 
 ## Turns the model to face a direction on the 2D plane.
@@ -74,16 +77,58 @@ func facing() -> Vector2:
 	return Vector2(front.x, front.z).normalized()
 
 
-## Paints the weapon in hand.
-func hold(weapon_color: Color) -> void:
-	var weapon_material: StandardMaterial3D = _weapon.material_override
-	weapon_material.albedo_color = weapon_color
+## Puts a weapon's model in the right hand (see CharacterLook.weapon_model).
+func hold(weapon_id: String) -> void:
+	if weapon_id == _weapon_id:
+		return
+	_weapon_id = weapon_id
+	for held in _weapon_slot.get_children():
+		for mesh in _meshes_in(held):
+			_meshes.erase(mesh)
+		held.queue_free()
+	var weapon: Node3D = load(CharacterLook.WEAPONS_PATH % CharacterLook.weapon_model(weapon_id)).instantiate()
+	_weapon_slot.add_child(weapon)
+	_meshes.append_array(_meshes_in(weapon))
+
+
+func held_weapon_id() -> String:
+	return _weapon_id
+
+
+## Runs while moving, stands idle otherwise (unless an attack or a hit is playing).
+func show_moving(moving: bool) -> void:
+	_moving = moving
+
+
+## Swings, shoots or casts, depending on the weapon in hand.
+func play_attack() -> void:
+	var attack := CharacterLook.attack_animation(_weapon_id)
+	_animations.play(attack, BLEND_SECONDS, ATTACK_SPEED)
+	_action_left = _animations.get_animation(attack).length / ATTACK_SPEED
+
+
+## Flinches, unless in the middle of an attack.
+func play_hit() -> void:
+	if _action_left > 0.0:
+		return
+	_animations.play(HIT, BLEND_SECONDS)
+	_action_left = HIT_SECONDS
+
+
+func current_animation() -> String:
+	return _animations.current_animation
+
+
+## ratio: 0 (dead) to 1 (full health). The bar empties from the right.
+func show_health(ratio: float) -> void:
+	if _health_fill != null:
+		_health_fill.scale.x = maxf(clampf(ratio, 0.0, 1.0), 0.001)
 
 
 ## Glows white for a moment, to show a hit landed.
 func flash() -> void:
 	_flash_left = FLASH_SECONDS
-	_set_glow(true)
+	_overlay(ModelParts.material(Color.WHITE, true))
 
 
 func is_flashing() -> bool:
@@ -91,24 +136,89 @@ func is_flashing() -> bool:
 
 
 func _process(delta: float) -> void:
-	if _flash_left <= 0.0:
+	if _flash_left > 0.0:
+		_flash_left -= delta
+		if _flash_left <= 0.0:
+			_overlay(null)
+	if _action_left > 0.0:
+		_action_left -= delta
 		return
-	_flash_left -= delta
-	if _flash_left <= 0.0:
-		_set_glow(false)
+	var wanted := RUN if _moving else IDLE
+	if _animations.current_animation != wanted:
+		_animations.play(wanted, BLEND_SECONDS)
 
 
-## Every body part is drawn over in white while flashing.
-func _set_glow(glowing: bool) -> void:
-	var overlay: Material = ModelParts.material(Color.WHITE, true) if glowing else null
-	for part: GeometryInstance3D in _body.get_children():
-		part.material_overlay = overlay
+## Out of sight, nothing needs animating.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and _animations != null:
+		_animations.active = is_visible_in_tree()
 
 
-## ratio: 0 (dead) to 1 (full health). The bar empties from the right.
-func show_health(ratio: float) -> void:
-	if _health_fill != null:
-		_health_fill.scale.x = maxf(clampf(ratio, 0.0, 1.0), 0.001)
+## Takes off the model's weapons (it holds ours), keeps what it wears, and colours its skin.
+func _dress(figure: Node3D, look: CharacterLook) -> void:
+	var skin_tint := look.skin_tint
+	var skeleton: Skeleton3D = figure.find_child("Skeleton3D", true, false)
+	for child in skeleton.get_children():
+		if child is BoneAttachment3D:
+			if child.name in KEPT_GEAR and (look.wears_hat or child.name not in HATS):
+				_meshes.append_array(_meshes_in(child))
+			else:
+				child.free()
+		elif child is MeshInstance3D:
+			_meshes.append(child)
+			if skin_tint != CharacterLook.NO_TINT and _is_skin(child.name):
+				_tint(child, skin_tint)
+
+
+static func _is_skin(part_name: String) -> bool:
+	for part in SKIN_PARTS:
+		if part in part_name:
+			return true
+	return false
+
+
+static func _meshes_in(node: Node) -> Array[MeshInstance3D]:
+	var meshes: Array[MeshInstance3D] = []
+	for mesh: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false):
+		meshes.append(mesh)
+	return meshes
+
+
+static func _tint(mesh: MeshInstance3D, tint: Color) -> void:
+	for surface in mesh.mesh.get_surface_count():
+		var tinted: StandardMaterial3D = mesh.mesh.surface_get_material(surface).duplicate()
+		tinted.albedo_color = tinted.albedo_color * tint
+		mesh.set_surface_override_material(surface, tinted)
+
+
+func _overlay(material: Material) -> void:
+	for mesh in _meshes:
+		if is_instance_valid(mesh):
+			mesh.material_overlay = material
+
+
+## The model's own player, or (for models imported without animations) a new one with the shared ones.
+func _animation_player(figure: Node3D) -> AnimationPlayer:
+	var player: AnimationPlayer = figure.find_child("AnimationPlayer", true, false)
+	if player == null:
+		player = AnimationPlayer.new()
+		figure.add_child(player)
+		player.add_animation_library("", _animations_for_all())
+	else:
+		_animations_for_all()  # Makes sure idling and running loop.
+	return player
+
+
+## The animations every model shares (they all use the same skeleton), with idling and running looped.
+static func _animations_for_all() -> AnimationLibrary:
+	if _shared_animations == null:
+		var animated: Node = load(CharacterLook.MODELS_PATH % CharacterLook.ANIMATED_MODEL).instantiate()
+		var player: AnimationPlayer = animated.find_child("AnimationPlayer", true, false)
+		_shared_animations = player.get_animation_library("")
+		for name in LOOPING:
+			_shared_animations.get_animation(name).loop_mode = Animation.LOOP_LINEAR
+		animated.free()
+	return _shared_animations
 
 
 ## A flat bar above the head that always faces the camera. It starts at its left end, so scaling it

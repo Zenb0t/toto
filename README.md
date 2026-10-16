@@ -58,6 +58,11 @@ godot --headless -s addons/gut/gut_cmdln.gd
 
 Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 
+## Credits
+
+Characters and weapons: [KayKit Adventurers](https://kaylousberg.itch.io/kaykit-adventurers) by Kay Lousberg
+(CC0), in `assets/kaykit_adventurers` with its license.
+
 ## Layout
 
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`)
@@ -92,7 +97,8 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
   `GroundView` lays the 2D plane on the floor (floor, aim previews, telegraphs, fog), `MapView3D` stands walls
   and closed doors on it, and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
-  the floor texture shows). `models/` holds the placeholder models
+  the floor texture shows). `models/` holds the models: `CharacterModel` (KayKit characters, animated) and
+  `CharacterLook` (who wears what), and the simple ones (chests, loot, shots, torches, the stairs' arch)
 - `scripts/run` – `RunState`: what a run carries down the stairs (floor, gear, health, potions, experience);
   `Experience`: levels from kills, each adding maximum health
 - `scripts/main.gd` – composition root (one floor): wires controls to the player and applies the room rules

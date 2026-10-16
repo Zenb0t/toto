@@ -216,9 +216,8 @@ phases, each played on a phone before the next:
 1. **Camera and blockout** (done): a 3D view with placeholder shapes, to judge the camera.
 2. **Map look** (done, see below): flagstones, stone walls with caps, columns, moving water and lava,
    torches, the stairs' arch, soft fog.
-3. **Characters**: rigged, animated low-poly models (free CC0 packs such as KayKit or Quaternius), with
-   idle, run, attack, hit and death animations timed to wind-ups and cooldowns. What the races mean
-   (looks only, factions by depth, or their own stats) is still open.
+3. **Characters** (first pass done): KayKit Adventurers (CC0, by Kay Lousberg), rigged and animated. See
+   Characters below. Still open: models of their own for goblins, orcs, dwarves and ogres; death animations.
 4. **Polish**: ~~hit flashes, damage numbers~~ (a hit model flashes white and its damage rises above it:
    white over enemies, red over the hero; a defeated monster bursts into chunks in its colour; the camera
    jolts briefly when the hero is hit~~); particles for spells, sound.
@@ -268,6 +267,24 @@ Like Dungeon Crawl's tombstone, a run ends with a summary instead of an instant 
 the level reached and the monsters slain, and a **Play again** button. Every attack carries its source
 (the monster's name, "your own Fireball", "lava"), and the hero remembers what hurt them last. Kills are
 counted across floors (`RunState`); the lines are written by `RunSummary` (pure).
+
+**Characters** (phase 3, first pass). The models are the KayKit Adventurers pack (CC0, by Kay Lousberg,
+kaylousberg.com; in `assets/kaykit_adventurers`): Knight, Barbarian, Mage, Rogue and hooded Rogue, all on one
+skeleton, with weapons as separate models. `CharacterLook` (plain data) says who wears what:
+
+- The hero is the Knight. Humans dress for their weapon: casters are mages, crossbowmen rogues, bandits
+  hooded rogues.
+- Races without a model of their own borrow one, coloured by their skin (head and arms only, so clothes keep
+  their colours): kobolds are small brown hooded rogues, goblins small green rogues, orcs green barbarians
+  (bareheaded, so the skin shows; their wizards green mages), dwarves short, broad barbarians, ogres huge
+  yellowish ones, deep elves blue-skinned mages.
+- Each weapon has a model in the right hand (sword, two-handed axe, crossbow, staff for the fireball, an open
+  spellbook for the cloud, a wand for the rest) and an attack animation (a slice, a two-handed slice, a
+  crossbow shot, a spell cast).
+- Characters stand idle, run while moving, play their attack when it is released, and flinch when hit.
+  Animations only run while the character is in sight.
+- Size: the animations are imported once (with the Knight) and shared, so the five models add about 2 MB
+  to the phone download.
 
 ## Explicitly deferred
 

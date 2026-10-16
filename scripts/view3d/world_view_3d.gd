@@ -14,6 +14,8 @@ const GROUND_LEAD := 2.0
 const ENEMY_HIT_COLOR := Color(1.0, 0.95, 0.85)
 const HERO_HIT_COLOR := Color(1.0, 0.35, 0.3)
 const HIT_TEXT_SIZE := 0.6
+## Slower than this (pixels per second) counts as standing still, for the run animation.
+const MOVING_SPEED := 10.0
 ## The camera shakes briefly when the hero is hit, this far at first (in cells), settling over SHAKE_SECONDS.
 const SHAKE_DISTANCE := 0.12
 const SHAKE_SECONDS := 0.18
@@ -59,25 +61,29 @@ func show_exploration(exploration: Exploration) -> void:
 ## The camera follows the player.
 func add_player(player: Player) -> void:
 	_hero = player
-	var stand_in := CharacterModel.new(Player.BODY_COLOR)
+	var stand_in := CharacterModel.new(CharacterLook.hero())
 	_show_hits(player, player.health, stand_in, HERO_HIT_COLOR)
 	player.health.damaged.connect(func(_amount: int) -> void: _shake_left = SHAKE_SECONDS)
+	player.attack_fired.connect(func(_attacks: Array) -> void: stand_in.play_attack())
 	_puppets.add(player, stand_in, func(model: CharacterModel) -> void:
 		model.face(player.facing)
-		model.hold(player.weapon.color))
+		model.hold(player.weapon.id)
+		model.show_moving(player.velocity.length() > MOVING_SPEED))
 
 
-## The model shows the enemy's race, in its colour and size.
+## The model shows the enemy's race (see CharacterLook), at its size.
 func add_enemy(enemy: Enemy) -> void:
 	var monster := enemy.monster
-	var stand_in := CharacterModel.new(monster.color, true, monster.race)
+	var stand_in := CharacterModel.new(CharacterLook.of_monster(monster), true)
 	stand_in.scale = Vector3.ONE * monster.size
+	enemy.attack_fired.connect(func(_attacks: Array) -> void: stand_in.play_attack())
 	_show_hits(enemy, enemy.health, stand_in, ENEMY_HIT_COLOR)
 	enemy.defeated.connect(func(_defeated: Enemy) -> void:
 		add_child(DeathBurst.new(monster.color, WorldSpace.to_3d(enemy.global_position), monster.size)))
 	_puppets.add(enemy, stand_in, func(model: CharacterModel) -> void:
 		model.face(enemy.facing)
-		model.hold(enemy.weapon.color)
+		model.hold(enemy.weapon.id)
+		model.show_moving(enemy.velocity.length() > MOVING_SPEED)
 		model.show_health(float(enemy.health.current) / enemy.health.maximum))
 
 
@@ -108,6 +114,7 @@ func _show_hits(actor: Node2D, health: Health, model: CharacterModel, color: Col
 		if amount <= 0 or not is_instance_valid(model):
 			return
 		model.flash()
+		model.play_hit()
 		add_child(FloatingText.new(str(amount), color, WorldSpace.to_3d(actor.global_position), HIT_TEXT_SIZE)))
 
 
