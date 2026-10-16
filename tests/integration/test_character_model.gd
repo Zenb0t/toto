@@ -55,3 +55,12 @@ func test_a_hit_flashes_the_model_for_a_moment() -> void:
 	await wait_seconds(CharacterModel.FLASH_SECONDS + 0.1)
 
 	assert_false(model.is_flashing())
+
+
+func test_skeletons_share_the_adventurers_animations() -> void:
+	var skeleton := _model(CharacterLook.of_monster(Bestiary.by_id("skeleton")))
+
+	skeleton.show_moving(true)
+	await wait_process_frames(2)
+
+	assert_eq(skeleton.current_animation(), CharacterModel.RUN)

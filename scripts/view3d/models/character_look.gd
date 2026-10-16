@@ -1,17 +1,19 @@
 class_name CharacterLook
 extends RefCounted
-## What a character looks like in the 3D view, as plain data: which KayKit Adventurers model (CC0, by Kay
-## Lousberg; see assets/kaykit_adventurers), the colour of its skin, how it is stretched, and per weapon,
+## What a character looks like in the 3D view, as plain data: which KayKit model (Adventurers or Skeletons,
+## CC0, by Kay Lousberg; see assets/), the colour of its skin, how it is stretched, and per weapon,
 ## what it holds and how it swings. Races without a model of their own borrow one (an orc is a green
 ## barbarian, a dwarf a short, stocky one) until real ones arrive.
 
 const MODELS_PATH := "res://assets/kaykit_adventurers/%s.glb"
+const UNDEAD_MODELS_PATH := "res://assets/kaykit_skeletons/%s.glb"
 const WEAPONS_PATH := "res://assets/kaykit_adventurers/weapons/%s.gltf"
 ## The model whose animations every character shares (they all use the same skeleton).
 const ANIMATED_MODEL := "Knight"
 const NO_TINT := Color.WHITE
 
-## The model's name in assets/kaykit_adventurers (Knight, Barbarian, Mage, Rogue, Rogue_Hooded).
+## The model's name: Knight, Barbarian, Mage, Rogue, Rogue_Hooded (adventurers), or Skeleton_Minion,
+## Skeleton_Warrior, Skeleton_Rogue, Skeleton_Mage (the undead).
 var model := ANIMATED_MODEL
 ## Multiplies the colour of the skin (head and arms), so a goblin is green but keeps its clothes.
 var skin_tint := NO_TINT
@@ -26,6 +28,10 @@ func _init(model_name: String, tint := NO_TINT, body_stretch := Vector3.ONE, hat
 	skin_tint = tint
 	stretch = body_stretch
 	wears_hat = hat
+
+
+func model_path() -> String:
+	return (UNDEAD_MODELS_PATH if model.begins_with("Skeleton_") else MODELS_PATH) % model
 
 
 static func hero() -> CharacterLook:
@@ -48,6 +54,13 @@ static func of_monster(monster: Monster) -> CharacterLook:
 			return CharacterLook.new("Barbarian", Color(0.95, 0.85, 0.55), Vector3.ONE, false)
 		"elf":
 			return CharacterLook.new("Mage", Color(0.7, 0.75, 1.0))
+		"undead":
+			match monster.weapon_id:
+				"battleaxe":
+					return CharacterLook.new("Skeleton_Warrior")
+				"crossbow":
+					return CharacterLook.new("Skeleton_Rogue")
+			return CharacterLook.new("Skeleton_Mage" if is_caster(monster.weapon_id) else "Skeleton_Minion")
 	# Humans dress for their weapon.
 	if is_caster(monster.weapon_id):
 		return CharacterLook.new("Mage")

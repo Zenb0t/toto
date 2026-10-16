@@ -6,7 +6,7 @@ extends RefCounted
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
 ##   w apprentice  c crossbowman  f pyromancer  n necromancer  o orc  W orc wizard  d dwarf
-##   e deep elf mage  O ogre
+##   e deep elf mage  O ogre  z skeleton  x skeleton archer  m skeletal mage  Z skeleton warrior
 
 const WALL := "#"
 const FLOOR := "."

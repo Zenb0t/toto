@@ -9,12 +9,13 @@ const HEIGHT := 1.35
 ## How tall the KayKit models are, in their own units.
 const MODEL_HEIGHT := 2.3
 const HAND_BONE := "handslot.r"
-## The gear each model keeps on: what makes it who it is. Its weapons go, so it can hold any other.
-const KEPT_GEAR: Array[String] = [
-	"Knight_Helmet", "Knight_Cape", "Barbarian_Hat", "Barbarian_Cape", "Mage_Hat", "Mage_Cape", "Rogue_Cape",
+## A model's own weapons and shields come off, so it can hold any weapon; the rest of its gear (hats, capes)
+## is what makes it who it is, and stays.
+const WEAPON_WORDS: Array[String] = [
+	"Sword", "Axe", "Shield", "Crossbow", "Wand", "Staff", "Spellbook", "Knife", "Throwable", "Mug", "Blade",
 ]
 ## Headgear, which a bareheaded look takes off (see CharacterLook.wears_hat).
-const HATS: Array[String] = ["Knight_Helmet", "Barbarian_Hat", "Mage_Hat"]
+const HAT_WORDS: Array[String] = ["Helmet", "Hat", "Hood"]
 ## Skin is on the head and arms: what a race's tint colours.
 const SKIN_PARTS: Array[String] = ["Head", "Arm"]
 const IDLE := "Idle"
@@ -48,7 +49,7 @@ var _flash_left := 0.0
 ## With a health bar, the model shows how hurt it is (see show_health).
 func _init(look: CharacterLook, with_health_bar := false) -> void:
 	add_child(_body)
-	var figure: Node3D = load(CharacterLook.MODELS_PATH % look.model).instantiate()
+	var figure: Node3D = load(look.model_path()).instantiate()
 	# The models face +Z; the game's front is -Z.
 	figure.rotation.y = PI
 	figure.scale = look.stretch * (HEIGHT / MODEL_HEIGHT)
@@ -160,19 +161,20 @@ func _dress(figure: Node3D, look: CharacterLook) -> void:
 	var skeleton: Skeleton3D = figure.find_child("Skeleton3D", true, false)
 	for child in skeleton.get_children():
 		if child is BoneAttachment3D:
-			if child.name in KEPT_GEAR and (look.wears_hat or child.name not in HATS):
+			var is_hat := _names_any(child.name, HAT_WORDS)
+			if not _names_any(child.name, WEAPON_WORDS) and (look.wears_hat or not is_hat):
 				_meshes.append_array(_meshes_in(child))
 			else:
 				child.free()
 		elif child is MeshInstance3D:
 			_meshes.append(child)
-			if skin_tint != CharacterLook.NO_TINT and _is_skin(child.name):
+			if skin_tint != CharacterLook.NO_TINT and _names_any(child.name, SKIN_PARTS):
 				_tint(child, skin_tint)
 
 
-static func _is_skin(part_name: String) -> bool:
-	for part in SKIN_PARTS:
-		if part in part_name:
+static func _names_any(part_name: String, words: Array[String]) -> bool:
+	for word in words:
+		if word in part_name:
 			return true
 	return false
 
@@ -212,7 +214,7 @@ func _animation_player(figure: Node3D) -> AnimationPlayer:
 ## The animations every model shares (they all use the same skeleton), with idling and running looped.
 static func _animations_for_all() -> AnimationLibrary:
 	if _shared_animations == null:
-		var animated: Node = load(CharacterLook.MODELS_PATH % CharacterLook.ANIMATED_MODEL).instantiate()
+		var animated: Node = load(CharacterLook.new(CharacterLook.ANIMATED_MODEL).model_path()).instantiate()
 		var player: AnimationPlayer = animated.find_child("AnimationPlayer", true, false)
 		_shared_animations = player.get_animation_library("")
 		for name in LOOPING:

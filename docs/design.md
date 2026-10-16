@@ -136,6 +136,10 @@ still decides how it fights). The map letter names the monster, so playtests sta
 | `W` | Orc wizard | Fireball | 4 | 0.95× | large | |
 | `d` | Dwarf | Crossbow | 8 | 0.7× | | The tank: slow and sturdy |
 | `e` | Deep elf mage | Lightning Bolt | 5 | 1.05× | | Pointy ears; bolts bounce off walls |
+| `z` | Skeleton (undead) | Sword | 4 | 0.9× | | |
+| `x` | Skeleton archer (undead) | Crossbow | 4 | 0.9× | | |
+| `m` | Skeletal mage (undead) | Mephitic Cloud | 5 | 0.9× | | |
+| `Z` | Skeleton warrior (undead) | Battleaxe | 7 | 0.85× | large | |
 | `O` | Ogre | Battleaxe | 14 | 0.6× | huge | +1 damage on every hit |
 
 Size is the body attacks hit, so an ogre is easier to hit than a kobold. Tune → Enemies scales every
@@ -143,7 +147,8 @@ monster's health at once (Health ×). Models show the race: colour, size, pointy
 tusks (orcs, ogres), a beard (dwarves); the red ring on the floor marks every one as a foe.
 
 **By depth** (`DungeonDifficulty`): kobolds, goblins and bandits near the start; then human casters and archers,
-orcs and necromancers; then orc wizards and dwarves; deep elf mages and ogres deepest. Deeper rooms also hold more monsters.
+orcs and necromancers; then orc wizards, dwarves and skeletons; deep elf mages, skeleton warriors and ogres
+deepest. Deeper rooms also hold more monsters.
 
 ## Floors (the descent)
 
@@ -268,16 +273,17 @@ the level reached and the monsters slain, and a **Play again** button. Every att
 (the monster's name, "your own Fireball", "lava"), and the hero remembers what hurt them last. Kills are
 counted across floors (`RunState`); the lines are written by `RunSummary` (pure).
 
-**Characters** (phase 3, first pass). The models are the KayKit Adventurers pack (CC0, by Kay Lousberg,
-kaylousberg.com; in `assets/kaykit_adventurers`): Knight, Barbarian, Mage, Rogue and hooded Rogue, all on one
-skeleton, with weapons as separate models. `CharacterLook` (plain data) says who wears what:
+**Characters** (phase 3, first pass). The models are KayKit's Adventurers and Skeletons packs (CC0, by Kay
+Lousberg, kaylousberg.com; in `assets/kaykit_adventurers` and `assets/kaykit_skeletons`): Knight, Barbarian,
+Mage, Rogue and hooded Rogue, and four skeletons, all on one rig, with weapons as separate models. `CharacterLook` (plain data) says who wears what:
 
 - The hero is the Knight. Humans dress for their weapon: casters are mages, crossbowmen rogues, bandits
   hooded rogues.
 - Races without a model of their own borrow one, coloured by their skin (head and arms only, so clothes keep
   their colours): kobolds are small brown hooded rogues, goblins small green rogues, orcs green barbarians
   (bareheaded, so the skin shows; their wizards green mages), dwarves short, broad barbarians, ogres huge
-  yellowish ones, deep elves blue-skinned mages.
+  yellowish ones, deep elves blue-skinned mages. The undead are KayKit's skeletons, dressed for their weapon
+  (a warrior with the battleaxe, a hooded rogue with the crossbow, a mage with the cloud).
 - Each weapon has a model in the right hand (sword, two-handed axe, crossbow, staff for the fireball, an open
   spellbook for the cloud, a wand for the rest) and an attack animation (a slice, a two-handed slice, a
   crossbow shot, a spell cast).
