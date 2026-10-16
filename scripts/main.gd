@@ -12,6 +12,9 @@ const SUMMARY_DELAY_SECONDS := 1.2
 ## How long "down to floor N" shows before the next floor loads.
 const DESCEND_DELAY_SECONDS := 0.8
 const LEVEL_UP_COLOR := Color(1.0, 0.85, 0.35)
+## The branch's name and greeting show on arriving, then fade out.
+const ARRIVAL_SECONDS := 2.5
+const ARRIVAL_FADE_SECONDS := 1.0
 ## Where a chest's potion lands, tried in order: beside the chest, on safe floor.
 const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 ## How often line of sight is worked out again.
@@ -49,6 +52,7 @@ var _experience := Experience.new(_run.experience)
 @onready var _weapon_switch: Button = $Hud/WeaponSwitch
 @onready var _loot_card: LootCard = $Hud/LootCard
 @onready var _potion_bar: PotionBar = $Hud/PotionBar
+@onready var _arrival: Label = $Hud/Arrival
 @onready var _touch_controls: TouchControls = $TouchControls
 @onready var _move_stick: TouchStick = $TouchControls/MoveStick
 @onready var _attack_button: AimButton = $TouchControls/AttackButton
@@ -89,6 +93,7 @@ func _ready() -> void:
 	_apply_tuning(_tuning)
 	_touch_controls.apply_layout(_layout)
 	_refresh_hud()
+	_greet()
 
 
 func _physics_process(delta: float) -> void:
@@ -495,6 +500,14 @@ func _grow_from(monster: Monster) -> void:
 	if levels > 0:
 		_player.health.raise_maximum(levels * Experience.HEALTH_PER_LEVEL)
 		_world.float_text(_player.global_position, "LEVEL %d!" % _experience.level(), LEVEL_UP_COLOR)
+
+
+## Names the branch and greets the player, like Dungeon Crawl on arriving somewhere new.
+func _greet() -> void:
+	_arrival.text = "The %s\n%s" % [_branch().display_name, _branch().greeting]
+	var fade := create_tween()
+	fade.tween_interval(ARRIVAL_SECONDS)
+	fade.tween_property(_arrival, "modulate:a", 0.0, ARRIVAL_FADE_SECONDS)
 
 
 ## The branch this floor is in (see Branch).

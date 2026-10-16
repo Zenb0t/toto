@@ -9,9 +9,15 @@ func test_each_floor_of_the_descent_is_a_different_branch() -> void:
 	assert_eq(seen.size(), RunState.FLOOR_COUNT)
 
 
-func test_the_descent_starts_in_the_dungeon() -> void:
+func test_the_descent_starts_in_the_mostly_built_dungeon() -> void:
 	assert_eq(Branch.for_floor(1).id, "dungeon")
-	assert_eq(Branch.for_floor(1).cave_share, 0.0)
+	assert_lt(Branch.for_floor(1).cave_share, 0.5)
+	assert_true(Branch.for_floor(1).look.flagstones)
+
+
+func test_every_branch_greets_the_player() -> void:
+	for branch in Branch.all():
+		assert_ne(branch.greeting, "", branch.id)
 
 
 func test_anything_deeper_than_the_last_branch_stays_in_it() -> void:

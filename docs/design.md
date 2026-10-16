@@ -157,7 +157,7 @@ rooms, set pieces, inhabitants and look (`BranchLook`):
 
 | Floor | Branch | Rooms | Vaults | Lives there | Look |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Dungeon | Built | Pillared hall, statue gallery, treasure closet, moat island | (the depth's mix) | Grey flagstones, stone walls, torches and banners |
+| 1 | Dungeon | Built, 15% caves | Pillared hall, statue gallery, treasure closet, moat island | (the depth's mix) | Grey flagstones, stone walls, torches and banners |
 | 2 | Lair | 75% caves | Lake, pool, moat island | Goblins, goblin archers, kobolds | Mossy earth, moss-capped rock, glowing mushrooms, grass, boulders; no torches |
 | 3 | Orcish Mines | 85% caves | Rubble cavern, ember corners, lava river | Orcs, orc wizards | Brown earth, rock veined with gold ore, boulders, coins; torches |
 | 4 | Crypt | Built | Catacomb (rows of tombs), statue gallery, treasure closet | The undead | Violet stone, coffins, bone piles, candles |
@@ -169,7 +169,9 @@ wander in and out in stretches of three cells, with rounded corners; the middle 
 so corridors can still meet it. Their floors are blotchy earth without grout. Free-standing pillars are carved columns in built places,
 trees in the Lair and plain rock in the Mines (they block like walls all the same); columns and trees stand
 on the floor with a shadow at their foot.
-The HUD, the pause menu and the run summary name the branch ("Killed by an orc in the Orcish Mines").
+The HUD, the pause menu and the run summary name the branch ("Killed by an orc in the Orcish Mines"), and
+arriving shows its name and a line of flavour for a moment ("The Orcish Mines. Pickaxes ring somewhere in
+the dark."). The Dungeon itself has the odd cave (15% of its rooms).
 
 ## Floors (the descent)
 

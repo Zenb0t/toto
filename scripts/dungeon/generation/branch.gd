@@ -18,6 +18,8 @@ var vaults: Array[String] = []
 var favoured: Array[String] = []
 ## Whether its caves have puddles of shallow water (see DungeonGenerator).
 var puddles := false
+## A line on arriving, the way Dungeon Crawl greets a new branch.
+var greeting := ""
 var look: BranchLook
 
 
@@ -36,8 +38,8 @@ func _init(
 
 ## Every branch, in the order the descent goes through them: one per floor.
 static func all() -> Array[Branch]:
-	return [
-		Branch.new("dungeon", "Dungeon", "D", 0.0,
+	var branches: Array[Branch] = [
+		Branch.new("dungeon", "Dungeon", "D", 0.15,
 			["pillared_hall", "statue_gallery", "treasure_closet", "moat_island"], [], BranchLook.dungeon()),
 		Branch.new("lair", "Lair", "Lair", 0.75,
 			["lake", "pool", "moat_island"], ["g", "a", "k"], BranchLook.lair(), true),
@@ -48,6 +50,16 @@ static func all() -> Array[Branch]:
 		Branch.new("depths", "Depths", "Depths", 0.3,
 			["lava_lake", "lava_lake", "ember_corners", "pillared_hall"], ["e", "O", "d", "W"], BranchLook.depths()),
 	]
+	var greetings := [
+		"Somewhere below lies the way out.",
+		"It smells of damp earth and fur.",
+		"Pickaxes ring somewhere in the dark.",
+		"Something stirs in the tombs.",
+		"Heat rises from far below.",
+	]
+	for i in branches.size():
+		branches[i].greeting = greetings[i]
+	return branches
 
 
 ## The branch a floor of the descent is in (the last one for anything deeper).
