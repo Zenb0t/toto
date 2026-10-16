@@ -240,3 +240,12 @@ func test_a_might_potion_makes_attacks_hit_harder() -> void:
 	player.attack(Vector2.RIGHT)
 
 	assert_eq(_fired_shot(player).damage, MagicMissile.new().shot_damage + 2)
+
+
+func test_using_a_utility_says_which_one() -> void:
+	var player := _player_with(Shield.new())
+	watch_signals(player)
+
+	player.use_utility(Vector2.RIGHT)
+
+	assert_signal_emitted_with_parameters(player, "utility_used", ["shield"])

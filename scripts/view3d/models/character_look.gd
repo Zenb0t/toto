@@ -98,3 +98,13 @@ static func attack_animation(weapon_id: String) -> String:
 		"crossbow":
 			return "1H_Ranged_Shoot"
 	return "Spellcast_Shoot"
+
+
+## The animation of using a utility: a dodge for the quick moves, a guard for the shield, a cast for spells.
+static func utility_animation(utility_id: String) -> String:
+	match utility_id:
+		"dash", "blink":
+			return "Dodge_Forward"
+		"shield":
+			return "Block"
+	return "Spellcast_Raise"

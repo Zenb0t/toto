@@ -67,6 +67,7 @@ func add_player(player: Player) -> void:
 	_show_hits(player, player.health, stand_in, HERO_HIT_COLOR)
 	player.health.damaged.connect(func(_amount: int) -> void: _shake_left = SHAKE_SECONDS)
 	player.attack_fired.connect(func(_attacks: Array) -> void: stand_in.play_attack())
+	player.utility_used.connect(stand_in.play_utility)
 	# The hero's body hides when it dies; its model stays in view to fall.
 	player.died.connect(func() -> void:
 		var model := _fall(player, -1.0)

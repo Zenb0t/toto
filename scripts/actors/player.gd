@@ -7,6 +7,8 @@ extends CharacterBody2D
 signal attack_fired(attacks: Array)
 signal health_changed(current: int, maximum: int)
 signal died
+## A utility was used (its id), for whoever shows it.
+signal utility_used(utility_id: String)
 
 ## The player is in this group, so area attacks (like the fireball's blast) can find them.
 const GROUP := &"players"
@@ -91,6 +93,7 @@ func use_utility(direction: Vector2) -> void:
 		return
 	facing = direction.normalized()
 	_apply(utility.activate(facing))
+	utility_used.emit(utility.id)
 
 
 ## Drinks a potion: its effect starts at once. Whoever holds the potion belt decides whether there is one.

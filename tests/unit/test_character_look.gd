@@ -45,3 +45,11 @@ func test_the_undead_are_skeletons_dressed_for_their_weapon() -> void:
 	assert_eq(CharacterLook.of_monster(Bestiary.by_id("skeleton_warrior")).model, "Skeleton_Warrior")
 	assert_eq(CharacterLook.of_monster(Bestiary.by_id("skeleton_archer")).model, "Skeleton_Rogue")
 	assert_eq(CharacterLook.of_monster(Bestiary.by_id("skeletal_mage")).model, "Skeleton_Mage")
+
+
+func test_every_utility_is_acted_out_with_an_animation_the_models_have() -> void:
+	var animated: Node = load(CharacterLook.hero().model_path()).instantiate()
+	var player: AnimationPlayer = animated.find_child("AnimationPlayer", true, false)
+	for utility_id in GameTuning.utility_ids():
+		assert_true(player.has_animation(CharacterLook.utility_animation(utility_id)), utility_id)
+	animated.free()

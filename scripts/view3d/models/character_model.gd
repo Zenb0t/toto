@@ -109,6 +109,13 @@ func play_attack() -> void:
 	_action_left = _animations.get_animation(attack).length / ATTACK_SPEED
 
 
+## Acts out using a utility (see CharacterLook.utility_animation).
+func play_utility(utility_id: String) -> void:
+	var move := CharacterLook.utility_animation(utility_id)
+	_animations.play(move, BLEND_SECONDS, ATTACK_SPEED)
+	_action_left = _animations.get_animation(move).length / ATTACK_SPEED
+
+
 ## Flinches, unless in the middle of an attack.
 func play_hit() -> void:
 	if _action_left > 0.0:
