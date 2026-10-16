@@ -50,3 +50,13 @@ func test_the_start_is_at_depth_zero_and_the_deepest_room_is_farthest() -> void:
 func test_the_same_seed_grows_the_same_graph() -> void:
 	assert_eq(_grow(5).slots, _grow(5).slots)
 	assert_eq(_grow(5).links, _grow(5).links)
+
+
+func test_a_dead_end_has_a_single_link() -> void:
+	var graph := _grow(6, 7, 0)
+	var dead_ends := graph.slots.filter(func(slot: Vector2i) -> bool: return graph.link_count(slot) == 1)
+
+	assert_gt(dead_ends.size(), 0)
+	for slot: Vector2i in graph.slots:
+		var by_hand := graph.links.filter(func(link: Array) -> bool: return slot in link).size()
+		assert_eq(graph.link_count(slot), by_hand)

@@ -4,7 +4,8 @@ extends RefCounted
 ## works on the hand-made map works here). The same seed always gives the same map.
 ##
 ## Rooms of varied shapes sit on a grid of slots (see RoomGraph) and are joined by short, three-wide
-## corridors with a door at each end. The player starts in a quiet room; the exit is in the room farthest
+## corridors with a door at each end. Some rooms are hand-written set pieces instead (see Vaults), the way
+## Dungeon Crawl Stone Soup mixes vaults into its random levels. The player starts in a quiet room; the exit is in the room farthest
 ## from it; rooms get tougher the farther they are from the start (see DungeonDifficulty).
 
 const GRID := Vector2i(4, 3)
@@ -17,6 +18,10 @@ const MIN_ROOMS := 6
 const MAX_ROOMS := 8
 const MAX_EXTRA_LINKS := 2
 const MAX_PILLARS := 4
+## Chance that a room (other than the start) is a vault instead of a random shape.
+const VAULT_CHANCE := 0.3
+## Chance that a dead-end room (one way in) has an item lying on its floor: a reward for exploring.
+const DEAD_END_LOOT_CHANCE := 0.5
 ## Enemies start this many cells clear of a room's edge, so they don't spawn in a doorway.
 const SPAWN_EDGE_CLEARANCE := 3
 
@@ -25,17 +30,17 @@ const FLOOR := "."
 const DOOR := "+"
 const PLAYER := "P"
 const EXIT := ">"
+const LOOT := "*"
 
 
 func generate(seed_value: int) -> String:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var graph := RoomGraph.grow(GRID, rng.randi_range(MIN_ROOMS, MAX_ROOMS), rng.randi_range(0, MAX_EXTRA_LINKS), rng)
-	var rooms := _shape_rooms(graph, rng)
-	var corridors := _connect(graph, rooms, rng)
+	var rooms := {}  # slot -> {cell: map symbol}
 	for slot in graph.slots:
-		if slot != graph.start_slot():
-			rooms[slot] = RoomShapes.with_pillars(rooms[slot], rng.randi_range(0, MAX_PILLARS), rng)
+		rooms[slot] = _shape_room(slot == graph.start_slot(), room_bounds(slot), rng)
+	var corridors := _connect(graph, rooms, rng)
 	return _draw(graph, rooms, corridors, rng)
 
 
@@ -48,13 +53,21 @@ static func room_bounds(slot: Vector2i) -> Rect2i:
 	return Rect2i(Vector2i.ONE + slot * SLOT_SIZE, SLOT_SIZE).grow(-ROOM_MARGIN)
 
 
-## The start room is a plain rectangle; the rest get random shapes.
-func _shape_rooms(graph: RoomGraph, rng: RandomNumberGenerator) -> Dictionary:
-	var rooms := {}
-	for slot in graph.slots:
-		var kind := RoomShapes.Kind.RECT if slot == graph.start_slot() else RoomShapes.random_kind(rng)
-		rooms[slot] = RoomShapes.build(kind, room_bounds(slot), rng)
-	return rooms
+## The start room is a plain rectangle. The rest are vaults, or random shapes with a few pillars.
+func _shape_room(is_start: bool, bounds: Rect2i, rng: RandomNumberGenerator) -> Dictionary:
+	if is_start:
+		return _as_floor(RoomShapes.build(RoomShapes.Kind.RECT, bounds, rng))
+	if rng.randf() < VAULT_CHANCE:
+		return Vaults.stamp(Vaults.random_name(rng), bounds, rng)
+	var shape := RoomShapes.build(RoomShapes.random_kind(rng), bounds, rng)
+	return _as_floor(RoomShapes.with_pillars(shape, rng.randi_range(0, MAX_PILLARS), rng))
+
+
+func _as_floor(cells: Dictionary) -> Dictionary:
+	var floor_plan := {}
+	for cell: Vector2i in cells:
+		floor_plan[cell] = FLOOR
+	return floor_plan
 
 
 ## Corridors for every link, as {cell: FLOOR or DOOR}. A link that finds no straight, sealed spot between
@@ -72,7 +85,7 @@ func _connect(graph: RoomGraph, rooms: Dictionary, rng: RandomNumberGenerator) -
 		if failed.is_empty():
 			return corridors
 		for slot: Vector2i in failed:
-			rooms[slot] = RoomShapes.build(RoomShapes.Kind.RECT, room_bounds(slot), rng)
+			rooms[slot] = _as_floor(RoomShapes.build(RoomShapes.Kind.RECT, room_bounds(slot), rng))
 	return {}
 
 
@@ -141,7 +154,7 @@ func _draw(graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, rng: Rand
 		rows.append(row)
 	for slot in graph.slots:
 		for cell: Vector2i in rooms[slot]:
-			rows[cell.y][cell.x] = FLOOR
+			rows[cell.y][cell.x] = rooms[slot][cell]
 	for cell: Vector2i in corridors:
 		rows[cell.y][cell.x] = corridors[cell]
 	var start_center := _center_cell(rooms[graph.start_slot()])
@@ -151,40 +164,56 @@ func _draw(graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, rng: Rand
 	for slot in graph.slots:
 		if slot == graph.start_slot():
 			continue
-		var letters := DungeonDifficulty.enemy_letters(graph.depth_of(slot), rng)
-		for cell in _spawn_cells(rooms[slot], letters.size(), exit_cell, rng):
+		var taken: Array[Vector2i] = [exit_cell]
+		if _hides_loot(slot, graph, rooms[slot], rng):
+			var loot_cell := _spawn_cells(rooms[slot], 1, taken, rng)[0]
+			rows[loot_cell.y][loot_cell.x] = LOOT
+			taken.append(loot_cell)
+		var depth := DungeonDifficulty.rolled_depth(graph.depth_of(slot), rng)
+		var letters := DungeonDifficulty.enemy_letters(depth, rng)
+		for cell in _spawn_cells(rooms[slot], letters.size(), taken, rng):
 			rows[cell.y][cell.x] = letters.pop_back()
 	return "\n".join(rows.map(func(row: Array) -> String: return "".join(PackedStringArray(row))))
 
 
+## Dead ends (other than the exit's room) sometimes hide an item, unless they are vaults with treasure of their own.
+func _hides_loot(slot: Vector2i, graph: RoomGraph, room: Dictionary, rng: RandomNumberGenerator) -> bool:
+	if slot == graph.deepest_slot() or graph.link_count(slot) != 1 or LOOT in room.values():
+		return false
+	return rng.randf() < DEAD_END_LOOT_CHANCE
+
+
 ## The exit sits in the corner of its room farthest from the middle (where the chest appears), clear of the walls.
 func _exit_cell(room: Dictionary) -> Vector2i:
+	var area := _main_area(room)
 	var middle := _center_cell(room)
 	var farthest := middle
-	for cell: Vector2i in room:
-		if _clear_of_edge(cell, room, 1) and cell.distance_squared_to(middle) > farthest.distance_squared_to(middle):
+	for cell: Vector2i in area:
+		if room[cell] == FLOOR and _clear_of_edge(cell, area, 1) \
+				and cell.distance_squared_to(middle) > farthest.distance_squared_to(middle):
 			farthest = cell
 	return farthest
 
 
 ## Random cells away from the room's edge and its middle, spread a little apart. Narrow or crowded rooms
 ## let enemies start closer to the walls rather than leave anyone out.
-func _spawn_cells(room: Dictionary, count: int, exit_cell: Vector2i, rng: RandomNumberGenerator) -> Array[Vector2i]:
+func _spawn_cells(room: Dictionary, count: int, taken: Array[Vector2i], rng: RandomNumberGenerator) -> Array[Vector2i]:
 	var chosen: Array[Vector2i] = []
 	for clearance in range(SPAWN_EDGE_CLEARANCE, 0, -1):
-		chosen = _spread_cells(room, count, clearance, exit_cell, rng)
+		chosen = _spread_cells(room, count, clearance, taken, rng)
 		if chosen.size() == count:
 			break
 	return chosen
 
 
 func _spread_cells(
-		room: Dictionary, count: int, clearance: int, exit_cell: Vector2i, rng: RandomNumberGenerator
+		room: Dictionary, count: int, clearance: int, taken: Array[Vector2i], rng: RandomNumberGenerator
 ) -> Array[Vector2i]:
+	var area := _main_area(room)
 	var middle := _center_cell(room)
 	var candidates: Array[Vector2i] = []
-	for cell: Vector2i in room:
-		if cell != middle and cell != exit_cell and _clear_of_edge(cell, room, clearance):
+	for cell: Vector2i in area:
+		if room[cell] == FLOOR and cell != middle and cell not in taken and _clear_of_edge(cell, area, clearance):
 			candidates.append(cell)
 	var chosen: Array[Vector2i] = []
 	while chosen.size() < count and not candidates.is_empty():
@@ -194,25 +223,49 @@ func _spread_cells(
 	return chosen
 
 
-func _clear_of_edge(cell: Vector2i, room: Dictionary, clearance: int) -> bool:
+func _clear_of_edge(cell: Vector2i, area: Dictionary, clearance: int) -> bool:
 	for y in range(-clearance, clearance + 1):
 		for x in range(-clearance, clearance + 1):
-			if not room.has(cell + Vector2i(x, y)):
+			if not area.has(cell + Vector2i(x, y)):
 				return false
 	return true
 
 
-## The room's cell closest to its middle (the same rule DungeonMap.room_center uses).
+## Where the chest will appear: the same rule DungeonMap.room_center uses on the parsed room.
 func _center_cell(room: Dictionary) -> Vector2i:
-	var middle := Vector2.ZERO
+	var area := _main_area(room)
+	return DungeonMap.middle_cell(area.keys().filter(func(cell: Vector2i) -> bool: return room[cell] == FLOOR))
+
+
+## The room as the map parser will see it: its largest piece, without anything a door shuts off (like a vault's
+## closet). Water and lava are part of it.
+func _main_area(room: Dictionary) -> Dictionary:
+	var unvisited := {}
 	for cell: Vector2i in room:
-		middle += Vector2(cell)
-	middle /= room.size()
-	var closest: Vector2i = room.keys()[0]
-	for cell: Vector2i in room:
-		if Vector2(cell).distance_squared_to(middle) < Vector2(closest).distance_squared_to(middle):
-			closest = cell
-	return closest
+		if room[cell] != DOOR:
+			unvisited[cell] = true
+	var largest := {}
+	while not unvisited.is_empty():
+		var piece := _piece_from(unvisited.keys()[0], unvisited)
+		if piece.size() > largest.size():
+			largest = piece
+	return largest
+
+
+## Takes the connected piece containing start out of cells, and returns it.
+func _piece_from(start: Vector2i, cells: Dictionary) -> Dictionary:
+	var piece := {start: true}
+	cells.erase(start)
+	var frontier: Array[Vector2i] = [start]
+	while not frontier.is_empty():
+		var cell: Vector2i = frontier.pop_back()
+		for step in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var next: Vector2i = cell + step
+			if cells.has(next):
+				cells.erase(next)
+				piece[next] = true
+				frontier.append(next)
+	return piece
 
 
 func _in_any_room(cell: Vector2i, rooms: Dictionary) -> bool:

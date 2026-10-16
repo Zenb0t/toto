@@ -102,6 +102,10 @@ comparable; deeper rooms have tougher mixes. Tank-style enemies (more health, sl
 
 ## Dungeon generation
 
+Dungeon Crawl Stone Soup is the model for the dungeon itself: random levels with hand-made vaults mixed in,
+terrain that changes how fights play, line of sight with map memory, items lying around for whoever explores,
+and the odd room that is more dangerous than its depth suggests.
+
 `DungeonGenerator` turns a seed into the same ASCII map format the parser always read, so room detection,
 doors, locks, chests and enemy letters work unchanged, and a map can be printed and read when something looks
 wrong.
@@ -112,11 +116,26 @@ wrong.
 2. **Shapes** (`RoomShapes`): the start room is a rectangle; the others are a rectangle, an L, a cross or two
    merged rectangles, never thinner than 7 cells. Fighting rooms get up to four 2×2 pillars, kept clear of
    the walls and never allowed to cut a room in two. Pillars block shots; the fireball lobs over them.
+   About a third of rooms are **vaults** instead (`Vaults`): hand-written set pieces in the map format, randomly
+   mirrored: moat island (treasure on an island with one bridge), pool, lava river, pillared hall, statue
+   gallery, treasure closet (a walled chamber with a door), ember corners. Every vault keeps a floor ring along
+   its edge so corridors always open onto floor.
 3. **Corridors**: three cells wide with a door at each end, where both rooms have a straight wall facing
    each other. If two odd shapes can't be joined cleanly, they become rectangles.
 4. **Difficulty** (`DungeonDifficulty`): by depth (rooms from the start). Near the start, two or so swords
-   and wands; deeper, more enemies (up to six), crossbows, then fireballs.
-5. **Exit**: in the deepest room, in its corner farthest from the middle (where the chest appears).
+   and wands; deeper, more enemies (up to six), crossbows, then fireballs. 15% of rooms are **out of depth**:
+   their enemies are picked as if two rooms deeper. Rooms are optional, so walking away is a real choice.
+5. **Floor loot** (`*`): vault treasure, and half of the dead ends (rooms with one way in) hide an item, picked
+   like a chest's. Exploring pays.
+6. **Exit**: in the deepest room, in its corner farthest from the middle (where the chest appears).
+
+**Terrain.** Deep water (`~`) blocks walking but not sight or shots: a shooter across a pool can hit you, and
+you can hit back, but nobody walks over. Lava (`L`) can be crossed, but burns (1 damage on stepping in, then
+every half second; the Shield blocks it). Enemies path around water and avoid lava when they can.
+
+**Fog of war** (`Exploration`, `FogView`). You see 16 cells around you (farther than any weapon reaches, so
+nothing hits you from the dark), through floor, water and lava but not walls or closed doors. What you have
+seen stays drawn, dimmed; what you haven't is dark. Enemies out of sight are hidden.
 
 Enemies find their way around walls and pillars (`Pathfinder`, on Godot's `AStarGrid2D`) when they can't
 see the player, and only shoot with a clear line; fireball throwers lob over cover.

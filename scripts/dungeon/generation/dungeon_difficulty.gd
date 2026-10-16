@@ -4,6 +4,10 @@ extends RefCounted
 ## Near the start: a couple of swords and wands. Deeper: more enemies, crossbows, then fireballs.
 
 const MAX_ENEMIES := 6
+## Like Dungeon Crawl's out-of-depth monsters: now and then a room holds enemies from deeper in. Rooms are
+## optional, so reading the danger and walking away is a choice.
+const OUT_OF_DEPTH_CHANCE := 0.15
+const OUT_OF_DEPTH_EXTRA := 2
 ## Enemy map letters (see DungeonMapParser) that may appear at each depth; the last entry covers anything deeper.
 const POOLS_BY_DEPTH := [
 	["s", "s", "w"],
@@ -11,6 +15,11 @@ const POOLS_BY_DEPTH := [
 	["s", "w", "c", "c", "f"],
 	["s", "w", "c", "f", "f"],
 ]
+
+
+## The depth a room's enemies are picked for: usually its own, sometimes deeper.
+static func rolled_depth(depth: int, rng: RandomNumberGenerator) -> int:
+	return depth + OUT_OF_DEPTH_EXTRA if rng.randf() < OUT_OF_DEPTH_CHANCE else depth
 
 
 static func enemy_count(depth: int) -> int:

@@ -33,3 +33,13 @@ func test_every_letter_is_one_the_map_parser_knows() -> void:
 	for pool: Array in DungeonDifficulty.POOLS_BY_DEPTH:
 		for letter: String in pool:
 			assert_has(DungeonMapParser.ENEMY_WEAPONS, letter)
+
+
+func test_now_and_then_a_room_holds_enemies_from_deeper_in() -> void:
+	var rolls := {}
+	for seed_value in 60:
+		rolls[DungeonDifficulty.rolled_depth(2, _rng(seed_value))] = true
+
+	assert_eq(rolls.keys().size(), 2)
+	assert_has(rolls, 2)
+	assert_has(rolls, 2 + DungeonDifficulty.OUT_OF_DEPTH_EXTRA)

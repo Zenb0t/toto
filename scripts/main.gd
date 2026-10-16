@@ -6,11 +6,19 @@ const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 const RESTART_DELAY_SECONDS := 1.5
+## How often line of sight is worked out again.
+const SIGHT_UPDATE_SECONDS := 0.1
 
 var _seed: int
 var _map: DungeonMap
 var _pathfinder: Pathfinder
 var _run_over := false
+var _lava := LavaBurn.new()
+var _exploration := Exploration.new()
+var _fog: FogView
+var _sight_update_left := 0.0
+## Where the player last looked from; sight is only worked out again when this or a door changes.
+var _sight_origin := DungeonMap.NO_CELL
 var _view: DungeonView
 var _progress: DungeonProgress
 var _player: Player
@@ -45,12 +53,16 @@ func _ready() -> void:
 	add_child(_view)
 	move_child(_view, 0)
 	_view.show_map(_map)
+	_fog = FogView.new(_view.drawn_cells())
 	_tuning = _settings.load_tuning()
 	_layout = _settings.load_layout()
 	_pause_menu.show_seed(_seed)
 
 	_player = _spawn_player()
 	_spawn_enemies()
+	_spawn_floor_loot()
+	add_child(_fog)
+	_update_sight()
 	_progress = _create_progress()
 	_connect_controls()
 	_connect_menu()
@@ -59,8 +71,13 @@ func _ready() -> void:
 	_refresh_hud()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	_player.move(_move_input())
+	_burn_whoever_stands_in_lava(delta)
+	_sight_update_left -= delta
+	if _sight_update_left <= 0.0:
+		_sight_update_left = SIGHT_UPDATE_SECONDS
+		_update_sight()
 	_attack_button.set_cooldown_ratio(_player.attack_cooldown_ratio())
 	_utility_button.set_cooldown_ratio(_player.utility_cooldown_ratio())
 	_track_player_room()
@@ -90,6 +107,12 @@ func _spawn_enemies() -> void:
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
 		add_child(enemy)
 		_enemies_by_room.get_or_add(room, []).append(enemy)
+
+
+## Items lying around from the start (vault treasure, dead-end finds), picked like a chest's.
+func _spawn_floor_loot() -> void:
+	for cell in _map.loot_cells:
+		_spawn_drop(DungeonView.cell_center(cell), LootTable.pick_item_id(GameTuning.item_ids(), _held_ids(), _rng))
 
 
 func _create_progress() -> DungeonProgress:
@@ -185,12 +208,14 @@ func _track_player_room() -> void:
 
 func _on_room_locked(room: int) -> void:
 	_view.set_room_closed(room, true)
+	_sight_origin = DungeonMap.NO_CELL
 	for enemy: Enemy in _enemies_by_room[room]:
 		enemy.chase(_player)
 
 
 func _on_room_cleared(room: int) -> void:
 	_view.set_room_closed(room, false)
+	_sight_origin = DungeonMap.NO_CELL
 	_spawn_chest(room)
 
 
@@ -212,6 +237,35 @@ func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 			add_child(projectile)
 		elif attack is Slash:
 			add_child(SlashEffect.new(attack, attacker))
+
+
+## Fog of war: the player sees through open floor, water and lava, not walls or closed doors. Enemies out of
+## sight are hidden; the map they have seen stays drawn, dimmed.
+func _update_sight() -> void:
+	var origin := DungeonView.world_to_cell(_player.global_position)
+	if origin != _sight_origin:
+		_sight_origin = origin
+		var is_clear := func(cell: Vector2i) -> bool: return _map.is_see_through(cell) and not _view.is_door_closed(cell)
+		_exploration.look_from(origin, is_clear)
+		_fog.show_exploration(_exploration)
+	for enemies: Array in _enemies_by_room.values():
+		for enemy: Enemy in enemies:
+			enemy.visible = _exploration.is_visible(DungeonView.world_to_cell(enemy.global_position))
+
+
+func _burn_whoever_stands_in_lava(delta: float) -> void:
+	_burn(_player, delta)
+	for enemies: Array in _enemies_by_room.values():
+		for enemy: Enemy in enemies:
+			_burn(enemy, delta)
+
+
+func _burn(actor: Node2D, delta: float) -> void:
+	var cell := DungeonView.world_to_cell(actor.global_position)
+	var in_lava := _map.terrain_at(cell) == DungeonMap.Terrain.LAVA
+	var damage := _lava.damage_due(actor.get_instance_id(), in_lava, delta)
+	if damage > 0:
+		actor.take_damage(damage)
 
 
 # --- Loot ----------------------------------------------------------------------------------------

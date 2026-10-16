@@ -51,6 +51,11 @@ func deepest_slot() -> Vector2i:
 	return deepest
 
 
+## How many links lead in and out of a room: 1 means a dead end.
+func link_count(slot: Vector2i) -> int:
+	return links.filter(func(link: Array) -> bool: return slot in link).size()
+
+
 func is_linked(a: Vector2i, b: Vector2i) -> bool:
 	return links.any(func(link: Array) -> bool: return (link[0] == a and link[1] == b) or (link[0] == b and link[1] == a))
 

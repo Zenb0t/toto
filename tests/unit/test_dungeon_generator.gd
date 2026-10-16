@@ -85,3 +85,16 @@ func test_deeper_rooms_hold_as_many_enemies_as_their_depth_calls_for() -> void:
 		var map := _map(seed_value)
 		for room: int in _enemy_rooms(map):
 			assert_true(_enemy_rooms(map)[room] >= DungeonDifficulty.enemy_count(1), "seed %d room %d" % [seed_value, room])
+
+
+func test_items_lie_on_safe_floor_away_from_the_start_and_the_chest_spot() -> void:
+	var items := 0
+	for seed_value in SEEDS:
+		var map := _map(seed_value)
+		for cell in map.loot_cells:
+			items += 1
+			var room := map.room_at(cell)
+			assert_true(map.is_standable(cell), "seed %d %s" % [seed_value, cell])
+			assert_ne(room, map.room_at(map.player_spawn), "seed %d" % seed_value)
+			assert_ne(cell, map.room_center(room), "seed %d" % seed_value)
+	assert_gt(items, SEEDS / 2)

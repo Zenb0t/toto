@@ -1,7 +1,11 @@
 class_name DungeonMap
 extends RefCounted
-## Read-only description of a dungeon: walkable cells, doors, rooms and spawn points.
-## Rooms are areas of floor separated by doors; a door belongs to every room it touches.
+## Read-only description of a dungeon: walkable cells, doors, rooms, terrain and spawn points.
+## Rooms are areas separated by doors; a door belongs to every room it touches. A room's water and lava
+## are part of it: deep water can't be walked on but can be seen and shot across; lava can be walked on,
+## but it burns.
+
+enum Terrain { FLOOR, WATER, LAVA }
 
 const NO_ROOM := -1
 const NO_CELL := Vector2i(-1, -1)
@@ -12,11 +16,14 @@ var enemy_spawns: Array[Vector2i]
 var room_count: int
 ## Where the stairs out are, or NO_CELL for a map without an exit.
 var exit_cell: Vector2i
+## Where an item lies on the floor from the start.
+var loot_cells: Array[Vector2i] = []
 
 var _room_by_cell: Dictionary  # Vector2i -> int
 var _doors_by_room: Dictionary  # int -> Array[Vector2i]
 var _door_cells: Dictionary  # Vector2i -> true
 var _enemy_weapon_by_cell: Dictionary  # Vector2i -> weapon id
+var _terrain_by_cell: Dictionary  # Vector2i -> Terrain, only for cells that aren't plain floor
 
 
 func _init(
@@ -28,6 +35,8 @@ func _init(
 	enemy_weapon_by_cell: Dictionary,
 	number_of_rooms: int,
 	exit: Vector2i = NO_CELL,
+	terrain_by_cell: Dictionary = {},
+	loot: Array[Vector2i] = [],
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -38,6 +47,8 @@ func _init(
 	enemy_spawns.assign(enemy_weapon_by_cell.keys())
 	room_count = number_of_rooms
 	exit_cell = exit
+	_terrain_by_cell = terrain_by_cell
+	loot_cells = loot
 
 
 ## The weapon id the enemy spawning at cell carries.
@@ -45,8 +56,35 @@ func enemy_weapon_at(cell: Vector2i) -> String:
 	return _enemy_weapon_by_cell.get(cell, "")
 
 
-func is_walkable(cell: Vector2i) -> bool:
+## True for anything that isn't solid wall: room cells (water and lava included) and doors.
+func is_open(cell: Vector2i) -> bool:
 	return _room_by_cell.has(cell) or is_door(cell)
+
+
+func is_walkable(cell: Vector2i) -> bool:
+	return is_open(cell) and terrain_at(cell) != Terrain.WATER
+
+
+## Sight and shots cross water and lava; only walls (and closed doors, handled by the doors) stop them.
+func is_see_through(cell: Vector2i) -> bool:
+	return is_open(cell)
+
+
+func terrain_at(cell: Vector2i) -> Terrain:
+	return _terrain_by_cell.get(cell, Terrain.FLOOR)
+
+
+## Where it is safe to stand or put something: walkable and not burning.
+func is_standable(cell: Vector2i) -> bool:
+	return is_walkable(cell) and terrain_at(cell) != Terrain.LAVA
+
+
+func cells_with(terrain: Terrain) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for cell: Vector2i in _terrain_by_cell:
+		if _terrain_by_cell[cell] == terrain:
+			cells.append(cell)
+	return cells
 
 
 func is_door(cell: Vector2i) -> bool:
@@ -77,27 +115,37 @@ func cells_of_room(room: int) -> Array[Vector2i]:
 	return cells
 
 
-## The room's cell closest to its middle, so things placed there are always on its floor
-## (even in a room that isn't a rectangle).
+## The room's free, standable cell closest to its middle, so things placed there (the chest) are always on
+## safe floor, even in a room that isn't a rectangle or has a pool in the middle, and never on another item.
 func room_center(room: int) -> Vector2i:
-	var cells := cells_of_room(room)
-	assert(not cells.is_empty(), "room %d has no cells" % room)
+	return middle_cell(cells_of_room(room).filter(
+		func(cell: Vector2i) -> bool: return is_standable(cell) and cell not in loot_cells))
+
+
+## Of the given cells, the one closest to their middle.
+static func middle_cell(cells: Array) -> Vector2i:
+	assert(not cells.is_empty(), "no cells to pick the middle of")
 	var middle := Vector2.ZERO
-	for cell in cells:
+	for cell: Vector2i in cells:
 		middle += Vector2(cell)
 	middle /= cells.size()
-	var closest := cells[0]
-	for cell in cells:
+	var closest: Vector2i = cells[0]
+	for cell: Vector2i in cells:
 		if Vector2(cell).distance_squared_to(middle) < Vector2(closest).distance_squared_to(middle):
 			closest = cell
 	return closest
 
 
-func walkable_cells() -> Array[Vector2i]:
+## Every cell that isn't wall (see is_open).
+func open_cells() -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	cells.assign(_room_by_cell.keys())
 	cells.append_array(door_cells())
 	return cells
+
+
+func walkable_cells() -> Array[Vector2i]:
+	return open_cells().filter(is_walkable)
 
 
 ## True when no door is in any of the 8 surrounding cells, so a door could close without overlapping
