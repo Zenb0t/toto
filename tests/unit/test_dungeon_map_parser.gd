@@ -69,7 +69,9 @@ func test_each_enemy_letter_spawns_its_monster() -> void:
 
 
 func test_every_monster_letter_is_read_as_an_enemy() -> void:
-	var map := _parser.parse("#".repeat(14) + "\n#P" + "".join(Bestiary.letters()) + "#\n" + "#".repeat(14))
+	var letters := "".join(Bestiary.letters())
+	var wall := "#".repeat(letters.length() + 3)
+	var map := _parser.parse(wall + "\n#P" + letters + "#\n" + wall)
 
 	assert_eq(map.enemy_spawns.size(), Bestiary.all().size())
 

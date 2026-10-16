@@ -51,6 +51,12 @@ func advance(delta: float, origin: Vector2) -> Array:
 	return weapon.attacks(origin, _direction, _aim_distance)
 
 
+## Cancels an attack being wound up (being yanked off your feet does that). The cooldown stays spent.
+func interrupt() -> void:
+	_winding_up = false
+	_target = null
+
+
 func is_winding_up() -> bool:
 	return _winding_up
 

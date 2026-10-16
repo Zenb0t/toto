@@ -124,3 +124,33 @@ func test_the_dash_preview_shows_how_far_one_dash_goes() -> void:
 	dash.dash_duration = 0.2
 
 	assert_eq(dash.aim_range(), 120.0)
+
+
+func test_a_lightning_bolt_pierces_and_bounces() -> void:
+	var bolt: Shot = LightningBolt.new().attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)[0]
+
+	assert_true(bolt.pierces)
+	assert_gt(bolt.bounces, 0)
+
+
+func test_a_mephitic_cloud_is_lobbed_where_aimed_and_leaves_a_cloud() -> void:
+	var weapon := MephiticCloud.new()
+
+	var shot: Shot = weapon.attacks(Vector2.ZERO, Vector2.UP, 200.0)[0]
+
+	assert_true(shot.lobbed)
+	assert_true(shot.leaves_cloud())
+	assert_eq(shot.travel_range, 200.0)
+	assert_false(shot.explodes())
+	assert_false(weapon.needs_line_of_sight())
+
+
+func test_a_battleaxe_hits_harder_and_wider_than_a_sword_but_slower() -> void:
+	var axe := Battleaxe.new()
+	var sword := Sword.new()
+
+	assert_gt(axe.damage, sword.damage)
+	assert_gt(axe.arc_degrees, sword.arc_degrees)
+	assert_gt(axe.cooldown, sword.cooldown)
+	assert_gt(axe.windup, sword.windup)
+	assert_ne(axe.id, sword.id)

@@ -18,7 +18,7 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
-| **Weapon: …** (top right) | Testing aid: switch between Magic Missile, Sword, Fireball and Crossbow |
+| **Weapon: …** (top right) | Testing aid: cycle through every weapon |
 | **II** (top right) or Esc | Pause menu: resume, customize controls, tune gameplay, restart run |
 | WASD | Move (desktop only; a mouse is just one finger) |
 
@@ -70,8 +70,8 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
   (which rooms and links), `RoomShapes` (floor plans and pillars), `Vaults` (hand-made set pieces),
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`)
-- `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`,
-  `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`). Each declares its own tunable `Knob`s
+- `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`, `Battleaxe`, `LightningBolt`, `MephiticCloud`,
+  `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`), when a weapon fires
   (`Wielder`: cooldown and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)

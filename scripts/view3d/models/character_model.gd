@@ -44,7 +44,7 @@ func _init(body_color: Color, with_health_bar := false, race := "") -> void:
 
 func _add_race_feature(race: String, head_center: Vector3, body_color: Color) -> void:
 	match race:
-		"kobold", "goblin":
+		"kobold", "goblin", "elf":
 			for side: float in [-1.0, 1.0]:
 				var ear := ModelParts.part(ModelParts.box(Vector3(0.26, 0.07, 0.1)), body_color.darkened(0.15),
 					head_center + Vector3(side * HEAD_RADIUS * 1.05, HEAD_RADIUS * 0.3, 0))

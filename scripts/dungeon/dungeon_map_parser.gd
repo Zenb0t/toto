@@ -5,7 +5,8 @@ extends RefCounted
 ##   P  player spawn (on floor)     >  exit (on floor; optional)     *  an item lying on the floor
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
-##   w apprentice  c crossbowman  f pyromancer  o orc  W orc wizard  d dwarf  O ogre
+##   w apprentice  c crossbowman  f pyromancer  n necromancer  o orc  W orc wizard  d dwarf
+##   e deep elf mage  O ogre
 
 const WALL := "#"
 const FLOOR := "."

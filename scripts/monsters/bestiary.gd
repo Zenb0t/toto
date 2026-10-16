@@ -1,7 +1,8 @@
 class_name Bestiary
 extends RefCounted
 ## Every monster in the dungeon. Like Dungeon Crawl's early floors: quick, weak kobolds and goblins first,
-## humans, then orcs and their wizards, slow and sturdy dwarves, and ogres that hit very hard.
+## humans and their necromancers, then orcs and their wizards, slow and sturdy dwarves, deep elf mages
+## casting lightning, and ogres swinging battleaxes.
 
 const KOBOLD_COLOR := Color(0.78, 0.55, 0.3)
 const GOBLIN_COLOR := Color(0.5, 0.75, 0.3)
@@ -10,6 +11,8 @@ const ORC_COLOR := Color(0.32, 0.55, 0.32)
 const ORC_WIZARD_COLOR := Color(0.55, 0.4, 0.75)
 const DWARF_COLOR := Color(0.72, 0.42, 0.25)
 const OGRE_COLOR := Color(0.7, 0.66, 0.45)
+const NECROMANCER_COLOR := Color(0.55, 0.5, 0.6)
+const DEEP_ELF_COLOR := Color(0.55, 0.6, 0.9)
 
 
 static func all() -> Array[Monster]:
@@ -22,10 +25,12 @@ static func all() -> Array[Monster]:
 		Monster.new("apprentice", "Apprentice", "w", "wand", 3, 1.0, 1.0, 0, "human", HUMAN_COLOR),
 		Monster.new("crossbowman", "Crossbowman", "c", "crossbow", 3, 1.0, 1.0, 0, "human", HUMAN_COLOR),
 		Monster.new("pyromancer", "Pyromancer", "f", "fireball", 3, 1.0, 1.0, 0, "human", HUMAN_COLOR),
+		Monster.new("necromancer", "Necromancer", "n", "mephitic_cloud", 4, 0.95, 1.0, 0, "human", NECROMANCER_COLOR),
 		Monster.new("orc", "Orc", "o", "sword", 5, 1.0, 1.15, 0, "orc", ORC_COLOR),
 		Monster.new("orc_wizard", "Orc wizard", "W", "fireball", 4, 0.95, 1.1, 0, "orc", ORC_WIZARD_COLOR),
 		Monster.new("dwarf", "Dwarf", "d", "crossbow", 8, 0.7, 0.95, 0, "dwarf", DWARF_COLOR),
-		Monster.new("ogre", "Ogre", "O", "sword", 14, 0.6, 1.6, 2, "ogre", OGRE_COLOR),
+		Monster.new("deep_elf_mage", "Deep elf mage", "e", "lightning_bolt", 5, 1.05, 0.95, 0, "elf", DEEP_ELF_COLOR),
+		Monster.new("ogre", "Ogre", "O", "battleaxe", 14, 0.6, 1.6, 1, "ogre", OGRE_COLOR),
 	]
 
 

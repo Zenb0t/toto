@@ -2,7 +2,9 @@ class_name Projectile
 extends Area2D
 ## Flies a Shot straight until it hits something or runs out of range.
 ## A plain shot damages what it hits; an explosive shot bursts into an Explosion instead.
-## A lobbed shot arcs over everything and bursts where it lands.
+## A lobbed shot arcs over everything and bursts (or leaves its poison cloud) where it lands.
+## A piercing shot passes through foes, hitting each once; a bouncing one glances off walls; a pulling one
+## drags the first foe it hits back to where it was fired from.
 ## On the 2D plane (the floor) it draws only its shadow; the 3D view draws the shot itself, height() up.
 
 ## How high a lob arcs, relative to how far it travels, and never higher than LOB_MAX_HEIGHT.
@@ -17,6 +19,9 @@ const ENEMY_LAYER_BIT := 4
 var _shot: Shot
 var _time_left := 0.0
 var _spent := false
+var _bounces_left := 0
+var _last_step := Vector2.ZERO
+var _already_hit := {}  # foe instance id -> true
 
 
 func _ready() -> void:
@@ -28,6 +33,7 @@ func launch(shot: Shot) -> void:
 	_shot = shot
 	position = shot.origin
 	_time_left = shot.lifetime()
+	_bounces_left = shot.bounces
 	if shot.lobbed:
 		collision_mask = 0
 	else:
@@ -44,7 +50,8 @@ func height() -> float:
 
 
 func _physics_process(delta: float) -> void:
-	position += _shot.direction * _shot.speed * delta
+	_last_step = _shot.direction * _shot.speed * delta
+	position += _last_step
 	_time_left -= delta
 	if _time_left <= 0.0:
 		_finish()
@@ -65,9 +72,33 @@ func _lob_height() -> float:
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if not _shot.explodes() and body.has_method("take_damage"):
+	if not body.has_method("take_damage"):
+		_hit_wall()
+		return
+	if _spent or _already_hit.has(body.get_instance_id()):
+		return
+	_already_hit[body.get_instance_id()] = true
+	if _shot.pulls and body.has_method("pull_toward"):
+		body.pull_toward(_shot.origin)
+	elif not _shot.explodes():
 		body.take_damage(_shot.damage)
-	_finish()
+	if not _shot.pierces:
+		_finish()
+
+
+## Glances off the wall while it has bounces left, otherwise stops there.
+func _hit_wall() -> void:
+	if _bounces_left <= 0:
+		_finish()
+		return
+	var query := PhysicsRayQueryParameters2D.create(
+		global_position - _last_step * 2.0, global_position + _shot.direction * _shot.size * 2.0, WALL_LAYER_BIT)
+	var contact := get_world_2d().direct_space_state.intersect_ray(query)
+	var normal: Vector2 = contact.normal if not contact.is_empty() else -_shot.direction
+	_bounces_left -= 1
+	_shot.direction = _shot.direction.bounce(normal).normalized()
+	if not contact.is_empty():
+		global_position = contact.position + normal * (_shot.size + 2.0)
 
 
 ## A shot can touch a wall and an enemy in the same frame: only the first contact counts.
@@ -79,4 +110,8 @@ func _finish() -> void:
 		var explosion := Explosion.new(_shot.blast_radius, _shot.damage, _shot.color)
 		explosion.position = position
 		get_parent().add_child.call_deferred(explosion)
+	if _shot.leaves_cloud():
+		var cloud := PoisonCloud.new(_shot.cloud_radius, _shot.damage, _shot.cloud_seconds, _shot.hurts_player)
+		cloud.position = position
+		get_parent().add_child.call_deferred(cloud)
 	queue_free()

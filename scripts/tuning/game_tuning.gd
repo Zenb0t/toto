@@ -25,11 +25,14 @@ const DEFAULT_UTILITY_ID := "dash"
 
 ## Every weapon, in the order the quick switch cycles through them.
 static func weapons() -> Array[Weapon]:
-	return [MagicMissile.new(), Sword.new(), Fireball.new(), Crossbow.new()]
+	return [
+		MagicMissile.new(), Sword.new(), Fireball.new(), Crossbow.new(), LightningBolt.new(), MephiticCloud.new(),
+		Battleaxe.new(),
+	]
 
 
 static func utilities() -> Array[Utility]:
-	return [Dash.new(), Shield.new(), Blink.new(), FrostNova.new()]
+	return [Dash.new(), Shield.new(), Blink.new(), FrostNova.new(), Beckoning.new()]
 
 
 ## Every potion, in the order the potion belt shows them.

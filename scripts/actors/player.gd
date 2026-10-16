@@ -172,8 +172,11 @@ func _apply(effect: UtilityEffect) -> void:
 	health.heal(effect.heal_amount)
 	if effect.blink_offset != Vector2.ZERO:
 		move_and_collide(effect.blink_offset)
+	# What a utility lets out starts at its user; shots, like a weapon's, just in front of the body.
 	for attack: Variant in effect.attacks:
 		attack.origin = global_position
+		if attack is Shot:
+			attack.origin += attack.direction * Weapon.MUZZLE_DISTANCE
 	_release(effect.attacks)
 	if effect.haste_seconds > 0.0:
 		_haste_multiplier = effect.haste_multiplier

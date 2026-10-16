@@ -41,9 +41,13 @@ func test_kobolds_are_quick_and_frail() -> void:
 
 func test_ogres_are_huge_and_hit_hard() -> void:
 	var ogre := Bestiary.by_id("ogre")
+	var tuning := GameTuning.create()
+	var bandit_hit: int = GameTuning.weapon(tuning, Bestiary.by_id("bandit").weapon_id).damage
+
+	var ogre_hit: int = GameTuning.weapon(tuning, ogre.weapon_id).damage + ogre.damage_bonus
 
 	assert_gt(ogre.size, 1.4)
-	assert_gt(ogre.damage_bonus, 0)
+	assert_gt(ogre_hit, bandit_hit)
 
 
 func test_unknown_ids_fall_back_to_a_bandit() -> void:

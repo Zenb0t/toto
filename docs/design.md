@@ -40,12 +40,16 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | Sword | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
 | Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (eased, so short drags give fine control up close); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
+| Lightning Bolt | Dungeon Crawl's bolt, shot like Rico's: passes through every enemy in its line (each hit once) and bounces off one wall | Line |
+| Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 3 s that hurts enemies inside every 0.6 s. Doesn't hurt the thrower | Landing circle |
+| Battleaxe | Like Frank's hammer: a long wind-up, then a 180° sweep for 4 damage | Cone |
 
 | Utility | Behaviour | Aim |
 | --- | --- | --- |
 | Dash (starter) | A quick burst of speed where you aim | Line as long as one dash |
 | Shield | Blocks all damage (your own blasts included) for a moment | None: tap anywhere |
 | Blink | Like Dungeon Crawl's scroll of blinking: an instant hop (140) where you aim. Walls and water stop it short; enemies don't, so it gets you out of a corner | Line as long as the hop |
+| Lesser Beckoning | Like Gene's magic hand: a quick bolt that drags the first enemy it hits back to where it was cast, cancelling the attack it was winding up | Line |
 | Frost Nova | A burst around you: 1 damage to every enemy in reach, and they act at half speed (moving, winding up, recovering) for 2.5 s. An icy ring on the floor marks a slowed enemy | The burst's circle around you |
 
 **Potions** (consumables, like Dungeon Crawl's). Heal used to be a utility, but healing on a cooldown was too
@@ -127,17 +131,19 @@ still decides how it fights). The map letter names the monster, so playtests sta
 | `w` | Apprentice (human) | Magic Missile | 3 | 1× | | |
 | `c` | Crossbowman (human) | Crossbow | 3 | 1× | | |
 | `f` | Pyromancer (human) | Fireball | 3 | 1× | | |
+| `n` | Necromancer (human) | Mephitic Cloud | 4 | 0.95× | | |
 | `o` | Orc | Sword | 5 | 1× | large | |
 | `W` | Orc wizard | Fireball | 4 | 0.95× | large | |
 | `d` | Dwarf | Crossbow | 8 | 0.7× | | The tank: slow and sturdy |
-| `O` | Ogre | Sword | 14 | 0.6× | huge | +2 damage on every hit |
+| `e` | Deep elf mage | Lightning Bolt | 5 | 1.05× | | Pointy ears; bolts bounce off walls |
+| `O` | Ogre | Battleaxe | 14 | 0.6× | huge | +1 damage on every hit |
 
 Size is the body attacks hit, so an ogre is easier to hit than a kobold. Tune → Enemies scales every
-monster's health at once (Health ×). Models show the race: colour, size, pointy ears (kobolds, goblins),
+monster's health at once (Health ×). Models show the race: colour, size, pointy ears (kobolds, goblins, elves),
 tusks (orcs, ogres), a beard (dwarves); the red ring on the floor marks every one as a foe.
 
 **By depth** (`DungeonDifficulty`): kobolds, goblins and bandits near the start; then human casters and archers,
-and orcs; then orc wizards and dwarves; ogres deepest. Deeper rooms also hold more monsters.
+orcs and necromancers; then orc wizards and dwarves; deep elf mages and ogres deepest. Deeper rooms also hold more monsters.
 
 ## Floors (the descent)
 

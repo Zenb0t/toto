@@ -32,6 +32,9 @@ const SLACK_SHARE := 0.25
 const REPATH_SECONDS := 0.4
 ## How close to a path point counts as reaching it, in pixels.
 const WAYPOINT_REACHED := 6.0
+## How fast a pulled enemy is dragged, and how far from the pull's point it stops.
+const PULL_SPEED := 900.0
+const PULL_STOP_GAP := 8.0
 
 var health := Health.new(DEFAULT_MAX_HEALTH)
 ## What kind of monster this is. Set with become() before it joins the world.
@@ -51,6 +54,8 @@ var _target: Node2D
 var _strafe_sign := 1.0
 var _path := PackedVector2Array()
 var _repath_left := 0.0
+var _pull_velocity := Vector2.ZERO
+var _pull_time_left := 0.0
 var _slow_multiplier := 1.0
 var _slow_time_left := 0.0
 
@@ -106,8 +111,26 @@ func is_slowed() -> bool:
 	return _slow_time_left > 0.0
 
 
+## Drags the enemy to just short of a point (Lesser Beckoning), cancelling the attack it was winding up.
+func pull_toward(point: Vector2) -> void:
+	var stop := point + point.direction_to(global_position) * (body_radius() + Player.RADIUS + PULL_STOP_GAP)
+	var travel := stop - global_position
+	_pull_velocity = travel.normalized() * PULL_SPEED
+	_pull_time_left = travel.length() / PULL_SPEED
+	_wielder.interrupt()
+
+
+func is_being_pulled() -> bool:
+	return _pull_time_left > 0.0
+
+
 func _physics_process(delta: float) -> void:
 	_slow_time_left = maxf(_slow_time_left - delta, 0.0)
+	if is_being_pulled():
+		_pull_time_left -= delta
+		velocity = _pull_velocity
+		move_and_slide()
+		return
 	# A slowed enemy's own clock runs slow: it moves, winds up and recovers at a fraction of its pace.
 	var pace := _slow_multiplier if is_slowed() else 1.0
 	_release(_wielder.advance(delta * pace, global_position))

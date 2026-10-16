@@ -58,3 +58,12 @@ func test_a_frost_nova_previews_the_area_around_you() -> void:
 
 	assert_eq(shape.length, 0.0)
 	assert_eq(shape.end_radius, FrostNova.new().radius)
+
+
+func test_beckoning_throws_a_harmless_pulling_bolt_toward_the_aim() -> void:
+	var effect := Beckoning.new().activate(Vector2(0, 2))
+
+	var shot: Shot = effect.attacks[0]
+	assert_true(shot.pulls)
+	assert_eq(shot.damage, 0)
+	assert_eq(shot.direction, Vector2.DOWN)
