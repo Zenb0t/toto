@@ -25,7 +25,7 @@ const DEFAULT_UTILITY_ID := "dash"
 
 ## Every weapon, in the order the quick switch cycles through them.
 static func weapons() -> Array[Weapon]:
-	return [Wand.new(), Sword.new(), Fireball.new(), Crossbow.new()]
+	return [MagicMissile.new(), Sword.new(), Fireball.new(), Crossbow.new()]
 
 
 static func utilities() -> Array[Utility]:

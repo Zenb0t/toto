@@ -42,7 +42,7 @@ func test_an_enemy_attacks_only_when_its_target_is_within_reach() -> void:
 func test_melee_fighters_want_to_be_closer_than_shooters_and_throwers() -> void:
 	var sword := Sword.new().ideal_distance()
 	var crossbow := Crossbow.new().ideal_distance()
-	var wand := Wand.new().ideal_distance()
+	var wand := MagicMissile.new().ideal_distance()
 	var fireball := Fireball.new().ideal_distance()
 
 	assert_lt(sword, crossbow)

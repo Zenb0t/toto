@@ -36,7 +36,7 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 
 | Weapon | Behaviour | Aim shape |
 | --- | --- | --- |
-| Wand (starter) | One magic bolt | Line |
+| Magic Missile (starter; id `wand`) | One magic bolt, Dungeon Crawl's first spell | Line |
 | Sword | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
 | Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (eased, so short drags give fine control up close); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
@@ -66,7 +66,7 @@ might works, a ring in its colour shows on the floor around the hero. Each potio
 **Model (step 4).** `Weapon` and `Utility` are plain data objects (both `Item`s). Whoever wields a weapon owns
 *when* (a `Wielder`: cooldown, wind-up, auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s).
 A utility turns an aim into a `UtilityEffect` (dash, shield time, healing) that the player applies. The buttons show the equipped
-item's name and colour. The starter gear is a **Wand** (one magic bolt) and a **Dash**. New behaviours
+item's name and colour. The starter gear is **Magic Missile** (one magic bolt) and a **Dash**. New behaviours
 (melee arc, explosions, spreads) are attack kinds: a weapon returns `Shot`s (projectiles, optionally
 explosive) and `Slash`es (melee arcs), and the world carries them out.
 
@@ -90,7 +90,7 @@ When a playtest settles on better values, they get copied into those defaults.
 - **Compare and swap.** Standing on a drop shows a card: the item's name and one-line description, what it
   replaces (what you hold in the same slot), and **Take** / **Leave**. Taking it leaves your old item on the floor in its place, so a swap can be
   undone; the card only returns after you step off and on again, so nothing is swapped by accident.
-- **Runs start with the Wand and the Dash.** The HUD weapon switch stays as a testing aid for tuning each weapon, but the
+- **Runs start with Magic Missile and the Dash.** The HUD weapon switch stays as a testing aid for tuning each weapon, but the
   choice is no longer saved.
 
 `LootTable` holds the rules (pure, given a seeded random generator). `Chest` and `WeaponDrop` only notice the
@@ -105,7 +105,7 @@ Enemies carry **the same weapons as the player**, and the weapon decides how the
 | --- | --- |
 | Sword | Rushes in and swings |
 | Crossbow | Gets close, then fires its fan |
-| Wand | Keeps to mid range and shoots |
+| Magic Missile | Keeps to mid range and shoots |
 | Fireball | Hangs back and lobs; backs away if you get close. Its blast hurts other enemies too |
 
 Within their comfortable range they circle the player instead of standing still. Their attacks are fair by
@@ -121,10 +121,10 @@ still decides how it fights). The map letter names the monster, so playtests sta
 | Letter | Monster | Weapon | Health | Speed | Size | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `k` | Kobold | Sword | 2 | 1.25× | small | Quick and frail, comes in numbers |
-| `g` | Goblin | Wand | 2 | 1.1× | small | |
+| `g` | Goblin | Magic Missile | 2 | 1.1× | small | |
 | `a` | Goblin archer | Crossbow | 2 | 1.1× | small | |
 | `s` | Bandit (human) | Sword | 3 | 1× | | |
-| `w` | Apprentice (human) | Wand | 3 | 1× | | |
+| `w` | Apprentice (human) | Magic Missile | 3 | 1× | | |
 | `c` | Crossbowman (human) | Crossbow | 3 | 1× | | |
 | `f` | Pyromancer (human) | Fireball | 3 | 1× | | |
 | `o` | Orc | Sword | 5 | 1× | large | |

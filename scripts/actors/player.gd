@@ -34,7 +34,7 @@ var weapon: Weapon:
 		return _wielder.weapon
 var utility: Utility = Dash.new()
 
-var _wielder := Wielder.new(Wand.new())
+var _wielder := Wielder.new(MagicMissile.new())
 var _move_input := Vector2.ZERO
 var _utility_cooldown := Cooldown.new(utility.cooldown)
 var _dash_direction := Vector2.ZERO

@@ -453,7 +453,7 @@ func _on_layout_finished(layout: ControlLayout) -> void:
 	_pause_menu.return_to_panel()
 
 
-## Testing aid: cycles through every weapon, keeping each one's own tuning. Runs still start with the Wand.
+## Testing aid: cycles through every weapon, keeping each one's own tuning. Runs still start with the MagicMissile.
 func _on_weapon_switch_pressed() -> void:
 	_weapon_id = GameTuning.next_weapon_id(_weapon_id)
 	_apply_tuning(_tuning)

@@ -34,8 +34,8 @@ func _carry_out(attacks: Array, attacker: Node2D) -> void:
 			add_child_autofree(SlashEffect.new(attack, attacker))
 
 
-func _wand(windup: float) -> Wand:
-	var wand := Wand.new()
+func _wand(windup: float) -> MagicMissile:
+	var wand := MagicMissile.new()
 	wand.windup = windup
 	wand.shot_speed = 1000.0
 	return wand
@@ -75,7 +75,7 @@ func test_stepping_aside_during_the_telegraph_dodges_the_shot() -> void:
 
 func test_an_enemys_shot_flies_through_other_enemies() -> void:
 	var player := _spawn_player_at(Vector2(200, 0))
-	var bystander := _spawn_enemy_at(Vector2(100, 0), Wand.new())
+	var bystander := _spawn_enemy_at(Vector2(100, 0), MagicMissile.new())
 	var shooter := _spawn_enemy_at(Vector2.ZERO, _wand(0.1))
 
 	shooter.chase(player)

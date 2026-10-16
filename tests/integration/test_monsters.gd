@@ -14,8 +14,8 @@ func _monster_at(position: Vector2, monster_id: String, health_multiplier := 1.0
 	return enemy
 
 
-func _quick_wand() -> Wand:
-	var wand := Wand.new()
+func _quick_wand() -> MagicMissile:
+	var wand := MagicMissile.new()
 	wand.windup = 0.0
 	wand.shot_speed = 1000.0
 	return wand
@@ -61,4 +61,4 @@ func test_a_strong_monster_hits_harder_with_the_same_weapon() -> void:
 	await wait_seconds(0.2)
 
 	var attacks: Array = get_signal_parameters(ogre, "attack_fired")[0]
-	assert_eq(attacks[0].damage, Wand.new().shot_damage + Bestiary.by_id("ogre").damage_bonus)
+	assert_eq(attacks[0].damage, MagicMissile.new().shot_damage + Bestiary.by_id("ogre").damage_bonus)

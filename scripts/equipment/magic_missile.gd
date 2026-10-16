@@ -1,6 +1,7 @@
-class_name Wand
+class_name MagicMissile
 extends Weapon
-## The starter weapon: a single magic bolt.
+## The starter weapon, Dungeon Crawl's first spell: a single bolt of magic.
+## Its id stays "wand" (what it was first called), so saved tuning keeps working.
 
 var shot_speed := 360.0
 var shot_range := 420.0
@@ -9,9 +10,9 @@ var shot_damage := 1
 
 func _init() -> void:
 	id = "wand"
-	display_name = "Wand"
-	description = "One magic bolt."
-	button_label = "WAND"
+	display_name = "MagicMissile"
+	description = "A single bolt of magic."
+	button_label = "MISSILE"
 	color = Color(1, 0.8, 0.3)
 	cooldown = 0.8
 	windup = 0.1

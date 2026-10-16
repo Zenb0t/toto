@@ -28,7 +28,7 @@ func test_each_weapon_keeps_its_own_settings() -> void:
 	tuning.set_value(GameTuning.key("sword", "windup"), 0.5)
 
 	assert_eq(GameTuning.weapon(tuning, "sword").windup, 0.5)
-	assert_eq(GameTuning.weapon(tuning, "wand").windup, Wand.new().windup)
+	assert_eq(GameTuning.weapon(tuning, "wand").windup, MagicMissile.new().windup)
 
 
 func test_whole_number_settings_stay_whole() -> void:

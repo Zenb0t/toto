@@ -4,7 +4,7 @@ const ORIGIN := Vector2(10, 20)
 
 
 func test_the_wand_fires_one_bolt_from_in_front_of_the_player() -> void:
-	var attacks := Wand.new().attacks(ORIGIN, Vector2(0, -5), 0.0)
+	var attacks := MagicMissile.new().attacks(ORIGIN, Vector2(0, -5), 0.0)
 
 	assert_eq(attacks.size(), 1)
 	var bolt: Shot = attacks[0]
@@ -14,7 +14,7 @@ func test_the_wand_fires_one_bolt_from_in_front_of_the_player() -> void:
 
 
 func test_a_shot_flies_for_as_long_as_its_range_allows() -> void:
-	var wand := Wand.new()
+	var wand := MagicMissile.new()
 	wand.shot_speed = 200.0
 	wand.shot_range = 500.0
 
@@ -75,7 +75,7 @@ func test_a_fireball_aim_curve_of_one_aims_in_proportion_to_the_drag() -> void:
 
 
 func test_a_weapon_aims_in_proportion_to_the_drag_by_default() -> void:
-	var wand := Wand.new()
+	var wand := MagicMissile.new()
 
 	assert_almost_eq(wand.aim_distance(0.25), wand.aim_range() * 0.25, 0.001)
 
@@ -105,7 +105,7 @@ func test_the_crossbow_fans_its_bolts_around_the_aim() -> void:
 
 
 func test_each_weapon_previews_its_own_shape() -> void:
-	assert_eq(Wand.new().aim_shape().kind, AimShape.Kind.LINE)
+	assert_eq(MagicMissile.new().aim_shape().kind, AimShape.Kind.LINE)
 	assert_eq(Sword.new().aim_shape().kind, AimShape.Kind.CONE)
 	assert_eq(Crossbow.new().aim_shape().kind, AimShape.Kind.FAN)
 	assert_eq(Fireball.new().aim_shape().kind, AimShape.Kind.LOB)

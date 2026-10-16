@@ -10,8 +10,8 @@ func _player() -> Player:
 	return player
 
 
-func _wand_with_windup(windup: float) -> Wand:
-	var weapon := Wand.new()
+func _wand_with_windup(windup: float) -> MagicMissile:
+	var weapon := MagicMissile.new()
 	weapon.windup = windup
 	return weapon
 
@@ -239,4 +239,4 @@ func test_a_might_potion_makes_attacks_hit_harder() -> void:
 	player.drink(potion)
 	player.attack(Vector2.RIGHT)
 
-	assert_eq(_fired_shot(player).damage, Wand.new().shot_damage + 2)
+	assert_eq(_fired_shot(player).damage, MagicMissile.new().shot_damage + 2)

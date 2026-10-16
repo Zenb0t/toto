@@ -90,17 +90,17 @@ func test_the_loot_card_is_hidden_until_something_is_offered() -> void:
 func test_the_loot_card_compares_the_found_weapon_with_the_held_one() -> void:
 	var card := _loot_card()
 
-	card.show_offer(Fireball.new(), Wand.new())
+	card.show_offer(Fireball.new(), MagicMissile.new())
 
 	assert_true(card.visible)
 	assert_eq(card.get_node("Panel/Rows/FoundName").text, "Fireball")
 	assert_eq(card.get_node("Panel/Rows/FoundDescription").text, Fireball.new().description)
-	assert_eq(card.get_node("Panel/Rows/Replaces").text, "Replaces your Wand")
+	assert_eq(card.get_node("Panel/Rows/Replaces").text, "Replaces your MagicMissile")
 
 
 func test_the_loot_card_reports_take_and_leave() -> void:
 	var card := _loot_card()
-	card.show_offer(Sword.new(), Wand.new())
+	card.show_offer(Sword.new(), MagicMissile.new())
 	watch_signals(card)
 
 	card.get_node("Panel/Rows/Buttons/Take").pressed.emit()

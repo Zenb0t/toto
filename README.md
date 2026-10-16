@@ -18,7 +18,7 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
-| **Weapon: …** (top right) | Testing aid: switch between Wand, Sword, Fireball and Crossbow |
+| **Weapon: …** (top right) | Testing aid: switch between Magic Missile, Sword, Fireball and Crossbow |
 | **II** (top right) or Esc | Pause menu: resume, customize controls, tune gameplay, restart run |
 | WASD | Move (desktop only; a mouse is just one finger) |
 
@@ -40,7 +40,7 @@ chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and oft
 weapon wants; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
-fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 with the Wand, the Dash and a Potion of
+fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 with Magic Missile, the Dash and a Potion of
 Healing.
 
 ## Play on a phone
@@ -69,7 +69,7 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
   (which rooms and links), `RoomShapes` (floor plans and pillars), `Vaults` (hand-made set pieces),
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`)
-- `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`Wand`, `Sword`,
+- `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`,
   `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`). Each declares its own tunable `Knob`s
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`), when a weapon fires
   (`Wielder`: cooldown and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`),

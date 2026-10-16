@@ -3,8 +3,8 @@ extends GutTest
 const ORIGIN := Vector2.ZERO
 
 
-func _wand(windup: float, cooldown := 1.0) -> Wand:
-	var wand := Wand.new()
+func _wand(windup: float, cooldown := 1.0) -> MagicMissile:
+	var wand := MagicMissile.new()
 	wand.windup = windup
 	wand.cooldown = cooldown
 	return wand
