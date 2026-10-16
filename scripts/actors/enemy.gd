@@ -43,6 +43,8 @@ var monster: Monster = Bestiary.by_id("bandit")
 ## winding up an attack.
 var facing := Vector2.DOWN
 var move_speed := DEFAULT_MOVE_SPEED
+## The share of its speed the ground allows (see DungeonMap.ground_speed), set by whoever knows the map.
+var ground_speed := 1.0
 ## Optional: without it, the enemy always heads straight for its target.
 var navigation: Pathfinder
 var weapon: Weapon:
@@ -143,7 +145,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			_go_around_to(_target.global_position)
 	_update_facing()
-	velocity *= pace
+	velocity *= pace * ground_speed
 	move_and_slide()
 	queue_redraw()
 

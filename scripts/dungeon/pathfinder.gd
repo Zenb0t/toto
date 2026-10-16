@@ -8,6 +8,8 @@ extends RefCounted
 const SIGHT_STEP := 8.0
 ## A lava cell costs this many floor cells, so paths go round it when they can.
 const LAVA_COST := 10.0
+## Wading is slow: a shallow water cell costs this many floor cells.
+const SHALLOW_COST := 2.0
 
 var _map: DungeonMap
 var _grid := AStarGrid2D.new()
@@ -27,6 +29,8 @@ func _init(map: DungeonMap) -> void:
 			_grid.set_point_solid(cell, not map.is_walkable(cell))
 			if map.terrain_at(cell) == DungeonMap.Terrain.LAVA:
 				_grid.set_point_weight_scale(cell, LAVA_COST)
+			elif map.terrain_at(cell) == DungeonMap.Terrain.SHALLOW:
+				_grid.set_point_weight_scale(cell, SHALLOW_COST)
 
 
 ## World positions of cell centres from (excluding) the start cell to the goal cell; empty if there is no way.

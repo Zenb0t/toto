@@ -169,3 +169,17 @@ func test_a_rooms_center_is_never_in_its_pool() -> void:
 """)
 
 	assert_true(map.is_standable(map.room_center(0)))
+
+
+func test_shallow_water_can_be_waded_through_slowly() -> void:
+	var map := _parser.parse("""
+#####
+#P,.#
+#####
+""")
+
+	assert_eq(map.terrain_at(Vector2i(2, 1)), DungeonMap.Terrain.SHALLOW)
+	assert_true(map.is_walkable(Vector2i(2, 1)))
+	assert_true(map.is_standable(Vector2i(2, 1)))
+	assert_lt(map.ground_speed(Vector2i(2, 1)), 1.0)
+	assert_eq(map.ground_speed(Vector2i(3, 1)), 1.0)

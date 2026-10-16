@@ -4,6 +4,7 @@ extends RefCounted
 ##   #  wall      .  floor      +  door
 ##   P  player spawn (on floor)     >  exit (on floor; optional)     *  an item lying on the floor
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
+##   ,  shallow water (walkable, slowly)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
 ##   w apprentice  c crossbowman  f pyromancer  n necromancer  o orc  W orc wizard  d dwarf
 ##   e deep elf mage  O ogre  z skeleton  x skeleton archer  m skeletal mage  Z skeleton warrior
@@ -16,6 +17,7 @@ const EXIT := ">"
 const LOOT := "*"
 const WATER := "~"
 const LAVA := "L"
+const SHALLOW := ","
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 
 
@@ -25,7 +27,7 @@ func parse(ascii: String) -> DungeonMap:
 	assert(Array(rows).all(func(row: String) -> bool: return row.length() == size.x), "every row must be the same width")
 
 	var enemy_symbols := Bestiary.letters()
-	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, LOOT, WATER, LAVA] + enemy_symbols)
+	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, LOOT, WATER, LAVA, SHALLOW] + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
 	var player_cells := _cells_matching(rows, [PLAYER])
 	assert(player_cells.size() == 1, "map needs exactly one player spawn")
@@ -57,6 +59,8 @@ func _terrain_by_cell(rows: PackedStringArray) -> Dictionary:
 		terrain[cell] = DungeonMap.Terrain.WATER
 	for cell in _cells_matching(rows, [LAVA]):
 		terrain[cell] = DungeonMap.Terrain.LAVA
+	for cell in _cells_matching(rows, [SHALLOW]):
+		terrain[cell] = DungeonMap.Terrain.SHALLOW
 	return terrain
 
 

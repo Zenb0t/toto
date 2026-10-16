@@ -28,6 +28,11 @@ const SPAWN_EDGE_CLEARANCE := 3
 const WALL := "#"
 const FLOOR := "."
 const DOOR := "+"
+const SHALLOW := ","
+## Puddles in a wet branch's caves: how many, how big, and how far from the cave's edge.
+const MAX_PUDDLES := 3
+const PUDDLE_RADIUS := 2
+const PUDDLE_EDGE_CLEARANCE := 4
 const PLAYER := "P"
 const EXIT := ">"
 const LOOT := "*"
@@ -65,7 +70,28 @@ func _shape_room(is_start: bool, bounds: Rect2i, branch: Branch, rng: RandomNumb
 		return Vaults.stamp(branch.vaults[rng.randi_range(0, branch.vaults.size() - 1)], bounds, rng)
 	var is_cave := rng.randf() < branch.cave_share
 	var shape := RoomShapes.cave(bounds, rng) if is_cave else RoomShapes.build(RoomShapes.random_kind(rng), bounds, rng)
-	return _as_floor(RoomShapes.with_pillars(shape, rng.randi_range(0, MAX_PILLARS), rng))
+	var room := _as_floor(RoomShapes.with_pillars(shape, rng.randi_range(0, MAX_PILLARS), rng))
+	if is_cave and branch.puddles:
+		_add_puddles(room, rng)
+	return room
+
+
+## Shallow water in the middle of a cave, kept away from its edges (so corridors and doorways stay dry).
+## Shallow water can be waded through, so the cave stays in one piece.
+func _add_puddles(room: Dictionary, rng: RandomNumberGenerator) -> void:
+	var inner: Array[Vector2i] = []
+	for cell: Vector2i in room:
+		if _clear_of_edge(cell, room, PUDDLE_EDGE_CLEARANCE):
+			inner.append(cell)
+	for _i in rng.randi_range(1, MAX_PUDDLES):
+		if inner.is_empty():
+			return
+		var center: Vector2i = inner[rng.randi_range(0, inner.size() - 1)]
+		for dy in range(-PUDDLE_RADIUS, PUDDLE_RADIUS + 1):
+			for dx in range(-PUDDLE_RADIUS, PUDDLE_RADIUS + 1):
+				var cell := center + Vector2i(dx, dy)
+				if Vector2(dx, dy).length() <= PUDDLE_RADIUS + 0.4 and room.get(cell) == FLOOR:
+					room[cell] = SHALLOW
 
 
 func _as_floor(cells: Dictionary) -> Dictionary:

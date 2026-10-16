@@ -119,3 +119,13 @@ func test_deeper_floors_hold_tougher_monsters() -> void:
 
 func test_a_seed_makes_the_same_floor_every_time() -> void:
 	assert_eq(DungeonGenerator.new().generate(42, 3), DungeonGenerator.new().generate(42, 3))
+
+
+func test_the_lairs_caves_have_shallow_water_to_wade_through() -> void:
+	var wet := 0
+	for seed_value in 10:
+		var map := _parser.parse(DungeonGenerator.new().generate(seed_value, 2))
+		if not map.cells_with(DungeonMap.Terrain.SHALLOW).is_empty():
+			wet += 1
+
+	assert_gt(wet, 5)

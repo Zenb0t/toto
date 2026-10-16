@@ -29,6 +29,10 @@ const WATER_SPEED := 1.0
 const LAVA_COLOR := Color(0.7, 0.18, 0.05)
 const LAVA_SHINE_COLOR := Color(1.0, 0.75, 0.25)
 const LAVA_SPEED := 0.45
+## Shallow water lets the floor show through.
+const SHALLOW_COLOR := Color(0.2, 0.42, 0.62, 0.55)
+const SHALLOW_SHINE_COLOR := Color(0.55, 0.78, 0.95, 0.7)
+const SHALLOW_SPEED := 0.8
 const STAIRS_COLOR := Color(0.95, 0.75, 0.3)
 const STAIRS_STEPS := 4
 
@@ -53,6 +57,8 @@ func show_map(map: DungeonMap, look := BranchLook.dungeon()) -> void:
 	_build_doors()
 	add_child(LiquidView.new(_map.cells_with(DungeonMap.Terrain.WATER), WATER_COLOR, WATER_SHINE_COLOR, WATER_SPEED))
 	add_child(LiquidView.new(_map.cells_with(DungeonMap.Terrain.LAVA), LAVA_COLOR, LAVA_SHINE_COLOR, LAVA_SPEED))
+	add_child(LiquidView.new(
+		_map.cells_with(DungeonMap.Terrain.SHALLOW), SHALLOW_COLOR, SHALLOW_SHINE_COLOR, SHALLOW_SPEED))
 	queue_redraw()
 
 

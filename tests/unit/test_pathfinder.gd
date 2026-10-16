@@ -70,3 +70,17 @@ func test_paths_go_round_lava_when_there_is_another_way() -> void:
 
 	assert_does_not_have(Array(path), _at(Vector2i(4, 2)))
 	assert_does_not_have(Array(path), _at(Vector2i(5, 2)))
+
+
+func test_paths_go_round_shallow_water_when_dry_ground_is_close() -> void:
+	var map := DungeonMapParser.new().parse("""
+#######
+#P....#
+#.,,,.#
+#.....#
+#######
+""")
+	var path := Pathfinder.new(map).path(DungeonView.cell_center(Vector2i(1, 2)), DungeonView.cell_center(Vector2i(5, 2)))
+
+	for point in path:
+		assert_ne(map.terrain_at(DungeonView.world_to_cell(point)), DungeonMap.Terrain.SHALLOW, str(point))

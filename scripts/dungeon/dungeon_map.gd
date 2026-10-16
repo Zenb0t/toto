@@ -2,11 +2,13 @@ class_name DungeonMap
 extends RefCounted
 ## Read-only description of a dungeon: walkable cells, doors, rooms, terrain and spawn points.
 ## Rooms are areas separated by doors; a door belongs to every room it touches. A room's water and lava
-## are part of it: deep water can't be walked on but can be seen and shot across; lava can be walked on,
-## but it burns.
+## are part of it: deep water can't be walked on but can be seen and shot across; shallow water can be
+## waded through, slowly; lava can be walked on, but it burns.
 
-enum Terrain { FLOOR, WATER, LAVA }
+enum Terrain { FLOOR, WATER, LAVA, SHALLOW }
 
+## Wading through shallow water, everyone moves at this share of their speed.
+const WADING_SPEED := 0.6
 const NO_ROOM := -1
 const NO_CELL := Vector2i(-1, -1)
 
@@ -72,6 +74,11 @@ func is_see_through(cell: Vector2i) -> bool:
 
 func terrain_at(cell: Vector2i) -> Terrain:
 	return _terrain_by_cell.get(cell, Terrain.FLOOR)
+
+
+## How fast one moves on a cell, as a share of one's speed: slower wading through shallow water.
+func ground_speed(cell: Vector2i) -> float:
+	return WADING_SPEED if terrain_at(cell) == Terrain.SHALLOW else 1.0
 
 
 ## Where it is safe to stand or put something: walkable and not burning.

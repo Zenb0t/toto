@@ -41,3 +41,14 @@ func test_a_shot_flies_across_deep_water() -> void:
 	await wait_seconds(0.6)
 
 	assert_eq(enemy.health.current, Enemy.DEFAULT_MAX_HEALTH - 1)
+
+
+func test_wading_slows_the_player() -> void:
+	var player: Player = preload("res://scenes/player.tscn").instantiate()
+	add_child_autofree(player)
+
+	player.ground_speed = DungeonMap.WADING_SPEED
+	player.move(Vector2.RIGHT)
+	await wait_physics_frames(2)
+
+	assert_almost_eq(player.velocity.x, player.move_speed * DungeonMap.WADING_SPEED, 0.01)

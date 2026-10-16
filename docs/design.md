@@ -222,7 +222,9 @@ wrong.
 6. **Exit**: in the deepest room, in its corner farthest from the middle (where the chest appears).
 
 **Terrain.** Deep water (`~`) blocks walking but not sight or shots: a shooter across a pool can hit you, and
-you can hit back, but nobody walks over. Lava (`L`) can be crossed, but burns (1 damage on stepping in, then
+you can hit back, but nobody walks over. Shallow water (`,`, like Dungeon Crawl's) can be waded through, but
+everyone in it moves at 60% speed; enemies go round it when dry ground is close. The Lair's caves have
+puddles of it, and its lake and pool have shallow shores. Lava (`L`) can be crossed, but burns (1 damage on stepping in, then
 every half second; the Shield blocks it). Enemies path around water and avoid lava when they can.
 
 **Fog of war** (`Exploration`, `FogView`). You see 16 cells around you (farther than any weapon reaches, so

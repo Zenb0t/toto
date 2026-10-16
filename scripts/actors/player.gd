@@ -33,6 +33,8 @@ var health := Health.new(MAX_HEALTH)
 var last_hurt_by := ""
 var facing := Vector2.RIGHT
 var move_speed := DEFAULT_MOVE_SPEED
+## The share of its speed the ground allows (see DungeonMap.ground_speed), set by whoever knows the map.
+var ground_speed := 1.0
 var weapon: Weapon:
 	get:
 		return _wielder.weapon
@@ -155,7 +157,7 @@ func _physics_process(delta: float) -> void:
 		_dash_time_left -= delta
 		velocity = _dash_direction * _dash_speed
 	else:
-		velocity = _move_input * move_speed * (_haste_multiplier if is_hasted() else 1.0)
+		velocity = _move_input * move_speed * ground_speed * (_haste_multiplier if is_hasted() else 1.0)
 		if _move_input.length() > 0.1:
 			facing = _move_input.normalized()
 	move_and_slide()

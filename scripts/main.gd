@@ -93,7 +93,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_player.move(_move_input())
-	_burn_whoever_stands_in_lava(delta)
+	_apply_terrain(delta)
 	_sight_update_left -= delta
 	if _sight_update_left <= 0.0:
 		_sight_update_left = SIGHT_UPDATE_SECONDS
@@ -297,11 +297,14 @@ func _update_sight() -> void:
 		pickup.visible = _exploration.is_seen(DungeonView.world_to_cell(pickup.global_position))
 
 
-func _burn_whoever_stands_in_lava(delta: float) -> void:
+## Lava burns whoever stands in it; shallow water slows whoever wades through it.
+func _apply_terrain(delta: float) -> void:
 	_burn(_player, delta)
+	_player.ground_speed = _map.ground_speed(DungeonView.world_to_cell(_player.global_position))
 	for enemies: Array in _enemies_by_room.values():
 		for enemy: Enemy in enemies:
 			_burn(enemy, delta)
+			enemy.ground_speed = _map.ground_speed(DungeonView.world_to_cell(enemy.global_position))
 
 
 func _burn(actor: Node2D, delta: float) -> void:
