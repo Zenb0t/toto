@@ -54,3 +54,25 @@ func test_pillars_keep_clear_of_the_room_edge() -> void:
 
 func test_a_room_in_two_pieces_is_not_one_piece() -> void:
 	assert_false(RoomShapes.is_one_piece({Vector2i(0, 0): true, Vector2i(5, 5): true}))
+
+
+func test_caves_are_one_piece_inside_their_bounds_and_big_enough() -> void:
+	for seed_value in 30:
+		var cave := RoomShapes.cave(BOUNDS, _rng(seed_value))
+		assert_true(RoomShapes.is_one_piece(cave), "seed %d" % seed_value)
+		assert_gt(cave.size(), RoomShapes.MIN_THICKNESS * RoomShapes.MIN_THICKNESS, "seed %d" % seed_value)
+		for cell: Vector2i in cave:
+			assert_true(BOUNDS.has_point(cell), "seed %d: %s" % [seed_value, cell])
+
+
+func test_cave_walls_wander_but_the_middle_of_each_side_stays_straight() -> void:
+	var cave := RoomShapes.cave(BOUNDS, _rng(4))
+	var rows := {}
+	for cell: Vector2i in cave:
+		rows[cell.y] = mini(rows.get(cell.y, 1000), cell.x)
+	var left_edges := rows.values()
+
+	assert_gt(left_edges.max(), left_edges.min(), "the left wall wanders")
+	var middle: int = (rows.keys().min() + rows.keys().max()) / 2
+	assert_eq(rows[middle - 1], rows[middle])
+	assert_eq(rows[middle + 1], rows[middle])

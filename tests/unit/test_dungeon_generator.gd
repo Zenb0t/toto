@@ -6,8 +6,9 @@ const SEEDS := 25
 var _parser := DungeonMapParser.new()
 
 
+## Seeds go through every floor (every branch: built halls, caves, the branch's vaults).
 func _map(seed_value: int) -> DungeonMap:
-	return _parser.parse(DungeonGenerator.new().generate(seed_value))
+	return _parser.parse(DungeonGenerator.new().generate(seed_value, seed_value % RunState.FLOOR_COUNT + 1))
 
 
 func _enemy_rooms(map: DungeonMap) -> Dictionary:

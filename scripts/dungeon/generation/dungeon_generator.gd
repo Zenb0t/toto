@@ -56,14 +56,15 @@ static func room_bounds(slot: Vector2i) -> Rect2i:
 	return Rect2i(Vector2i.ONE + slot * SLOT_SIZE, SLOT_SIZE).grow(-ROOM_MARGIN)
 
 
-## The start room is a plain rectangle. The rest are the branch's vaults, or random shapes with a few
-## pillars.
+## The start room is a plain rectangle. The rest are the branch's vaults, natural caves (as many as the
+## branch has), or built shapes; caves and built rooms get a few pillars (rocks, in a cave).
 func _shape_room(is_start: bool, bounds: Rect2i, branch: Branch, rng: RandomNumberGenerator) -> Dictionary:
 	if is_start:
 		return _as_floor(RoomShapes.build(RoomShapes.Kind.RECT, bounds, rng))
 	if rng.randf() < VAULT_CHANCE:
 		return Vaults.stamp(branch.vaults[rng.randi_range(0, branch.vaults.size() - 1)], bounds, rng)
-	var shape := RoomShapes.build(RoomShapes.random_kind(rng), bounds, rng)
+	var is_cave := rng.randf() < branch.cave_share
+	var shape := RoomShapes.cave(bounds, rng) if is_cave else RoomShapes.build(RoomShapes.random_kind(rng), bounds, rng)
 	return _as_floor(RoomShapes.with_pillars(shape, rng.randi_range(0, MAX_PILLARS), rng))
 
 
