@@ -247,6 +247,8 @@ deterministic), so it costs nothing to store and never changes how the game play
   the floor below (only on floor: it never spills over walls). Their flames flicker while in sight.
 - **Water and lava** move: slow waves with highlights (`shaders/liquid.gdshader`), lava slower and hotter.
 - **Stairs** stand under a stone arch trimmed in gold.
+- **Cutaway**: walls right in front of the hero (the two cells toward the camera, three wide) drop to a low
+  stub while the hero stands behind them, so a wall never hides you.
 - **Fog** is a one-pixel-per-cell picture stretched smoothly over the map, so its edges fade across a cell.
   A wall counts as in sight when an open cell beside it is (sight grazing along a wall would otherwise
   leave it dimmed while you stand next to it).

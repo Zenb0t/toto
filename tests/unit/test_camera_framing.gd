@@ -42,3 +42,12 @@ func test_a_top_down_tilt_puts_the_camera_straight_above_its_aim() -> void:
 	var target := framing.target(HERO)
 
 	assert_almost_eq(Vector2(eye.x, eye.z), Vector2(target.x, target.z), Vector2.ONE * 0.001)
+
+
+func test_only_cells_toward_the_camera_can_hide_the_hero() -> void:
+	var hiding := CameraFraming.cells_hiding(Vector2i(10, 10))
+
+	assert_has(hiding, Vector2i(10, 11))
+	assert_has(hiding, Vector2i(9, 12))
+	assert_does_not_have(hiding, Vector2i(10, 9), "behind the hero")
+	assert_does_not_have(hiding, Vector2i(10, 10))

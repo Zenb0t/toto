@@ -27,3 +27,13 @@ func target(focus: Vector3) -> Vector3:
 func eye(focus: Vector3) -> Vector3:
 	var pitch := deg_to_rad(pitch_degrees)
 	return target(focus) + Vector3(0.0, sin(pitch), cos(pitch)) * distance
+
+
+## The cells between the camera and a hero standing on a cell: the few right in front of them, toward the
+## bottom of the screen, where a wall would hide them. Walls there are cut down (see MapView3D).
+static func cells_hiding(hero_cell: Vector2i) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for dy in range(1, 3):
+		for dx in range(-1, 2):
+			cells.append(hero_cell + Vector2i(dx, dy))
+	return cells

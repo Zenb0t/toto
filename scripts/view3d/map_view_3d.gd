@@ -20,6 +20,9 @@ const STONE_TINT := 0.06
 const REMEMBERED_BRIGHTNESS := 0.35
 const HIDDEN := 0.0
 const LIT := 1.0
+## Walls right in front of the hero (toward the camera) are cut down to this share of their height, so they
+## don't hide the hero.
+const CUTAWAY_SHARE := 0.3
 
 ## Height of the walls, in cells. Closed doors are as tall.
 var wall_height := DEFAULT_WALL_HEIGHT:
@@ -37,6 +40,7 @@ var _closed_doors := {}  # Vector2i -> true
 var _torches := {}  # wall cell -> TorchModel
 var _shown := {}  # Vector2i -> the brightness last shown, so a refresh only touches what changed
 var _exploration: Exploration
+var _cut_cells := {}  # Vector2i -> true, walls cut down in front of the hero
 var _stairs_cell := DungeonMap.NO_CELL
 var _stairs := StairsModel.new()
 var _blocks := _multimesh(ModelParts.box(Vector3.ONE))
@@ -94,6 +98,26 @@ func set_doors_closed(door_cells: Array[Vector2i], closed: bool) -> void:
 func show_exploration(exploration: Exploration) -> void:
 	_exploration = exploration
 	_refresh()
+
+
+## Cuts down the walls between the camera and the hero standing on a cell.
+func show_hero_at(hero_cell: Vector2i) -> void:
+	var cut := {}
+	for cell in CameraFraming.cells_hiding(hero_cell):
+		if _has_block.has(cell):
+			cut[cell] = true
+	if cut == _cut_cells:
+		return
+	var changed := cut.keys() + _cut_cells.keys()
+	_cut_cells = cut
+	for cell: Vector2i in changed:
+		_shown.erase(cell)
+	_refresh()
+
+
+## Whether a wall stands cut down in front of the hero.
+func is_cut_away(cell: Vector2i) -> bool:
+	return _cut_cells.has(cell)
 
 
 ## Whether a block stands on this cell and can be seen: a wall the player knows of, or a closed door.
@@ -158,27 +182,31 @@ func _refresh(everything := false) -> void:
 		_place_column(j, cell, shade)
 		_place_cap(_block_cells.size() + j, cell, shade, CAP_COLOR, COLUMN_RADIUS * 2.4)
 	for cell: Vector2i in _torches:
-		_torches[cell].show_on_wall(cell, wall_height, brightness(cell))
+		_torches[cell].show_on_wall(cell, _height_at(cell), brightness(cell))
 	_stairs.show_at(_stairs_cell, _ground_brightness(_stairs_cell))
 
 
 ## The wall's body, below its cap.
 func _place_block(index: int, cell: Vector2i, shade: float, color: Color) -> void:
-	var height := wall_height - CAP_THICKNESS
+	var height := _height_at(cell) - CAP_THICKNESS
 	_blocks.set_instance_transform(index, _upright(cell, Vector3(1.0, height, 1.0), height / 2.0, shade))
 	_blocks.set_instance_color(index, _stone(color, cell, shade))
 
 
 func _place_cap(index: int, cell: Vector2i, shade: float, color: Color, width: float) -> void:
 	var size := Vector3(width, CAP_THICKNESS, width)
-	_caps.set_instance_transform(index, _upright(cell, size, wall_height - CAP_THICKNESS / 2.0, shade))
+	_caps.set_instance_transform(index, _upright(cell, size, _height_at(cell) - CAP_THICKNESS / 2.0, shade))
 	_caps.set_instance_color(index, _stone(color, cell, shade))
 
 
 func _place_column(index: int, cell: Vector2i, shade: float) -> void:
-	var height := wall_height - CAP_THICKNESS
+	var height := _height_at(cell) - CAP_THICKNESS
 	_columns.set_instance_transform(index, _upright(cell, Vector3(1.0, height, 1.0), height / 2.0, shade))
 	_columns.set_instance_color(index, _stone(WALL_COLOR, cell, shade))
+
+
+func _height_at(cell: Vector2i) -> float:
+	return wall_height * (CUTAWAY_SHARE if _cut_cells.has(cell) else 1.0)
 
 
 ## A hidden piece shrinks to nothing; a flattened one would still darken the floor.

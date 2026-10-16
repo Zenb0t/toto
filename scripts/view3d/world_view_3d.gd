@@ -96,6 +96,7 @@ func float_text(at: Vector2, message: String, color: Color) -> void:
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_hero):
 		return
+	_map.show_hero_at(DungeonView.world_to_cell(_hero.global_position))
 	var focus := WorldSpace.to_3d(_hero.global_position)
 	_camera.position = framing.eye(focus)
 	_camera.rotation = Vector3(-deg_to_rad(framing.pitch_degrees), 0.0, 0.0)

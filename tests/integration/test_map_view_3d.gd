@@ -104,3 +104,15 @@ func test_a_wall_beside_floor_in_sight_is_lit_even_if_sight_grazes_past_it() -> 
 	view.show_exploration(exploration)
 
 	assert_eq(view.brightness(Vector2i(20, 0)), MapView3D.LIT)
+
+
+func test_walls_in_front_of_the_hero_are_cut_down_and_grow_back() -> void:
+	var view := _map_view()
+	var bottom_wall := Vector2i(20, 4)
+
+	view.show_hero_at(Vector2i(20, 3))
+	assert_true(view.is_cut_away(bottom_wall))
+	assert_false(view.is_cut_away(Vector2i(20, 0)), "walls behind the hero stay whole")
+
+	view.show_hero_at(Vector2i(20, 1))
+	assert_false(view.is_cut_away(bottom_wall))
