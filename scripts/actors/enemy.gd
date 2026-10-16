@@ -23,6 +23,8 @@ const BODY_COLOR := Color(0.9, 0.35, 0.3)
 ## The ring on the floor under the enemy (the body itself is in the 3D view).
 const BASE_FILL_ALPHA := 0.25
 const BASE_RING_WIDTH := 2.5
+const SLOWED_COLOR := Color(0.6, 0.9, 1.0, 0.9)
+const SLOWED_RING_GAP := 5.0
 const TELEGRAPH_COLOR := Color(1.0, 0.3, 0.25, 0.3)
 ## How far from its ideal distance an enemy is still happy, relative to that distance.
 const SLACK_SHARE := 0.25
@@ -49,6 +51,8 @@ var _target: Node2D
 var _strafe_sign := 1.0
 var _path := PackedVector2Array()
 var _repath_left := 0.0
+var _slow_multiplier := 1.0
+var _slow_time_left := 0.0
 
 
 func _ready() -> void:
@@ -92,8 +96,21 @@ func take_damage(amount: int) -> void:
 	health.take_damage(amount)
 
 
+## Acts at a fraction of its speed (moving, winding up, recovering) for a while.
+func slow(multiplier: float, seconds: float) -> void:
+	_slow_multiplier = multiplier
+	_slow_time_left = maxf(_slow_time_left, seconds)
+
+
+func is_slowed() -> bool:
+	return _slow_time_left > 0.0
+
+
 func _physics_process(delta: float) -> void:
-	_release(_wielder.advance(delta, global_position))
+	_slow_time_left = maxf(_slow_time_left - delta, 0.0)
+	# A slowed enemy's own clock runs slow: it moves, winds up and recovers at a fraction of its pace.
+	var pace := _slow_multiplier if is_slowed() else 1.0
+	_release(_wielder.advance(delta * pace, global_position))
 	_repath_left -= delta
 	velocity = Vector2.ZERO
 	if is_instance_valid(_target) and not _wielder.is_winding_up():
@@ -103,6 +120,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			_go_around_to(_target.global_position)
 	_update_facing()
+	velocity *= pace
 	move_and_slide()
 	queue_redraw()
 
@@ -158,6 +176,8 @@ func _draw() -> void:
 		AimPreview.draw(self, weapon.aim_shape(), _wielder.aim_direction(), _wielder.aim_distance(), TELEGRAPH_COLOR)
 	draw_circle(Vector2.ZERO, body_radius(), Color(BODY_COLOR, BASE_FILL_ALPHA))
 	draw_arc(Vector2.ZERO, body_radius(), 0.0, TAU, 32, BODY_COLOR, BASE_RING_WIDTH, true)
+	if is_slowed():
+		draw_arc(Vector2.ZERO, body_radius() + SLOWED_RING_GAP, 0.0, TAU, 32, SLOWED_COLOR, BASE_RING_WIDTH, true)
 
 
 func _on_died() -> void:

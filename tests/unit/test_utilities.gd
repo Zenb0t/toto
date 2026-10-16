@@ -31,3 +31,30 @@ func test_every_item_has_a_unique_id_and_a_description() -> void:
 	for id in ids:
 		assert_eq(ids.count(id), 1, id)
 		assert_ne(GameTuning.item(GameTuning.create(), id).description, "", id)
+
+
+func test_a_blink_jumps_its_distance_toward_the_aim() -> void:
+	var blink := Blink.new()
+	blink.distance = 100.0
+
+	assert_eq(blink.activate(Vector2(0, -5)).blink_offset, Vector2(0, -100))
+
+
+func test_a_frost_nova_lets_out_a_chilling_burst() -> void:
+	var frost := FrostNova.new()
+
+	var effect := frost.activate(Vector2.RIGHT)
+
+	assert_eq(effect.attacks.size(), 1)
+	var nova: Nova = effect.attacks[0]
+	assert_eq(nova.radius, frost.radius)
+	assert_eq(nova.damage, frost.damage)
+	assert_lt(nova.slow_multiplier, 1.0)
+	assert_false(nova.hurts_player)
+
+
+func test_a_frost_nova_previews_the_area_around_you() -> void:
+	var shape := FrostNova.new().aim_shape()
+
+	assert_eq(shape.length, 0.0)
+	assert_eq(shape.end_radius, FrostNova.new().radius)

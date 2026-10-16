@@ -82,7 +82,8 @@ func attack(direction: Vector2, target: Node2D = null, strength := 1.0) -> void:
 		_release(_wielder.advance(0.0, global_position))
 
 
-## Uses the utility toward direction (dash) or on the spot (shield). Ignored during its cooldown.
+## Uses the utility toward direction (dash, blink) or on the spot (shield, frost nova). Ignored during its
+## cooldown.
 func use_utility(direction: Vector2) -> void:
 	if direction == Vector2.ZERO or not _utility_cooldown.try_trigger():
 		return
@@ -169,6 +170,11 @@ func _apply(effect: UtilityEffect) -> void:
 		_dash_time_left = effect.dash_seconds
 	_shield_time_left = maxf(_shield_time_left, effect.shield_seconds)
 	health.heal(effect.heal_amount)
+	if effect.blink_offset != Vector2.ZERO:
+		move_and_collide(effect.blink_offset)
+	for attack: Variant in effect.attacks:
+		attack.origin = global_position
+	_release(effect.attacks)
 	if effect.haste_seconds > 0.0:
 		_haste_multiplier = effect.haste_multiplier
 		_haste_time_left = effect.haste_seconds

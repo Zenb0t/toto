@@ -29,7 +29,7 @@ static func weapons() -> Array[Weapon]:
 
 
 static func utilities() -> Array[Utility]:
-	return [Dash.new(), Shield.new()]
+	return [Dash.new(), Shield.new(), Blink.new(), FrostNova.new()]
 
 
 ## Every potion, in the order the potion belt shows them.

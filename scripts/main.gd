@@ -253,7 +253,8 @@ func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
 		_spawn_potion(enemy.position, LootTable.pick_potion_id(GameTuning.potion_weights(), _rng))
 
 
-## Carries out the Shots and Slashes of one attack, by the player or an enemy (the swing follows its swinger).
+## Carries out the Shots, Slashes and Novas of one attack, by the player or an enemy (the swing follows its
+## swinger).
 func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 	for attack: Variant in attacks:
 		if attack is Shot:
@@ -263,6 +264,8 @@ func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 			_world.add_projectile(projectile)
 		elif attack is Slash:
 			add_child(SlashEffect.new(attack, attacker))
+		elif attack is Nova:
+			add_child(NovaEffect.new(attack))
 
 
 ## Fog of war: the player sees through open floor, water and lava, not walls or closed doors. Enemies out of

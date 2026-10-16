@@ -9,6 +9,10 @@ var dash_seconds := 0.0
 ## Seconds during which the user takes no damage.
 var shield_seconds := 0.0
 var heal_amount := 0
+## Moves the user at once by this much (stopped short by whatever blocks walking).
+var blink_offset := Vector2.ZERO
+## Attacks (like a Nova) the user lets out, centred on the user, for the world to carry out.
+var attacks: Array = []
 ## For haste_seconds, the user moves haste_multiplier times faster.
 var haste_multiplier := 1.0
 var haste_seconds := 0.0
@@ -48,4 +52,16 @@ static func might(bonus: int, seconds: float) -> UtilityEffect:
 	var effect := UtilityEffect.new()
 	effect.might_bonus = bonus
 	effect.might_seconds = seconds
+	return effect
+
+
+static func blink(offset: Vector2) -> UtilityEffect:
+	var effect := UtilityEffect.new()
+	effect.blink_offset = offset
+	return effect
+
+
+static func burst(nova: Nova) -> UtilityEffect:
+	var effect := UtilityEffect.new()
+	effect.attacks = [nova]
 	return effect

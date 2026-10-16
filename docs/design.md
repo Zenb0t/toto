@@ -45,6 +45,8 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | --- | --- | --- |
 | Dash (starter) | A quick burst of speed where you aim | Line as long as one dash |
 | Shield | Blocks all damage (your own blasts included) for a moment | None: tap anywhere |
+| Blink | Like Dungeon Crawl's scroll of blinking: an instant hop (140) where you aim. Walls and water stop it short; enemies don't, so it gets you out of a corner | Line as long as the hop |
+| Frost Nova | A burst around you: 1 damage to every enemy in reach, and they act at half speed (moving, winding up, recovering) for 2.5 s. An icy ring on the floor marks a slowed enemy | The burst's circle around you |
 
 **Potions** (consumables, like Dungeon Crawl's). Heal used to be a utility, but healing on a cooldown was too
 strong: it made every fight winnable by waiting. Healing is now only from potions, which run out.

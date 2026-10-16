@@ -15,7 +15,7 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 | Touch the left half of the screen and drag | Move (floating stick) |
 | Tap the **weapon** button | Auto-aim at the nearest enemy and attack |
 | Drag from the weapon button, then release | Aim manually and fire |
-| **Utility** button (DASH, SHIELD...) | Same tap / drag gesture; Shield doesn't need aiming |
+| **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
 | **Weapon: …** (top right) | Testing aid: switch between Wand, Sword, Fireball and Crossbow |
@@ -35,7 +35,7 @@ Every run is a new dungeon (its seed is shown in the pause menu), inspired by Du
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map. Items sometimes lie on the floor, and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
-chest with a random weapon or utility (Dash, Shield...), and often a potion. Enemies carry the same weapons you do and fight the way their
+chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
 weapon wants; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go. Find the gold stairs (in the room farthest from the start,
 usable once it is clear) to win. If you die, you start over with the Wand and the Dash.
@@ -67,8 +67,8 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`)
 - `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`Wand`, `Sword`,
-  `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Heal`). Each declares its own tunable `Knob`s
-- `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `UtilityEffect`), when a weapon fires
+  `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`). Each declares its own tunable `Knob`s
+- `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`), when a weapon fires
   (`Wielder`: cooldown and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
 - `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength) and the
