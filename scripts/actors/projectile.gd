@@ -1,13 +1,11 @@
 class_name Projectile
 extends Area2D
-## Flies straight until it hits something or runs out of range. Damages anything that can take damage.
+## Flies a Shot straight until it hits something or runs out of range.
+## A plain shot damages what it hits; an explosive shot bursts into an Explosion instead.
 
-const RADIUS := 5.0
-const COLOR := Color(1.0, 0.9, 0.4)
-
-var _velocity := Vector2.ZERO
-var _damage := 0
+var _shot: Shot
 var _time_left := 0.0
+var _spent := false
 
 
 func _ready() -> void:
@@ -16,24 +14,35 @@ func _ready() -> void:
 
 ## Must be called before the projectile is added to the tree.
 func launch(shot: Shot) -> void:
+	_shot = shot
 	position = shot.origin
-	_velocity = shot.direction * shot.speed
-	_damage = shot.damage
 	_time_left = shot.lifetime()
 
 
 func _physics_process(delta: float) -> void:
-	position += _velocity * delta
+	position += _shot.direction * _shot.speed * delta
 	_time_left -= delta
 	if _time_left <= 0.0:
-		queue_free()
+		_finish()
 
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, RADIUS, COLOR)
+	draw_circle(Vector2.ZERO, _shot.size, _shot.color)
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if body.has_method("take_damage"):
-		body.take_damage(_damage)
+	if not _shot.explodes() and body.has_method("take_damage"):
+		body.take_damage(_shot.damage)
+	_finish()
+
+
+## A shot can touch a wall and an enemy in the same frame: only the first contact counts.
+func _finish() -> void:
+	if _spent:
+		return
+	_spent = true
+	if _shot.explodes():
+		var explosion := Explosion.new(_shot.blast_radius, _shot.damage, _shot.color)
+		explosion.position = position
+		get_parent().add_child.call_deferred(explosion)
 	queue_free()

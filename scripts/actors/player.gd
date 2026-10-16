@@ -3,7 +3,8 @@ extends CharacterBody2D
 ## The hero. Contains no input code: whoever controls it calls move(), attack() and use_utility().
 ## What those do comes from the equipped Weapon and Utility.
 
-signal attack_fired(shots: Array[Shot])
+## The Shots and Slashes of one attack, for the world to carry out.
+signal attack_fired(attacks: Array)
 signal health_changed(current: int, maximum: int)
 signal died
 
@@ -12,14 +13,14 @@ const MAX_HEALTH := 10
 const RADIUS := 12.0
 const BODY_COLOR := Color(0.35, 0.75, 1.0)
 const AIM_PREVIEW_COLOR := Color(1, 1, 1, 0.3)
+const AIM_PREVIEW_WIDTH := 4.0
+const AIM_PREVIEW_ARC_POINTS := 24
 const WINDUP_COLOR := Color(1.0, 0.85, 0.4, 0.8)
-## Shots start just past the facing tick, in front of the body rather than inside it.
-const MUZZLE_DISTANCE := RADIUS + 6.0
 
 var health := Health.new(MAX_HEALTH)
 var facing := Vector2.RIGHT
 var move_speed := DEFAULT_MOVE_SPEED
-var weapon := Weapon.new()
+var weapon: Weapon = Wand.new()
 var utility := Utility.new()
 
 var _move_input := Vector2.ZERO
@@ -27,7 +28,8 @@ var _attack_cooldown := Cooldown.new(weapon.cooldown)
 var _utility_cooldown := Cooldown.new(utility.cooldown)
 var _dash_direction := Vector2.ZERO
 var _dash_time_left := 0.0
-var _aim_preview := Vector2.ZERO
+var _aim_direction := Vector2.ZERO
+var _aim_shape: AimShape
 var _windup_direction := Vector2.ZERO
 var _windup_target: Node2D
 var _windup_time_left := 0.0
@@ -75,9 +77,10 @@ func use_utility(direction: Vector2) -> void:
 	_dash_time_left = utility.dash_duration
 
 
-## Shows where an ability will go. Pass a zero vector to hide it.
-func preview_aim(direction_with_length: Vector2) -> void:
-	_aim_preview = direction_with_length
+## Shows where an ability will go, in the ability's own shape. Pass a zero direction to hide it.
+func preview_aim(direction: Vector2, shape: AimShape = null) -> void:
+	_aim_direction = direction.normalized()
+	_aim_shape = shape
 	queue_redraw()
 
 
@@ -122,17 +125,32 @@ func _advance_windup(delta: float) -> void:
 func _fire() -> void:
 	_windup_target = null
 	_windup_time_left = 0.0
-	var muzzle := global_position + _windup_direction * MUZZLE_DISTANCE
-	attack_fired.emit(weapon.shots(muzzle, _windup_direction))
+	attack_fired.emit(weapon.attacks(global_position, _windup_direction))
 
 
 func _draw() -> void:
 	if _windup_time_left > 0.0:
 		draw_line(Vector2.ZERO, _windup_direction * (RADIUS + 28.0), WINDUP_COLOR, RADIUS * 1.4)
-	if _aim_preview != Vector2.ZERO:
-		draw_line(Vector2.ZERO, _aim_preview, AIM_PREVIEW_COLOR, RADIUS * 1.2)
+	if _aim_direction != Vector2.ZERO and _aim_shape != null:
+		_draw_aim_preview(_aim_direction, _aim_shape)
 	draw_circle(Vector2.ZERO, RADIUS, BODY_COLOR)
 	draw_line(Vector2.ZERO, facing * (RADIUS + 6.0), Color.WHITE, 3.0)
+
+
+func _draw_aim_preview(direction: Vector2, shape: AimShape) -> void:
+	match shape.kind:
+		AimShape.Kind.LINE:
+			var end := direction * shape.length
+			draw_line(Vector2.ZERO, end, AIM_PREVIEW_COLOR, AIM_PREVIEW_WIDTH * 3.0)
+			if shape.end_radius > 0.0:
+				draw_circle(end, shape.end_radius, AIM_PREVIEW_COLOR)
+		AimShape.Kind.CONE:
+			var wedge := ArcPolygon.wedge(direction, shape.length, shape.spread_degrees, AIM_PREVIEW_ARC_POINTS)
+			draw_colored_polygon(wedge, AIM_PREVIEW_COLOR)
+		AimShape.Kind.FAN:
+			for angle in Spread.angles_degrees(shape.count, shape.spread_degrees):
+				var line_end := direction.rotated(deg_to_rad(angle)) * shape.length
+				draw_line(Vector2.ZERO, line_end, AIM_PREVIEW_COLOR, AIM_PREVIEW_WIDTH)
 
 
 func _on_died() -> void:

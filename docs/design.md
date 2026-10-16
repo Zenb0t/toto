@@ -28,22 +28,28 @@ Anything that doesn't help answer that is deferred.
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire | Proven on touch screens |
 | Movement | Floating stick: it appears wherever the left thumb lands | Standard for mobile action games |
 
-## Equipment (planned)
+## Equipment
 
 Every item defines how it **aims** (shape + range) and what it **does**. Items change behaviour, not just stats.
 
 | Weapon | Behaviour | Aim shape |
 | --- | --- | --- |
-| Sword | Short melee arc in front of you | Cone |
-| Fireball | Slow projectile that explodes in an area on impact | Line + impact circle |
-| Crossbow | A spread of bolts | Fan of lines |
+| Wand (starter) | One magic bolt | Line |
+| Sword | Short melee arc in front of you; hits everything inside it | Cone |
+| Fireball | Slow projectile that explodes on impact or at the end of its range | Line + blast circle |
+| Crossbow | A fan of bolts; strongest up close | Fan of lines |
 
 Utilities (first ideas, not final): dash, shield, heal.
 
 **Model (step 4).** `Weapon` and `Utility` are plain data objects. The player owns *when* (cooldown, wind-up,
 auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s). The buttons show the equipped
 item's name and colour. The starter gear is a **Wand** (one magic bolt) and a **Dash**. New behaviours
-(melee arc, explosions, spreads) arrive with the item pool in step 5.
+(melee arc, explosions, spreads) are attack kinds: a weapon returns `Shot`s (projectiles, optionally
+explosive) and `Slash`es (melee arcs), and the world carries them out.
+
+**Per-item tuning.** Each item declares its tunable fields as `Knob`s; tuning keys are `<item id>.<field>`, so
+every weapon keeps its own settings. A HUD button cycles weapons for testing, and the Tune screen shows the
+equipped weapon's knobs only.
 
 **Tuning.** Feel matters more than anything at this stage, so the numbers that shape it are editable in-game
 (pause menu → Tune gameplay), saved on the device, and sent to Claude as JSON with one tap. Defaults live in the classes
@@ -65,7 +71,7 @@ Art and audio, procedural generation, rarity tiers, stat depth, meta-progression
 2. ~~Fixed test dungeon with room locks~~
 3. ~~Touch controls (move stick, aim buttons, auto-aim)~~
 4. ~~Equipment model: weapon and utility data drive what the buttons do~~
-5. First item pool: sword, fireball, crossbow + utilities
+5. First item pool: ~~sword, fireball, crossbow~~ + utilities
 6. Loot: room chests, rare drops, replace-on-pickup compare
 7. Enemy types: rusher, ranged, tank
 8. ~~Web export for playtesting on a phone~~

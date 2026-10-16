@@ -7,6 +7,8 @@ const _LAYOUT_SECTION := "touch_controls"
 const _LAYOUT_KEY := "layout"
 const _TUNING_SECTION := "tuning"
 const _TUNING_KEY := "values"
+const _LOADOUT_SECTION := "loadout"
+const _WEAPON_KEY := "weapon"
 
 var _store: SettingsStore
 
@@ -34,3 +36,13 @@ func load_tuning() -> Tuning:
 
 func save_tuning(tuning: Tuning) -> Error:
 	return _store.save_section(_TUNING_SECTION, {_TUNING_KEY: tuning.to_dict()})
+
+
+## The weapon picked with the quick switch. Unknown or missing ids give the starter weapon.
+func load_weapon_id() -> String:
+	var saved: Variant = _store.load_section(_LOADOUT_SECTION).get(_WEAPON_KEY)
+	return saved if saved is String and saved in GameTuning.weapon_ids() else GameTuning.DEFAULT_WEAPON_ID
+
+
+func save_weapon_id(weapon_id: String) -> Error:
+	return _store.save_section(_LOADOUT_SECTION, {_WEAPON_KEY: weapon_id})

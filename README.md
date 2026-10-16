@@ -12,9 +12,10 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 | Input | Action |
 | --- | --- |
 | Touch the left half of the screen and drag | Move (floating stick) |
-| Tap the **weapon** button (WAND) | Auto-aim at the nearest enemy and fire |
+| Tap the **weapon** button | Auto-aim at the nearest enemy and attack |
 | Drag from the weapon button, then release | Aim manually and fire |
 | **Utility** button (DASH) | Same tap / drag gesture |
+| **Weapon: …** (top right) | Testing aid: switch between Wand, Sword, Fireball and Crossbow |
 | **II** (top right) or Esc | Pause menu: resume, customize controls, tune gameplay, restart run |
 | WASD | Move (desktop only; a mouse is just one finger) |
 
@@ -22,7 +23,8 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 **Tune gameplay** exposes the numbers that shape the feel (move speed, the weapon's cooldown, wind-up, shot
-speed, range and damage, the dash, enemy speed and health, and each button's aim dead zone). Changes apply live and are saved on Done.
+speed, range and damage, the dash, enemy speed and health, and each button's aim dead zone). Every weapon has
+its own settings; the screen shows the equipped one's. Changes apply live and are saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
 Entering a room with enemies locks its doors until you defeat them all. Clear the dungeon to win. If you die, you start over.
@@ -48,13 +50,16 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`, `TestDungeon`), room-lock rules
   (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`)
-- `scripts/equipment` – what the buttons do: `Weapon` (fires `Shot`s) and `Utility`, plain data objects
-- `scripts/tuning` – `Tuning` (generic knobs with limits, defaults and JSON export) and `GameTuning`
+- `scripts/equipment` – what the buttons do, as plain data: `Weapon` and its kinds (`Wand`, `Sword`,
+  `Fireball`, `Crossbow`), and `Utility`. Each declares its own tunable `Knob`s
+- `scripts/combat` – what an attack is (`Shot`, `Slash`), how it is previewed (`AimShape`), and pure
+  geometry (`HitShapes`, `Spread`, `ArcPolygon`)
+- `scripts/tuning` – `Tuning` (generic knobs with limits, defaults and JSON export), `Knob`, and `GameTuning`
   (which knobs exist and how they become gear)
 - `scripts/settings` – saved settings: `ControlLayout`, `GameSettings` (what is saved, and how) on top of
   `SettingsStore` (sections in a ConfigFile)
 - `scripts/ui` – touch widgets (`TouchStick`, `AimButton`, `TouchControls`), `PauseMenu`, `LayoutEditor`,
   `TuningPanel`, `TuningSender`
-- `scripts/actors` – `Player`, `Enemy`, `Projectile`. The player holds no input code
+- `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `SlashEffect`. The player holds no input code
 - `scripts/main.gd` – composition root: wires controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests

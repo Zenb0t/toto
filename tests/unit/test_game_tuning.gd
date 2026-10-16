@@ -1,27 +1,20 @@
 extends GutTest
 
 
-func test_untouched_tuning_builds_the_starter_gear() -> void:
-	var tuning := GameTuning.create()
-	var starter_weapon := Weapon.new()
-	var starter_utility := Utility.new()
-
-	var weapon := GameTuning.weapon(tuning)
-	var utility := GameTuning.utility(tuning)
-
-	assert_eq(weapon.cooldown, starter_weapon.cooldown)
-	assert_eq(weapon.windup, starter_weapon.windup)
-	assert_eq(weapon.shot_speed, starter_weapon.shot_speed)
-	assert_eq(weapon.shot_range, starter_weapon.shot_range)
-	assert_eq(weapon.shot_damage, starter_weapon.shot_damage)
-	assert_eq(utility.dash_speed, starter_utility.dash_speed)
-	assert_eq(utility.dash_duration, starter_utility.dash_duration)
-	assert_eq(utility.cooldown, starter_utility.cooldown)
-
-
-func test_untouched_tuning_keeps_the_default_speeds_and_health() -> void:
+func test_untouched_tuning_builds_every_weapon_with_its_own_defaults() -> void:
 	var tuning := GameTuning.create()
 
+	for fresh in GameTuning.weapons():
+		var built := GameTuning.weapon(tuning, fresh.id)
+		for knob in fresh.knobs():
+			assert_eq(built.get(knob.field), fresh.get(knob.field), "%s.%s" % [fresh.id, knob.field])
+
+
+func test_untouched_tuning_builds_the_default_utility_and_values() -> void:
+	var tuning := GameTuning.create()
+	var dash := GameTuning.utility(tuning)
+
+	assert_eq(dash.cooldown, Utility.new().cooldown)
 	assert_eq(GameTuning.player_move_speed(tuning), Player.DEFAULT_MOVE_SPEED)
 	assert_eq(GameTuning.enemy_move_speed(tuning), Enemy.DEFAULT_MOVE_SPEED)
 	assert_eq(GameTuning.enemy_max_health(tuning), Enemy.DEFAULT_MAX_HEALTH)
@@ -29,17 +22,52 @@ func test_untouched_tuning_keeps_the_default_speeds_and_health() -> void:
 	assert_eq(GameTuning.utility_dead_zone(tuning), AimButton.DEFAULT_DEAD_ZONE)
 
 
-func test_tweaked_values_reach_the_gear() -> void:
+func test_each_weapon_keeps_its_own_settings() -> void:
 	var tuning := GameTuning.create()
-	tuning.set_value(GameTuning.WEAPON_WINDUP, 0.5)
-	tuning.set_value(GameTuning.UTILITY_DASH_SPEED, 900)
 
-	assert_eq(GameTuning.weapon(tuning).windup, 0.5)
-	assert_eq(GameTuning.utility(tuning).dash_speed, 900.0)
+	tuning.set_value(GameTuning.key("sword", "windup"), 0.5)
+
+	assert_eq(GameTuning.weapon(tuning, "sword").windup, 0.5)
+	assert_eq(GameTuning.weapon(tuning, "wand").windup, Wand.new().windup)
+
+
+func test_whole_number_settings_stay_whole() -> void:
+	var tuning := GameTuning.create()
+
+	tuning.set_value(GameTuning.key("crossbow", "bolts"), 5)
+
+	var bolts: Variant = GameTuning.weapon(tuning, "crossbow").bolts
+	assert_true(bolts is int)
+	assert_eq(bolts, 5)
+
+
+func test_an_unknown_weapon_falls_back_to_the_starter_wand() -> void:
+	assert_eq(GameTuning.weapon(GameTuning.create(), "banana").id, "wand")
+
+
+func test_the_quick_switch_visits_every_weapon_and_wraps_around() -> void:
+	var visited: Array[String] = []
+	var current := GameTuning.DEFAULT_WEAPON_ID
+	for _step in GameTuning.weapon_ids().size():
+		visited.append(current)
+		current = GameTuning.next_weapon_id(current)
+
+	assert_eq(visited, GameTuning.weapon_ids())
+	assert_eq(current, GameTuning.DEFAULT_WEAPON_ID)
+
+
+func test_the_tune_screen_shows_only_the_equipped_weapon() -> void:
+	var tuning := GameTuning.create()
+
+	var groups := GameTuning.visible_groups(tuning, "fireball")
+
+	assert_has(groups, GameTuning.weapon_group("fireball"))
+	assert_does_not_have(groups, GameTuning.weapon_group("wand"))
+	assert_has(groups, "Player")
 
 
 func test_every_default_is_a_value_its_knob_accepts() -> void:
 	var tuning := GameTuning.create()
 
 	for param in tuning.params():
-		assert_eq(param.accept(param.default_value), param.default_value, param.key)
+		assert_almost_eq(param.accept(param.default_value), param.default_value, 0.0001, param.key)

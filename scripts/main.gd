@@ -15,9 +15,11 @@ var _enemies_by_room := {}  # int -> Array[Enemy]
 var _settings := GameSettings.new()
 var _layout: ControlLayout
 var _tuning: Tuning
+var _weapon_id: String
 
 @onready var _hud_layer: CanvasLayer = $Hud
 @onready var _hud: Label = $Hud/Status
+@onready var _weapon_switch: Button = $Hud/WeaponSwitch
 @onready var _touch_controls: TouchControls = $TouchControls
 @onready var _move_stick: TouchStick = $TouchControls/MoveStick
 @onready var _attack_button: AimButton = $TouchControls/AttackButton
@@ -35,6 +37,7 @@ func _ready() -> void:
 	_view.show_map(_map)
 	_tuning = _settings.load_tuning()
 	_layout = _settings.load_layout()
+	_weapon_id = _settings.load_weapon_id()
 
 	_player = _spawn_player()
 	_spawn_enemies()
@@ -89,10 +92,11 @@ func _create_progress() -> DungeonProgress:
 
 func _connect_controls() -> void:
 	_attack_button.aim_changed.connect(
-		func(direction: Vector2) -> void: _player.preview_aim(direction * _player.weapon.aim_range()))
+		func(direction: Vector2) -> void: _player.preview_aim(direction, _player.weapon.aim_shape()))
 	_attack_button.aim_released.connect(_on_attack_released)
 	_utility_button.aim_changed.connect(
-		func(direction: Vector2) -> void: _player.preview_aim(direction * _player.utility.aim_range()))
+		func(direction: Vector2) -> void: _player.preview_aim(direction, _player.utility.aim_shape()))
+	_weapon_switch.pressed.connect(_on_weapon_switch_pressed)
 	_utility_button.aim_released.connect(_on_utility_released)
 
 
@@ -176,11 +180,14 @@ func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
 	_refresh_hud()
 
 
-func _on_attack_fired(shots: Array[Shot]) -> void:
-	for shot in shots:
-		var projectile: Projectile = PROJECTILE_SCENE.instantiate()
-		projectile.launch(shot)
-		add_child(projectile)
+func _on_attack_fired(attacks: Array) -> void:
+	for attack: Variant in attacks:
+		if attack is Shot:
+			var projectile: Projectile = PROJECTILE_SCENE.instantiate()
+			projectile.launch(attack)
+			add_child(projectile)
+		elif attack is Slash:
+			add_child(SlashEffect.new(attack))
 
 
 # --- Equipment and tuning ------------------------------------------------------------------------
@@ -188,7 +195,7 @@ func _on_attack_fired(shots: Array[Shot]) -> void:
 ## Applies everything that can change mid-run. The rest (like enemy health) waits for the next run.
 func _apply_tuning(tuning: Tuning) -> void:
 	_player.move_speed = GameTuning.player_move_speed(tuning)
-	_equip(GameTuning.weapon(tuning), GameTuning.utility(tuning))
+	_equip(GameTuning.weapon(tuning, _weapon_id), GameTuning.utility(tuning))
 	_attack_button.dead_zone = GameTuning.weapon_dead_zone(tuning)
 	_utility_button.dead_zone = GameTuning.utility_dead_zone(tuning)
 	for enemies: Array in _enemies_by_room.values():
@@ -202,6 +209,7 @@ func _equip(weapon: Weapon, utility: Utility) -> void:
 	_player.equip_utility(utility)
 	_attack_button.label = weapon.button_label
 	_attack_button.color = weapon.color
+	_weapon_switch.text = "Weapon: %s" % weapon.button_label
 	_utility_button.label = utility.button_label
 	_utility_button.color = utility.color
 
@@ -221,9 +229,16 @@ func _on_layout_finished(layout: ControlLayout) -> void:
 	_pause_menu.return_to_panel()
 
 
+## Testing aid: cycles through every weapon, keeping each one's own tuning.
+func _on_weapon_switch_pressed() -> void:
+	_weapon_id = GameTuning.next_weapon_id(_weapon_id)
+	_apply_tuning(_tuning)
+	_warn_if_failed(_settings.save_weapon_id(_weapon_id), "the weapon choice")
+
+
 func _on_tuning_requested() -> void:
 	_hud_layer.hide()
-	_tuning_panel.open(_tuning)
+	_tuning_panel.open(_tuning, GameTuning.visible_groups(_tuning, _weapon_id))
 
 
 func _on_tuning_finished(tuning: Tuning) -> void:

@@ -26,11 +26,11 @@ func test_a_saved_layout_is_there_next_time_the_game_starts() -> void:
 
 func test_saved_tuning_is_there_next_time_the_game_starts() -> void:
 	var tuning := GameTuning.create()
-	tuning.set_value(GameTuning.WEAPON_WINDUP, 0.5)
+	tuning.set_value(GameTuning.key("wand", "windup"), 0.5)
 
 	assert_eq(_settings().save_tuning(tuning), OK)
 
-	assert_eq(_settings().load_tuning().value(GameTuning.WEAPON_WINDUP), 0.5)
+	assert_eq(_settings().load_tuning().value(GameTuning.key("wand", "windup")), 0.5)
 
 
 func test_saving_tuning_keeps_the_saved_layout() -> void:
@@ -56,3 +56,15 @@ func test_a_layout_saved_by_the_previous_build_still_loads() -> void:
 	config.save(PATH)
 
 	assert_eq(_settings().load_layout().diameter_of(ControlLayout.ATTACK), 250.0)
+
+
+func test_the_picked_weapon_is_remembered() -> void:
+	_settings().save_weapon_id("fireball")
+
+	assert_eq(_settings().load_weapon_id(), "fireball")
+
+
+func test_a_saved_weapon_that_no_longer_exists_gives_the_starter_weapon() -> void:
+	_settings().save_weapon_id("banana")
+
+	assert_eq(_settings().load_weapon_id(), GameTuning.DEFAULT_WEAPON_ID)

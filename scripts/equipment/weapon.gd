@@ -1,25 +1,39 @@
 class_name Weapon
 extends RefCounted
-## What the attack button does. A plain data object: the player decides when to attack,
-## the weapon decides what the attack is.
-## The defaults describe the starter Wand, which fires a single magic bolt.
+## What the attack button does. Weapons are plain data: the player decides *when* to attack
+## (cooldown, wind-up, aim), the weapon decides *what* the attack is.
+## Subclasses add their own fields and expose the ones worth tuning through knobs().
 
-var display_name := "Wand"
-var button_label := "WAND"
-var color := Color(1, 0.8, 0.3)
+## Projectiles start just past the player's facing tick, in front of the body rather than inside it.
+const MUZZLE_DISTANCE := 18.0
+
+## Stable identifier: used in saved settings and tuning keys, so never rename one.
+var id := ""
+var display_name := ""
+var button_label := ""
+var color := Color.WHITE
 ## Seconds between attacks.
 var cooldown := 0.8
-## Seconds between releasing the button and the shot leaving, so attacks feel deliberate.
-var windup := 0.3
-var shot_speed := 300.0
-var shot_damage := 1
-var shot_range := 420.0
+## Seconds between releasing the button and the attack happening, so attacks feel deliberate.
+var windup := 0.1
 
 
-## How far the aim preview reaches.
-func aim_range() -> float:
-	return shot_range
+## The fields the Tune screen may change.
+func knobs() -> Array[Knob]:
+	return [
+		Knob.new("cooldown", "Cooldown (s)", 0.1, 3.0, 0.05),
+		Knob.new("windup", "Wind-up (s)", 0.0, 1.0, 0.01),
+	]
 
 
-func shots(origin: Vector2, direction: Vector2) -> Array[Shot]:
-	return [Shot.new(origin, direction, shot_speed, shot_damage, shot_range)]
+## The Shots and Slashes one attack produces, from the attacker's centre toward the aim.
+func attacks(_origin: Vector2, _direction: Vector2) -> Array:
+	return []
+
+
+func aim_shape() -> AimShape:
+	return AimShape.line(0.0)
+
+
+static func muzzle(origin: Vector2, direction: Vector2) -> Vector2:
+	return origin + direction.normalized() * MUZZLE_DISTANCE

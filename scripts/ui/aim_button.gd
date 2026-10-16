@@ -6,7 +6,7 @@ signal aim_changed(direction: Vector2)  ## Zero while the finger is still inside
 signal aim_released(release: AimGesture.Release)
 
 ## How far the finger must move before a press counts as manual aim instead of a tap, in viewport pixels.
-const DEFAULT_DEAD_ZONE := 30.0
+const DEFAULT_DEAD_ZONE := 32.0
 const NO_TOUCH := -1
 const KNOB_TRAVEL := 0.6  ## How far the knob moves when aiming, relative to the button radius.
 const MIN_FONT_SIZE := 14

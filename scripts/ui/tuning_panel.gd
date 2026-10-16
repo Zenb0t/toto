@@ -1,6 +1,7 @@
 class_name TuningPanel
 extends Control
-## Full-screen editor for gameplay tuning. One row per knob, generated from the Tuning's params:
+## Full-screen editor for gameplay tuning. One row per knob, generated from the Tuning's params
+## (optionally only some groups, e.g. just the equipped weapon's):
 ## a slider for big moves and -/+ buttons for exact steps. Works on its own copy and reports every
 ## change, so the game can apply it live.
 
@@ -42,10 +43,10 @@ func _ready() -> void:
 	hide()
 
 
-func open(tuning: Tuning) -> void:
+## Shows the given groups, or every group when none are given.
+func open(tuning: Tuning, groups: Array[String] = []) -> void:
 	_tuning = tuning.copy()
-	if _rows.is_empty():
-		_build_rows()
+	_build_rows(groups if not groups.is_empty() else _all_groups())
 	_refresh_all()
 	show()
 
@@ -75,9 +76,10 @@ func _on_done_pressed() -> void:
 # --- Building and refreshing rows ----------------------------------------------------------------
 
 ## Groups go to whichever column is shorter, so the screen fills evenly without scrolling.
-func _build_rows() -> void:
+func _build_rows(groups: Array[String]) -> void:
+	_clear_rows()
 	var heights: Array[int] = [0, 0]
-	for group in _groups_in_order():
+	for group in groups:
 		var column := 0 if heights[0] <= heights[1] else 1
 		var params := _params_in(group)
 		_columns[column].add_child(_header(group))
@@ -86,7 +88,15 @@ func _build_rows() -> void:
 		heights[column] += params.size() + 1
 
 
-func _groups_in_order() -> Array[String]:
+func _clear_rows() -> void:
+	_rows.clear()
+	for column in _columns:
+		for child in column.get_children():
+			column.remove_child(child)
+			child.free()
+
+
+func _all_groups() -> Array[String]:
 	var groups: Array[String] = []
 	for each in _tuning.params():
 		if each.group not in groups:

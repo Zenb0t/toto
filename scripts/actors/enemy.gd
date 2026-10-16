@@ -4,6 +4,8 @@ extends CharacterBody2D
 
 signal defeated(enemy: Enemy)
 
+## Every enemy is in this group, so area attacks can find them.
+const GROUP := &"enemies"
 const DEFAULT_MOVE_SPEED := 80.0
 const DEFAULT_MAX_HEALTH := 3
 const CONTACT_DAMAGE := 1
@@ -19,6 +21,7 @@ var _contact_cooldown := Cooldown.new(CONTACT_INTERVAL)
 
 func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
+	add_to_group(GROUP)
 	health.changed.connect(func(_current: int, _maximum: int) -> void: queue_redraw())
 	health.died.connect(_on_died)
 

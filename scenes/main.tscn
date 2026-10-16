@@ -25,7 +25,20 @@ offset_top = 40.0
 offset_right = 900.0
 offset_bottom = 66.0
 theme_override_font_sizes/font_size = 13
-text = "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  II: menu, controls and tuning."
+text = "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Weapon: switch weapons.  II: menu, controls and tuning."
+
+[node name="WeaponSwitch" type="Button" parent="Hud"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -380.0
+offset_top = 16.0
+offset_right = -120.0
+offset_bottom = 88.0
+grow_horizontal = 0
+focus_mode = 0
+theme_override_font_sizes/font_size = 24
+text = "Weapon: WAND"
 
 [node name="TouchControls" parent="." instance=ExtResource("2")]
 
