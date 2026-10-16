@@ -219,7 +219,8 @@ phases, each played on a phone before the next:
 3. **Characters**: rigged, animated low-poly models (free CC0 packs such as KayKit or Quaternius), with
    idle, run, attack, hit and death animations timed to wind-ups and cooldowns. What the races mean
    (looks only, factions by depth, or their own stats) is still open.
-4. **Polish**: hit flashes, damage numbers, particles, screen shake.
+4. **Polish**: ~~hit flashes, damage numbers~~ (a hit model flashes white and its damage rises above it:
+   white over enemies, red over the hero); particles, screen shake.
 
 **The game stays 2D; only the view is 3D.** Physics, hit shapes, pathfinding, fog and every test work on the
 2D plane exactly as before. `WorldView3D` shows that plane in 3D:

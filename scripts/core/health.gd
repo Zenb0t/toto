@@ -4,6 +4,8 @@ extends RefCounted
 
 signal changed(current: int, maximum: int)
 signal died
+## Damage actually taken (after limits), for whoever shows hits.
+signal damaged(amount: int)
 
 var current: int
 var maximum: int
@@ -22,7 +24,9 @@ func is_dead() -> bool:
 func take_damage(amount: int) -> void:
 	if is_dead() or amount <= 0:
 		return
+	var before := current
 	current = maxi(current - amount, 0)
+	damaged.emit(before - current)
 	changed.emit(current, maximum)
 	if is_dead():
 		died.emit()

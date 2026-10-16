@@ -89,3 +89,12 @@ func test_raising_the_maximum_heals_as_much() -> void:
 
 	assert_eq(health.maximum, 12)
 	assert_eq(health.current, 8)
+
+
+func test_taking_damage_reports_how_much_was_taken() -> void:
+	var health := Health.restored(10, 2)
+	watch_signals(health)
+
+	health.take_damage(5)
+
+	assert_signal_emitted_with_parameters(health, "damaged", [2])

@@ -15,12 +15,13 @@ var _elapsed := 0.0
 var _start: Vector3
 
 
-func _init(message: String, color: Color, at: Vector3) -> void:
+## size: relative to a level-up message (damage numbers are smaller).
+func _init(message: String, color: Color, at: Vector3, size := 1.0) -> void:
 	text = message
 	modulate = color
 	billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	no_depth_test = true
-	font_size = FONT_SIZE
+	font_size = roundi(FONT_SIZE * size)
 	pixel_size = PIXEL_SIZE
 	outline_size = 14
 	_start = at + Vector3(0, START_HEIGHT, 0)

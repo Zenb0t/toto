@@ -15,11 +15,14 @@ const HEALTH_COLOR := Color(0.95, 0.3, 0.25)
 const HEALTH_BACK_COLOR := Color(0.1, 0.08, 0.1, 0.8)
 const TUSK_COLOR := Color(0.95, 0.92, 0.8)
 const BEARD_COLOR := Color(0.55, 0.35, 0.2)
+## A hit model glows white for a moment.
+const FLASH_SECONDS := 0.12
 
 ## Everything that turns with the character. The health bar stays level, so it isn't in here.
 var _body := Node3D.new()
 var _weapon: MeshInstance3D
 var _health_fill: MeshInstance3D
+var _flash_left := 0.0
 
 
 ## With a health bar, the model shows how hurt it is (see show_health). race: see Monster.race.
@@ -75,6 +78,31 @@ func facing() -> Vector2:
 func hold(weapon_color: Color) -> void:
 	var weapon_material: StandardMaterial3D = _weapon.material_override
 	weapon_material.albedo_color = weapon_color
+
+
+## Glows white for a moment, to show a hit landed.
+func flash() -> void:
+	_flash_left = FLASH_SECONDS
+	_set_glow(true)
+
+
+func is_flashing() -> bool:
+	return _flash_left > 0.0
+
+
+func _process(delta: float) -> void:
+	if _flash_left <= 0.0:
+		return
+	_flash_left -= delta
+	if _flash_left <= 0.0:
+		_set_glow(false)
+
+
+## Every body part is drawn over in white while flashing.
+func _set_glow(glowing: bool) -> void:
+	var overlay: Material = ModelParts.material(Color.WHITE, true) if glowing else null
+	for part: GeometryInstance3D in _body.get_children():
+		part.material_overlay = overlay
 
 
 ## ratio: 0 (dead) to 1 (full health). The bar empties from the right.

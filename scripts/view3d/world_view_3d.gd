@@ -10,6 +10,10 @@ const AMBIENT_ENERGY := 0.8
 ## How far up the screen from the camera's aim the floor texture is centred, in cells: a tilted camera
 ## sees farther ahead than behind.
 const GROUND_LEAD := 2.0
+## Damage numbers: white over enemies, red over the hero, smaller than a level-up.
+const ENEMY_HIT_COLOR := Color(1.0, 0.95, 0.85)
+const HERO_HIT_COLOR := Color(1.0, 0.35, 0.3)
+const HIT_TEXT_SIZE := 0.6
 
 ## Where the camera sits. Takes effect on the next frame.
 var framing := CameraFraming.new()
@@ -51,7 +55,9 @@ func show_exploration(exploration: Exploration) -> void:
 ## The camera follows the player.
 func add_player(player: Player) -> void:
 	_hero = player
-	_puppets.add(player, CharacterModel.new(Player.BODY_COLOR), func(model: CharacterModel) -> void:
+	var stand_in := CharacterModel.new(Player.BODY_COLOR)
+	_show_hits(player, player.health, stand_in, HERO_HIT_COLOR)
+	_puppets.add(player, stand_in, func(model: CharacterModel) -> void:
 		model.face(player.facing)
 		model.hold(player.weapon.color))
 
@@ -61,6 +67,7 @@ func add_enemy(enemy: Enemy) -> void:
 	var monster := enemy.monster
 	var stand_in := CharacterModel.new(monster.color, true, monster.race)
 	stand_in.scale = Vector3.ONE * monster.size
+	_show_hits(enemy, enemy.health, stand_in, ENEMY_HIT_COLOR)
 	_puppets.add(enemy, stand_in, func(model: CharacterModel) -> void:
 		model.face(enemy.facing)
 		model.hold(enemy.weapon.color)
@@ -86,6 +93,15 @@ func add_drop(drop: ItemDrop) -> void:
 func add_potion(drop: PotionDrop) -> void:
 	_puppets.add(drop, LootModel.new(), func(model: LootModel) -> void:
 		model.show_potion(drop.potion))
+
+
+## Every hit flashes the model and pops its damage above the actor.
+func _show_hits(actor: Node2D, health: Health, model: CharacterModel, color: Color) -> void:
+	health.damaged.connect(func(amount: int) -> void:
+		if amount <= 0 or not is_instance_valid(model):
+			return
+		model.flash()
+		add_child(FloatingText.new(str(amount), color, WorldSpace.to_3d(actor.global_position), HIT_TEXT_SIZE)))
 
 
 ## A message rising from a spot on the 2D plane.
