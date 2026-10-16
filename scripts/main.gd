@@ -94,7 +94,14 @@ func _move_input() -> Vector2:
 
 func _on_attack_released(release: AimGesture.Release) -> void:
 	_player.preview_aim(Vector2.ZERO)
-	_player.attack(release.direction if not release.is_auto else _auto_aim_direction())
+	if not release.is_auto:
+		_player.attack(release.direction)
+		return
+	var target := _auto_aim_target()
+	if target == null:
+		_player.attack(_player.facing)
+	else:
+		_player.attack(_player.global_position.direction_to(target.global_position), target)
 
 
 func _on_utility_released(release: AimGesture.Release) -> void:
@@ -102,15 +109,20 @@ func _on_utility_released(release: AimGesture.Release) -> void:
 	_player.dash(release.direction if not release.is_auto else _player.facing)
 
 
-## Nearest enemy in the room you're fighting in, or straight ahead if there is none.
-func _auto_aim_direction() -> Vector2:
+## Closest enemy in the room the player is fighting in (or standing in), at any distance. Null if none.
+func _auto_aim_target() -> Enemy:
+	var enemies: Array = _enemies_by_room.get(_combat_room(), [])
 	var positions: Array[Vector2] = []
-	for enemy: Enemy in _enemies_by_room.get(_progress.locked_room, []):
+	for enemy: Enemy in enemies:
 		positions.append(enemy.global_position)
-	var target := AutoAim.nearest_index(_player.global_position, positions, Projectile.RANGE)
-	if target == AutoAim.NO_TARGET:
-		return _player.facing
-	return _player.global_position.direction_to(positions[target])
+	var nearest := AutoAim.nearest_index(_player.global_position, positions, INF)
+	return null if nearest == AutoAim.NO_TARGET else enemies[nearest]
+
+
+func _combat_room() -> int:
+	if _progress.locked_room != DungeonProgress.NO_ROOM:
+		return _progress.locked_room
+	return _map.room_at(DungeonView.world_to_cell(_player.global_position))
 
 
 # --- Rooms and combat ----------------------------------------------------------------------------

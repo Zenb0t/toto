@@ -4,7 +4,7 @@ extends CharacterBody2D
 
 signal defeated(enemy: Enemy)
 
-const SPEED := 110.0
+const SPEED := 80.0
 const MAX_HEALTH := 3
 const CONTACT_DAMAGE := 1
 const CONTACT_INTERVAL := 0.8

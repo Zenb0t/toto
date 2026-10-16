@@ -6,18 +6,18 @@ signal attack_fired(origin: Vector2, direction: Vector2)
 signal health_changed(current: int, maximum: int)
 signal died
 
-const SPEED := 160.0
+const SPEED := 140.0
 const MAX_HEALTH := 10
 const RADIUS := 12.0
 const BODY_COLOR := Color(0.35, 0.75, 1.0)
 const AIM_PREVIEW_COLOR := Color(1, 1, 1, 0.3)
-const ATTACK_INTERVAL := 0.5
+const ATTACK_INTERVAL := 0.8
 ## Delay between releasing the button and the shot leaving, so attacks feel deliberate.
-const ATTACK_WINDUP := 0.15
+const ATTACK_WINDUP := 0.3
 const WINDUP_COLOR := Color(1.0, 0.85, 0.4, 0.8)
 # Temporary utility until equipment exists.
-const DASH_SPEED := 900.0
-const DASH_DURATION := 0.15
+const DASH_SPEED := 650.0
+const DASH_DURATION := 0.18
 const DASH_DISTANCE := DASH_SPEED * DASH_DURATION
 const DASH_INTERVAL := 1.5
 
@@ -31,6 +31,7 @@ var _dash_direction := Vector2.ZERO
 var _dash_time_left := 0.0
 var _aim_preview := Vector2.ZERO
 var _windup_direction := Vector2.ZERO
+var _windup_target: Node2D
 var _windup_time_left := 0.0
 
 
@@ -46,11 +47,13 @@ func move(strength: Vector2) -> void:
 
 
 ## Starts an attack. The shot leaves after a short wind-up; taps during the cooldown are ignored.
-func attack(direction: Vector2) -> void:
+## With a target (auto-aim), the aim keeps tracking it during the wind-up so the delay doesn't cause misses.
+func attack(direction: Vector2, target: Node2D = null) -> void:
 	if direction == Vector2.ZERO or not _attack_cooldown.try_trigger():
 		return
 	facing = direction.normalized()
 	_windup_direction = facing
+	_windup_target = target
 	_windup_time_left = ATTACK_WINDUP
 
 
@@ -98,9 +101,18 @@ func _physics_process(delta: float) -> void:
 func _advance_windup(delta: float) -> void:
 	if _windup_time_left <= 0.0:
 		return
+	if is_instance_valid(_windup_target):
+		_windup_direction = global_position.direction_to(_windup_target.global_position)
+		facing = _windup_direction
 	_windup_time_left -= delta
 	if _windup_time_left <= 0.0:
-		attack_fired.emit(global_position, _windup_direction)
+		_windup_target = null
+		attack_fired.emit(_muzzle_position(), _windup_direction)
+
+
+## Shots start just past the aim tick, in front of the body rather than inside it.
+func _muzzle_position() -> Vector2:
+	return global_position + _windup_direction * (RADIUS + 6.0)
 
 
 func _draw() -> void:

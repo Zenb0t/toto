@@ -2,9 +2,9 @@ class_name Projectile
 extends Area2D
 ## Flies straight until it hits something. Damages anything that can take damage.
 
-const SPEED := 520.0
+const SPEED := 300.0
 const DAMAGE := 1
-const RANGE := 360.0
+const RANGE := 420.0
 const RADIUS := 5.0
 const COLOR := Color(1.0, 0.9, 0.4)
 
