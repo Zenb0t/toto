@@ -15,6 +15,7 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 | Tap the **weapon** button | Auto-aim at the nearest enemy and attack |
 | Drag from the weapon button, then release | Aim manually and fire |
 | **Utility** button (DASH) | Same tap / drag gesture |
+| Walk onto a chest or a dropped weapon | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
 | **Weapon: …** (top right) | Testing aid: switch between Wand, Sword, Fireball and Crossbow |
 | **II** (top right) or Esc | Pause menu: resume, customize controls, tune gameplay, restart run |
 | WASD | Move (desktop only; a mouse is just one finger) |
@@ -27,7 +28,8 @@ speed, range and damage, the dash, enemy speed and health, and each button's aim
 its own settings; the screen shows the equipped one's. Changes apply live and are saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
-Entering a room with enemies locks its doors until you defeat them all. Clear the dungeon to win. If you die, you start over.
+Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a chest with a
+random weapon. Enemies sometimes drop one too. Clear the dungeon to win. If you die, you start over with the Wand.
 
 ## Play on a phone
 
@@ -54,12 +56,14 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
   `Fireball`, `Crossbow`), and `Utility`. Each declares its own tunable `Knob`s
 - `scripts/combat` – what an attack is (`Shot`, `Slash`), how it is previewed (`AimShape`), and pure
   geometry (`HitShapes`, `Spread`, `ArcPolygon`)
+- `scripts/loot` – `LootTable`: what drops (pure rules, given a random generator)
 - `scripts/tuning` – `Tuning` (generic knobs with limits, defaults and JSON export), `Knob`, and `GameTuning`
   (which knobs exist and how they become gear)
 - `scripts/settings` – saved settings: `ControlLayout`, `GameSettings` (what is saved, and how) on top of
   `SettingsStore` (sections in a ConfigFile)
 - `scripts/ui` – touch widgets (`TouchStick`, `AimButton`, `TouchControls`), `PauseMenu`, `LayoutEditor`,
-  `TuningPanel`, `TuningSender`
-- `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `SlashEffect`. The player holds no input code
+  `TuningPanel`, `TuningSender`, `LootCard`
+- `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `SlashEffect`, and the loot on the floor
+  (`PickupArea`, `Chest`, `WeaponDrop`). The player holds no input code
 - `scripts/main.gd` – composition root: wires controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests

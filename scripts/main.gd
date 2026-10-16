@@ -1,6 +1,6 @@
 extends Node2D
 ## Composition root: builds the test dungeon, spawns actors, routes touch intents to the player,
-## applies the room-lock rules, and connects the pause menu's settings screens.
+## applies the room-lock and loot rules, and connects the pause menu's settings screens.
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
@@ -15,11 +15,14 @@ var _enemies_by_room := {}  # int -> Array[Enemy]
 var _settings := GameSettings.new()
 var _layout: ControlLayout
 var _tuning: Tuning
-var _weapon_id: String
+var _weapon_id := GameTuning.DEFAULT_WEAPON_ID
+var _rng := RandomNumberGenerator.new()
+var _offered_drop: WeaponDrop  ## The dropped weapon the player is standing on, if any.
 
 @onready var _hud_layer: CanvasLayer = $Hud
 @onready var _hud: Label = $Hud/Status
 @onready var _weapon_switch: Button = $Hud/WeaponSwitch
+@onready var _loot_card: LootCard = $Hud/LootCard
 @onready var _touch_controls: TouchControls = $TouchControls
 @onready var _move_stick: TouchStick = $TouchControls/MoveStick
 @onready var _attack_button: AimButton = $TouchControls/AttackButton
@@ -37,7 +40,7 @@ func _ready() -> void:
 	_view.show_map(_map)
 	_tuning = _settings.load_tuning()
 	_layout = _settings.load_layout()
-	_weapon_id = _settings.load_weapon_id()
+	_rng.randomize()
 
 	_player = _spawn_player()
 	_spawn_enemies()
@@ -100,6 +103,8 @@ func _connect_controls() -> void:
 			_player.preview_aim(direction, _player.utility.aim_shape()))
 	_weapon_switch.pressed.connect(_on_weapon_switch_pressed)
 	_utility_button.aim_released.connect(_on_utility_released)
+	_loot_card.take_pressed.connect(_on_take_pressed)
+	_loot_card.leave_pressed.connect(_close_offer)
 
 
 func _connect_menu() -> void:
@@ -174,12 +179,15 @@ func _on_room_locked(room: int) -> void:
 
 func _on_room_cleared(room: int) -> void:
 	_view.set_room_closed(room, false)
+	_spawn_chest(room)
 
 
 func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
 	_enemies_by_room[room].erase(enemy)
 	_progress.record_defeat(room)
 	_refresh_hud()
+	if LootTable.rolls_enemy_drop(GameTuning.enemy_drop_chance(_tuning), _rng):
+		_spawn_drop(enemy.position)
 
 
 func _on_attack_fired(attacks: Array) -> void:
@@ -190,6 +198,59 @@ func _on_attack_fired(attacks: Array) -> void:
 			add_child(projectile)
 		elif attack is Slash:
 			add_child(SlashEffect.new(attack, _player))
+
+
+# --- Loot ----------------------------------------------------------------------------------------
+
+func _spawn_chest(room: int) -> void:
+	var chest := Chest.new()
+	chest.position = DungeonView.cell_center(_map.room_center(room))
+	chest.opened.connect(_spawn_drop.bind(chest.position))
+	_place_on_floor.call_deferred(chest)
+
+
+## Drops a random weapon other than the one the player holds.
+func _spawn_drop(at: Vector2) -> void:
+	var weapon_id := LootTable.pick_weapon_id(GameTuning.weapon_ids(), _weapon_id, _rng)
+	var drop := WeaponDrop.new(GameTuning.weapon(_tuning, weapon_id))
+	drop.position = at
+	drop.player_entered.connect(_offer.bind(drop))
+	drop.player_exited.connect(_on_drop_left.bind(drop))
+	_place_on_floor.call_deferred(drop)
+
+
+## Drawn above the map but below the actors. Loot appears from inside physics callbacks (a hit, a step),
+## where areas can't be added yet, so callers defer this.
+func _place_on_floor(node: Node2D) -> void:
+	add_child(node)
+	move_child(node, _view.get_index() + 1)
+
+
+func _offer(drop: WeaponDrop) -> void:
+	_offered_drop = drop
+	_loot_card.show_offer(drop.weapon, _player.weapon)
+
+
+func _on_drop_left(drop: WeaponDrop) -> void:
+	if drop == _offered_drop:
+		_close_offer()
+
+
+func _close_offer() -> void:
+	_offered_drop = null
+	_loot_card.hide()
+
+
+## Swap: the player takes the found weapon and leaves theirs on the floor in its place. The card only
+## comes back after stepping off and on again, so a swap can be undone but never happens by accident.
+func _on_take_pressed() -> void:
+	if _offered_drop == null:
+		return
+	var found_id := _offered_drop.weapon.id
+	_offered_drop.weapon = _player.weapon
+	_close_offer()
+	_weapon_id = found_id
+	_apply_tuning(_tuning)
 
 
 # --- Equipment and tuning ------------------------------------------------------------------------
@@ -214,6 +275,8 @@ func _equip(weapon: Weapon, utility: Utility) -> void:
 	_weapon_switch.text = "Weapon: %s" % weapon.button_label
 	_utility_button.label = utility.button_label
 	_utility_button.color = utility.color
+	if _offered_drop != null:
+		_loot_card.show_offer(_offered_drop.weapon, weapon)
 
 
 # --- Menu ----------------------------------------------------------------------------------------
@@ -231,11 +294,10 @@ func _on_layout_finished(layout: ControlLayout) -> void:
 	_pause_menu.return_to_panel()
 
 
-## Testing aid: cycles through every weapon, keeping each one's own tuning.
+## Testing aid: cycles through every weapon, keeping each one's own tuning. Runs still start with the Wand.
 func _on_weapon_switch_pressed() -> void:
 	_weapon_id = GameTuning.next_weapon_id(_weapon_id)
 	_apply_tuning(_tuning)
-	_warn_if_failed(_settings.save_weapon_id(_weapon_id), "the weapon choice")
 
 
 func _on_tuning_requested() -> void:

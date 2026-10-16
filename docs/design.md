@@ -56,6 +56,21 @@ equipped weapon's knobs only.
 (`Weapon`, `Utility`, `Player`, `Enemy`), and the tuning screen reads them, so there is one source of truth.
 When a playtest settles on better values, they get copied into those defaults.
 
+## Loot (step 6)
+
+- **Chests.** Clearing a room leaves a chest at its centre. Walking onto it opens it and drops a weapon.
+  The open chest stays, so you can see which rooms you have looted.
+- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot, default 10%) to drop a weapon.
+- **What drops.** Weapons only for now, picked at random but never the one you hold (a duplicate is no choice).
+- **Compare and swap.** Standing on a drop shows a card: the weapon's name and one-line description, what it
+  replaces, and **Take** / **Leave**. Taking it leaves your old weapon on the floor in its place, so a swap can be
+  undone; the card only returns after you step off and on again, so nothing is swapped by accident.
+- **Runs start with the Wand.** The HUD weapon switch stays as a testing aid for tuning each weapon, but the
+  choice is no longer saved.
+
+`LootTable` holds the rules (pure, given a seeded random generator). `Chest` and `WeaponDrop` only notice the
+player; `main.gd` decides what drops and does the swap.
+
 ## Enemies (planned)
 
 Three types, each answered best by different gear: **rusher** (melee chaser, the current enemy),
@@ -72,7 +87,7 @@ Art and audio, procedural generation, rarity tiers, stat depth, meta-progression
 3. ~~Touch controls (move stick, aim buttons, auto-aim)~~
 4. ~~Equipment model: weapon and utility data drive what the buttons do~~
 5. First item pool: ~~sword, fireball, crossbow~~ + utilities
-6. Loot: room chests, rare drops, replace-on-pickup compare
+6. Loot: ~~room chests, rare drops, replace-on-pickup compare~~ (weapons only so far)
 7. Enemy types: rusher, ranged, tank
 8. ~~Web export for playtesting on a phone~~
 9. ~~Pause menu with a touch layout editor (move and resize controls, saved on the device)~~

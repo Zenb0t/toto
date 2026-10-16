@@ -14,6 +14,7 @@ var aim_curve := 2.0
 func _init() -> void:
 	id = "fireball"
 	display_name = "Fireball"
+	description = "Lobbed over walls; explodes where it lands. Mind the blast."
 	button_label = "FIREBALL"
 	color = Color(1, 0.45, 0.2)
 	cooldown = 1.4

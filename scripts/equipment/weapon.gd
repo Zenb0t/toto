@@ -10,6 +10,8 @@ const MUZZLE_DISTANCE := 18.0
 ## Stable identifier: used in saved settings and tuning keys, so never rename one.
 var id := ""
 var display_name := ""
+## One line shown when the weapon is found, so the player can compare it with what they hold.
+var description := ""
 var button_label := ""
 var color := Color.WHITE
 ## Seconds between attacks.

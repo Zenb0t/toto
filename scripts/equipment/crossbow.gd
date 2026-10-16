@@ -12,6 +12,7 @@ var damage := 1
 func _init() -> void:
 	id = "crossbow"
 	display_name = "Crossbow"
+	description = "A fan of bolts, strongest up close."
 	button_label = "CROSSBOW"
 	color = Color(0.55, 0.85, 0.4)
 	cooldown = 1.0

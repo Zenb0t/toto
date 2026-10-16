@@ -1,0 +1,85 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/loot_card.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="1"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+bg_color = Color(0.07, 0.06, 0.09, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.75, 0.3, 0.8)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="LootCard" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1")
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.75
+anchor_top = 0.15
+anchor_right = 0.75
+anchor_bottom = 0.15
+offset_left = -190.0
+offset_right = 190.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("1")
+
+[node name="Rows" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FoundName" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Sword"
+horizontal_alignment = 1
+
+[node name="FoundDescription" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Description"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Replaces" type="Label" parent="Panel/Rows"]
+modulate = Color(1, 1, 1, 0.65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Replaces your Wand"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Take" type="Button" parent="Panel/Rows/Buttons"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "Take"
+
+[node name="Leave" type="Button" parent="Panel/Rows/Buttons"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "Leave"

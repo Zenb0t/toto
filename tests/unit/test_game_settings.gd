@@ -56,15 +56,3 @@ func test_a_layout_saved_by_the_previous_build_still_loads() -> void:
 	config.save(PATH)
 
 	assert_eq(_settings().load_layout().diameter_of(ControlLayout.ATTACK), 250.0)
-
-
-func test_the_picked_weapon_is_remembered() -> void:
-	_settings().save_weapon_id("fireball")
-
-	assert_eq(_settings().load_weapon_id(), "fireball")
-
-
-func test_a_saved_weapon_that_no_longer_exists_gives_the_starter_weapon() -> void:
-	_settings().save_weapon_id("banana")
-
-	assert_eq(_settings().load_weapon_id(), GameTuning.DEFAULT_WEAPON_ID)

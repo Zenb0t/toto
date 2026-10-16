@@ -57,6 +57,30 @@ func door_cells() -> Array[Vector2i]:
 	return cells
 
 
+func cells_of_room(room: int) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for cell: Vector2i in _room_by_cell:
+		if _room_by_cell[cell] == room:
+			cells.append(cell)
+	return cells
+
+
+## The room's cell closest to its middle, so things placed there are always on its floor
+## (even in a room that isn't a rectangle).
+func room_center(room: int) -> Vector2i:
+	var cells := cells_of_room(room)
+	assert(not cells.is_empty(), "room %d has no cells" % room)
+	var middle := Vector2.ZERO
+	for cell in cells:
+		middle += Vector2(cell)
+	middle /= cells.size()
+	var closest := cells[0]
+	for cell in cells:
+		if Vector2(cell).distance_squared_to(middle) < Vector2(closest).distance_squared_to(middle):
+			closest = cell
+	return closest
+
+
 func walkable_cells() -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	cells.assign(_room_by_cell.keys())

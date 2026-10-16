@@ -12,6 +12,7 @@ var sweep_seconds := 0.15
 func _init() -> void:
 	id = "sword"
 	display_name = "Sword"
+	description = "The blade sweeps an arc in front of you."
 	button_label = "SWORD"
 	color = Color(0.85, 0.88, 1.0)
 	cooldown = 0.6

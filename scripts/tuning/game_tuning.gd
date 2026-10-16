@@ -9,6 +9,7 @@ const ENEMY_MOVE_SPEED := "enemy.move_speed"
 const ENEMY_MAX_HEALTH := "enemy.max_health"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
 const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
+const LOOT_ENEMY_DROP_CHANCE := "loot.enemy_drop_chance"
 const DEFAULT_WEAPON_ID := "wand"
 
 
@@ -48,6 +49,8 @@ static func create() -> Tuning:
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", "Enemies", 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_MAX_HEALTH, "Health", "Enemies", 1, 10, 1, Enemy.DEFAULT_MAX_HEALTH, true),
+		Tuning.Param.new(
+			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", "Loot", 0, 1, 0.05, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
 		Tuning.Param.new(
 			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", "Controls", 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(
@@ -92,6 +95,10 @@ static func enemy_move_speed(tuning: Tuning) -> float:
 
 static func enemy_max_health(tuning: Tuning) -> int:
 	return roundi(tuning.value(ENEMY_MAX_HEALTH))
+
+
+static func enemy_drop_chance(tuning: Tuning) -> float:
+	return tuning.value(LOOT_ENEMY_DROP_CHANCE)
 
 
 static func weapon_dead_zone(tuning: Tuning) -> float:
