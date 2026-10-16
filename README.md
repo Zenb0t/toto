@@ -19,6 +19,12 @@ Open the project in Godot 4.4+ and press F5. The window runs in landscape and tr
 
 Entering a room with enemies locks its doors until you defeat them all. Clear the dungeon to win. If you die, you start over.
 
+## Play on a phone
+
+`tools/web_playtest/package.sh <godot-binary>` exports the Web build and packs it into `build/web_playtest/`.
+`toto-playtest.html` is a touch-friendly loader page that works on static hosts that serve only web file types.
+Web export needs Godot's 4.4.1 export templates installed.
+
 ## Test
 
 ```sh

@@ -1,5 +1,7 @@
 # Godot
 .godot/
 *.translation
-export_presets.cfg
 .mono/
+
+# Export output
+build/

@@ -1,0 +1,263 @@
+<title>Toto Playtest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  /* Layout: full-bleed game canvas; a single start panel floats over it until the engine is running. */
+  :root {
+    color-scheme: dark;
+    --ground: #0d0b12;      /* same as the in-game clear colour */
+    --stone: #3b3542;       /* dungeon floor */
+    --ink: #ece6f2;
+    --muted: #a39cb0;
+    --torch: #f2c14e;       /* ATTACK button gold */
+    --danger: #e0675a;      /* enemy red */
+    --display: "Pixelify Sans", "Courier New", monospace;
+    --body: "IBM Plex Sans", system-ui, sans-serif;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    outline: none;
+    background: var(--ground);
+  }
+  .panel {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding-block: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--ground);
+    z-index: 2;
+  }
+  .card {
+    display: grid;
+    gap: 14px;
+    justify-items: start;
+    width: min(28rem, 100%);
+  }
+  .eyebrow {
+    font-family: var(--display);
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2.6rem, 9vw, 4rem);
+    line-height: 1;
+    text-wrap: balance;
+  }
+  .lede { margin: 0; max-width: 34ch; line-height: 1.5; color: var(--muted); }
+  .controls {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+  .controls dt { font-family: var(--display); color: var(--torch); }
+  .controls dd { margin: 0; color: var(--ink); }
+  button {
+    font: 700 1.1rem var(--display);
+    letter-spacing: 0.06em;
+    color: var(--ground);
+    background: var(--torch);
+    border: 0;
+    border-radius: 999px;
+    padding: 14px 28px;
+    cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  button:disabled { opacity: 0.6; cursor: progress; }
+  .progress {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--stone);
+    overflow: hidden;
+  }
+  .progress > span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--torch);
+    transition: width 120ms linear;
+  }
+  .status { margin: 0; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .status.error { color: var(--danger); }
+  .rotate {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    place-items: center;
+    text-align: center;
+    padding-block: 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--ground);
+    font-family: var(--display);
+    font-size: 1.3rem;
+  }
+  @media (orientation: portrait) and (pointer: coarse) {
+    .rotate { display: grid; }
+  }
+  [hidden] { display: none !important; }
+  .panel { overflow-y: auto; }
+  /* Phones held sideways are short: tighten everything so the Play button stays on screen. */
+  @media (max-height: 480px) {
+    .card { gap: 8px; }
+    h1 { font-size: 2.2rem; }
+    .lede { display: none; }
+    .controls { font-size: 0.8rem; gap: 4px 12px; }
+    button { padding: 10px 24px; font-size: 1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .progress > span { transition: none; }
+  }
+</style>
+
+<canvas id="canvas" tabindex="0">Your browser can't run this game.</canvas>
+
+<section class="panel" id="start-panel" aria-labelledby="game-title">
+  <div class="card">
+    <span class="eyebrow">Core-loop playtest · build 0.1</span>
+    <h1 id="game-title">Toto</h1>
+    <p class="lede">Fight through five locked rooms. Every door seals until the room is clear.</p>
+    <dl class="controls">
+      <dt>Left thumb</dt><dd>Move. The stick appears wherever you touch.</dd>
+      <dt>Attack</dt><dd>Tap to auto-aim, or drag to aim and release to fire.</dd>
+      <dt>Dash</dt><dd>Same gesture. Tap dashes the way you face.</dd>
+    </dl>
+    <button id="play" type="button">Tap to play</button>
+    <div class="progress" id="progress" hidden><span id="progress-fill"></span></div>
+    <p class="status" id="status" role="status">Downloads about 10&nbsp;MB the first time.</p>
+  </div>
+</section>
+
+<div class="rotate" aria-hidden="true">Turn your phone sideways to play.</div>
+
+<script>
+  // The host serves only web file types, so the engine (gzipped) and the game data are published under
+  // .wasm names. Map Godot's requests to those files and unpack the engine in the browser.
+  (function installPackedFileLoader() {
+    const realFetch = window.fetch.bind(window);
+    const PUBLISHED_AS = {
+      'index.wasm': { file: 'engine.gz.wasm', type: 'application/wasm' },
+      'index.pck': { file: 'gamedata.pck.wasm', type: 'application/octet-stream' },
+    };
+
+    async function streamThatMayBeGzipped(response) {
+      const reader = response.body.getReader();
+      const first = await reader.read();
+      const head = first.value || new Uint8Array(0);
+      const whole = new ReadableStream({
+        start(controller) {
+          if (first.done) { controller.close(); return; }
+          controller.enqueue(head);
+        },
+        async pull(controller) {
+          const { done, value } = await reader.read();
+          if (done) controller.close(); else controller.enqueue(value);
+        },
+      });
+      // Only decompress when the gzip magic bytes are present (a host may already have undone it).
+      const isGzip = head[0] === 0x1f && head[1] === 0x8b;
+      return isGzip ? whole.pipeThrough(new DecompressionStream('gzip')) : whole;
+    }
+
+    window.fetch = async function (input, init) {
+      const url = typeof input === 'string' ? input : input.url;
+      const name = url.split('/').pop().split('?')[0];
+      const published = PUBLISHED_AS[name];
+      if (!published) return realFetch(input, init);
+      const response = await realFetch(url.slice(0, url.length - name.length) + published.file, init);
+      if (!response.ok) return response;
+      const body = await streamThatMayBeGzipped(response);
+      return new Response(body, { status: 200, headers: { 'Content-Type': published.type } });
+    };
+  })();
+</script>
+<script src="index.js"></script>
+<script>
+  const GODOT_CONFIG = {
+    args: [],
+    canvasResizePolicy: 2,
+    ensureCrossOriginIsolationHeaders: false,
+    executable: 'index',
+    experimentalVK: false,
+    fileSizes: { 'index.pck': 48032, 'index.wasm': 43699190 },
+    focusCanvas: true,
+    gdextensionLibs: [],
+  };
+
+  const panel = document.getElementById('start-panel');
+  const playButton = document.getElementById('play');
+  const progress = document.getElementById('progress');
+  const progressFill = document.getElementById('progress-fill');
+  const statusLine = document.getElementById('status');
+
+  function showError(message) {
+    statusLine.textContent = message;
+    statusLine.classList.add('error');
+    playButton.disabled = false;
+    playButton.textContent = 'Try again';
+  }
+
+  function showProgress(loaded, total) {
+    const percent = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0;
+    progressFill.style.width = percent + '%';
+    statusLine.textContent = percent < 100 ? `Loading ${percent}%` : 'Starting…';
+  }
+
+  async function requestFullscreenIfAllowed() {
+    try {
+      if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+      if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+    } catch (_) {
+      // Fullscreen and orientation lock are optional; some app views refuse them.
+    }
+  }
+
+  async function start() {
+    const missing = Engine.getMissingFeatures({ threads: false });
+    if (missing.length > 0) {
+      showError('This browser is missing: ' + missing.join(', ') + '. Try Chrome on Android.');
+      return;
+    }
+    playButton.disabled = true;
+    playButton.textContent = 'Loading…';
+    progress.hidden = false;
+    statusLine.classList.remove('error');
+    requestFullscreenIfAllowed();
+
+    try {
+      const engine = new Engine({ ...GODOT_CONFIG, canvas: document.getElementById('canvas') });
+      await engine.startGame({ onProgress: showProgress });
+      panel.hidden = true;
+    } catch (error) {
+      showError('The game could not start: ' + (error && error.message ? error.message : error));
+    }
+  }
+
+  playButton.addEventListener('click', start);
+</script>
