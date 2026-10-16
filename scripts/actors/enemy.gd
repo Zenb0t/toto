@@ -1,6 +1,6 @@
 class_name Enemy
 extends CharacterBody2D
-## Simple chaser: walks straight at its target and hurts it on contact.
+## Simple chaser: idles until told to chase, then walks straight at its target and hurts it on contact.
 
 signal defeated(enemy: Enemy)
 

@@ -1,0 +1,57 @@
+class_name TouchStick
+extends Control
+## Floating joystick: put a thumb anywhere inside this control and the stick appears under it.
+
+signal strength_changed(strength: Vector2)
+
+const RADIUS := 70.0
+const NO_TOUCH := -1
+const BASE_COLOR := Color(1, 1, 1, 0.12)
+const KNOB_COLOR := Color(1, 1, 1, 0.45)
+const HINT_OFFSET := Vector2(140, -140)
+
+var _touch_index := NO_TOUCH
+var _origin := Vector2.ZERO
+var _finger := Vector2.ZERO
+
+
+func _ready() -> void:
+	mouse_filter = MOUSE_FILTER_IGNORE
+
+
+func current_strength() -> Vector2:
+	if _touch_index == NO_TOUCH:
+		return Vector2.ZERO
+	return StickMath.strength(_origin, _finger, RADIUS)
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		_on_touch(event)
+	elif event is InputEventScreenDrag and event.index == _touch_index:
+		_finger = event.position
+		strength_changed.emit(current_strength())
+		queue_redraw()
+
+
+func _on_touch(event: InputEventScreenTouch) -> void:
+	if event.pressed and _touch_index == NO_TOUCH and get_global_rect().has_point(event.position):
+		_touch_index = event.index
+		_origin = event.position
+		_finger = event.position
+		get_viewport().set_input_as_handled()
+		queue_redraw()
+	elif not event.pressed and event.index == _touch_index:
+		_touch_index = NO_TOUCH
+		strength_changed.emit(Vector2.ZERO)
+		queue_redraw()
+
+
+func _draw() -> void:
+	if _touch_index == NO_TOUCH:
+		var hint := Vector2(0, size.y) + HINT_OFFSET
+		draw_circle(hint, RADIUS, BASE_COLOR)
+		return
+	var base := _origin - global_position
+	draw_circle(base, RADIUS, BASE_COLOR)
+	draw_circle(base + current_strength() * RADIUS, RADIUS * 0.45, KNOB_COLOR)

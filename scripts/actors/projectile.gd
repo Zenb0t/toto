@@ -4,12 +4,12 @@ extends Area2D
 
 const SPEED := 520.0
 const DAMAGE := 1
-const LIFETIME := 1.2
+const RANGE := 360.0
 const RADIUS := 5.0
 const COLOR := Color(1.0, 0.9, 0.4)
 
 var _direction := Vector2.RIGHT
-var _time_left := LIFETIME
+var _time_left := RANGE / SPEED
 
 
 func _ready() -> void:

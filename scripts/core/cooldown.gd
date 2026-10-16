@@ -15,6 +15,11 @@ func tick(delta: float) -> void:
 	_remaining = maxf(_remaining - delta, 0.0)
 
 
+## 1.0 right after triggering, 0.0 when ready again. Handy for UI.
+func remaining_ratio() -> float:
+	return _remaining / duration if duration > 0.0 else 0.0
+
+
 func is_ready() -> bool:
 	return _remaining == 0.0
 

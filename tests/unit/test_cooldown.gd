@@ -40,3 +40,14 @@ func test_can_be_triggered_again_after_recovering() -> void:
 	cooldown.tick(0.5)
 
 	assert_true(cooldown.try_trigger())
+
+
+func test_reports_how_much_of_the_cooldown_is_left() -> void:
+	var cooldown := Cooldown.new(2.0)
+	assert_eq(cooldown.remaining_ratio(), 0.0)
+
+	cooldown.try_trigger()
+	assert_eq(cooldown.remaining_ratio(), 1.0)
+
+	cooldown.tick(0.5)
+	assert_almost_eq(cooldown.remaining_ratio(), 0.75, 0.001)

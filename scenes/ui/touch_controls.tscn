@@ -1,0 +1,44 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/touch_stick.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/ui/aim_button.gd" id="2"]
+
+[node name="TouchControls" type="CanvasLayer"]
+
+[node name="MoveStick" type="Control" parent="."]
+anchors_preset = 9
+anchor_right = 0.5
+anchor_bottom = 1.0
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1")
+
+[node name="AttackButton" type="Control" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -230.0
+offset_top = -250.0
+offset_right = -90.0
+offset_bottom = -110.0
+mouse_filter = 2
+script = ExtResource("2")
+label = "ATTACK"
+color = Color(1, 0.8, 0.3, 1)
+
+[node name="UtilityButton" type="Control" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = -160.0
+offset_right = -280.0
+offset_bottom = -60.0
+mouse_filter = 2
+script = ExtResource("2")
+label = "DASH"
+color = Color(0.45, 0.85, 1, 1)
