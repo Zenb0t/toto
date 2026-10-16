@@ -131,3 +131,18 @@ func test_a_cave_branch_shows_its_walls_without_torches_or_columns() -> void:
 
 	assert_eq(view.torch_count(), 0)
 	assert_true(view.is_standing(PILLAR), "the pillar stands, as rock")
+
+
+func test_the_lairs_pillars_are_trees_that_still_stand_like_walls() -> void:
+	var view: MapView3D = autofree(MapView3D.new())
+	var map := _hall()
+	var walls: Array[Vector2i] = []
+	for y in map.size.y:
+		for x in map.size.x:
+			if not map.is_open(Vector2i(x, y)):
+				walls.append(Vector2i(x, y))
+
+	view.show_map(map, walls, BranchLook.lair())
+	view.show_exploration(_looking_from(Vector2i(29, 3)))
+
+	assert_true(view.is_standing(PILLAR))

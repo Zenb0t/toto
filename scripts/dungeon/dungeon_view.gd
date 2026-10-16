@@ -10,6 +10,9 @@ const STONE_TINT := 0.035
 const GROUT_WIDTH := 1.5
 const EARTH_SPECK_COLOR := Color(0, 0, 0, 0.18)
 const EARTH_SPECKS := 3
+## Columns and trees stand on the floor, with a shadow at their foot (rock fills its whole cell instead).
+const PILLAR_SHADOW_COLOR := Color(0, 0, 0, 0.35)
+const PILLAR_SHADOW_RADIUS := 13.0
 const BEVEL_LIGHT := Color(1, 1, 1, 0.08)
 const BEVEL_DARK := Color(0, 0, 0, 0.18)
 const CRACK_COLOR := Color(0.16, 0.14, 0.18, 0.45)
@@ -73,12 +76,13 @@ func _draw() -> void:
 	if _map == null:
 		return
 	for cell in _map.open_cells():
-		if _look.flagstones:
-			_draw_flagstone(cell)
-		else:
-			_draw_earth(cell)
+		_draw_ground(cell)
 	for cell in wall_cells():
 		draw_rect(_tile_rect(cell), WALL_COLOR)
+	if _look.pillar_style != BranchLook.PillarStyle.ROCK:
+		for cell in DungeonDecor.pillar_cells(_map, wall_cells()):
+			_draw_ground(cell)
+			draw_circle(cell_center(cell), PILLAR_SHADOW_RADIUS, PILLAR_SHADOW_COLOR)
 	var torches: Array[Vector2i] = []
 	if _look.torches:
 		torches = DungeonDecor.torch_cells(_map, wall_cells())
@@ -87,6 +91,13 @@ func _draw() -> void:
 		draw_rect(_tile_rect(cell), Color(TORCH_LIGHT_COLOR, TORCH_LIGHT_COLOR.a * light[cell]))
 	if _map.exit_cell != DungeonMap.NO_CELL:
 		_draw_stairs(_tile_rect(_map.exit_cell))
+
+
+func _draw_ground(cell: Vector2i) -> void:
+	if _look.flagstones:
+		_draw_flagstone(cell)
+	else:
+		_draw_earth(cell)
 
 
 func _draw_flagstone(cell: Vector2i) -> void:

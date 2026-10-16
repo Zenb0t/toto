@@ -13,6 +13,8 @@ const COFFIN_LID_COLOR := Color(0.42, 0.3, 0.22)
 const BONE_COLOR := Color(0.92, 0.9, 0.82)
 const BRAZIER_COLOR := Color(0.25, 0.22, 0.2)
 const EMBER_COLOR := Color(1.0, 0.55, 0.2)
+const TRUNK_COLOR := Color(0.38, 0.27, 0.18)
+const LEAF_COLORS: Array[Color] = [Color(0.25, 0.5, 0.22), Color(0.32, 0.56, 0.2), Color(0.22, 0.45, 0.3)]
 
 
 ## A decoration of a kind; variant (0..1) picks among looks of the same kind, so no two are alike.
@@ -30,6 +32,8 @@ static func make(kind: String, variant: float) -> Node3D:
 			return _bones(variant)
 		"brazier":
 			return _brazier()
+		"tree":
+			return _tree(variant)
 	return PropModel.make(kind)
 
 
@@ -105,3 +109,19 @@ static func _brazier() -> Node3D:
 	embers.scale = Vector3(1, 0.6, 1)
 	brazier.add_child(embers)
 	return brazier
+
+
+## A tree as tall as a wall: a trunk and a crown of three overlapping balls of leaves.
+static func _tree(variant: float) -> Node3D:
+	var tree := Node3D.new()
+	var trunk := CylinderMesh.new()
+	trunk.top_radius = 0.1
+	trunk.bottom_radius = 0.15
+	trunk.height = 0.6
+	tree.add_child(ModelParts.part(trunk, TRUNK_COLOR, Vector3(0, 0.3, 0)))
+	var leaves := LEAF_COLORS[floori(variant * LEAF_COLORS.size()) % LEAF_COLORS.size()]
+	for i in 3:
+		var at := Vector3(cos(i * 2.1 + variant * 5.0) * 0.18, 0.75 + 0.12 * (i % 2), sin(i * 2.1 + variant * 5.0) * 0.18)
+		var crown := ModelParts.part(ModelParts.sphere(0.36 - 0.04 * i), leaves.lightened(0.06 * i), at)
+		tree.add_child(crown)
+	return tree

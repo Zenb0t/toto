@@ -42,6 +42,7 @@ var _closed_doors := {}  # Vector2i -> true
 var _torches := {}  # wall cell -> TorchModel
 var _banners := {}  # wall cell -> Node3D
 var _clutter := {}  # floor cell -> Node3D
+var _trees := {}  # pillar cell -> Node3D
 var _shown := {}  # Vector2i -> the brightness last shown, so a refresh only touches what changed
 var _exploration: Exploration
 var _cut_cells := {}  # Vector2i -> true, walls cut down in front of the hero
@@ -64,14 +65,18 @@ func _init() -> void:
 ## wall_cells: the walls to stand up (those next to open cells).
 func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.dungeon()) -> void:
 	_look = look
-	# Caves have no carved columns: their pillars are plain rock, like their walls.
+	# Pillars are carved columns, trees (the Lair's), or plain rock like the walls around them.
 	var pillars: Array[Vector2i] = []
-	if look.flagstones:
-		pillars = DungeonDecor.pillar_cells(map, wall_cells)
+	var trees: Array[Vector2i] = []
+	match look.pillar_style:
+		BranchLook.PillarStyle.COLUMN:
+			pillars = DungeonDecor.pillar_cells(map, wall_cells)
+		BranchLook.PillarStyle.TREE:
+			trees = DungeonDecor.pillar_cells(map, wall_cells)
 	_column_cells = pillars
 	_block_cells.clear()
 	for cell in wall_cells:
-		if cell not in pillars:
+		if cell not in pillars and cell not in trees:
 			_block_cells.append(cell)
 	_block_cells.append_array(map.door_cells())
 	_has_block.clear()
@@ -84,11 +89,17 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 	_blocks.instance_count = _block_cells.size()
 	_caps.instance_count = _block_cells.size() + _column_cells.size()
 	_columns.instance_count = _column_cells.size()
-	for prop: Node in _torches.values() + _banners.values() + _clutter.values():
+	for prop: Node in _torches.values() + _banners.values() + _clutter.values() + _trees.values():
 		prop.queue_free()
 	_torches.clear()
 	_banners.clear()
 	_clutter.clear()
+	_trees.clear()
+	for cell in trees:
+		var tree := DecorModel.make("tree", DungeonDecor.noise(cell, 16))
+		tree.position = WorldSpace.to_3d(DungeonView.cell_center(cell))
+		add_child(tree)
+		_trees[cell] = tree
 	var banner_cells: Array[Vector2i] = []
 	if look.banners:
 		banner_cells = DungeonDecor.banner_cells(map, wall_cells)
@@ -219,6 +230,8 @@ func _refresh(everything := false) -> void:
 		_banners[cell].scale.y = PropModel.SCALE * PropModel.BANNER_SIZE * _height_at(cell)
 	for cell: Vector2i in _clutter:
 		_clutter[cell].visible = _ground_brightness(cell) > HIDDEN
+	for cell: Vector2i in _trees:
+		_trees[cell].visible = brightness(cell) > HIDDEN
 
 
 ## The wall's body, below its cap.

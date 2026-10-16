@@ -166,7 +166,9 @@ rooms, set pieces, inhabitants and look (`BranchLook`):
 A branch's favoured monsters are added (twice) to every room's pool, on top of what the depth calls for,
 so the danger still grows floor by floor. **Caves** (`RoomShapes.cave`) are rough rectangles whose walls
 wander in and out in stretches of three cells, with rounded corners; the middle of each side stays straight
-so corridors can still meet it. Their floors are blotchy earth without grout, their pillars plain rock.
+so corridors can still meet it. Their floors are blotchy earth without grout. Free-standing pillars are carved columns in built places,
+trees in the Lair and plain rock in the Mines (they block like walls all the same); columns and trees stand
+on the floor with a shadow at their foot.
 The HUD, the pause menu and the run summary name the branch ("Killed by an orc in the Orcish Mines").
 
 ## Floors (the descent)

@@ -19,6 +19,9 @@ var torches := true
 var clutter: Array[String] = ["candle_lit", "candle_triple", "bottle_A_brown", "coin_stack_small"]
 ## Banners on the walls (see PropModel.BANNERS), or none.
 var banners := true
+## What free-standing pillars are: carved columns, plain rock, or trees (they block like walls all the same).
+enum PillarStyle { COLUMN, ROCK, TREE }
+var pillar_style := PillarStyle.COLUMN
 
 
 static func dungeon() -> BranchLook:
@@ -37,6 +40,7 @@ static func lair() -> BranchLook:
 	look.torches = false
 	look.clutter = ["mushrooms", "mushrooms", "grass", "boulder", "grass"]
 	look.banners = false
+	look.pillar_style = PillarStyle.TREE
 	return look
 
 
@@ -51,6 +55,7 @@ static func mines() -> BranchLook:
 	look.ambient_color = Color(0.7, 0.6, 0.5)
 	look.clutter = ["boulder", "boulder", "coin_stack_small", "bottle_A_brown"]
 	look.banners = false
+	look.pillar_style = PillarStyle.ROCK
 	return look
 
 
