@@ -10,6 +10,8 @@ var length := 0.0
 var spread_degrees := 0.0
 var count := 1
 var end_radius := 0.0
+## How much of a line is filled in brighter (0..1): a charging shot shows how charged it is.
+var fill := 0.0
 
 
 static func line(line_length: float, blast_radius := 0.0) -> AimShape:

@@ -31,6 +31,22 @@ func attacks(_origin: Vector2, _direction: Vector2, _aim_distance: float) -> Arr
 	return []
 
 
+## Seconds of holding the attack button that make a full charge, or 0 for weapons that fire as soon as the
+## button is released (see Charge).
+func charge_seconds() -> float:
+	return 0.0
+
+
+## The share of the hero's speed while the button is held to charge (1 = not slowed).
+func charging_move_share() -> float:
+	return 1.0
+
+
+## The attacks when the button was held for held_seconds. Weapons that don't charge ignore it.
+func charged_attacks(origin: Vector2, direction: Vector2, aim_distance: float, _held_seconds: float) -> Array:
+	return attacks(origin, direction, aim_distance)
+
+
 ## How far from its target an enemy wielding this weapon likes to stay. Most keep to the middle of
 ## their range; weapons that are best up close (or from afar) say so.
 func ideal_distance() -> float:

@@ -46,6 +46,8 @@ var _settings := GameSettings.new()
 var _layout: ControlLayout
 var _tuning: Tuning
 var _weapon_id := _run.weapon_id
+## How long the mouse button has been held on a weapon that charges.
+var _mouse_held_seconds := 0.0
 var _utility_id := _run.utility_id
 var _rng := RandomNumberGenerator.new()
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
@@ -112,8 +114,15 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_player.move(_move_input())
-	if _keyboard_mouse.is_attack_held() and not _run_over:
+	var mouse_held := _keyboard_mouse.is_attack_held() and not _run_over
+	if mouse_held and _player.weapon.charge_seconds() > 0.0:
+		_mouse_held_seconds += delta
+		_charge_toward_cursor()
+	elif mouse_held:
 		_attack_toward_cursor()
+	else:
+		_mouse_held_seconds = 0.0
+	_update_charging()
 	_apply_terrain(delta)
 	for squad: Squad in _squads_by_room.values():
 		squad.tick(delta)
@@ -203,6 +212,7 @@ func _connect_keyboard_mouse() -> void:
 	_keyboard_mouse.attack_held_changed.connect(func(held: bool) -> void:
 		if not held:
 			_player.preview_aim(Vector2.ZERO))
+	_keyboard_mouse.attack_released.connect(_release_charged_attack)
 	_keyboard_mouse.utility_requested.connect(_use_utility_toward_cursor)
 	_keyboard_mouse.potion_requested.connect(func(slot: int) -> void: _drink(GameTuning.potion_ids()[slot]))
 	_keyboard_mouse.take_requested.connect(_on_take_pressed)
@@ -251,6 +261,34 @@ func _attack_toward_cursor() -> void:
 	_player.attack(aim.direction, null, aim.strength)
 
 
+## A weapon that charges is drawn while the mouse button is held, and shoots when it is let go.
+func _charge_toward_cursor() -> void:
+	var aim := MouseAim.toward(_player.global_position, _cursor_on_plane(), _player.weapon, _player.facing)
+	_player.preview_aim(aim.direction, _player.weapon.aim_shape(), aim.strength)
+	_player.preview_charge(Charge.ratio(_mouse_held_seconds, _player.weapon.charge_seconds()))
+
+
+func _release_charged_attack() -> void:
+	var held := _mouse_held_seconds
+	_mouse_held_seconds = 0.0
+	_player.preview_aim(Vector2.ZERO)
+	if _run_over or _player.weapon.charge_seconds() <= 0.0:
+		return
+	var aim := MouseAim.toward(_player.global_position, _cursor_on_plane(), _player.weapon, _player.facing)
+	_player.attack(aim.direction, null, aim.strength, held)
+
+
+## The hero is slower while drawing a weapon that charges, by touch or mouse.
+func _update_charging() -> void:
+	var weapon := _player.weapon
+	if weapon.charge_seconds() <= 0.0:
+		_player.charging = false
+		return
+	_player.charging = _attack_button.is_held() or _mouse_held_seconds > 0.0
+	if _attack_button.is_held():
+		_player.preview_charge(Charge.ratio(_attack_button.held_seconds(), weapon.charge_seconds()))
+
+
 func _use_utility_toward_cursor() -> void:
 	if not _run_over:
 		_player.use_utility(MouseAim.direction(_player.global_position, _cursor_on_plane(), _player.facing))
@@ -265,13 +303,14 @@ func _on_attack_released(release: AimGesture.Release) -> void:
 	if release.is_cancelled:
 		return
 	if not release.is_auto:
-		_player.attack(release.direction, null, release.strength)
+		_player.attack(release.direction, null, release.strength, release.held_seconds)
 		return
 	var target := _auto_aim_target()
 	if target == null:
-		_player.attack(_player.facing)
+		_player.attack(_player.facing, null, 1.0, release.held_seconds)
 	else:
-		_player.attack(_player.global_position.direction_to(target.global_position), target)
+		_player.attack(
+			_player.global_position.direction_to(target.global_position), target, 1.0, release.held_seconds)
 
 
 ## Like Brawl Stars, a short buzz tells the thumb its aim came back into the dead zone, where letting go cancels

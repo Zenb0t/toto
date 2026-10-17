@@ -83,6 +83,8 @@ static func weapon_model(weapon_id: String) -> String:
 			return "axe_2handed"
 		"crossbow":
 			return "crossbow_1handed"
+		"bow":
+			return "bow"
 		"fireball":
 			return "staff"
 		"mephitic_cloud":
@@ -99,7 +101,7 @@ static func attack_animation(weapon_id: String) -> String:
 			return "1H_Melee_Attack_Slice_Horizontal"
 		"battleaxe":
 			return "2H_Melee_Attack_Slice"
-		"crossbow":
+		"crossbow", "bow":
 			return "1H_Ranged_Shoot"
 		"knuckles":
 			return "Unarmed_Melee_Attack_Punch_A"
