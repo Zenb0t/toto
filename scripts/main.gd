@@ -31,6 +31,7 @@ var _run_over := false
 var _lava := LavaBurn.new()
 var _exploration := Exploration.new()
 var _fog: FogView
+var _minimap := MinimapView.new()
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
@@ -88,6 +89,7 @@ func _ready() -> void:
 	_spawn_enemies()
 	_spawn_floor_loot()
 	add_child(_fog)
+	_hud_layer.add_child(_minimap)
 	_update_sight()
 	_progress = _create_progress()
 	_belt.changed.connect(_refresh_potions)
@@ -353,6 +355,7 @@ func _update_sight() -> void:
 		_exploration.look_from(origin, is_clear)
 		_fog.show_exploration(_exploration)
 		_world.show_exploration(_exploration)
+		_minimap.show_map(_map, _exploration, origin)
 	for enemies: Array in _enemies_by_room.values():
 		for enemy: Enemy in enemies:
 			enemy.visible = _exploration.is_visible(DungeonView.world_to_cell(enemy.global_position))
