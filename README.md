@@ -15,7 +15,7 @@ and mouse, following whichever you used last.
 
 | Input | Action |
 | --- | --- |
-| Touch the left half of the screen and drag | Move (floating stick) |
+| Touch the left half of the screen (below the Map button) and drag | Move (floating stick). The top left stays free for the Map button |
 | Tap the **weapon** button | Auto-aim at the nearest enemy and attack. Each weapon holds 3 shots of ammo (orange bar over your head) that reload one at a time |
 | Drag from the weapon button, then release | Aim manually and fire. The button floats like the stick: touch anywhere in the faint circle around it and it jumps under your finger; the aim is measured from where you touched. Dragging back to the middle buzzes (phones that support it); letting go there cancels, as in Brawl Stars |
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |

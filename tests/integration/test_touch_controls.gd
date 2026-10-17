@@ -150,6 +150,19 @@ func test_a_bigger_stick_needs_a_longer_thumb_drag_for_full_speed() -> void:
 	_touch(Vector2(275, 400), false)
 
 
+func test_a_touch_at_the_top_left_leaves_the_stick_alone_so_the_map_button_gets_it() -> void:
+	var controls: TouchControls = TOUCH_CONTROLS_SCENE.instantiate()
+	add_child_autofree(controls)
+	var map_button_spot := Vector2(60, 92)
+
+	_touch(map_button_spot, true)
+	_drag(map_button_spot + Vector2(80, 0))
+	await wait_process_frames(2)
+
+	assert_eq(controls.move_stick.current_strength(), Vector2.ZERO)
+	_touch(map_button_spot + Vector2(80, 0), false)
+
+
 func test_pausing_mid_aim_cancels_the_shot_instead_of_leaving_the_button_stuck() -> void:
 	var button := _aim_button()
 	watch_signals(button)

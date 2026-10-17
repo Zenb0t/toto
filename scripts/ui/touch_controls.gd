@@ -37,6 +37,9 @@ func _arrange() -> void:
 	var screen := get_viewport().get_visible_rect().size
 	_place_button(attack_button, _layout.rect_in(ControlLayout.ATTACK, screen))
 	_place_button(utility_button, _layout.rect_in(ControlLayout.UTILITY, screen))
+	var zone := ControlLayout.stick_zone(screen)
+	move_stick.position = zone.position
+	move_stick.size = zone.size
 	var stick_rect := _layout.rect_in(ControlLayout.STICK, screen)
 	move_stick.radius = stick_rect.size.x / 2.0
 	move_stick.rest_center = stick_rect.get_center() - move_stick.position

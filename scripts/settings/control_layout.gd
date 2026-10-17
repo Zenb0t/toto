@@ -14,6 +14,8 @@ const MIN_DIAMETER := 80.0
 const MAX_DIAMETER := 320.0
 ## The stick floats inside the left half of the screen, so its resting spot stays there too.
 const STICK_MAX_X := 0.5
+## ...below the top of the screen, which is left to the status lines and the Map button.
+const STICK_MIN_Y := 0.22
 ## Extra reach around a control when picking it up with a thumb.
 const GRAB_SLOP := 24.0
 
@@ -68,8 +70,14 @@ func diameter_of(id: StringName) -> float:
 
 
 func set_center(id: StringName, fraction: Vector2) -> void:
-	var max_x := STICK_MAX_X if id == STICK else 1.0
-	_centers[id] = Vector2(clampf(fraction.x, 0.0, max_x), clampf(fraction.y, 0.0, 1.0))
+	var zone := Rect2(0.0, STICK_MIN_Y, STICK_MAX_X, 1.0 - STICK_MIN_Y) if id == STICK else Rect2(0, 0, 1, 1)
+	_centers[id] = fraction.clamp(zone.position, zone.end)
+
+
+## Where a thumb brings up the move stick: the left half of the screen, below the status lines and the Map
+## button, so a tap on those isn't taken for a move.
+static func stick_zone(screen_size: Vector2) -> Rect2:
+	return Rect2(0.0, screen_size.y * STICK_MIN_Y, screen_size.x * STICK_MAX_X, screen_size.y * (1.0 - STICK_MIN_Y))
 
 
 func set_diameter(id: StringName, diameter: float) -> void:
