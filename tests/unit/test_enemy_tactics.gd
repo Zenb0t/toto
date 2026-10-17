@@ -52,3 +52,47 @@ func test_throwers_keep_well_clear_of_their_own_blast() -> void:
 	var fireball := Fireball.new()
 
 	assert_gt(fireball.ideal_distance(), fireball.blast_radius * 2.0)
+
+
+func test_an_enemy_far_from_its_flank_spot_circles_toward_it() -> void:
+	var toward_spot := EnemyTactics.move_direction(Vector2(IDEAL, 0), IDEAL, SLACK, 1.0, 1.0)
+	var other_side := EnemyTactics.move_direction(Vector2(IDEAL, 0), IDEAL, SLACK, 1.0, -1.0)
+
+	assert_almost_eq(toward_spot.length(), 1.0, 0.001)
+	assert_almost_eq(toward_spot.dot(Vector2.RIGHT), 0.0, 0.001)
+	assert_eq(toward_spot, -other_side)
+
+
+func test_a_flanking_enemy_circles_the_way_a_positive_flank_gap_points() -> void:
+	var circling := EnemyTactics.move_direction(Vector2(IDEAL, 0), IDEAL, SLACK, 1.0)
+	var flanking := EnemyTactics.move_direction(Vector2(IDEAL, 0), IDEAL, SLACK, 1.0, 1.0)
+
+	assert_gt(circling.dot(flanking), 0.0)
+
+
+func test_a_distant_flanking_enemy_closes_in_while_it_circles() -> void:
+	var move := EnemyTactics.move_direction(Vector2(500, 0), IDEAL, SLACK, 1.0, 1.0)
+
+	assert_gt(move.dot(Vector2.RIGHT), 0.0)
+	assert_lt(move.dot(Vector2.RIGHT), 0.99)
+
+
+func test_an_enemy_close_to_its_flank_spot_circles_slowly_as_usual() -> void:
+	var near_spot := EnemyTactics.move_direction(Vector2(IDEAL, 0), IDEAL, SLACK, 1.0, 0.05)
+
+	assert_almost_eq(near_spot.length(), EnemyTactics.STRAFE_SPEED, 0.001)
+
+
+func test_enemies_aim_ahead_of_a_moving_target() -> void:
+	var aim := EnemyTactics.lead(Vector2(200, 0), Vector2(0, 100), 0.5, 1.0)
+
+	assert_eq(aim, Vector2(200, 50))
+
+
+func test_with_no_lead_enemies_aim_at_where_the_target_is() -> void:
+	assert_eq(EnemyTactics.lead(Vector2(200, 0), Vector2(0, 100), 0.5, 0.0), Vector2(200, 0))
+
+
+func test_shots_take_time_to_fly_but_blows_land_at_once() -> void:
+	assert_gt(MagicMissile.new().travel_seconds(300.0), 0.0)
+	assert_eq(Sword.new().travel_seconds(300.0), 0.0)

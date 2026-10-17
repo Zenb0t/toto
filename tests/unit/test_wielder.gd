@@ -82,3 +82,12 @@ func test_an_empty_weapon_attacks_again_once_a_charge_reloads() -> void:
 	wielder.advance(1.1, ORIGIN)
 
 	assert_true(wielder.start(Vector2.RIGHT, 100.0))
+
+
+func test_a_wielder_is_ready_until_it_starts_an_attack() -> void:
+	var wielder := Wielder.new(_wand(0.5))
+	var before := wielder.is_ready()
+	wielder.start(Vector2.RIGHT, 100.0)
+
+	assert_true(before)
+	assert_false(wielder.is_ready())

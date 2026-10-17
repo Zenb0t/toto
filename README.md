@@ -57,7 +57,7 @@ closet). Deep water stops feet but not shots; lava burns. You only see what's in
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
 lava, and you. Items sometimes lie on the floor, and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
 chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
-weapon wants; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
+weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
 fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 with Magic Missile, the Dash and a Potion of
@@ -102,7 +102,9 @@ Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.
 - `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`, `Battleaxe`, `Knuckles`, `LightningBolt`, `MephiticCloud`,
   `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`), when a weapon fires
-  (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`),
+  (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead), what they are doing (`EnemyBrain`, a
+  small state machine: idle, hunt, position, wind up, recover), how a room's enemies fight as a team (`Squad`:
+  taking turns, flank spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
 - `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength) and the
   `Bestiary` that lists them with their map letters

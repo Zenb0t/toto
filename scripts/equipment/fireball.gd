@@ -40,6 +40,10 @@ func attacks(origin: Vector2, direction: Vector2, aim_distance: float) -> Array:
 	return [shot]
 
 
+func travel_seconds(distance: float) -> float:
+	return distance / shot_speed
+
+
 func aim_range() -> float:
 	return shot_range
 

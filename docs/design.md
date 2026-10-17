@@ -149,7 +149,29 @@ Enemies carry **the same weapons as the player**, and the weapon decides how the
 | Magic Missile | Keeps to mid range and shoots |
 | Fireball | Hangs back and lobs; backs away if you get close. Its blast hurts other enemies too |
 
-Within their comfortable range they circle the player instead of standing still. Their attacks are fair by
+Within their comfortable range they circle the player instead of standing still.
+
+**Behaviour** is a small state machine (`EnemyBrain`), so each step can be tuned on its own:
+
+| State | What the enemy does | Leaves when |
+| --- | --- | --- |
+| Idle | Waits | Its room locks and it gets a target |
+| Hunt | Can't see the player: walks around walls (`Pathfinder`) | It sees the player, or gets its turn (lobbing weapons attack over walls) |
+| Position | Keeps to its weapon's distance, at its flank spot | It loses sight, or gets its turn |
+| Wind-up | Stands still and telegraphs the attack, aim locked | The attack is released (or a Beckoning yanks it) |
+| Recover | Steps aside (alternating sides) for 0.35 s | Recovered: back to Hunt or Position |
+
+**Teamwork** (`Squad`, one per room). Enemies no longer all fire at once: a room lets at most 2 enemies wind
+up at the same time, and starts their attacks at least 0.35 s apart, so attacks come in a rhythm the player
+can read and dodge one by one. They also spread out: seen from the player, neighbours take spots 70° apart,
+centred on where the group already stands and in the order they stand (nobody crosses over), so a group
+flanks and, when big enough, surrounds the player instead of bunching into one easy target.
+**Aiming ahead.** Enemies aim 60% of the way to where a moving player will be when the attack arrives (wind-up
+plus the shot's flight, `Weapon.travel_seconds`), so running in a straight line is punished but a sidestep
+still dodges. All of these are in Tune → Enemies: aim ahead, step aside after attack, attackers at once, gap
+between attacks, flank spread.
+
+Their attacks are fair by
 design: an enemy is slower between attacks than the player with the same weapon, and before each attack it
 **stops and shows where it will go** (a red preview), with its aim locked, so stepping aside dodges it. Both
 are tunable (Tune → Enemies: attack slowness, telegraph). Enemy attacks hurt only the player; the player's hurt

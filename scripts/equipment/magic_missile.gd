@@ -32,6 +32,10 @@ func attacks(origin: Vector2, direction: Vector2, _aim_distance: float) -> Array
 	return [Shot.new(Weapon.muzzle(origin, direction), direction, shot_speed, shot_damage, shot_range)]
 
 
+func travel_seconds(distance: float) -> float:
+	return distance / shot_speed
+
+
 func aim_range() -> float:
 	return shot_range
 

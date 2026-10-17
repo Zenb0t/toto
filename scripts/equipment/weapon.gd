@@ -37,6 +37,12 @@ func ideal_distance() -> float:
 	return aim_range() * 0.6
 
 
+## How long the attack takes to get this far once released: 0 for blows that land at once, flight time for
+## shots. Enemies use it to aim ahead of a moving target.
+func travel_seconds(_distance: float) -> float:
+	return 0.0
+
+
 ## Whether an attack needs a clear line to its target. Lobbed weapons fly over walls.
 func needs_line_of_sight() -> bool:
 	return true

@@ -40,6 +40,7 @@ var _world: WorldView3D
 var _progress: DungeonProgress
 var _player: Player
 var _enemies_by_room := {}  # int -> Array[Enemy]
+var _squads_by_room := {}  # int -> Squad: each room's enemies fight as a team
 var _settings := GameSettings.new()
 var _layout: ControlLayout
 var _tuning: Tuning
@@ -111,6 +112,8 @@ func _physics_process(delta: float) -> void:
 	if _keyboard_mouse.is_attack_held() and not _run_over:
 		_attack_toward_cursor()
 	_apply_terrain(delta)
+	for squad: Squad in _squads_by_room.values():
+		squad.tick(delta)
 	_sight_update_left -= delta
 	if _sight_update_left <= 0.0:
 		_sight_update_left = SIGHT_UPDATE_SECONDS
@@ -143,6 +146,7 @@ func _spawn_enemies() -> void:
 		enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
 		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
 		enemy.navigation = _pathfinder
+		enemy.squad = _squads_by_room.get_or_add(room, Squad.new())
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
 		add_child(enemy)
@@ -527,6 +531,10 @@ func _apply_tuning(tuning: Tuning) -> void:
 		for enemy: Enemy in enemies:
 			enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier
 			enemy.arm(GameTuning.enemy_weapon(tuning, enemy.weapon.id))
+			enemy.lead_share = GameTuning.enemy_lead_share(tuning)
+			enemy.recover_seconds = GameTuning.enemy_recover_seconds(tuning)
+	for squad: Squad in _squads_by_room.values():
+		GameTuning.tune_squad(squad, tuning)
 
 
 ## The buttons always show what is equipped.

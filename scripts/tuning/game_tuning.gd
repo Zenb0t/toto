@@ -9,6 +9,11 @@ const ENEMY_MOVE_SPEED := "enemy.move_speed"
 const ENEMY_HEALTH_MULTIPLIER := "enemy.health_multiplier"
 const ENEMY_COOLDOWN_MULTIPLIER := "enemy.cooldown_multiplier"
 const ENEMY_TELEGRAPH := "enemy.telegraph"
+const ENEMY_LEAD := "enemy.lead"
+const ENEMY_RECOVER := "enemy.recover"
+const SQUAD_MAX_ATTACKERS := "squad.max_attackers"
+const SQUAD_TURN_GAP := "squad.turn_gap"
+const SQUAD_FLANK_SPREAD := "squad.flank_spread"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
 const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
 const CONTROLS_BUTTON_CATCH := "controls.button_catch"
@@ -120,6 +125,16 @@ static func create() -> Tuning:
 		Tuning.Param.new(
 			ENEMY_TELEGRAPH, "Telegraph (s)", ENEMIES_GROUP, 0, 1.5, 0.05, Enemy.DEFAULT_TELEGRAPH_SECONDS),
 		Tuning.Param.new(
+			ENEMY_LEAD, "Aim ahead (0-1)", ENEMIES_GROUP, 0, 1, 0.05, EnemyTactics.DEFAULT_LEAD_SHARE),
+		Tuning.Param.new(
+			ENEMY_RECOVER, "Step aside after attack (s)", ENEMIES_GROUP, 0, 2, 0.05, EnemyBrain.DEFAULT_RECOVER_SECONDS),
+		Tuning.Param.new(
+			SQUAD_MAX_ATTACKERS, "Attackers at once", ENEMIES_GROUP, 1, 8, 1, Squad.DEFAULT_MAX_ATTACKERS),
+		Tuning.Param.new(
+			SQUAD_TURN_GAP, "Gap between attacks (s)", ENEMIES_GROUP, 0, 2, 0.05, Squad.DEFAULT_TURN_GAP_SECONDS),
+		Tuning.Param.new(
+			SQUAD_FLANK_SPREAD, "Flank spread (deg)", ENEMIES_GROUP, 0, 180, 5, Squad.DEFAULT_FLANK_SPREAD_DEGREES),
+		Tuning.Param.new(
 			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
 		Tuning.Param.new(
 			LOOT_POTION_DROP_CHANCE, "Enemy potion chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_POTION_DROP_CHANCE),
@@ -207,6 +222,22 @@ static func player_move_speed(tuning: Tuning) -> float:
 
 static func enemy_move_speed(tuning: Tuning) -> float:
 	return tuning.value(ENEMY_MOVE_SPEED)
+
+
+## How much enemies aim ahead of a moving player (0 = at where the player is).
+static func enemy_lead_share(tuning: Tuning) -> float:
+	return tuning.value(ENEMY_LEAD)
+
+
+static func enemy_recover_seconds(tuning: Tuning) -> float:
+	return tuning.value(ENEMY_RECOVER)
+
+
+## Applies the tuned teamwork rules (taking turns, flanking) to a room's squad.
+static func tune_squad(target: Squad, tuning: Tuning) -> void:
+	target.max_attackers = roundi(tuning.value(SQUAD_MAX_ATTACKERS))
+	target.turn_gap_seconds = tuning.value(SQUAD_TURN_GAP)
+	target.flank_spread_degrees = tuning.value(SQUAD_FLANK_SPREAD)
 
 
 ## How much tougher than their kind's health enemies are (1 = as listed in the Bestiary).

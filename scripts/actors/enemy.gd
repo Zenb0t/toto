@@ -1,8 +1,10 @@
 class_name Enemy
 extends CharacterBody2D
 ## An armed monster (see Bestiary): idles until told to chase, then fights its target with its weapon the way the weapon
-## wants (see EnemyTactics). Before each attack it stops and shows where the attack will go, and its aim
-## stays put, so the player can see it coming and get out of the way.
+## wants (see EnemyTactics). What it is doing is decided by its EnemyBrain (idle, hunt, position, wind up,
+## recover); this node carries it out. Before each attack it stops and shows where the attack will go, and its
+## aim stays put, so the player can see it coming and get out of the way.
+## In a Squad, it takes turns to attack with the rest of its room and spreads out around the target.
 ## With navigation, an enemy that can't see its target walks around walls to find it, and only attacks
 ## through them with a weapon that lobs.
 
@@ -53,8 +55,19 @@ var navigation: Pathfinder
 var weapon: Weapon:
 	get:
 		return _wielder.weapon
+## Optional: the room's team. Without one, the enemy attacks whenever it can and doesn't flank.
+var squad: Squad
+## How much it aims ahead of a moving target (see EnemyTactics.lead).
+var lead_share := EnemyTactics.DEFAULT_LEAD_SHARE
+## How long it steps aside after each attack (see EnemyBrain).
+var recover_seconds: float:
+	get:
+		return _brain.recover_seconds
+	set(value):
+		_brain.recover_seconds = value
 
 var _wielder := Wielder.new(Sword.new())
+var _brain := EnemyBrain.new()
 var _target: Node2D
 var _strafe_sign := 1.0
 var _path := PackedVector2Array()
@@ -140,17 +153,97 @@ func _physics_process(delta: float) -> void:
 	var pace := _slow_multiplier if is_slowed() else 1.0
 	_release(_wielder.advance(delta * pace, global_position))
 	_repath_left -= delta
-	velocity = Vector2.ZERO
-	if is_instance_valid(_target) and not _wielder.is_winding_up():
-		if _sees(_target.global_position):
-			_path.clear()
-			_fight(_target.global_position - global_position)
-		else:
-			_go_around_to(_target.global_position)
+	_report_to_squad()
+	var before := _brain.state
+	_brain.update(delta * pace, _senses())
+	if _brain.state != before:
+		_on_state_changed(before, _brain.state)
+	velocity = _movement() * move_speed * pace * ground_speed
 	_update_facing()
-	velocity *= pace * ground_speed
 	move_and_slide()
 	queue_redraw()
+
+
+func _senses() -> EnemyBrain.Senses:
+	var senses := EnemyBrain.Senses.new()
+	senses.has_target = is_instance_valid(_target)
+	senses.winding_up = _wielder.is_winding_up()
+	if senses.has_target:
+		senses.sees_target = _sees(_target.global_position)
+		senses.has_turn = _brain.is_looking_for_a_turn() and _may_attack(senses.sees_target) and _claim_turn()
+	return senses
+
+
+func _may_attack(sees_target: bool) -> bool:
+	if not _wielder.is_ready() or not (sees_target or not weapon.needs_line_of_sight()):
+		return false
+	return EnemyTactics.can_attack(global_position.distance_to(_target.global_position), Player.RADIUS, weapon.aim_range())
+
+
+## Without a squad, every enemy attacks whenever it can.
+func _claim_turn() -> bool:
+	return squad == null or squad.request_turn(get_instance_id())
+
+
+func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
+	if to == EnemyBrain.State.POSITION:
+		_path.clear()
+	elif to == EnemyBrain.State.WINDUP:
+		_start_attack()
+	if from == EnemyBrain.State.WINDUP:
+		_end_turn()
+		# Step aside the other way next time, so its moves are harder to read.
+		_strafe_sign = -_strafe_sign
+
+
+## Aims ahead of a moving target, where it will be when the attack arrives.
+func _start_attack() -> void:
+	var to_target := _target.global_position - global_position
+	var seconds := weapon.windup + weapon.travel_seconds(to_target.length())
+	var aim := EnemyTactics.lead(to_target, _target_velocity(), seconds, lead_share)
+	_wielder.start(aim, aim.length())
+
+
+func _end_turn() -> void:
+	if squad != null:
+		squad.end_turn(get_instance_id())
+
+
+func _target_velocity() -> Vector2:
+	return _target.velocity if _target is CharacterBody2D else Vector2.ZERO
+
+
+func _report_to_squad() -> void:
+	if squad != null and is_instance_valid(_target):
+		squad.report_bearing(get_instance_id(), _bearing())
+
+
+## The angle from the target to this enemy.
+func _bearing() -> float:
+	return (global_position - _target.global_position).angle()
+
+
+## Unit-or-shorter direction to move in, for what the brain is doing.
+func _movement() -> Vector2:
+	match _brain.state:
+		EnemyBrain.State.HUNT:
+			return _path_direction(_target.global_position)
+		EnemyBrain.State.POSITION:
+			var to_target := _target.global_position - global_position
+			var ideal := weapon.ideal_distance()
+			return EnemyTactics.move_direction(to_target, ideal, ideal * SLACK_SHARE, _strafe_sign, _flank_gap())
+		EnemyBrain.State.RECOVER:
+			if not is_instance_valid(_target):
+				return Vector2.ZERO
+			return global_position.direction_to(_target.global_position).orthogonal() * _strafe_sign
+	return Vector2.ZERO
+
+
+## How far round the target this enemy's spot in the squad is (0 without a squad).
+func _flank_gap() -> float:
+	if squad == null:
+		return 0.0
+	return angle_difference(_bearing(), squad.flank_bearing(get_instance_id()))
 
 
 func _update_facing() -> void:
@@ -162,32 +255,20 @@ func _update_facing() -> void:
 		facing = velocity.normalized()
 
 
-func _fight(to_target: Vector2) -> void:
-	var ideal := weapon.ideal_distance()
-	velocity = EnemyTactics.move_direction(to_target, ideal, ideal * SLACK_SHARE, _strafe_sign) * move_speed
-	_attack_if_in_reach(to_target)
-
-
-func _attack_if_in_reach(to_target: Vector2) -> void:
-	if EnemyTactics.can_attack(to_target.length(), Player.RADIUS, weapon.aim_range()):
-		_wielder.start(to_target, to_target.length())
-
-
 func _sees(point: Vector2) -> bool:
 	return navigation == null or navigation.can_see(global_position, point)
 
 
-## Follows a path around whatever blocks the view. A lobbing weapon still attacks over it.
-func _go_around_to(goal: Vector2) -> void:
-	if not weapon.needs_line_of_sight():
-		_attack_if_in_reach(goal - global_position)
+## The way along a path around whatever blocks the view.
+func _path_direction(goal: Vector2) -> Vector2:
+	if navigation == null:
+		return global_position.direction_to(goal)
 	if _repath_left <= 0.0:
 		_path = navigation.path(global_position, goal)
 		_repath_left = REPATH_SECONDS
 	while not _path.is_empty() and global_position.distance_to(_path[0]) < WAYPOINT_REACHED:
 		_path.remove_at(0)
-	if not _path.is_empty():
-		velocity = global_position.direction_to(_path[0]) * move_speed
+	return global_position.direction_to(_path[0]) if not _path.is_empty() else Vector2.ZERO
 
 
 func _release(attacks: Array) -> void:
@@ -210,5 +291,7 @@ func _draw() -> void:
 
 
 func _on_died() -> void:
+	if squad != null:
+		squad.leave(get_instance_id())
 	defeated.emit(self)
 	queue_free()

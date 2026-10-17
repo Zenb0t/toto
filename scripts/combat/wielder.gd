@@ -25,6 +25,11 @@ func equip(held: Weapon) -> void:
 	_ammo = Ammo.new(held.ammo, held.reload)
 
 
+## Whether an attack could start now: it isn't winding one up, has ammo and didn't just attack.
+func is_ready() -> bool:
+	return not _winding_up and _between_attacks.is_ready() and _ammo.charges() > 0
+
+
 ## Starts an attack unless the weapon is out of ammo or just attacked. Returns whether it started.
 ## aim_distance is how far away to aim (weapons that target a spot use it).
 func start(direction: Vector2, aim_distance: float, target: Node2D = null) -> bool:
