@@ -1,7 +1,9 @@
 # Triage Labels
 
 The skills speak in terms of canonical roles. This file maps them to the label strings used in this repo.
-GitHub creates a missing label (grey) the first time an issue uses it; the colours below are what to set.
+Every label below exists on the repo. A new one must be created before an issue can use it: the GitHub MCP tools
+refuse unknown labels (in a cloud session, create it with `gh api`, see `docs/agents/issue-tracker.md`). Use the
+colours below.
 
 ## Triage (from the `triage` skill)
 
