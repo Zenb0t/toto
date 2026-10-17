@@ -193,7 +193,7 @@ func _connect_controls() -> void:
 	_potion_bar.drink_requested.connect(_drink)
 	_map_toggle.pressed.connect(_toggle_minimap)
 	_minimap.pressed.connect(_open_big_map)
-	_move_stick.blockers = [_minimap, _map_toggle]
+	_touch_controls.keep_touches_for([_minimap, _map_toggle])
 	_big_map.closed.connect(func() -> void: get_tree().paused = false)
 
 

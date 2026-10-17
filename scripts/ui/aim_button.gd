@@ -57,6 +57,8 @@ var accepts_touch := true:
 			_forget_touch()
 
 var drag_reach := DEFAULT_DRAG_REACH
+## On-screen controls that keep their own touches (the minimap, the Map button), even inside the catch zone.
+var blockers: Array[Control] = []
 var catch_scale := DEFAULT_CATCH_SCALE:
 	set(value):
 		catch_scale = value
@@ -163,9 +165,11 @@ func _catch_radius() -> float:
 	return _radius() * catch_scale
 
 
-## Whether a new touch is this button's: inside its catch zone, and closer to it than to any other aim button
-## whose zone it is also in.
+## Whether a new touch is this button's: inside its catch zone, closer to it than to any other aim button
+## whose zone it is also in, and not on a control that keeps its touches.
 func _claims(point: Vector2) -> bool:
+	if TouchZones.is_kept_by(point, blockers):
+		return false
 	var rivals: Array[AimButton] = []
 	var centers: Array[Vector2] = []
 	var radii: Array[float] = []

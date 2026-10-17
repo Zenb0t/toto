@@ -24,6 +24,13 @@ func apply_layout(layout: ControlLayout) -> void:
 	_arrange()
 
 
+## Touches on these controls (the minimap, the Map button) stay theirs: the stick and buttons leave them.
+func keep_touches_for(keepers: Array[Control]) -> void:
+	move_stick.blockers = keepers
+	attack_button.blockers = keepers
+	utility_button.blockers = keepers
+
+
 ## Off while playing with keyboard and mouse.
 func use_touch(enabled: bool) -> void:
 	move_stick.accepts_touch = enabled

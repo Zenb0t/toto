@@ -198,6 +198,22 @@ func test_a_hidden_control_does_not_keep_the_stick_from_its_touches() -> void:
 	_touch(Vector2(120, 50), false)
 
 
+func test_an_aim_button_leaves_a_touch_on_the_map_to_the_map() -> void:
+	var button := _aim_button()
+	var minimap := Control.new()
+	minimap.position = BUTTON_RECT.position
+	minimap.size = Vector2(40, 40)
+	add_child_autofree(minimap)
+	button.blockers = [minimap]
+	watch_signals(button)
+
+	_touch(BUTTON_RECT.position + Vector2(10, 10), true)
+	_touch(BUTTON_RECT.position + Vector2(10, 10), false)
+	await wait_process_frames(2)
+
+	assert_signal_not_emitted(button, "aim_released")
+
+
 func test_pausing_mid_aim_cancels_the_shot_instead_of_leaving_the_button_stuck() -> void:
 	var button := _aim_button()
 	watch_signals(button)

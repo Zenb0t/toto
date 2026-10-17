@@ -86,12 +86,7 @@ func _on_touch(event: InputEventScreenTouch) -> void:
 
 ## Whether a touch landing here is the stick's: inside its area and not on a control that keeps its touches.
 func _owns(point: Vector2) -> bool:
-	if not get_global_rect().has_point(point):
-		return false
-	for blocker in blockers:
-		if is_instance_valid(blocker) and blocker.is_visible_in_tree() and blocker.get_global_rect().has_point(point):
-			return false
-	return true
+	return get_global_rect().has_point(point) and not TouchZones.is_kept_by(point, blockers)
 
 
 func _draw() -> void:
