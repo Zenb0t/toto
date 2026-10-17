@@ -20,12 +20,16 @@ class Release:
 	var strength: float
 	## The player aimed, then brought the finger back to the middle: they changed their mind.
 	var is_cancelled: bool
+	## How long the button was held, for weapons that charge (see Charge).
+	var held_seconds: float
 
-	func _init(auto: bool, aim_direction: Vector2, aim_strength: float, cancelled := false) -> void:
+	func _init(
+			auto: bool, aim_direction: Vector2, aim_strength: float, cancelled := false, held := 0.0) -> void:
 		is_auto = auto
 		direction = aim_direction
 		strength = aim_strength
 		is_cancelled = cancelled
+		held_seconds = held
 
 
 var _dead_zone: float
@@ -34,6 +38,7 @@ var _finger := Vector2.ZERO
 var _active := false
 ## Whether this press has left the dead zone at some point.
 var _has_aimed := false
+var _held_seconds := 0.0
 var _button_radius := 100.0
 var _full_reach := 200.0
 
@@ -51,6 +56,18 @@ func begin(origin: Vector2, button_radius := 100.0, full_reach := 200.0) -> void
 	_finger = origin
 	_active = true
 	_has_aimed = false
+	_held_seconds = 0.0
+
+
+## Moves time on: the press has been held this much longer.
+func tick(delta: float) -> void:
+	if _active:
+		_held_seconds += delta
+
+
+## How long the current press has been held.
+func held_seconds() -> float:
+	return _held_seconds
 
 
 func move_to(finger: Vector2) -> void:
@@ -103,6 +120,6 @@ static func _share(value: float, start: float, end: float) -> float:
 ## A tap auto-aims, a drag fires where it points, and a drag brought back to the middle cancels.
 func release() -> Release:
 	var cancelled := will_cancel()
-	var result := Release.new(not is_manual() and not cancelled, direction(), strength(), cancelled)
+	var result := Release.new(not is_manual() and not cancelled, direction(), strength(), cancelled, _held_seconds)
 	_active = false
 	return result

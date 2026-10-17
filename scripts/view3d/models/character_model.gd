@@ -92,7 +92,7 @@ func hold(weapon_id: String) -> void:
 	var model_name := CharacterLook.weapon_model(weapon_id)
 	if model_name == CharacterLook.BARE_HANDS:
 		return
-	var weapon: Node3D = load(CharacterLook.WEAPONS_PATH % model_name).instantiate()
+	var weapon := WeaponModel.instance(weapon_id)
 	_weapon_slot.add_child(weapon)
 	_meshes.append_array(_meshes_in(weapon))
 

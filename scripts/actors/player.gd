@@ -35,6 +35,9 @@ var facing := Vector2.RIGHT
 var move_speed := DEFAULT_MOVE_SPEED
 ## The share of its speed the ground allows (see DungeonMap.ground_speed), set by whoever knows the map.
 var ground_speed := 1.0
+## Whether the attack button is being held to charge the weapon (set by whoever reads the input): the hero is
+## slower for as long as the weapon says (Weapon.charging_move_share).
+var charging := false
 var weapon: Weapon:
 	get:
 		return _wielder.weapon
@@ -80,8 +83,9 @@ func move(strength: Vector2) -> void:
 ## Starts an attack. It happens after the weapon's wind-up; taps during the cooldown are ignored.
 ## With a target (auto-aim), the aim keeps tracking it during the wind-up so the delay doesn't cause misses,
 ## and weapons that aim at a spot land on it. Without one, strength (0..1) picks how far away to aim.
-func attack(direction: Vector2, target: Node2D = null, strength := 1.0) -> void:
-	if not _wielder.start(direction, weapon.aim_distance(strength), target):
+## held_seconds is how long the button was held, for weapons that charge (see Charge).
+func attack(direction: Vector2, target: Node2D = null, strength := 1.0, held_seconds := Charge.FULL) -> void:
+	if not _wielder.start(direction, weapon.aim_distance(strength), target, held_seconds):
 		return
 	facing = direction.normalized()
 	if weapon.windup <= 0.0:
@@ -110,6 +114,13 @@ func preview_aim(direction: Vector2, shape: AimShape = null, strength := 1.0) ->
 	_aim_shape = shape
 	_aim_strength = strength
 	queue_redraw()
+
+
+## Fills the preview line by how charged the shot is (0..1), for weapons that charge.
+func preview_charge(ratio: float) -> void:
+	if _aim_shape != null:
+		_aim_shape.fill = ratio
+		queue_redraw()
 
 
 func attack_cooldown_ratio() -> float:
@@ -163,6 +174,8 @@ func _physics_process(delta: float) -> void:
 		velocity = _dash_direction * _dash_speed
 	else:
 		velocity = _move_input * move_speed * ground_speed * (_haste_multiplier if is_hasted() else 1.0)
+		if charging:
+			velocity *= weapon.charging_move_share()
 		if _move_input.length() > 0.1:
 			facing = _move_input.normalized()
 	move_and_slide()

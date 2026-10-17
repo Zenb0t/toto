@@ -247,3 +247,15 @@ func test_an_enemy_aims_ahead_of_a_player_on_the_move() -> void:
 	await wait_physics_frames(3)
 
 	assert_gt(enemy.facing.y, 0.1)
+
+
+func test_an_enemy_with_a_bow_shoots_it_fully_charged() -> void:
+	var player := _spawn_player_at(Vector2(150, 0))
+	var bow := Bow.new()
+	bow.windup = 0.1
+	var enemy := _spawn_enemy_at(Vector2.ZERO, bow)
+
+	enemy.chase(player)
+	await wait_seconds(0.5)
+
+	assert_eq(player.health.current, Player.MAX_HEALTH - bow.max_damage)

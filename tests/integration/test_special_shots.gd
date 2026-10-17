@@ -125,3 +125,29 @@ func test_beckoning_pulls_an_enemy_to_the_caster() -> void:
 
 	assert_lt(enemy.position.x, 60.0)
 	assert_eq(enemy.health.current, enemy.health.maximum, "pulled, not hurt")
+
+
+func test_a_fully_charged_arrow_pierces_every_enemy_on_its_line() -> void:
+	var bow := Bow.new()
+	var first := _still_enemy_at(Vector2(100, 0))
+	var second := _still_enemy_at(Vector2(200, 0))
+	await wait_physics_frames(1)
+
+	_fire(bow.charged_attacks(Vector2.ZERO, Vector2.RIGHT, 0.0, bow.full_charge_seconds)[0])
+	await wait_seconds(0.6)
+
+	assert_eq(first.health.current, first.health.maximum - bow.max_damage)
+	assert_eq(second.health.current, second.health.maximum - bow.max_damage)
+
+
+func test_a_tapped_arrow_stops_at_the_first_enemy() -> void:
+	var bow := Bow.new()
+	var first := _still_enemy_at(Vector2(100, 0))
+	var second := _still_enemy_at(Vector2(200, 0))
+	await wait_physics_frames(1)
+
+	_fire(bow.charged_attacks(Vector2.ZERO, Vector2.RIGHT, 0.0, 0.0)[0])
+	await wait_seconds(0.6)
+
+	assert_true(_is_hurt(first))
+	assert_false(_is_hurt(second))

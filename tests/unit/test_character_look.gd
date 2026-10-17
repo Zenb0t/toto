@@ -10,7 +10,7 @@ func test_every_monster_has_a_model() -> void:
 func test_every_weapon_has_a_model_in_hand_or_is_fought_bare_handed() -> void:
 	for weapon_id in GameTuning.weapon_ids():
 		var model_name := CharacterLook.weapon_model(weapon_id)
-		if model_name != CharacterLook.BARE_HANDS:
+		if WeaponModel.is_asset(weapon_id):
 			assert_true(ResourceLoader.exists(CharacterLook.WEAPONS_PATH % model_name), weapon_id)
 
 

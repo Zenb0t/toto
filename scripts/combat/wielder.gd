@@ -11,6 +11,7 @@ var _ammo: Ammo
 var _direction := Vector2.ZERO
 var _aim_distance := 0.0
 var _target: Node2D
+var _held_seconds := Charge.FULL
 var _windup_left := 0.0
 var _winding_up := false
 
@@ -31,14 +32,16 @@ func is_ready() -> bool:
 
 
 ## Starts an attack unless the weapon is out of ammo or just attacked. Returns whether it started.
-## aim_distance is how far away to aim (weapons that target a spot use it).
-func start(direction: Vector2, aim_distance: float, target: Node2D = null) -> bool:
+## aim_distance is how far away to aim (weapons that target a spot use it). held_seconds is how long the attack
+## button was held (weapons that charge use it); attackers that don't charge shoot fully charged.
+func start(direction: Vector2, aim_distance: float, target: Node2D = null, held_seconds := Charge.FULL) -> bool:
 	if direction == Vector2.ZERO or not _between_attacks.is_ready() or not _ammo.try_spend():
 		return false
 	_between_attacks.try_trigger()
 	_direction = direction.normalized()
 	_aim_distance = aim_distance
 	_target = target
+	_held_seconds = held_seconds
 	_windup_left = weapon.windup
 	_winding_up = true
 	return true
@@ -58,7 +61,7 @@ func advance(delta: float, origin: Vector2) -> Array:
 		return []
 	_winding_up = false
 	_target = null
-	return weapon.attacks(origin, _direction, _aim_distance)
+	return weapon.charged_attacks(origin, _direction, _aim_distance, _held_seconds)
 
 
 ## Cancels an attack being wound up (being yanked off your feet does that). The ammo stays spent.

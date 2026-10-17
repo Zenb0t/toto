@@ -88,6 +88,19 @@ func set_cooldown_ratio(ratio: float) -> void:
 		queue_redraw()
 
 
+func _process(delta: float) -> void:
+	_gesture.tick(delta)
+
+
+## Whether a finger is on the button, and for how long (weapons that charge).
+func is_held() -> bool:
+	return _gesture.is_active()
+
+
+func held_seconds() -> float:
+	return _gesture.held_seconds()
+
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PAUSED:
 		_forget_touch()
