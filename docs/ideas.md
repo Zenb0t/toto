@@ -1,6 +1,7 @@
 # Toto — Ideas Backlog
 
-Raw ideas, written so each one can become a GitHub issue later (title, why, sketch, done when). Nothing here is
+Raw ideas, written so each one can become a GitHub issue later. Epics B, C, E and F still need a review before
+they're filed; brainstorm-only ideas become `idea` issues (title, why, sketch, done when). Nothing here is
 decided yet; once an idea is picked, its decision moves into `design.md`.
 
 Pitch, unchanged: **Brawl Stars meets Dungeon Crawl Stone Soup.** The core loop (fight → random gear → play
@@ -58,16 +59,9 @@ levelling feels the same). `Experience` stays a pure class.
 
 ## Epic A: Open-world generation (more like Dungeon Crawl)
 
-**Decided so far** (to move into the epic's map issue):
-- Maps twice today's area (tweak later).
-- Door locks are gone everywhere, boss arenas included.
-- Monster awareness (asleep / wandering / noticing) is part of this epic: it replaces the locks.
-- Until bands exist, chests only in vaults plus floor items scattered by density.
-- Still 5 floors, each one bigger.
-- Performance target: a reasonably modern phone. Build it properly from the start, but optimise only when it
-  shows up as a problem.
-- Still to discuss: layouts (A2), stairs vs. zones (A5, maybe no stairs: travel to the next zone), healing
-  outside fights (A8).
+**Superseded.** Epic A became a small open world: a 3×3 grid of quadrants, starting with the village quadrant
+and a 3-level crypt. Its decisions live in the epic map, issue #3 (with decision tickets as sub-issues). The other
+quadrants, dungeons and villagers are `idea` issues #9, #10, #11. The notes below are kept as background.
 
 ### A1. Larger, open layouts
 

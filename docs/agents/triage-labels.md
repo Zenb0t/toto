@@ -29,3 +29,9 @@ labels: they hold decisions, not build work. Build tickets made afterwards by `/
 | `wayfinder:research` | `c5def5` | Fact-finding an agent can do alone |
 | `wayfinder:prototype` | `c5def5` | A rough playable or visual mock to react to |
 | `wayfinder:task` | `c5def5` | Work that must happen before a decision can be made |
+
+## Ideas
+
+| Label | Colour | Meaning |
+| --- | --- | --- |
+| `idea` | `bfdadc` | Brainstorm, not committed. Triage skips it until it's promoted to `enhancement` (+ `needs-triage`) |
