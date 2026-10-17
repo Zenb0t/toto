@@ -2,7 +2,7 @@ class_name KeyboardMouseControls
 extends Node
 ## Keyboard and mouse play: WASD or the arrow keys move, the mouse aims, the left button attacks (held, it
 ## keeps attacking), the right button or Space uses the utility, 1-3 drink potions, E takes the item on the
-## floor and Q cycles weapons. Only reports what the player asked for; the composition root decides what it
+## floor, M shows or hides the minimap and Q cycles weapons. Only reports what the player asked for; the composition root decides what it
 ## means. Also tells which kind of play (touch or keyboard and mouse) is in use, following the last one used.
 
 signal mode_changed(mode: InputMode.Kind)
@@ -12,6 +12,7 @@ signal utility_requested
 signal potion_requested(slot: int)
 signal take_requested
 signal weapon_switch_requested
+signal minimap_toggle_requested
 
 const NO_SLOT := -1
 const POTION_ACTIONS: Array[StringName] = [&"drink_potion_1", &"drink_potion_2", &"drink_potion_3"]
@@ -74,6 +75,8 @@ func _report(event: InputEvent) -> bool:
 		take_requested.emit()
 	elif event.is_action_pressed(&"switch_weapon"):
 		weapon_switch_requested.emit()
+	elif event.is_action_pressed(&"toggle_minimap"):
+		minimap_toggle_requested.emit()
 	else:
 		var slot := _potion_slot(event)
 		if slot == NO_SLOT:

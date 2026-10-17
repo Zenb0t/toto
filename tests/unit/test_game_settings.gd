@@ -56,3 +56,13 @@ func test_a_layout_saved_by_the_previous_build_still_loads() -> void:
 	config.save(PATH)
 
 	assert_eq(_settings().load_layout().diameter_of(ControlLayout.ATTACK), 250.0)
+
+
+func test_the_minimap_shows_until_the_player_hides_it() -> void:
+	assert_true(_settings().load_minimap_shown())
+
+
+func test_a_hidden_minimap_stays_hidden_next_time_the_game_starts() -> void:
+	assert_eq(_settings().save_minimap_shown(false), OK)
+
+	assert_false(_settings().load_minimap_shown())

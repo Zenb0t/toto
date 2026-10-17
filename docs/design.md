@@ -108,6 +108,7 @@ Touch stays the target, but a computer gets its own controls rather than a mouse
 | Right button or Space | Utility, toward the cursor |
 | 1, 2, 3 | Drink a potion (in the potion bar's order) |
 | E | Take the item on the floor |
+| M | Show or hide the minimap |
 | Q | Next weapon (testing aid) |
 | Esc | Pause menu; in the Tune screen, back |
 
@@ -268,6 +269,13 @@ every half second; the Shield blocks it). Enemies path around water and avoid la
 **Fog of war** (`Exploration`, `FogView`). You see 16 cells around you (farther than any weapon reaches, so
 nothing hits you from the dark), through floor, water and lava but not walls or closed doors. What you have
 seen stays drawn, dimmed; what you haven't is dark. Enemies out of sight are hidden.
+
+**Minimap** (`MinimapPainter`, `MinimapView`). Top left of the HUD, a picture with one pixel per cell (shown at
+2 px) of what `Exploration` has seen: floor, doors, water, lava and the stairs in their own colours, cells in
+view brighter than remembered ones, you as a bright dot. Walls and unseen cells are left blank, so the map's
+shape shows through the gaps. It redraws whenever sight does. Enemies and loot aren't marked: the minimap is for
+finding the way, and the fog already hides what you haven't seen. The **Map** button under the help line (or
+M) shows or hides it, and the choice is saved with the settings so it holds across floors and runs.
 
 Enemies find their way around walls and pillars (`Pathfinder`, on Godot's `AStarGrid2D`) when they can't
 see the player, and only shoot with a clear line; fireball throwers lob over cover.

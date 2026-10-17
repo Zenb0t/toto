@@ -21,6 +21,7 @@ and mouse, following whichever you used last.
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
+| **Map** (top left) | Show or hide the minimap; the choice is remembered |
 | **Weapon: …** (top right) | Testing aid: cycle through every weapon |
 | **II** (top right) | Pause menu: resume, customize controls, tune gameplay, restart run |
 
@@ -34,6 +35,7 @@ and mouse, following whichever you used last.
 | Right click or Space | Utility, toward the cursor |
 | 1, 2, 3 | Drink a potion |
 | E | Take the item you're standing on |
+| M | Show or hide the minimap |
 | Q | Next weapon (testing aid) |
 | Esc | Pause menu; in the Tune screen, back one page |
 
@@ -52,7 +54,8 @@ Mines, the Crypt, the Depths) and a new dungeon (its seed is shown in the pause 
 Dungeon Crawl Stone Soup: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
-areas stay dimmed on the map. Items sometimes lie on the floor, and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
+areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
+lava, and you. Items sometimes lie on the floor, and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
 chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
 weapon wants; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
@@ -111,7 +114,7 @@ Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.
 - `scripts/settings` – saved settings: `ControlLayout`, `GameSettings` (what is saved, and how) on top of
   `SettingsStore` (sections in a ConfigFile)
 - `scripts/ui` – touch widgets (`TouchStick`, `AimButton`, `TouchControls`), `KeyboardMouseControls`, `PauseMenu`, `LayoutEditor`,
-  `TuningPanel`, `TuningSender`, `LootCard`
+  `TuningPanel`, `TuningSender`, `LootCard`, `MinimapView` (with `MinimapPainter`, which paints the picture)
 - `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `SlashEffect`, and the loot on the floor
   (`PickupArea`, `Chest`, `ItemDrop`). The player holds no input code
 - `scripts/view3d` – how the game is shown: the 2D world runs the game and `WorldView3D` shows it in 3D.

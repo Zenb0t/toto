@@ -8,6 +8,9 @@ const _LAYOUT_KEY := "layout"
 const _TUNING_SECTION := "tuning"
 const _TUNING_KEY := "values"
 
+const _MINIMAP_SECTION := "minimap"
+const _MINIMAP_KEY := "shown"
+
 var _store: SettingsStore
 
 
@@ -35,3 +38,12 @@ func load_tuning() -> Tuning:
 func save_tuning(tuning: Tuning) -> Error:
 	return _store.save_section(_TUNING_SECTION, {_TUNING_KEY: tuning.to_dict()})
 
+
+
+## The minimap shows unless the player hid it.
+func load_minimap_shown() -> bool:
+	return _store.load_section(_MINIMAP_SECTION).get(_MINIMAP_KEY, true) == true
+
+
+func save_minimap_shown(shown: bool) -> Error:
+	return _store.save_section(_MINIMAP_SECTION, {_MINIMAP_KEY: shown})
