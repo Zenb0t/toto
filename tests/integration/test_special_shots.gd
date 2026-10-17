@@ -1,8 +1,9 @@
 extends GutTest
-## Lightning bolts jump from enemy to enemy, shots bounce off walls, poison clouds linger, and beckoning pulls.
+## Lightning bolts jump from enemy to enemy, shots bounce off walls, poison clouds and burning ground linger, and beckoning pulls.
 
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
+const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const WALL_LAYER_BIT := 1
 
 
@@ -112,6 +113,57 @@ func test_a_poison_cloud_keeps_hurting_enemies_inside_it_then_dissipates() -> vo
 	assert_eq(outside.health.current, outside.health.maximum)
 	await wait_seconds(1.0)
 	assert_false(is_instance_valid(cloud))
+
+
+func test_burning_ground_hurts_whoever_stays_in_it_every_half_second_then_dies_out() -> void:
+	var inside := _enemy_at(Vector2(20, 0))
+	inside.set_physics_process(false)
+	var outside := _enemy_at(Vector2(300, 0))
+	var fire := BurningGround.new(60.0, 34, 1.5)
+	add_child(fire)
+
+	await wait_seconds(0.35)
+	assert_eq(inside.health.current, inside.health.maximum, "the first tick comes after half a second")
+	await wait_seconds(0.3)
+	assert_eq(inside.health.current, inside.health.maximum - 34)
+	await wait_seconds(1.2)
+
+	assert_eq(inside.health.current, inside.health.maximum - 3 * 34, "three ticks over the burn time")
+	assert_eq(outside.health.current, outside.health.maximum)
+	assert_false(is_instance_valid(fire))
+
+
+func test_burning_ground_hurts_the_player_standing_in_it_too() -> void:
+	var player: Player = PLAYER_SCENE.instantiate()
+	add_child_autofree(player)
+	var fire := BurningGround.new(60.0, 34, 1.5)
+	fire.source = "your own Fireball"
+	add_child(fire)
+
+	await wait_seconds(0.7)
+
+	assert_eq(player.health.current, Player.MAX_HEALTH - 34)
+
+
+func test_a_fireball_hits_for_its_damage_then_burns_a_target_that_stays_in_the_blast() -> void:
+	var fireball := Fireball.new()
+	var target := _enemy_at(Vector2(100, 0))
+	target.set_physics_process(false)
+	target.set_max_health(1000)
+	var aside := _enemy_at(Vector2(100, 400))
+	aside.set_physics_process(false)
+	var shot: Shot = fireball.attacks(Vector2.ZERO, Vector2.RIGHT, 100.0)[0]
+	shot.hurts_player = false
+
+	_fire(shot)
+	await wait_seconds(0.4)
+	assert_eq(target.health.current, 1000 - fireball.damage, "the impact")
+	await wait_seconds(1.8)
+
+	var expected := 1000 - fireball.damage - 3 * fireball.burn_damage
+	assert_eq(target.health.current, expected)
+	assert_between(fireball.damage + 3 * fireball.burn_damage, 290, 310, "a fireball is about 300 in all")
+	assert_eq(aside.health.current, aside.health.maximum)
 
 
 func test_beckoning_pulls_an_enemy_to_the_caster() -> void:

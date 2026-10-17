@@ -44,6 +44,32 @@ func test_the_fireball_is_lobbed_to_land_where_it_was_aimed() -> void:
 	assert_eq(shot.blast_radius, fireball.blast_radius)
 
 
+func test_the_fireball_leaves_burning_ground_over_its_blast() -> void:
+	var fireball := Fireball.new()
+
+	var shot: Shot = fireball.attacks(ORIGIN, Vector2.RIGHT, 150.0)[0]
+
+	assert_true(shot.leaves_burning_ground())
+	assert_eq(shot.burn_damage, fireball.burn_damage)
+	assert_eq(shot.burn_seconds, fireball.burn_seconds)
+
+
+func test_a_fireball_without_burn_time_leaves_no_fire() -> void:
+	var fireball := Fireball.new()
+	fireball.burn_seconds = 0.0
+
+	var shot: Shot = fireball.attacks(ORIGIN, Vector2.RIGHT, 150.0)[0]
+
+	assert_false(shot.leaves_burning_ground())
+
+
+func test_the_fireballs_burn_is_tunable() -> void:
+	var fields := Fireball.new().knobs().map(func(knob: Knob) -> String: return knob.field)
+
+	assert_has(fields, "burn_damage")
+	assert_has(fields, "burn_seconds")
+
+
 func test_the_fireball_never_lands_beyond_its_max_range() -> void:
 	var fireball := Fireball.new()
 

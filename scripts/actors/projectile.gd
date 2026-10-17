@@ -2,7 +2,8 @@ class_name Projectile
 extends Area2D
 ## Flies a Shot straight until it hits something or runs out of range.
 ## A plain shot damages what it hits; an explosive shot bursts into an Explosion instead.
-## A lobbed shot arcs over everything and bursts (or leaves its poison cloud) where it lands.
+## A lobbed shot arcs over everything and bursts (or leaves its poison cloud) where it lands;
+## a burning blast also leaves fire on the ground.
 ## A piercing shot passes through foes, hitting each once; a bouncing one glances off walls; a pulling one
 ## drags the first foe it hits back to where it was fired from; a chaining one jumps from the foe it hits to the
 ## next nearest one.
@@ -134,6 +135,11 @@ func _finish() -> void:
 		var explosion := Explosion.new(_shot.blast_radius, _shot.damage, _shot.color, _shot.source)
 		explosion.position = position
 		get_parent().add_child.call_deferred(explosion)
+	if _shot.leaves_burning_ground():
+		var fire := BurningGround.new(_shot.blast_radius, _shot.burn_damage, _shot.burn_seconds)
+		fire.source = _shot.source
+		fire.position = position
+		get_parent().add_child.call_deferred(fire)
 	if _shot.leaves_cloud():
 		var cloud := PoisonCloud.new(_shot.cloud_radius, _shot.damage, _shot.cloud_seconds, _shot.hurts_player, _shot.first_tick_delay)
 		cloud.source = _shot.source

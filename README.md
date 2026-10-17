@@ -105,7 +105,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   keyboard and mouse)
 - `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`, `Battleaxe`, `Knuckles`, `LightningBolt`, `MephiticCloud`,
   `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
-- `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`), when a weapon fires
+- `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects), when a weapon fires
   (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead), what they are doing (`EnemyBrain`, a
   small state machine: idle, hunt, position, wind up, recover), how a room's enemies fight as a team (`Squad`:
   taking turns, flank spots),
@@ -121,7 +121,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `SettingsStore` (sections in a ConfigFile)
 - `scripts/ui` – touch widgets (`TouchStick`, `AimButton`, `TouchControls`), `KeyboardMouseControls`, `PauseMenu`, `LayoutEditor`,
   `TuningPanel`, `TuningSender`, `LootCard`, `MinimapView` (with `MinimapPainter`, which paints the picture), `MapOverlay` (the big map)
-- `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `SlashEffect`, and the loot on the floor
+- `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `LingeringZone` (`PoisonCloud`, `BurningGround`), `SlashEffect`, and the loot on the floor
   (`PickupArea`, `Chest`, `ItemDrop`). The player holds no input code
 - `scripts/view3d` – how the game is shown: the 2D world runs the game and `WorldView3D` shows it in 3D.
   `GroundView` lays the 2D plane on the floor (floor, aim previews, telegraphs, fog), `MapView3D` stands walls
