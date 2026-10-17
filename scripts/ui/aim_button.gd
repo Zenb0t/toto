@@ -8,7 +8,7 @@ extends Control
 ## direction is zero while the finger is still inside the dead zone; strength is how far it was dragged (0..1).
 signal aim_changed(direction: Vector2, strength: float)
 signal aim_released(release: AimGesture.Release)
-## A drag that was aiming came back into the dead zone: letting go now is a tap (auto-aim). Worth a buzz.
+## A drag that was aiming came back into the dead zone: letting go now cancels. Worth a buzz.
 signal returned_to_dead_zone
 
 ## How far the finger must move before a press counts as manual aim instead of a tap, in viewport pixels.
@@ -18,6 +18,8 @@ const DEFAULT_CATCH_SCALE := 1.6
 ## Every aim button is in this group, so overlapping catch zones can be settled.
 const GROUP := &"aim_buttons"
 const CATCH_ZONE_COLOR := Color(1, 1, 1, 0.05)
+## The knob while letting go would cancel.
+const CANCEL_KNOB_COLOR := Color(0.6, 0.6, 0.6, 0.7)
 const NO_TOUCH := -1
 const KNOB_TRAVEL := 0.6  ## How far the knob moves at full strength, relative to the button radius.
 const MIN_KNOB_TRAVEL := 0.25  ## Where the knob sits just past the dead zone, so aiming is always visible.
@@ -130,7 +132,7 @@ func _draw() -> void:
 		draw_arc(center, radius * 0.5, -PI / 2.0, -PI / 2.0 + sweep, 32, Color(0, 0, 0, 0.6), radius, true)
 	var knob_reach := lerpf(MIN_KNOB_TRAVEL, KNOB_TRAVEL, _gesture.strength())
 	var knob := center + _gesture.direction() * radius * knob_reach
-	draw_circle(knob, radius * 0.35, Color(color, 0.9))
+	draw_circle(knob, radius * 0.35, CANCEL_KNOB_COLOR if _gesture.will_cancel() else Color(color, 0.9))
 	var font := ThemeDB.fallback_font
 	var font_size := maxi(MIN_FONT_SIZE, roundi(radius * FONT_SIZE_PER_RADIUS))
 	var text_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)

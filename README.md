@@ -17,7 +17,7 @@ and mouse, following whichever you used last.
 | --- | --- |
 | Touch the left half of the screen and drag | Move (floating stick) |
 | Tap the **weapon** button | Auto-aim at the nearest enemy and attack |
-| Drag from the weapon button, then release | Aim manually and fire. The button floats like the stick: touch anywhere in the faint circle around it and it jumps under your finger; the aim is measured from where you touched. Dragging back to the middle buzzes (phones that support it) and turns the release back into an auto-aim tap |
+| Drag from the weapon button, then release | Aim manually and fire. The button floats like the stick: touch anywhere in the faint circle around it and it jumps under your finger; the aim is measured from where you touched. Dragging back to the middle buzzes (phones that support it); letting go there cancels, as in Brawl Stars |
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |

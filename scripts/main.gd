@@ -244,6 +244,8 @@ func _cursor_on_plane() -> Vector2:
 
 func _on_attack_released(release: AimGesture.Release) -> void:
 	_player.preview_aim(Vector2.ZERO)
+	if release.is_cancelled:
+		return
 	if not release.is_auto:
 		_player.attack(release.direction, null, release.strength)
 		return
@@ -254,7 +256,8 @@ func _on_attack_released(release: AimGesture.Release) -> void:
 		_player.attack(_player.global_position.direction_to(target.global_position), target)
 
 
-## Like Brawl Stars, a short buzz tells the thumb its aim came back into the dead zone (phones that support it).
+## Like Brawl Stars, a short buzz tells the thumb its aim came back into the dead zone, where letting go cancels
+## (phones that support it).
 func _buzz() -> void:
 	var milliseconds := GameTuning.haptic_ms(_tuning)
 	if milliseconds > 0:
@@ -263,6 +266,8 @@ func _buzz() -> void:
 
 func _on_utility_released(release: AimGesture.Release) -> void:
 	_player.preview_aim(Vector2.ZERO)
+	if release.is_cancelled:
+		return
 	_player.use_utility(release.direction if not release.is_auto else _player.facing)
 
 

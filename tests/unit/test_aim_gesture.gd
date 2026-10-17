@@ -45,14 +45,6 @@ func test_releasing_after_a_drag_fires_in_the_dragged_direction() -> void:
 	assert_almost_eq(release.direction, Vector2.LEFT, Vector2(0.001, 0.001))
 
 
-func test_dragging_back_to_the_centre_turns_it_back_into_a_tap() -> void:
-	var gesture := _pressed_gesture()
-	gesture.move_to(BUTTON + Vector2(80, 0))
-	gesture.move_to(BUTTON + Vector2(3, 0))
-
-	assert_true(gesture.release().is_auto)
-
-
 func test_gesture_ends_on_release() -> void:
 	var gesture := _pressed_gesture()
 
@@ -88,3 +80,43 @@ func test_releasing_reports_the_strength_of_the_drag() -> void:
 	gesture.move_to(BUTTON + Vector2(0, -120))
 
 	assert_eq(gesture.release().strength, 1.0)
+
+
+func test_aiming_then_coming_back_to_the_middle_cancels_instead_of_auto_aiming() -> void:
+	var gesture := _pressed_gesture()
+	gesture.move_to(BUTTON + Vector2(0, -80))
+	gesture.move_to(BUTTON + Vector2(3, 2))
+
+	var release := gesture.release()
+
+	assert_true(release.is_cancelled)
+	assert_false(release.is_auto)
+
+
+func test_aiming_out_again_after_coming_back_fires_normally() -> void:
+	var gesture := _pressed_gesture()
+	gesture.move_to(BUTTON + Vector2(0, -80))
+	gesture.move_to(BUTTON)
+	gesture.move_to(BUTTON + Vector2(80, 0))
+
+	var release := gesture.release()
+
+	assert_false(release.is_cancelled)
+	assert_almost_eq(release.direction, Vector2.RIGHT, Vector2.ONE * 0.001)
+
+
+func test_a_plain_tap_is_never_a_cancel() -> void:
+	var release := _pressed_gesture().release()
+
+	assert_false(release.is_cancelled)
+	assert_true(release.is_auto)
+
+
+func test_a_new_press_forgets_that_the_last_one_aimed() -> void:
+	var gesture := _pressed_gesture()
+	gesture.move_to(BUTTON + Vector2(0, -80))
+	gesture.release()
+
+	gesture.begin(BUTTON)
+
+	assert_true(gesture.release().is_auto)
