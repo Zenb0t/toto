@@ -40,12 +40,30 @@ A broken-walled set piece in one corner of the plains, home to the toughest grou
 _Avoid_: Vault (for the ruin itself), fort, castle
 
 **Camp**:
-The spot on the plains where one group of monsters lives, asleep or wandering. Camps farther from the village hold tougher groups.
+The spot on the plains, around a campfire, where one band of monsters lives, asleep or wandering. Camps farther from the village hold tougher bands. Once its band is dead, the campfire is the hero's to rest at.
 _Avoid_: Spawn, nest, lair (that's a branch)
 
 **Crypt entrance**:
 A small stone mausoleum on the plains with stairs down to the first level of the crypt.
 _Avoid_: Dungeon entrance, portal
+
+### Monsters
+
+**Band**:
+The monsters that live together at one home and start the same way, asleep or wandering. Each one gives up a chase on its own.
+_Avoid_: Group, pack, squad (that's how a band takes turns to attack)
+
+**Home**:
+The spot a band lives at and goes back to when one of its members gives up a chase: a camp's campfire, the middle of the ruin, or a crypt room.
+_Avoid_: Spawn, lair, post
+
+**Noise**:
+What the hero's attacks make: it wakes monsters close by, even ones that can't see the hero.
+_Avoid_: Sound, alarm
+
+**Shout**:
+The noise a monster makes when it notices the hero. Every monster it wakes shouts in turn, so a band, or a camp close by, wakes one after another.
+_Avoid_: Alert, call, aggro
 
 ### Crypt
 
