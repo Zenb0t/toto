@@ -33,6 +33,7 @@ func test_a_patch_ticks_after_each_interval_up_to_its_end() -> void:
 	assert_eq(TickClock.count_after_each_interval(0.4, 0.5), 0, "gone before the first tick")
 
 
-func test_a_cloud_ticks_at_once_and_then_each_interval_until_its_end() -> void:
-	assert_eq(TickClock.count_from_start(3.0, 0.6), 5)
-	assert_eq(TickClock.count_from_start(1.0, 0.6), 2)
+func test_a_cloud_ticks_from_its_first_tick_through_its_end() -> void:
+	assert_eq(TickClock.count_from(0.6, 6.0, 0.6), 10, "0.6, 1.2 ... 6.0")
+	assert_eq(TickClock.count_from(0.0, 3.0, 0.6), 6, "0, 0.6 ... 3.0")
+	assert_eq(TickClock.count_from(1.0, 0.5, 0.6), 0, "gone before the first tick")

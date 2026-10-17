@@ -10,8 +10,11 @@ const PUFFS := 7
 var _hurts_player: bool
 
 
-func _init(radius: float, damage: int, seconds: float, hurts_player: bool) -> void:
-	super(radius, damage, seconds, TickClock.new(0.0, TICK_SECONDS, TickClock.count_from_start(seconds, TICK_SECONDS)))
+## The first tick comes first_tick_delay after landing (a grace window to run out), then one every TICK_SECONDS up
+## to and including the moment the cloud ends.
+func _init(radius: float, damage: int, seconds: float, hurts_player: bool, first_tick_delay := 0.0) -> void:
+	var ticks := TickClock.count_from(first_tick_delay, seconds, TICK_SECONDS)
+	super(radius, damage, seconds, TickClock.new(first_tick_delay, TICK_SECONDS, ticks))
 	_hurts_player = hurts_player
 
 

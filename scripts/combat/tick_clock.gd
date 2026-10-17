@@ -19,10 +19,10 @@ func _init(first_after: float, interval: float, count: int) -> void:
 	_count = count
 
 
-## Ticks at 0, interval, 2 x interval ... while still before `seconds` is up (a 3 s poison cloud ticking every
-## 0.6 s: 5).
-static func count_from_start(seconds: float, interval: float) -> int:
-	return maxi(ceili(seconds / interval - SLACK), 0)
+## Ticks at first_after, then every interval, up to and including `seconds` (a 6 s poison cloud whose first tick
+## comes at 0.6 s, ticking every 0.6 s: 10).
+static func count_from(first_after: float, seconds: float, interval: float) -> int:
+	return maxi(floori((seconds - first_after) / interval + SLACK) + 1, 0)
 
 
 ## Ticks at interval, 2 x interval ... up to and including `seconds` (a 1.5 s fire ticking every 0.5 s: 3).

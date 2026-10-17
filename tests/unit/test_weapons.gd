@@ -156,6 +156,15 @@ func test_a_mephitic_cloud_is_lobbed_where_aimed_and_leaves_a_cloud() -> void:
 	assert_false(weapon.needs_line_of_sight())
 
 
+func test_a_mephitic_cloud_gives_a_grace_window_and_keeps_its_500_total() -> void:
+	var weapon := MephiticCloud.new()
+	var shot: Shot = weapon.attacks(Vector2.ZERO, Vector2.UP, 200.0)[0]
+
+	assert_eq(shot.first_tick_delay, 0.6)
+	var ticks := floori((shot.cloud_seconds - shot.first_tick_delay) / PoisonCloud.TICK_SECONDS + 0.001) + 1
+	assert_eq(ticks * shot.damage, 500)
+
+
 func test_a_battleaxe_hits_harder_and_wider_than_a_sword_but_slower() -> void:
 	var axe := Battleaxe.new()
 	var sword := Sword.new()
