@@ -1,8 +1,8 @@
 # Toto — Ideas Backlog
 
-Raw ideas, written so each one can become a GitHub issue later. Epics B, C, E and F still need a review before
-they're filed; brainstorm-only ideas become `idea` issues (title, why, sketch, done when). Nothing here is
-decided yet; once an idea is picked, its decision moves into `design.md`.
+Raw ideas, written so each one can become a GitHub issue later (title, why, sketch, done when). Nothing here is
+decided yet; once an idea is picked, its decision moves into `design.md`. Epics B, C, E and F still need a
+review before they're filed; brainstorm-only ideas become `idea` issues.
 
 Pitch, unchanged: **Brawl Stars meets Dungeon Crawl Stone Soup.** The core loop (fight → random gear → play
 differently) works. The next big step is the world around it: **open areas and larger maps instead of a chain
