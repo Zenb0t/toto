@@ -42,7 +42,12 @@ func _hurt_bodies_inside() -> void:
 	for group in _target_groups():
 		for body: Node2D in get_tree().get_nodes_in_group(group):
 			if HitShapes.in_circle(global_position, _radius + body.body_radius(), body.global_position):
-				body.take_damage(_damage, source)
+				_hurt(body)
+
+
+## What one tick does to a body inside the zone. Poison overrides it (see PoisonCloud).
+func _hurt(body: Node2D) -> void:
+	body.take_damage(_damage, source)
 
 
 func _draw() -> void:

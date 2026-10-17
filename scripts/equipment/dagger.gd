@@ -1,7 +1,7 @@
 class_name Dagger
 extends ArcWeapon
 ## The starter weapon: a quick jab. Shorter, narrower and weaker than the sword, but it reloads faster.
-## Two stabs kill a goblin, so the first fights are winnable, and found weapons are still worth finding.
+## Two stabs kill a goblin (and three a bandit, two do not), so the first fights are winnable, and found weapons are still worth finding.
 
 
 func _init() -> void:
@@ -14,5 +14,5 @@ func _init() -> void:
 	windup = 0.08
 	reach = 55.0
 	arc_degrees = 70.0
-	damage = 100
+	damage = 110
 	sweep_seconds = 0.1

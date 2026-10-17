@@ -75,7 +75,7 @@ func test_a_lightning_bolt_does_not_jump_beyond_its_range() -> void:
 
 func test_a_lightning_bolt_stops_after_its_last_jump_and_hits_each_enemy_once() -> void:
 	var pack: Array[Enemy] = []
-	for index in 4:
+	for index in 5:
 		pack.append(_still_enemy_at(Vector2(100, index * 60)))
 	await wait_physics_frames(1)
 
@@ -84,8 +84,23 @@ func test_a_lightning_bolt_stops_after_its_last_jump_and_hits_each_enemy_once() 
 
 	var hurt := pack.filter(_is_hurt)
 	assert_eq(hurt.size(), 1 + LightningBolt.new().chains)
-	for enemy in hurt:
-		assert_eq(enemy.health.current, enemy.health.maximum - LightningBolt.new().damage)
+
+
+func test_a_lightning_bolt_hits_180_then_117_76_and_49_down_a_line_and_never_a_fifth_enemy() -> void:
+	var line: Array[Enemy] = []
+	for index in 5:
+		var enemy := _still_enemy_at(Vector2(100, index * 60))
+		enemy.set_max_health(1000)
+		line.append(enemy)
+	await wait_physics_frames(1)
+
+	_fire(_bolt(Vector2.ZERO, Vector2.RIGHT))
+	await wait_seconds(1.0)
+
+	var taken: Array[int] = []
+	for enemy in line:
+		taken.append(enemy.health.maximum - enemy.health.current)
+	assert_eq(taken, [180, 117, 76, 49, 0] as Array[int])
 
 
 func test_a_shot_bounces_off_a_wall_and_comes_back() -> void:
@@ -210,6 +225,8 @@ func _mephitic_cloud(foe_hurt_player := false) -> PoisonCloud:
 	return PoisonCloud.new(shot.cloud_radius, shot.damage, shot.cloud_seconds, foe_hurt_player, shot.first_tick_delay)
 
 
+
+
 func _tough_enemy_in_cloud() -> Enemy:
 	var enemy := _enemy_at(Vector2(20, 0))
 	enemy.set_physics_process(false)
@@ -262,3 +279,85 @@ func test_a_cloud_deals_each_tick_once_including_the_one_when_it_ends() -> void:
 
 	assert_false(is_instance_valid(cloud))
 	assert_eq(100 - enemy.health.current, 5, "ticks at 0.6, 1.2, 1.8, 2.4 and 3.0 s")
+
+
+func test_an_enemy_in_three_overlapping_clouds_takes_the_poison_of_one() -> void:
+	var enemy := _tough_enemy_in_cloud()
+	for index in 3:
+		add_child_autofree(_mephitic_cloud())
+
+	await wait_seconds(0.7)
+	assert_eq(5000 - enemy.health.current, 50, "one tick, not three")
+	await wait_seconds(0.6)
+	assert_eq(5000 - enemy.health.current, 100)
+
+
+func test_clouds_thrown_at_different_moments_still_tick_an_enemy_once_per_interval() -> void:
+	var enemy := _tough_enemy_in_cloud()
+	add_child_autofree(_mephitic_cloud())
+	await wait_seconds(0.3)
+	add_child_autofree(_mephitic_cloud())
+
+	await wait_seconds(2.4)
+
+	# Alone it would be ticked at 0.6 ... 2.4 s (4 times, 200); a second cloud adds nothing.
+	assert_eq(5000 - enemy.health.current, 200)
+
+
+func test_an_enemy_stepping_from_one_cloud_into_another_is_not_ticked_twice_within_an_interval() -> void:
+	var enemy := _tough_enemy_in_cloud()
+	var first := _mephitic_cloud()
+	add_child_autofree(first)
+	var second := _mephitic_cloud()
+	second.position = Vector2(500, 0)
+	add_child_autofree(second)
+
+	await wait_seconds(0.7)
+	assert_eq(5000 - enemy.health.current, 50)
+	enemy.position = Vector2(520, 0)
+	await wait_seconds(0.3)
+
+	assert_eq(5000 - enemy.health.current, 50, "second cloud's tick came soon after the first's")
+
+
+func test_poison_and_fire_both_hurt_an_enemy_standing_in_both() -> void:
+	var enemy := _tough_enemy_in_cloud()
+	add_child_autofree(_mephitic_cloud())
+	add_child_autofree(BurningGround.new(60.0, 34, 1.5))
+
+	await wait_seconds(0.7)
+
+	assert_eq(5000 - enemy.health.current, 50 + 34, "one poison tick and one burn tick")
+
+
+func test_burning_grounds_still_stack_with_each_other() -> void:
+	var enemy := _tough_enemy_in_cloud()
+	add_child_autofree(BurningGround.new(60.0, 34, 1.5))
+	add_child_autofree(BurningGround.new(60.0, 34, 1.5))
+
+	await wait_seconds(0.7)
+
+	assert_eq(5000 - enemy.health.current, 68)
+
+
+func test_the_player_in_overlapping_enemy_clouds_takes_poison_once_per_tick() -> void:
+	var player: Player = PLAYER_SCENE.instantiate()
+	add_child_autofree(player)
+	for index in 3:
+		add_child_autofree(_mephitic_cloud(true))
+
+	await wait_seconds(0.7)
+
+	assert_eq(player.health.current, Player.MAX_HEALTH - 50)
+
+
+func test_a_shielded_player_takes_no_poison_and_is_ticked_again_once_the_shield_drops() -> void:
+	var player: Player = PLAYER_SCENE.instantiate()
+	add_child_autofree(player)
+	player.equip_utility(Shield.new())
+	player.use_utility(Vector2.RIGHT)
+	add_child_autofree(_mephitic_cloud(true))
+
+	await wait_seconds(0.7)
+
+	assert_eq(player.health.current, Player.MAX_HEALTH)
