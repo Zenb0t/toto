@@ -5,8 +5,8 @@ extends Control
 
 const PIXELS_PER_CELL := 2
 const BACKING_COLOR := Color(0, 0, 0, 0.45)
-## Top left, under the help line.
-const MARGIN := Vector2(16, 72)
+## Top left, under the help line and the button that shows or hides it.
+const MARGIN := Vector2(16, 122)
 
 var _picture := TextureRect.new()
 

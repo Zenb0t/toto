@@ -53,6 +53,7 @@ var _experience := Experience.new(_run.experience)
 @onready var _hud_layer: CanvasLayer = $Hud
 @onready var _hud: Label = $Hud/Status
 @onready var _help: Label = $Hud/Help
+@onready var _map_toggle: Button = $Hud/MapToggle
 @onready var _weapon_switch: Button = $Hud/WeaponSwitch
 @onready var _loot_card: LootCard = $Hud/LootCard
 @onready var _potion_bar: PotionBar = $Hud/PotionBar
@@ -90,6 +91,7 @@ func _ready() -> void:
 	_spawn_floor_loot()
 	add_child(_fog)
 	_hud_layer.add_child(_minimap)
+	_minimap.visible = _settings.load_minimap_shown()
 	_update_sight()
 	_progress = _create_progress()
 	_belt.changed.connect(_refresh_potions)
@@ -183,6 +185,7 @@ func _connect_controls() -> void:
 	_loot_card.take_pressed.connect(_on_take_pressed)
 	_loot_card.leave_pressed.connect(_close_offer)
 	_potion_bar.drink_requested.connect(_drink)
+	_map_toggle.pressed.connect(_toggle_minimap)
 
 
 func _connect_keyboard_mouse() -> void:
@@ -194,6 +197,7 @@ func _connect_keyboard_mouse() -> void:
 	_keyboard_mouse.potion_requested.connect(func(slot: int) -> void: _drink(GameTuning.potion_ids()[slot]))
 	_keyboard_mouse.take_requested.connect(_on_take_pressed)
 	_keyboard_mouse.weapon_switch_requested.connect(_on_weapon_switch_pressed)
+	_keyboard_mouse.minimap_toggle_requested.connect(_toggle_minimap)
 
 
 func _connect_menu() -> void:
@@ -361,6 +365,12 @@ func _update_sight() -> void:
 			enemy.visible = _exploration.is_visible(DungeonView.world_to_cell(enemy.global_position))
 	for pickup: PickupArea in get_tree().get_nodes_in_group(PickupArea.GROUP):
 		pickup.visible = _exploration.is_seen(DungeonView.world_to_cell(pickup.global_position))
+
+
+## Shows or hides the minimap, and remembers the choice for the next floor and the next run.
+func _toggle_minimap() -> void:
+	_minimap.visible = not _minimap.visible
+	_warn_if_failed(_settings.save_minimap_shown(_minimap.visible), "the minimap setting")
 
 
 ## Lava burns whoever stands in it; shallow water slows whoever wades through it.

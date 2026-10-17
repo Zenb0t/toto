@@ -21,6 +21,7 @@ and mouse, following whichever you used last.
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
+| **Map** (top left) | Show or hide the minimap; the choice is remembered |
 | **Weapon: …** (top right) | Testing aid: cycle through every weapon |
 | **II** (top right) | Pause menu: resume, customize controls, tune gameplay, restart run |
 
@@ -34,6 +35,7 @@ and mouse, following whichever you used last.
 | Right click or Space | Utility, toward the cursor |
 | 1, 2, 3 | Drink a potion |
 | E | Take the item you're standing on |
+| M | Show or hide the minimap |
 | Q | Next weapon (testing aid) |
 | Esc | Pause menu; in the Tune screen, back one page |
 

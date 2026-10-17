@@ -84,6 +84,16 @@ func test_e_takes_the_item_and_q_switches_weapon() -> void:
 	assert_signal_emitted(controls, "weapon_switch_requested")
 
 
+func test_m_asks_to_toggle_the_minimap() -> void:
+	var controls := _controls()
+	watch_signals(controls)
+
+	_key(KEY_M)
+	await wait_process_frames(1)
+
+	assert_signal_emitted(controls, "minimap_toggle_requested")
+
+
 func test_clicking_a_button_on_screen_does_not_attack() -> void:
 	var controls := _controls()
 	var button := Button.new()
