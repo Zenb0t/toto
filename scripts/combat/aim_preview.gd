@@ -15,6 +15,9 @@ static func draw(
 			canvas.draw_line(Vector2.ZERO, end, color, WIDTH * 3.0)
 			if shape.end_radius > 0.0:
 				canvas.draw_circle(end, shape.end_radius, color)
+			if shape.fill > 0.0:
+				var filled := Color(color, 1.0)
+				canvas.draw_line(Vector2.ZERO, end * shape.fill, filled, WIDTH * 2.0)
 		AimShape.Kind.CONE:
 			canvas.draw_colored_polygon(
 				ArcPolygon.wedge(direction, shape.length, shape.spread_degrees, ARC_POINTS), color)

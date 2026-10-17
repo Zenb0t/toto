@@ -133,3 +133,31 @@ func test_a_new_press_forgets_that_the_last_one_aimed() -> void:
 	gesture.begin(BUTTON)
 
 	assert_true(gesture.release().is_auto)
+
+
+func test_the_release_says_how_long_the_button_was_held() -> void:
+	var gesture := AimGesture.new(30.0)
+	gesture.begin(Vector2.ZERO)
+	gesture.tick(0.5)
+	gesture.tick(0.25)
+
+	assert_almost_eq(gesture.release().held_seconds, 0.75, 0.0001)
+
+
+func test_a_new_press_starts_counting_from_zero() -> void:
+	var gesture := AimGesture.new(30.0)
+	gesture.begin(Vector2.ZERO)
+	gesture.tick(1.0)
+	gesture.release()
+
+	gesture.begin(Vector2.ZERO)
+
+	assert_eq(gesture.held_seconds(), 0.0)
+
+
+func test_time_does_not_count_while_nothing_is_pressed() -> void:
+	var gesture := AimGesture.new(30.0)
+
+	gesture.tick(1.0)
+
+	assert_eq(gesture.held_seconds(), 0.0)

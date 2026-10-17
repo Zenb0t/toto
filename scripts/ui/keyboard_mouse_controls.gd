@@ -7,6 +7,8 @@ extends Node
 
 signal mode_changed(mode: InputMode.Kind)
 signal attack_held_changed(held: bool)
+## The attack button was let go (not: the game paused or the kind of play changed), for weapons that charge.
+signal attack_released
 signal utility_requested
 ## slot: 0 for the first kind of potion, in the order the potion belt shows them.
 signal potion_requested(slot: int)
@@ -54,6 +56,8 @@ func _input(event: InputEvent) -> void:
 		_set_attack_held(false)
 		mode_changed.emit(mode)
 	if event.is_action_released(&"attack"):
+		if _attack_held:
+			attack_released.emit()
 		_set_attack_held(false)
 
 

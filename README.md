@@ -18,6 +18,7 @@ and mouse, following whichever you used last.
 | Touch the left half of the screen (below the Map button) and drag | Move (floating stick). The top left stays free for the Map button |
 | Tap the **weapon** button | Auto-aim at the nearest enemy and attack. Each weapon holds 3 shots of ammo (orange bar over your head) that reload one at a time |
 | Drag from the weapon button, then release | Aim manually and fire. The button floats like the stick: touch anywhere in the faint circle around it and it jumps under your finger; the aim is measured from where you touched. Dragging back to the middle buzzes (phones that support it); letting go there cancels, as in Brawl Stars |
+| Hold the weapon button (**Bow**) | Draws the bow: the longer you hold before letting go, the harder the arrow hits, up to a full charge at 1.5 s, which also pierces. You walk slower while drawing; the aim line fills up as it charges. A tap is a weak arrow |
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
@@ -32,7 +33,7 @@ and mouse, following whichever you used last.
 | --- | --- |
 | WASD or arrow keys | Move |
 | Mouse | Aim at the cursor (Fireball and Mephitic Cloud land on it) |
-| Left click | Attack; hold to keep attacking |
+| Left click | Attack; hold to keep attacking (with the Bow: hold to draw, release to shoot) |
 | Right click or Space | Utility, toward the cursor |
 | 1, 2, 3 | Drink a potion |
 | E | Take the item you're standing on |
@@ -104,8 +105,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`, `MouseAim`, `TouchZones`) and `InputMode` (touch or
   keyboard and mouse)
 - `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`, `Battleaxe`, `Knuckles`, `LightningBolt`, `MephiticCloud`,
-  `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
-- `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects), when a weapon fires
+  `Fireball`, `Crossbow`, `Bow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
+- `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects, `Charge`: seconds held to strength), when a weapon fires
   (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead), what they are doing (`EnemyBrain`, a
   small state machine: idle, hunt, position, wind up, recover), how a room's enemies fight as a team (`Squad`:
   taking turns, flank spots),
@@ -128,7 +129,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   and closed doors on it, and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
   the floor texture shows). `models/` holds the models: `CharacterModel` (KayKit characters, animated), `HeroBars` (health and ammo over the hero) and
-  `CharacterLook` (who wears what), and the simple ones (chests, loot, shots, torches, the stairs' arch)
+  `CharacterLook` (who wears what), and the simple ones (chests, loot, shots, torches, the stairs' arch, the bow in hand: `BowModel`, picked with the others by `WeaponModel`)
 - `scripts/run` – `RunState`: what a run carries down the stairs (floor, gear, health, potions, experience);
   `Experience`: levels from kills, each adding maximum health
 - `scripts/main.gd` – composition root (one floor): wires controls to the player and applies the room rules

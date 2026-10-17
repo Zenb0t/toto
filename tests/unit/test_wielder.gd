@@ -91,3 +91,25 @@ func test_a_wielder_is_ready_until_it_starts_an_attack() -> void:
 
 	assert_true(before)
 	assert_false(wielder.is_ready())
+
+
+func test_the_time_the_button_was_held_reaches_a_weapon_that_charges() -> void:
+	var bow := Bow.new()
+	bow.windup = 0.0
+	var wielder := Wielder.new(bow)
+	wielder.start(Vector2.RIGHT, 100.0, null, 0.0)
+
+	var arrow: Shot = wielder.advance(0.0, ORIGIN)[0]
+
+	assert_eq(arrow.damage, bow.min_damage)
+
+
+func test_an_attack_started_without_a_hold_time_is_fully_charged() -> void:
+	var bow := Bow.new()
+	bow.windup = 0.0
+	var wielder := Wielder.new(bow)
+	wielder.start(Vector2.RIGHT, 100.0)
+
+	var arrow: Shot = wielder.advance(0.0, ORIGIN)[0]
+
+	assert_eq(arrow.damage, bow.max_damage)

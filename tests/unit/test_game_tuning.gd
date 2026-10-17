@@ -169,3 +169,8 @@ func test_damage_and_healing_knobs_count_health_points() -> void:
 
 func test_two_punches_do_what_one_magic_missile_does() -> void:
 	assert_eq(Knuckles.new().damage * 2, MagicMissile.new().shot_damage)
+
+
+func test_the_bow_is_among_the_weapons_the_player_can_find() -> void:
+	assert_has(GameTuning.weapon_ids(), "bow")
+	assert_eq(GameTuning.weapon(GameTuning.create(), "bow").id, "bow")

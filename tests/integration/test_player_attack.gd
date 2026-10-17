@@ -249,3 +249,51 @@ func test_using_a_utility_says_which_one() -> void:
 	player.use_utility(Vector2.RIGHT)
 
 	assert_signal_emitted_with_parameters(player, "utility_used", ["shield"])
+
+
+func test_a_bow_drawn_for_a_full_charge_fires_a_piercing_arrow() -> void:
+	var player := _player()
+	player.equip_weapon(Bow.new())
+	watch_signals(player)
+
+	player.attack(Vector2.RIGHT, null, 1.0, player.weapon.charge_seconds())
+	await wait_seconds(player.weapon.windup + MARGIN)
+
+	assert_true(_fired_shot(player).pierces)
+
+
+func test_a_bow_tapped_fires_a_weak_arrow() -> void:
+	var player := _player()
+	var bow := Bow.new()
+	player.equip_weapon(bow)
+	watch_signals(player)
+
+	player.attack(Vector2.RIGHT, null, 1.0, 0.0)
+	await wait_seconds(bow.windup + MARGIN)
+
+	assert_eq(_fired_shot(player).damage, bow.min_damage)
+
+
+func test_the_hero_walks_slower_while_drawing_the_bow() -> void:
+	var player := _player()
+	player.equip_weapon(Bow.new())
+	player.move(Vector2.RIGHT)
+	await wait_physics_frames(2)
+	var walking := player.velocity.length()
+
+	player.charging = true
+	await wait_physics_frames(2)
+
+	assert_almost_eq(player.velocity.length(), walking * player.weapon.charging_move_share(), 0.01)
+
+
+func test_charging_does_not_slow_a_weapon_that_does_not_charge() -> void:
+	var player := _player()
+	player.move(Vector2.RIGHT)
+	await wait_physics_frames(2)
+	var walking := player.velocity.length()
+
+	player.charging = true
+	await wait_physics_frames(2)
+
+	assert_almost_eq(player.velocity.length(), walking, 0.01)

@@ -64,7 +64,7 @@ func _show(color: Color, label: String, look: Look) -> void:
 func _shape(color: Color, look: Look) -> Node3D:
 	match look:
 		Look.WEAPON:
-			var weapon: Node3D = load(CharacterLook.WEAPONS_PATH % CharacterLook.weapon_model(_weapon_id)).instantiate()
+			var weapon := WeaponModel.instance(_weapon_id)
 			weapon.scale = Vector3.ONE * CharacterModel.HEIGHT / CharacterModel.MODEL_HEIGHT * WEAPON_SCALE
 			weapon.rotation.z = PI / 2.0
 			var holder := Node3D.new()
