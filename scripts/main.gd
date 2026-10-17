@@ -32,6 +32,7 @@ var _lava := LavaBurn.new()
 var _exploration := Exploration.new()
 var _fog: FogView
 var _minimap := MinimapView.new()
+var _big_map := MapOverlay.new()
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
@@ -93,6 +94,7 @@ func _ready() -> void:
 	add_child(_fog)
 	_hud_layer.add_child(_minimap)
 	_minimap.visible = _settings.load_minimap_shown()
+	$Overlay.add_child(_big_map)
 	_update_sight()
 	_progress = _create_progress()
 	_belt.changed.connect(_refresh_potions)
@@ -190,6 +192,8 @@ func _connect_controls() -> void:
 	_loot_card.leave_pressed.connect(_close_offer)
 	_potion_bar.drink_requested.connect(_drink)
 	_map_toggle.pressed.connect(_toggle_minimap)
+	_minimap.pressed.connect(_open_big_map)
+	_big_map.closed.connect(func() -> void: get_tree().paused = false)
 
 
 func _connect_keyboard_mouse() -> void:
@@ -389,6 +393,14 @@ func _update_sight() -> void:
 func _toggle_minimap() -> void:
 	_minimap.visible = not _minimap.visible
 	_warn_if_failed(_settings.save_minimap_shown(_minimap.visible), "the minimap setting")
+
+
+## The whole map fills the screen and the game waits until it is closed.
+func _open_big_map() -> void:
+	if _run_over:
+		return
+	get_tree().paused = true
+	_big_map.open(_map, _exploration, DungeonView.world_to_cell(_player.global_position))
 
 
 ## Lava burns whoever stands in it; shallow water slows whoever wades through it.

@@ -299,6 +299,12 @@ shape shows through the gaps. It redraws whenever sight does. Enemies and loot a
 finding the way, and the fog already hides what you haven't seen. The **Map** button under the help line (or
 M) shows or hides it, and the choice is saved with the settings so it holds across floors and runs.
 
+**Big map** (`MapOverlay`). Tapping (or clicking) the minimap opens the same picture big over a dimmed screen, and
+the game pauses until it is closed by a tap, a click, Esc or M. It is cropped to what has been explored, plus a
+two-cell border, and scaled by a whole number of pixels per cell (at most 12, so a lone room doesn't turn into
+blocks) so every cell stays a crisp square. It opens only from the minimap, so hiding the minimap hides the
+way in too.
+
 Enemies find their way around walls and pillars (`Pathfinder`, on Godot's `AStarGrid2D`) when they can't
 see the player, and only shoot with a clear line; fireball throwers lob over cover.
 

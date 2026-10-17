@@ -1,7 +1,10 @@
 class_name MinimapView
 extends Control
 ## The minimap on screen: the painter's picture, enlarged without smoothing so each cell stays a crisp square,
-## over a dark backing. Draws no rules of its own; the composition root says when to refresh.
+## over a dark backing. Draws no rules of its own; the composition root says when to refresh. Tapping it
+## asks to see the whole map.
+
+signal pressed
 
 const PIXELS_PER_CELL := 2
 const BACKING_COLOR := Color(0, 0, 0, 0.45)
@@ -13,7 +16,7 @@ var _picture := TextureRect.new()
 
 func _init() -> void:
 	position = MARGIN
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	var backing := ColorRect.new()
 	backing.color = BACKING_COLOR
 	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -30,3 +33,10 @@ func _init() -> void:
 func show_map(map: DungeonMap, exploration: Exploration, player_cell: Vector2i) -> void:
 	_picture.texture = ImageTexture.create_from_image(MinimapPainter.paint(map, exploration, player_cell))
 	size = Vector2(map.size * PIXELS_PER_CELL)
+
+
+## Touches reach here as clicks too (Godot copies one into the other).
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		pressed.emit()
+		accept_event()

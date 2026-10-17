@@ -22,6 +22,7 @@ and mouse, following whichever you used last.
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
 | **Map** (top left) | Show or hide the minimap; the choice is remembered |
+| Tap the minimap | Open the whole map, big on the screen (the game waits). Tap, click, Esc or M closes it |
 | **Weapon: …** (top right) | Testing aid: cycle through every weapon |
 | **II** (top right) | Pause menu: resume, customize controls, tune gameplay, restart run |
 
@@ -35,7 +36,7 @@ and mouse, following whichever you used last.
 | Right click or Space | Utility, toward the cursor |
 | 1, 2, 3 | Drink a potion |
 | E | Take the item you're standing on |
-| M | Show or hide the minimap |
+| M | Show or hide the minimap; closes the big map when it is open |
 | Q | Next weapon (testing aid) |
 | Esc | Pause menu; in the Tune screen, back one page |
 
@@ -116,7 +117,7 @@ Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.
 - `scripts/settings` – saved settings: `ControlLayout`, `GameSettings` (what is saved, and how) on top of
   `SettingsStore` (sections in a ConfigFile)
 - `scripts/ui` – touch widgets (`TouchStick`, `AimButton`, `TouchControls`), `KeyboardMouseControls`, `PauseMenu`, `LayoutEditor`,
-  `TuningPanel`, `TuningSender`, `LootCard`, `MinimapView` (with `MinimapPainter`, which paints the picture)
+  `TuningPanel`, `TuningSender`, `LootCard`, `MinimapView` (with `MinimapPainter`, which paints the picture), `MapOverlay` (the big map)
 - `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `SlashEffect`, and the loot on the floor
   (`PickupArea`, `Chest`, `ItemDrop`). The player holds no input code
 - `scripts/view3d` – how the game is shown: the 2D world runs the game and `WorldView3D` shows it in 3D.
