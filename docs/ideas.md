@@ -235,6 +235,14 @@ see used). Keep it light for mobile: no scrolls of identify, and bad potions are
 **Sketch.** A fixed number of quick slots (3), with a small picker to choose what sits in them; or one potion
 button that opens a radial menu.
 
+### E5. A campfire kit
+
+**Why.** Rest spots are fixed (seeded campfires, and the fires of cleared camps). An item that builds one lets the
+player choose where to take the risk of resting.
+
+**Sketch.** A rare consumable: use it on open ground to build a campfire that works like any other rest spot
+(light it, heal to 50%, ambush roll), and stays for the rest of the run.
+
 ---
 
 ## Epic F: Brawl Stars flavour
