@@ -181,8 +181,11 @@ func test_damage_and_healing_knobs_count_health_points() -> void:
 	assert_does_not_have(keys, GameTuning.key("sword", "windup"))
 
 
-func test_two_punches_do_what_one_magic_missile_does() -> void:
-	assert_eq(Knuckles.new().damage * 2, MagicMissile.new().shot_damage)
+func test_a_magic_missile_is_worth_between_two_and_three_punches() -> void:
+	var punch := Knuckles.new().damage
+
+	assert_gt(MagicMissile.new().shot_damage, punch * 2)
+	assert_lte(MagicMissile.new().shot_damage, punch * 3)
 
 
 func test_the_bow_is_among_the_weapons_the_player_can_find() -> void:

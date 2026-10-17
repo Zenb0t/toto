@@ -36,19 +36,19 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 
 | Weapon | Behaviour | Aim shape |
 | --- | --- | --- |
-| Dagger (starter; an arc weapon) | A quick, short stab: reach 55, a 70° arc, 100 damage, reloads in 0.6 s. Two stabs kill a goblin, three a bandit; a full burst does half a Sword's | Cone |
-| Magic Missile (id `wand`) | One magic bolt, Dungeon Crawl's first spell. Goblins and apprentices cast it; the player finds it | Line |
+| Dagger (starter; an arc weapon) | A quick, short stab: reach 55, a 70° arc, 110 damage (was 100), reloads in 0.6 s. Two stabs kill a goblin (220 hp with the enemy health bonus), three a bandit (330), two do not; a full burst of three does a little over half a Sword's | Cone |
+| Magic Missile (id `wand`) | One magic bolt for 140 (was 100, about 115 damage per second at its 1.2 s reload), Dungeon Crawl's first spell. Goblins and apprentices cast it; the player finds it | Line |
 | Sword (an arc weapon) | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
 | Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (a drag to the button's edge throws half as far; dragging on past the button throws up to the max range, 280); arcs over walls and enemies and explodes where it lands for 200, hurting the thrower too; then the ground burns for 1.5 s, ticking 34 every 0.5 s (about 100 more to anyone who stays), like Barley's puddle. Burn damage per tick and burn time are Tune knobs | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
-| Lightning Bolt | Dungeon Crawl's bolt, shot like Jessie's: when it hits an enemy it jumps on to the nearest other enemy within 160, twice (never one it already hit) | Line |
-| Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 6 s; the first tick comes 0.6 s after it lands (a grace window to run out of it), then one every 0.6 s: ticks at 0.6, 1.2 ... 6.0 s, 10 of 50 = 500 to one that stays. Damage only comes from standing inside; nothing lingers after leaving. It used to last 3 s at 100 a tick with a tick on landing (same 500 total, spread thinner). Enemy casters (Necromancer, Skeletal mage) get the same numbers and the same grace window through the weapon. Doesn't hurt the thrower | Landing circle |
+| Lightning Bolt | Dungeon Crawl's bolt, shot like Jessie's: when it hits an enemy it jumps on to the nearest other enemy within 160, up to 3 times (4 enemies at most; never one it already hit), and every jump hits softer: 180 on the first enemy, then 117, 76, 49 (65% kept per jump, `ChainFalloff`). Tune knobs: first hit damage, damage kept per jump (0.3 to 1.0) and jumps (capped at 3 so tuning can't make it a screen-wide killer). Deep elf mages use the same bolt | Line |
+| Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 6 s; the first tick comes 0.6 s after it lands (a grace window to run out of it), then one every 0.6 s: ticks at 0.6, 1.2 ... 6.0 s, 10 of 50 = 500 to one that stays. Damage only comes from standing inside; nothing lingers after leaving. It used to last 3 s at 100 a tick with a tick on landing (same 500 total, spread thinner). **Poison doesn't stack:** a body inside several clouds takes at most one tick per 0.6 s, from whichever cloud ticks first, for that cloud's damage, so extra clouds only widen the coverage and add time (the same holds for enemy clouds on the player). Enemy casters (Necromancer, Skeletal mage) get the same numbers and the same grace window through the weapon. Doesn't hurt the thrower | Landing circle |
 | Battleaxe (an arc weapon) | Like Frank's hammer: a long wind-up, then a 180° sweep for 400 damage | Cone |
 | Bow | Like Angelo's bow in Brawl Stars: hold the button to draw, let go to shoot one fast arrow along a long, narrow line. A tap does 60 damage; the damage grows evenly with the time held to 240 at a full charge (1.5 s), and only a full charge pierces, hitting every enemy on the line once. The hero walks at half speed while drawing. Range 460 (a little past the Crossbow's 380; the hero sees 512), arrow speed 900 | Line, filling up (brighter, from the hero outward) as it charges |
-| Knuckles | Like El Primo's fists: a flurry of 4 short, fast punches 0.07 s apart, alternating a little to each side, each thrown from where you stand by then, 50 damage each (two punches to a Magic Missile). Fought bare-handed | Narrow cone |
+| Knuckles | Like El Primo's fists: a flurry of 4 short, fast punches 0.07 s apart, alternating a little to each side, each thrown from where you stand by then, 50 damage each (three punches are a bit more than a Magic Missile). Fought bare-handed | Narrow cone |
 
 **Health points, like Brawl Stars.** Health and damage are counted in big numbers (the hero has 1000, a bandit
-300, a Magic Missile does 100) rather than Dungeon Crawl's small ones, so weapons can be tuned finely (a punch
+300, a Magic Missile does 140) rather than Dungeon Crawl's small ones, so weapons can be tuned finely (a punch
 does half a missile) and tiers can come later without fractions. Tuned values saved on the old scale (×1) are
 multiplied by 100 when loaded (`GameSettings`, knobs marked `Knob.is_points`).
 
@@ -437,6 +437,17 @@ everyone, the thrower and other enemies included, exactly like the blast it foll
 fire hurts and a Shield blocks it. Its source is the thrower's ("your own Fireball"). The burn covers the blast
 area and starts ticking half a second after impact, so a target that stays takes 200 + 3 x 34, about 300; one
 that steps out of the blast right away only takes the 200 (dodging is the counter, as with Barley).
+
+**Poison does not stack.** A body that stands in several poison clouds takes poison as if it stood in one: one tick
+per 0.6 s at most, whichever cloud ticks first, for that cloud's damage. The rule is the pure `PoisonStatus`
+(`try_tick(now)`: has a full tick interval passed since the last poison tick that went through? a frame or three
+early still counts, so a lone cloud is never blocked by its own previous tick). Each poisonable body (`Enemy`,
+`Player`) owns one, because "when was I last poisoned" is a fact about the body, not about any cloud; clouds don't
+know each other and there is no registry or global. `PoisonCloud` overrides `LingeringZone._hurt` to call the
+body's `take_poison(damage, source, now)` (`now` is physics frames over the tick rate) instead of `take_damage`.
+A body stepping from one cloud into another is still limited to one tick per 0.6 s, and a Shield blocks poison
+without using up the interval. Fire is a different effect and keeps its own rule: `BurningGround` still calls
+`take_damage`, so poison and fire both apply together, and overlapping fires still add up.
 Like explosions and clouds, it is a plain 2D node; the 3D view has nothing mirroring those, so the fire needs no mirror either.
 
 ## Explicitly deferred

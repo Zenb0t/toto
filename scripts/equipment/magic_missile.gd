@@ -5,7 +5,7 @@ extends Weapon
 
 var shot_speed := 360.0
 var shot_range := 420.0
-var shot_damage := 100
+var shot_damage := 140
 
 
 func _init() -> void:

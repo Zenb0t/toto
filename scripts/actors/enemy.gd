@@ -42,6 +42,8 @@ const PULL_SPEED := 900.0
 const PULL_STOP_GAP := 8.0
 
 var health := Health.new(DEFAULT_MAX_HEALTH)
+## When poison last ticked on it; clouds overlapping it don't add up.
+var poison := PoisonStatus.new()
 ## What kind of monster this is. Set with become() before it joins the world.
 var monster: Monster = Bestiary.by_id("bandit")
 ## Where it looks: at its target while fighting, where it is going otherwise, and along its aim while
@@ -117,6 +119,12 @@ func chase(target: Node2D) -> void:
 
 func take_damage(amount: int, _source := "") -> void:
 	health.take_damage(amount)
+
+
+## A poison tick: hurts unless poison already ticked on this enemy within the last tick interval (no stacking).
+func take_poison(amount: int, source: String, now: float) -> void:
+	if poison.try_tick(now):
+		take_damage(amount, source)
 
 
 ## Acts at a fraction of its speed (moving, winding up, recovering) for a while.

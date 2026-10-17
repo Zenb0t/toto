@@ -61,6 +61,18 @@ func test_two_dagger_stabs_kill_a_goblin_and_three_kill_a_bandit() -> void:
 	assert_gt(Bestiary.by_id("bandit").max_health, damage * 2)
 
 
+func test_the_dagger_does_110_and_keeps_its_breakpoints_against_enemies_as_they_are_met() -> void:
+	var damage := Dagger.new().damage
+	var goblin := roundi(Bestiary.by_id("goblin").max_health * Enemy.DEFAULT_HEALTH_MULTIPLIER)
+	var bandit := roundi(Bestiary.by_id("bandit").max_health * Enemy.DEFAULT_HEALTH_MULTIPLIER)
+
+	assert_eq(damage, 110)
+	assert_lte(goblin, damage * 2, "two stabs kill a goblin")
+	assert_gt(goblin, damage, "one doesn't")
+	assert_lte(bandit, damage * 3, "three stabs kill a bandit")
+	assert_gt(bandit, damage * 2, "two don't")
+
+
 func test_the_fireball_is_lobbed_to_land_where_it_was_aimed() -> void:
 	var fireball := Fireball.new()
 
@@ -170,6 +182,42 @@ func test_a_lightning_bolt_chains_like_jessies_shot_instead_of_piercing() -> voi
 	assert_false(bolt.pierces)
 	assert_eq(bolt.bounces, 0)
 	assert_gt(bolt.chains, 0)
+
+
+func test_a_magic_missile_hits_for_140() -> void:
+	var bolt: Shot = MagicMissile.new().attacks(ORIGIN, Vector2.RIGHT, 0.0)[0]
+
+	assert_eq(bolt.damage, 140)
+
+
+func test_a_lightning_bolt_hits_180_and_keeps_65_percent_per_jump() -> void:
+	var weapon := LightningBolt.new()
+	var bolt: Shot = weapon.attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)[0]
+
+	assert_eq(bolt.damage, 180)
+	assert_eq(bolt.chains, 3)
+	assert_eq(bolt.chain_falloff, 0.65)
+	assert_eq(weapon.chain_range, 160.0)
+
+
+func test_the_lightning_bolt_cannot_be_tuned_past_three_jumps() -> void:
+	var jumps: Knob
+	for knob in LightningBolt.new().knobs():
+		if knob.field == "chains":
+			jumps = knob
+	var weapon := LightningBolt.new()
+	weapon.chains = 9
+
+	assert_eq(jumps.max_value, 3.0)
+	assert_eq((weapon.attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)[0] as Shot).chains, 3)
+
+
+func test_the_lightning_bolt_offers_a_damage_kept_per_jump_knob() -> void:
+	var fields: Array[String] = []
+	for knob in LightningBolt.new().knobs():
+		fields.append(knob.field)
+
+	assert_has(fields, "chain_falloff")
 
 
 func test_a_mephitic_cloud_is_lobbed_where_aimed_and_leaves_a_cloud() -> void:

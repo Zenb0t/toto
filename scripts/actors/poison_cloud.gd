@@ -3,7 +3,7 @@ extends LingeringZone
 ## A lingering cloud of poison (Dungeon Crawl's Mephitic Cloud): every foe inside it takes damage at
 ## intervals until it dissipates. The player's clouds hurt enemies; enemies' clouds hurt the player.
 
-const TICK_SECONDS := 0.6
+const TICK_SECONDS := PoisonStatus.TICK_SECONDS
 const COLOR := Color(0.55, 0.85, 0.3)
 const PUFFS := 7
 
@@ -20,6 +20,11 @@ func _init(radius: float, damage: int, seconds: float, hurts_player: bool, first
 
 func _target_groups() -> Array[StringName]:
 	return [Player.GROUP if _hurts_player else Enemy.GROUP]
+
+
+## Poison doesn't stack (see PoisonStatus): the body decides whether this tick goes through.
+func _hurt(body: Node2D) -> void:
+	body.take_poison(_damage, source, Engine.get_physics_frames() / float(Engine.physics_ticks_per_second))
 
 
 ## Puffs that drift around the middle and thin out as the cloud dissipates.

@@ -29,6 +29,8 @@ const BASE_FILL_ALPHA := 0.25
 const BASE_RING_WIDTH := 2.5
 
 var health := Health.new(MAX_HEALTH)
+## When poison last ticked on the hero; clouds overlapping each other don't add up.
+var poison := PoisonStatus.new()
 ## What last hurt the hero: what killed them, once they are dead.
 var last_hurt_by := ""
 var facing := Vector2.RIGHT
@@ -159,6 +161,15 @@ func take_damage(amount: int, source := "") -> void:
 		return
 	last_hurt_by = source
 	health.take_damage(amount)
+
+
+## A poison tick: hurts unless poison already ticked on the player within the last tick interval (no stacking).
+## A Shield blocks it without using up the interval.
+func take_poison(amount: int, source: String, now: float) -> void:
+	if is_shielded():
+		return
+	if poison.try_tick(now):
+		take_damage(amount, source)
 
 
 func _physics_process(delta: float) -> void:

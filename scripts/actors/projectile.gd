@@ -85,7 +85,7 @@ func _on_body_entered(body: Node2D) -> void:
 	if _shot.pulls and body.has_method("pull_toward"):
 		body.pull_toward(_shot.origin)
 	elif not _shot.explodes():
-		body.take_damage(_shot.damage, _shot.source)
+		body.take_damage(ChainFalloff.damage_after(_shot.damage, _shot.chain_falloff, _shot.chains - _chains_left), _shot.source)
 	if _chains_left > 0 and _chain_from(body):
 		return
 	if not _shot.pierces:

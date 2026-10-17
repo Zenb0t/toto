@@ -35,6 +35,8 @@ var burn_damage := 0
 ## chain_range (never one it already hit), this many times.
 var chains := 0
 var chain_range := 0.0
+## The share of `damage` kept at each jump (see ChainFalloff): `damage` is what the first foe takes.
+var chain_falloff := 1.0
 ## A pulling shot drags the first foe it hits back to where it was fired from.
 var pulls := false
 ## Seconds after the attack before this shot sets off, from wherever its attacker stands by then (a flurry).
