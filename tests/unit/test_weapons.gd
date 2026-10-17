@@ -33,6 +33,34 @@ func test_the_sword_swings_an_arc_from_the_player() -> void:
 	assert_eq(swing.arc_degrees, sword.arc_degrees)
 
 
+func test_the_dagger_stabs_a_short_arc_from_the_player() -> void:
+	var dagger := Dagger.new()
+
+	var stab: Slash = dagger.attacks(ORIGIN, Vector2.RIGHT, 0.0)[0]
+
+	assert_eq(stab.origin, ORIGIN)
+	assert_eq(stab.reach, dagger.reach)
+	assert_eq(stab.arc_degrees, dagger.arc_degrees)
+
+
+func test_the_dagger_reaches_less_and_hits_lighter_than_the_sword_but_reloads_faster() -> void:
+	var dagger := Dagger.new()
+	var sword := Sword.new()
+
+	assert_lt(dagger.reach, sword.reach)
+	assert_lt(dagger.arc_degrees, sword.arc_degrees)
+	assert_lt(dagger.damage, sword.damage)
+	assert_lt(dagger.reload, sword.reload)
+
+
+func test_two_dagger_stabs_kill_a_goblin_and_three_kill_a_bandit() -> void:
+	var damage := Dagger.new().damage
+
+	assert_lte(Bestiary.by_id("goblin").max_health, damage * 2)
+	assert_lte(Bestiary.by_id("bandit").max_health, damage * 3)
+	assert_gt(Bestiary.by_id("bandit").max_health, damage * 2)
+
+
 func test_the_fireball_is_lobbed_to_land_where_it_was_aimed() -> void:
 	var fireball := Fireball.new()
 
