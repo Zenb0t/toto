@@ -13,6 +13,8 @@ signal returned_to_dead_zone
 
 ## How far the finger must move before a press counts as manual aim instead of a tap, in viewport pixels.
 const DEFAULT_DEAD_ZONE := 32.0
+## The attack button's is a little larger, so a slightly sloppy tap still auto-aims.
+const ATTACK_DEAD_ZONE := 36.0
 ## How far around the button a touch still grabs it, as a multiple of the button's radius.
 const DEFAULT_CATCH_SCALE := 1.6
 ## How far past the button a drag keeps adding strength (full strength), as a multiple of its radius. The

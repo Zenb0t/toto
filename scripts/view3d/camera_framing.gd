@@ -4,7 +4,7 @@ extends RefCounted
 ## bottom of the screen), aimed a little past them so more of what is ahead shows.
 
 const DEFAULT_PITCH_DEGREES := 55.0
-const DEFAULT_DISTANCE := 17.0
+const DEFAULT_DISTANCE := 26.5
 const DEFAULT_FIELD_OF_VIEW := 38.0
 const DEFAULT_LOOK_AHEAD := 1.5
 

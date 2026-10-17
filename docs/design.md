@@ -49,8 +49,8 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 (each weapon its own reload time), and there is only a short gap between attacks (0.3 s), so a burst of three is
 possible, then a wait. Over the hero's head (`HeroBars`): a green health bar with the number on it, and an orange
 segment per charge, the reloading one filling up in a darker orange. The attack button only darkens while empty.
-Enemies hold one charge that reloads 1.3× slower than the player's (Tune → Enemies: reload slowness), about the pace
-they had before ammo. Utilities keep a cooldown.
+Enemies hold one charge that reloads 1.1× slower than the player's (Tune → Enemies: reload slowness), the pace the
+playtest settled on (1.6× the old cooldown, from before ammo). Utilities keep a cooldown.
 
 | Utility | Behaviour | Aim |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ strong: it made every fight winnable by waiting. Healing is now only from potion
 
 You carry up to 3 of each kind in the potion belt (buttons under the weapon switch, one per kind held, with
 the count); tap one to drink it. Runs start with one Potion of Healing. Potions lie on the floor (half of the
-floor finds), sit beside chests (50%), and drop from enemies (15%, when they drop no gear). Walking over one
+floor finds), sit beside chests (30%), and drop from enemies (10%, when they drop no gear). Walking over one
 picks it up; there is nothing to choose, unless that kind is full, then it stays where it is. While haste or
 might works, a ring in its colour shows on the floor around the hero. Each potion's numbers are in Tune.
 
@@ -124,7 +124,7 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
 
 - **Chests.** Clearing a room leaves a chest at its centre. Walking onto it opens it and drops a weapon.
   The open chest stays, so you can see which rooms you have looted.
-- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot, default 10%) to drop a weapon.
+- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot, default 5%) to drop a weapon.
 - **What drops.** Chests hold a random weapon or utility you don't already hold (a duplicate is no choice).
   An enemy's rare drop is the weapon it fought with (or a random find if you already hold that one).
   On the floor, weapons are round and utilities square.

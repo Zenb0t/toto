@@ -114,7 +114,7 @@ static func create() -> Tuning:
 		params.append_array(_item_params(each, potion_group(each.id)))
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", ENEMIES_GROUP, 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
-		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, 1.0, true),
+		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, Enemy.DEFAULT_HEALTH_MULTIPLIER, true),
 		Tuning.Param.new(
 			ENEMY_COOLDOWN_MULTIPLIER, "Reload slowness (x)", ENEMIES_GROUP, 1, 5, 0.1, Enemy.DEFAULT_COOLDOWN_MULTIPLIER),
 		Tuning.Param.new(
@@ -126,7 +126,7 @@ static func create() -> Tuning:
 		Tuning.Param.new(
 			LOOT_CHEST_POTION_CHANCE, "Chest potion chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_CHEST_POTION_CHANCE),
 		Tuning.Param.new(
-			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
+			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.ATTACK_DEAD_ZONE),
 		Tuning.Param.new(
 			CONTROLS_UTILITY_DEAD_ZONE, "Utility dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(

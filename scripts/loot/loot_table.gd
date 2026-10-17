@@ -2,11 +2,11 @@ class_name LootTable
 extends RefCounted
 ## What loot drops. Pure: the caller passes the random number generator, so results can be reproduced.
 
-const DEFAULT_ENEMY_DROP_CHANCE := 0.1
+const DEFAULT_ENEMY_DROP_CHANCE := 0.05
 ## Chance a defeated enemy leaves a potion (rolled when it drops no item).
-const DEFAULT_POTION_DROP_CHANCE := 0.15
+const DEFAULT_POTION_DROP_CHANCE := 0.1
 ## Chance a chest holds a potion as well as its item.
-const DEFAULT_CHEST_POTION_CHANCE := 0.5
+const DEFAULT_CHEST_POTION_CHANCE := 0.3
 ## Share of the items lying on the floor from the start that are potions.
 const FLOOR_POTION_SHARE := 0.5
 

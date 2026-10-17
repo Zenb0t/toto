@@ -12,13 +12,15 @@ signal attack_fired(attacks: Array)
 
 ## Every enemy is in this group, so area attacks can find them.
 const GROUP := &"enemies"
-const DEFAULT_MOVE_SPEED := 80.0
+const DEFAULT_MOVE_SPEED := 85.0
 const DEFAULT_MAX_HEALTH := 3
+## Every kind of enemy is this much tougher than the Bestiary lists it.
+const DEFAULT_HEALTH_MULTIPLIER := 1.1
 ## Enemies hold one charge of ammo and reload it this many times slower than the player does with the same
 ## weapon...
-const DEFAULT_COOLDOWN_MULTIPLIER := 1.3
+const DEFAULT_COOLDOWN_MULTIPLIER := 1.1
 ## ...and wind up for this much longer, showing where the attack will go.
-const DEFAULT_TELEGRAPH_SECONDS := 0.4
+const DEFAULT_TELEGRAPH_SECONDS := 0.3
 const RADIUS := 11.0
 const BODY_COLOR := Color(0.9, 0.35, 0.3)
 ## The ring on the floor under the enemy (the body itself is in the 3D view).
