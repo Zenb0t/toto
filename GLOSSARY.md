@@ -23,6 +23,14 @@ _Avoid_: Town, hub, base, safe zone
 The village building where the hero takes a full rest: full health after a short wait, with no risk and no limit on uses.
 _Avoid_: Tavern, hotel
 
+**Village lot**:
+One piece of the village, such as a house, the inn or the square, with its doorstep and the things that always stand by it. A village is fitted together from lots.
+_Avoid_: Plot, tile, building (a lot holds more than its building)
+
+**Square**:
+The open space at the heart of the village, with the well, where the streets from the four gates meet. The inn faces it.
+_Avoid_: Plaza, centre, market (that's a lot of its own)
+
 **Quadrant exit**:
 A gap in a quadrant's border leading to the neighbouring quadrant, one in the middle of each side. Blocked by a barricade until that quadrant exists.
 _Avoid_: Gate (that's the village's), stairs, door
