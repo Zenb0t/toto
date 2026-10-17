@@ -19,6 +19,18 @@ _Avoid_: Field, overworld
 A gap in a quadrant's border leading to the neighbouring quadrant, one in the middle of each side. Blocked by a barricade until that quadrant exists.
 _Avoid_: Gate (that's the village's), stairs, door
 
+**Ruin**:
+A broken-walled set piece in one corner of the plains, home to the toughest group on the map and a guaranteed chest.
+_Avoid_: Vault (for the ruin itself), fort, castle
+
+**Camp**:
+The spot on the plains where one group of monsters lives, asleep or wandering. Camps farther from the village hold tougher groups.
+_Avoid_: Spawn, nest, lair (that's a branch)
+
+**Crypt entrance**:
+A small stone mausoleum on the plains with stairs down to the first level of the crypt.
+_Avoid_: Dungeon entrance, portal
+
 ### Crypt
 
 **Lich**:
