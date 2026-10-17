@@ -44,6 +44,32 @@ func test_the_fireball_is_lobbed_to_land_where_it_was_aimed() -> void:
 	assert_eq(shot.blast_radius, fireball.blast_radius)
 
 
+func test_the_fireball_leaves_burning_ground_over_its_blast() -> void:
+	var fireball := Fireball.new()
+
+	var shot: Shot = fireball.attacks(ORIGIN, Vector2.RIGHT, 150.0)[0]
+
+	assert_true(shot.leaves_burning_ground())
+	assert_eq(shot.burn_damage, fireball.burn_damage)
+	assert_eq(shot.burn_seconds, fireball.burn_seconds)
+
+
+func test_a_fireball_without_burn_time_leaves_no_fire() -> void:
+	var fireball := Fireball.new()
+	fireball.burn_seconds = 0.0
+
+	var shot: Shot = fireball.attacks(ORIGIN, Vector2.RIGHT, 150.0)[0]
+
+	assert_false(shot.leaves_burning_ground())
+
+
+func test_the_fireballs_burn_is_tunable() -> void:
+	var fields := Fireball.new().knobs().map(func(knob: Knob) -> String: return knob.field)
+
+	assert_has(fields, "burn_damage")
+	assert_has(fields, "burn_seconds")
+
+
 func test_the_fireball_never_lands_beyond_its_max_range() -> void:
 	var fireball := Fireball.new()
 
@@ -128,6 +154,15 @@ func test_a_mephitic_cloud_is_lobbed_where_aimed_and_leaves_a_cloud() -> void:
 	assert_eq(shot.travel_range, 200.0)
 	assert_false(shot.explodes())
 	assert_false(weapon.needs_line_of_sight())
+
+
+func test_a_mephitic_cloud_gives_a_grace_window_and_keeps_its_500_total() -> void:
+	var weapon := MephiticCloud.new()
+	var shot: Shot = weapon.attacks(Vector2.ZERO, Vector2.UP, 200.0)[0]
+
+	assert_eq(shot.first_tick_delay, 0.6)
+	var ticks := floori((shot.cloud_seconds - shot.first_tick_delay) / PoisonCloud.TICK_SECONDS + 0.001) + 1
+	assert_eq(ticks * shot.damage, 500)
 
 
 func test_a_battleaxe_hits_harder_and_wider_than_a_sword_but_slower() -> void:

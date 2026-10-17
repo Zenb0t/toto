@@ -38,10 +38,10 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | --- | --- | --- |
 | Magic Missile (starter; id `wand`) | One magic bolt, Dungeon Crawl's first spell | Line |
 | Sword | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
-| Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (a drag to the button's edge throws half as far; dragging on past the button throws up to the max range, 280); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
+| Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (a drag to the button's edge throws half as far; dragging on past the button throws up to the max range, 280); arcs over walls and enemies and explodes where it lands for 200, hurting the thrower too; then the ground burns for 1.5 s, ticking 34 every 0.5 s (about 100 more to anyone who stays), like Barley's puddle. Burn damage per tick and burn time are Tune knobs | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
 | Lightning Bolt | Dungeon Crawl's bolt, shot like Jessie's: when it hits an enemy it jumps on to the nearest other enemy within 160, twice (never one it already hit) | Line |
-| Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 3 s that hurts enemies inside every 0.6 s. Doesn't hurt the thrower | Landing circle |
+| Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 6 s; the first tick comes 0.6 s after it lands (a grace window to run out of it), then one every 0.6 s: ticks at 0.6, 1.2 ... 6.0 s, 10 of 50 = 500 to one that stays. Damage only comes from standing inside; nothing lingers after leaving. It used to last 3 s at 100 a tick with a tick on landing (same 500 total, spread thinner). Enemy casters (Necromancer, Skeletal mage) get the same numbers and the same grace window through the weapon. Doesn't hurt the thrower | Landing circle |
 | Battleaxe | Like Frank's hammer: a long wind-up, then a 180° sweep for 400 damage | Cone |
 | Bow | Like Angelo's bow in Brawl Stars: hold the button to draw, let go to shoot one fast arrow along a long, narrow line. A tap does 60 damage; the damage grows evenly with the time held to 240 at a full charge (1.5 s), and only a full charge pierces, hitting every enemy on the line once. The hero walks at half speed while drawing. Range 460 (a little past the Crossbow's 380; the hero sees 512), arrow speed 900 | Line, filling up (brighter, from the hero outward) as it charges |
 | Knuckles | Like El Primo's fists: a flurry of 4 short, fast punches 0.07 s apart, alternating a little to each side, each thrown from where you stand by then, 50 damage each (two punches to a Magic Missile). Fought bare-handed | Narrow cone |
@@ -164,7 +164,7 @@ Enemies carry **the same weapons as the player**, and the weapon decides how the
 | Sword | Rushes in and swings |
 | Crossbow | Gets close, then fires its fan |
 | Magic Missile | Keeps to mid range and shoots |
-| Fireball | Hangs back and lobs; backs away if you get close. Its blast hurts other enemies too |
+| Fireball | Hangs back and lobs; backs away if you get close. Its blast and the fire it leaves hurt other enemies too |
 | Bow | Keeps to mid range. Enemies never draw it: after the telegraph (the line previewed on the floor) the arrow flies fully charged, 240 damage and piercing, so it hurts and it is a good reason to step aside. No monster carries one yet, so it only shows up as the player's find |
 
 Within their comfortable range they circle the player instead of standing still.
@@ -420,6 +420,15 @@ Mage, Rogue and hooded Rogue, and four skeletons, all on one rig, with weapons a
   the hero's stays down until the summary. Animations only run while the character is in sight.
 - Size: the animations are imported once (with the Knight) and shared, so the five models add about 2 MB
   to the phone download.
+
+**Lingering ground.** Mephitic Cloud's poison and the Fireball's fire share one rule, `LingeringZone`: a circle
+that hurts the bodies inside it each time a `TickClock` (pure: first tick, interval, tick count) says a tick is
+due, until its time runs out. `PoisonCloud` hurts one side (foes of whoever threw it); `BurningGround` hurts
+everyone, the thrower and other enemies included, exactly like the blast it follows, so standing in your own
+fire hurts and a Shield blocks it. Its source is the thrower's ("your own Fireball"). The burn covers the blast
+area and starts ticking half a second after impact, so a target that stays takes 200 + 3 x 34, about 300; one
+that steps out of the blast right away only takes the 200 (dodging is the counter, as with Barley).
+Like explosions and clouds, it is a plain 2D node; the 3D view has nothing mirroring those, so the fire needs no mirror either.
 
 ## Explicitly deferred
 

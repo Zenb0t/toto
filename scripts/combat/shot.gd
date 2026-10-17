@@ -25,6 +25,12 @@ var bounces := 0
 ## Above zero, where the shot ends a poison cloud lingers for this long (see PoisonCloud).
 var cloud_seconds := 0.0
 var cloud_radius := 0.0
+## Seconds after landing before the cloud's first tick: a grace window to run out of it.
+var first_tick_delay := 0.0
+## Above zero, where an explosive shot lands fire burns across the blast area for this long, hurting everyone
+## in it burn_damage per tick (see BurningGround).
+var burn_seconds := 0.0
+var burn_damage := 0
 ## A chaining shot, like Jessie's in Brawl Stars, jumps from the foe it hits to the nearest other foe within
 ## chain_range (never one it already hit), this many times.
 var chains := 0
@@ -56,3 +62,7 @@ func explodes() -> bool:
 
 func leaves_cloud() -> bool:
 	return cloud_seconds > 0.0
+
+
+func leaves_burning_ground() -> bool:
+	return explodes() and burn_seconds > 0.0 and burn_damage > 0
