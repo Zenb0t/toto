@@ -10,25 +10,29 @@ const PUFFS := 7
 var _radius: float
 var _damage: int
 var _seconds: float
+var _first_tick_delay: float
 var _hurts_player: bool
 ## Who threw it (see Shot.source).
 var source := ""
 var _elapsed := 0.0
-var _until_tick := 0.0
+var _ticks_dealt := 0
+var _ticks_total: int
 
 
-func _init(radius: float, damage: int, seconds: float, hurts_player: bool) -> void:
+func _init(radius: float, damage: int, seconds: float, hurts_player: bool, first_tick_delay := 0.0) -> void:
 	_radius = radius
 	_damage = damage
 	_seconds = seconds
 	_hurts_player = hurts_player
+	_first_tick_delay = first_tick_delay
+	# Ticks at first_tick_delay, then every TICK_SECONDS up to and including the moment the cloud ends, each once.
+	_ticks_total = maxi(0, floori((seconds - first_tick_delay) / TICK_SECONDS + 0.001) + 1)
 
 
 func _physics_process(delta: float) -> void:
 	_elapsed += delta
-	_until_tick -= delta
-	if _until_tick <= 0.0:
-		_until_tick = TICK_SECONDS
+	if _ticks_dealt < _ticks_total and _elapsed >= _first_tick_delay + _ticks_dealt * TICK_SECONDS:
+		_ticks_dealt += 1
 		_hurt_foes_inside()
 	if _elapsed >= _seconds:
 		queue_free()
