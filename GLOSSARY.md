@@ -15,6 +15,14 @@ _Avoid_: Zone, region, level, floor (for an outdoor map)
 The open grassland of the centre quadrant around the village: groves, boulders, ponds and monster camps.
 _Avoid_: Field, overworld
 
+**Village**:
+The palisaded settlement in the centre of the plains where every run starts, with a gate on each side. No monsters live there, though they may chase the hero in.
+_Avoid_: Town, hub, base, safe zone
+
+**Inn**:
+The village building where the hero takes a full rest: full health after a short wait, with no risk and no limit on uses.
+_Avoid_: Tavern, hotel
+
 **Quadrant exit**:
 A gap in a quadrant's border leading to the neighbouring quadrant, one in the middle of each side. Blocked by a barricade until that quadrant exists.
 _Avoid_: Gate (that's the village's), stairs, door
