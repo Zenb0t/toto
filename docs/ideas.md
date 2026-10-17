@@ -22,6 +22,8 @@ Suggested order (each epic leans on the ones before it):
 
 ### D1. Scale health and damage up (×10 or ×100)
 
+**Done** (×100, branch `ccr-84598e1b-ay8iry`, commit 47b4d16). D2 and D3 are still open.
+
 **Why.** Health is 2–14 and damage 1–4. At that scale, the smallest change is huge: +1 damage doubles a Magic
 Missile, Might's "+1" is worth 50% on one weapon and 25% on another, and Tune → Health × rounds a kobold's 2
 health to 2 or 3 with nothing in between. Balancing in 10% steps is impossible.
@@ -55,6 +57,17 @@ levelling feels the same). `Experience` stays a pure class.
 ---
 
 ## Epic A: Open-world generation (more like Dungeon Crawl)
+
+**Decided so far** (to move into the epic's map issue):
+- Maps twice today's area (tweak later).
+- Door locks are gone everywhere, boss arenas included.
+- Monster awareness (asleep / wandering / noticing) is part of this epic: it replaces the locks.
+- Until bands exist, chests only in vaults plus floor items scattered by density.
+- Still 5 floors, each one bigger.
+- Performance target: a reasonably modern phone. Build it properly from the start, but optimise only when it
+  shows up as a problem.
+- Still to discuss: layouts (A2), stairs vs. zones (A5, maybe no stairs: travel to the next zone), healing
+  outside fights (A8).
 
 ### A1. Larger, open layouts
 
