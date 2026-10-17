@@ -1,6 +1,7 @@
 class_name Ammo
 extends RefCounted
 ## Brawl Stars style ammo: a few charges, one spent per attack, reloading one at a time while not full.
+## Attacking throws away the charge being reloaded: firing again in quick succession costs that progress.
 
 var capacity: int
 ## Seconds to reload one charge.
@@ -24,11 +25,12 @@ func is_full() -> bool:
 	return _charges >= capacity
 
 
-## Spends a charge and returns true, or returns false when empty.
+## Spends a charge and returns true, or returns false when empty. The charge being reloaded starts over.
 func try_spend() -> bool:
 	if _charges <= 0:
 		return false
 	_charges -= 1
+	_reloading = 0.0
 	return true
 
 
