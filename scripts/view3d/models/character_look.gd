@@ -7,6 +7,8 @@ extends RefCounted
 
 const MODELS_PATH := "res://assets/kaykit_adventurers/%s.glb"
 const UNDEAD_MODELS_PATH := "res://assets/kaykit_skeletons/%s.glb"
+## A weapon with no model in hand (fists).
+const BARE_HANDS := ""
 const WEAPONS_PATH := "res://assets/kaykit_adventurers/weapons/%s.gltf"
 ## The model whose animations every character shares (they all use the same skeleton).
 const ANIMATED_MODEL := "Knight"
@@ -85,6 +87,8 @@ static func weapon_model(weapon_id: String) -> String:
 			return "staff"
 		"mephitic_cloud":
 			return "spellbook_open"
+		"knuckles":
+			return BARE_HANDS
 	return "wand"
 
 
@@ -97,6 +101,8 @@ static func attack_animation(weapon_id: String) -> String:
 			return "2H_Melee_Attack_Slice"
 		"crossbow":
 			return "1H_Ranged_Shoot"
+		"knuckles":
+			return "Unarmed_Melee_Attack_Punch_A"
 	return "Spellcast_Shoot"
 
 

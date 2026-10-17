@@ -27,6 +27,8 @@ var cloud_seconds := 0.0
 var cloud_radius := 0.0
 ## A pulling shot drags the first foe it hits back to where it was fired from.
 var pulls := false
+## Seconds after the attack before this shot sets off, from wherever its attacker stands by then (a flurry).
+var delay := 0.0
 var size := DEFAULT_SIZE
 var color := DEFAULT_COLOR
 

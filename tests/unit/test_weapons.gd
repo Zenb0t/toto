@@ -138,3 +138,29 @@ func test_a_battleaxe_hits_harder_and_wider_than_a_sword_but_slower() -> void:
 	assert_gt(axe.reload, sword.reload)
 	assert_gt(axe.windup, sword.windup)
 	assert_ne(axe.id, sword.id)
+
+
+func test_knuckles_throw_a_quick_flurry_of_short_punches() -> void:
+	var knuckles := Knuckles.new()
+
+	var punches := knuckles.attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)
+
+	assert_eq(punches.size(), knuckles.punches)
+	for index in punches.size():
+		var punch: Shot = punches[index]
+		assert_almost_eq(punch.delay, index * knuckles.punch_gap, 0.0001)
+		assert_eq(punch.travel_range, knuckles.punch_range)
+
+
+func test_knuckle_punches_alternate_sides_of_the_aim() -> void:
+	var punches := Knuckles.new().attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)
+
+	assert_lt((punches[0] as Shot).direction.y, 0.0)
+	assert_gt((punches[1] as Shot).direction.y, 0.0)
+
+
+func test_knuckles_reach_less_far_than_any_shooting_weapon() -> void:
+	var knuckles := Knuckles.new()
+
+	for shooter: Weapon in [MagicMissile.new(), Crossbow.new(), LightningBolt.new()]:
+		assert_lt(knuckles.aim_range(), shooter.aim_range(), shooter.id)

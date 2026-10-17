@@ -331,15 +331,29 @@ func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
 ## swinger).
 func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 	for attack: Variant in attacks:
-		if attack is Shot:
-			var projectile: Projectile = PROJECTILE_SCENE.instantiate()
-			projectile.launch(attack)
-			add_child(projectile)
-			_world.add_projectile(projectile)
+		if attack is Shot and attack.delay > 0.0:
+			get_tree().create_timer(attack.delay, false, true).timeout.connect(_follow_up.bind(attack, attacker))
+		elif attack is Shot:
+			_launch(attack)
 		elif attack is Slash:
 			add_child(SlashEffect.new(attack, attacker))
 		elif attack is Nova:
 			add_child(NovaEffect.new(attack))
+
+
+func _launch(shot: Shot) -> void:
+	var projectile: Projectile = PROJECTILE_SCENE.instantiate()
+	projectile.launch(shot)
+	add_child(projectile)
+	_world.add_projectile(projectile)
+
+
+## A delayed shot (a flurry's later punch) sets off from where its attacker stands now, if still standing.
+func _follow_up(shot: Shot, attacker: Node2D) -> void:
+	if not is_instance_valid(attacker) or not attacker.is_physics_processing():
+		return
+	shot.origin = Weapon.muzzle(attacker.global_position, shot.direction)
+	_launch(shot)
 
 
 ## Fog of war: the player sees through open floor, water and lava, not walls or closed doors. Enemies out of

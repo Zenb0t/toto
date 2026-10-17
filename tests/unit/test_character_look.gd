@@ -7,10 +7,15 @@ func test_every_monster_has_a_model() -> void:
 		assert_true(ResourceLoader.exists(look.model_path()), monster.id)
 
 
-func test_every_weapon_has_a_model_in_hand() -> void:
+func test_every_weapon_has_a_model_in_hand_or_is_fought_bare_handed() -> void:
 	for weapon_id in GameTuning.weapon_ids():
-		var path := CharacterLook.WEAPONS_PATH % CharacterLook.weapon_model(weapon_id)
-		assert_true(ResourceLoader.exists(path), weapon_id)
+		var model_name := CharacterLook.weapon_model(weapon_id)
+		if model_name != CharacterLook.BARE_HANDS:
+			assert_true(ResourceLoader.exists(CharacterLook.WEAPONS_PATH % model_name), weapon_id)
+
+
+func test_knuckles_are_fought_bare_handed() -> void:
+	assert_eq(CharacterLook.weapon_model("knuckles"), CharacterLook.BARE_HANDS)
 
 
 func test_every_weapon_swings_with_an_animation_the_models_have() -> void:

@@ -89,7 +89,10 @@ func hold(weapon_id: String) -> void:
 		for mesh in _meshes_in(held):
 			_meshes.erase(mesh)
 		held.queue_free()
-	var weapon: Node3D = load(CharacterLook.WEAPONS_PATH % CharacterLook.weapon_model(weapon_id)).instantiate()
+	var model_name := CharacterLook.weapon_model(weapon_id)
+	if model_name == CharacterLook.BARE_HANDS:
+		return
+	var weapon: Node3D = load(CharacterLook.WEAPONS_PATH % model_name).instantiate()
 	_weapon_slot.add_child(weapon)
 	_meshes.append_array(_meshes_in(weapon))
 
