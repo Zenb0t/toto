@@ -32,6 +32,7 @@ func test_attack_does_not_fire_the_instant_the_button_is_released() -> void:
 
 func test_attack_fires_after_the_weapons_wind_up() -> void:
 	var player := _player()
+	player.equip_weapon(MagicMissile.new())
 	watch_signals(player)
 
 	player.attack(Vector2.RIGHT)
@@ -92,6 +93,7 @@ func test_shots_carry_the_equipped_weapons_stats() -> void:
 
 func test_auto_aimed_attack_tracks_its_target_during_the_wind_up() -> void:
 	var player := _player()
+	player.equip_weapon(MagicMissile.new())
 	var target := Node2D.new()
 	target.position = Vector2(200, 0)
 	add_child_autofree(target)
@@ -106,6 +108,7 @@ func test_auto_aimed_attack_tracks_its_target_during_the_wind_up() -> void:
 
 func test_shot_starts_in_front_of_the_player_not_inside_it() -> void:
 	var player := _player()
+	player.equip_weapon(MagicMissile.new())
 	watch_signals(player)
 
 	player.attack(Vector2.RIGHT)

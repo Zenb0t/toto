@@ -33,14 +33,14 @@ func test_the_sword_swings_an_arc_from_the_player() -> void:
 	assert_eq(swing.arc_degrees, sword.arc_degrees)
 
 
-func test_the_dagger_stabs_a_short_arc_from_the_player() -> void:
-	var dagger := Dagger.new()
+func test_every_arc_weapon_sweeps_its_own_reach_and_arc_from_the_player() -> void:
+	for weapon: ArcWeapon in [Dagger.new(), Sword.new(), Battleaxe.new()]:
+		var swing: Slash = weapon.attacks(ORIGIN, Vector2.RIGHT, 0.0)[0]
 
-	var stab: Slash = dagger.attacks(ORIGIN, Vector2.RIGHT, 0.0)[0]
-
-	assert_eq(stab.origin, ORIGIN)
-	assert_eq(stab.reach, dagger.reach)
-	assert_eq(stab.arc_degrees, dagger.arc_degrees)
+		assert_eq(swing.origin, ORIGIN, weapon.id)
+		assert_eq(swing.reach, weapon.reach, weapon.id)
+		assert_eq(swing.arc_degrees, weapon.arc_degrees, weapon.id)
+		assert_eq(weapon.aim_shape().kind, AimShape.Kind.CONE, weapon.id)
 
 
 func test_the_dagger_reaches_less_and_hits_lighter_than_the_sword_but_reloads_faster() -> void:

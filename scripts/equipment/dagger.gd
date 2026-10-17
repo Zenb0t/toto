@@ -1,11 +1,10 @@
 class_name Dagger
-extends Sword
+extends ArcWeapon
 ## The starter weapon: a quick jab. Shorter, narrower and weaker than the sword, but it reloads faster.
 ## Two stabs kill a goblin, so the first fights are winnable, and found weapons are still worth finding.
 
 
 func _init() -> void:
-	super()
 	id = "dagger"
 	display_name = "Dagger"
 	description = "A quick, short stab in front of you."
