@@ -135,6 +135,6 @@ func test_a_battleaxe_hits_harder_and_wider_than_a_sword_but_slower() -> void:
 
 	assert_gt(axe.damage, sword.damage)
 	assert_gt(axe.arc_degrees, sword.arc_degrees)
-	assert_gt(axe.cooldown, sword.cooldown)
+	assert_gt(axe.reload, sword.reload)
 	assert_gt(axe.windup, sword.windup)
 	assert_ne(axe.id, sword.id)

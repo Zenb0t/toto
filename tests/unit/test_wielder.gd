@@ -3,10 +3,10 @@ extends GutTest
 const ORIGIN := Vector2.ZERO
 
 
-func _wand(windup: float, cooldown := 1.0) -> MagicMissile:
+func _wand(windup: float, attack_interval := 1.0) -> MagicMissile:
 	var wand := MagicMissile.new()
 	wand.windup = windup
-	wand.cooldown = cooldown
+	wand.attack_interval = attack_interval
 	return wand
 
 
@@ -26,7 +26,7 @@ func test_an_attack_is_released_only_after_the_wind_up() -> void:
 	assert_eq(late.size(), 1)
 
 
-func test_no_new_attack_starts_during_the_cooldown() -> void:
+func test_no_new_attack_starts_right_after_another() -> void:
 	var wielder := Wielder.new(_wand(0.0, 1.0))
 	wielder.start(Vector2.RIGHT, 100.0)
 	wielder.advance(0.0, ORIGIN)
@@ -55,3 +55,30 @@ func test_with_a_target_the_aim_follows_it_during_the_wind_up() -> void:
 
 	assert_almost_eq(shot.direction, Vector2.UP, Vector2(0.001, 0.001))
 	target.free()
+
+
+func test_attacks_follow_each_other_until_the_ammo_runs_out() -> void:
+	var wand := _wand(0.0, 0.2)
+	wand.ammo = 2
+	wand.reload = 5.0
+	var wielder := Wielder.new(wand)
+
+	var first := wielder.start(Vector2.RIGHT, 100.0)
+	wielder.advance(0.25, ORIGIN)
+	var second := wielder.start(Vector2.RIGHT, 100.0)
+	wielder.advance(0.25, ORIGIN)
+	var third := wielder.start(Vector2.RIGHT, 100.0)
+
+	assert_eq([first, second, third], [true, true, false])
+
+
+func test_an_empty_weapon_attacks_again_once_a_charge_reloads() -> void:
+	var wand := _wand(0.0, 0.1)
+	wand.ammo = 1
+	wand.reload = 1.0
+	var wielder := Wielder.new(wand)
+	wielder.start(Vector2.RIGHT, 100.0)
+
+	wielder.advance(1.1, ORIGIN)
+
+	assert_true(wielder.start(Vector2.RIGHT, 100.0))

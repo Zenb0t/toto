@@ -104,7 +104,7 @@ func test_untouched_tuning_builds_every_utility_with_its_own_defaults() -> void:
 			assert_eq(built.get(knob.field), fresh.get(knob.field), "%s.%s" % [fresh.id, knob.field])
 
 
-func test_enemies_wield_the_same_weapon_slower_and_with_a_longer_wind_up() -> void:
+func test_enemies_wield_the_same_weapon_with_one_slow_charge_and_a_longer_wind_up() -> void:
 	var tuning := GameTuning.create()
 	tuning.set_value(GameTuning.ENEMY_COOLDOWN_MULTIPLIER, 2.0)
 	tuning.set_value(GameTuning.ENEMY_TELEGRAPH, 0.5)
@@ -113,7 +113,8 @@ func test_enemies_wield_the_same_weapon_slower_and_with_a_longer_wind_up() -> vo
 	var enemys := GameTuning.enemy_weapon(tuning, "crossbow")
 
 	assert_eq(enemys.bolts, players.bolts)
-	assert_almost_eq(enemys.cooldown, players.cooldown * 2.0, 0.001)
+	assert_eq(enemys.ammo, 1)
+	assert_almost_eq(enemys.reload, players.reload * 2.0, 0.001)
 	assert_almost_eq(enemys.windup, players.windup + 0.5, 0.001)
 
 

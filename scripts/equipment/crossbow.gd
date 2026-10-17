@@ -15,7 +15,7 @@ func _init() -> void:
 	description = "A fan of bolts, strongest up close."
 	button_label = "CROSSBOW"
 	color = Color(0.55, 0.85, 0.4)
-	cooldown = 1.0
+	reload = 1.5
 	windup = 0.15
 
 

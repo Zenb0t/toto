@@ -63,23 +63,27 @@ func show_exploration(exploration: Exploration) -> void:
 	_map.show_exploration(exploration)
 
 
-## The camera follows the player.
+## The camera follows the player, whose health and ammo show over their head (HeroBars).
 func add_player(player: Player) -> void:
 	_hero = player
 	var stand_in := CharacterModel.new(CharacterLook.hero())
+	var bars := HeroBars.new()
+	stand_in.add_child(bars)
 	_show_hits(player, player.health, stand_in, HERO_HIT_COLOR)
 	player.health.damaged.connect(func(_amount: int) -> void: _shake_left = SHAKE_SECONDS)
 	player.attack_fired.connect(func(_attacks: Array) -> void: stand_in.play_attack())
 	player.utility_used.connect(stand_in.play_utility)
 	# The hero's body hides when it dies; its model stays in view to fall.
 	player.died.connect(func() -> void:
+		bars.hide()
 		var model := _fall(player, -1.0)
 		if model != null:
 			model.visible = true)
 	_puppets.add(player, stand_in, func(model: CharacterModel) -> void:
 		model.face(player.facing)
 		model.hold(player.weapon.id)
-		model.show_moving(player.velocity.length() > MOVING_SPEED))
+		model.show_moving(player.velocity.length() > MOVING_SPEED)
+		bars.show_state(player.health.current, player.health.maximum, player.ammo_fills()))
 
 
 ## The model shows the enemy's race (see CharacterLook), at its size.

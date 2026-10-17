@@ -15,7 +15,7 @@ func _init() -> void:
 	description = "The blade sweeps an arc in front of you."
 	button_label = "SWORD"
 	color = Color(0.85, 0.88, 1.0)
-	cooldown = 0.6
+	reload = 0.9
 	windup = 0.12
 
 

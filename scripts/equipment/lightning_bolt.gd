@@ -15,7 +15,7 @@ func _init() -> void:
 	description = "Passes through every enemy in its line and bounces off walls."
 	button_label = "LIGHTNING"
 	color = Color(0.75, 0.85, 1.0)
-	cooldown = 1.1
+	reload = 1.65
 	windup = 0.15
 
 

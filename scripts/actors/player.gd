@@ -116,6 +116,11 @@ func attack_cooldown_ratio() -> float:
 	return _wielder.cooldown_ratio()
 
 
+## How full each charge of the weapon's ammo is (see Ammo.segment_fills).
+func ammo_fills() -> Array[float]:
+	return _wielder.ammo_fills()
+
+
 func utility_cooldown_ratio() -> float:
 	return _utility_cooldown.remaining_ratio()
 

@@ -16,7 +16,7 @@ func _init() -> void:
 	description = "Lobbed; leaves a poison cloud that hurts enemies inside it."
 	button_label = "CLOUD"
 	color = Color(0.55, 0.85, 0.3)
-	cooldown = 1.8
+	reload = 2.7
 	windup = 0.2
 
 

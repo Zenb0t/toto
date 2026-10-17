@@ -14,7 +14,7 @@ func _init() -> void:
 	description = "A single bolt of magic."
 	button_label = "MISSILE"
 	color = Color(1, 0.8, 0.3)
-	cooldown = 0.8
+	reload = 1.2
 	windup = 0.1
 
 

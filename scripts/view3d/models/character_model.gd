@@ -62,8 +62,9 @@ func _init(look: CharacterLook, with_health_bar := false) -> void:
 	_animations = _animation_player(figure)
 	_animations.play(IDLE)
 	if with_health_bar:
-		add_child(_bar(HEALTH_BACK_COLOR, 0))
-		_health_fill = _bar(HEALTH_COLOR, 1)
+		var at := Vector3(-HEALTH_BAR_SIZE.x / 2.0, HEALTH_BAR_HEIGHT, 0)
+		add_child(ModelParts.bar(HEALTH_BAR_SIZE, HEALTH_BACK_COLOR, 0, at))
+		_health_fill = ModelParts.bar(HEALTH_BAR_SIZE, HEALTH_COLOR, 1, at)
 		add_child(_health_fill)
 
 
@@ -241,22 +242,3 @@ static func _animations_for_all() -> AnimationLibrary:
 			_shared_animations.get_animation(name).loop_mode = Animation.LOOP_LINEAR
 		animated.free()
 	return _shared_animations
-
-
-## A flat bar above the head that always faces the camera. It starts at its left end, so scaling it
-## along x empties it from the right.
-func _bar(color: Color, draw_order: int) -> MeshInstance3D:
-	var quad := QuadMesh.new()
-	quad.size = HEALTH_BAR_SIZE
-	quad.center_offset = Vector3(HEALTH_BAR_SIZE.x / 2.0, 0, 0)
-	var material := ModelParts.material(color, true)
-	material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	material.billboard_keep_scale = true
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.no_depth_test = true
-	material.render_priority = draw_order
-	quad.material = material
-	var bar := MeshInstance3D.new()
-	bar.mesh = quad
-	bar.position = Vector3(-HEALTH_BAR_SIZE.x / 2.0, HEALTH_BAR_HEIGHT, 0)
-	return bar

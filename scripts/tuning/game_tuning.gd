@@ -116,7 +116,7 @@ static func create() -> Tuning:
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", ENEMIES_GROUP, 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, 1.0, true),
 		Tuning.Param.new(
-			ENEMY_COOLDOWN_MULTIPLIER, "Attack slowness (x)", ENEMIES_GROUP, 1, 5, 0.1, Enemy.DEFAULT_COOLDOWN_MULTIPLIER),
+			ENEMY_COOLDOWN_MULTIPLIER, "Reload slowness (x)", ENEMIES_GROUP, 1, 5, 0.1, Enemy.DEFAULT_COOLDOWN_MULTIPLIER),
 		Tuning.Param.new(
 			ENEMY_TELEGRAPH, "Telegraph (s)", ENEMIES_GROUP, 0, 1.5, 0.05, Enemy.DEFAULT_TELEGRAPH_SECONDS),
 		Tuning.Param.new(
@@ -170,10 +170,11 @@ static func weapon(tuning: Tuning, weapon_id: String) -> Weapon:
 	return result
 
 
-## The same weapon in an enemy's hands: slower between attacks, with a longer, telegraphed wind-up.
+## The same weapon in an enemy's hands: one charge of ammo, reloading slower, and a longer, telegraphed wind-up.
 static func enemy_weapon(tuning: Tuning, weapon_id: String) -> Weapon:
 	var result := weapon(tuning, weapon_id)
-	result.cooldown *= tuning.value(ENEMY_COOLDOWN_MULTIPLIER)
+	result.ammo = 1
+	result.reload *= tuning.value(ENEMY_COOLDOWN_MULTIPLIER)
 	result.windup += tuning.value(ENEMY_TELEGRAPH)
 	return result
 

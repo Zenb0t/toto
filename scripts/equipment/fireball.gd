@@ -15,7 +15,7 @@ func _init() -> void:
 	description = "Lobbed over walls; explodes where it lands. Mind the blast."
 	button_label = "FIREBALL"
 	color = Color(1, 0.45, 0.2)
-	cooldown = 1.4
+	reload = 2.1
 	windup = 0.25
 
 

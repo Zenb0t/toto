@@ -8,12 +8,19 @@ const MUZZLE_DISTANCE := 18.0
 
 ## Seconds between releasing the button and the attack happening, so attacks feel deliberate.
 var windup := 0.1
+## Brawl Stars style ammo: how many attacks in a row, and the seconds to reload each one.
+var ammo := 3
+var reload := 1.2
+## The short wait between two attacks, even with ammo left.
+var attack_interval := 0.3
 
 
 ## The fields the Tune screen may change.
 func knobs() -> Array[Knob]:
 	return [
-		Knob.new("cooldown", "Cooldown (s)", 0.1, 3.0, 0.05),
+		Knob.new("ammo", "Ammo", 1, 6, 1),
+		Knob.new("reload", "Reload (s per ammo)", 0.2, 5.0, 0.05),
+		Knob.new("attack_interval", "Between attacks (s)", 0.05, 2.0, 0.05),
 		Knob.new("windup", "Wind-up (s)", 0.0, 1.0, 0.01),
 	]
 

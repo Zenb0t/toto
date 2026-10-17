@@ -14,8 +14,9 @@ signal attack_fired(attacks: Array)
 const GROUP := &"enemies"
 const DEFAULT_MOVE_SPEED := 80.0
 const DEFAULT_MAX_HEALTH := 3
-## Enemies attack this many times slower than the player with the same weapon...
-const DEFAULT_COOLDOWN_MULTIPLIER := 2.0
+## Enemies hold one charge of ammo and reload it this many times slower than the player does with the same
+## weapon...
+const DEFAULT_COOLDOWN_MULTIPLIER := 1.3
 ## ...and wind up for this much longer, showing where the attack will go.
 const DEFAULT_TELEGRAPH_SECONDS := 0.4
 const RADIUS := 11.0
