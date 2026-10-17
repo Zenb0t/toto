@@ -5,6 +5,20 @@ down the words the design uses for the first zone (village, plains, crypt).
 
 ## Language
 
+### World
+
+**Quadrant**:
+One map of the world's 3×3 grid, entered and left through its exits. The run starts in the centre quadrant.
+_Avoid_: Zone, region, level, floor (for an outdoor map)
+
+**Plains**:
+The open grassland of the centre quadrant around the village: groves, boulders, ponds and monster camps.
+_Avoid_: Field, overworld
+
+**Quadrant exit**:
+A gap in a quadrant's border leading to the neighbouring quadrant, one in the middle of each side. Blocked by a barricade until that quadrant exists.
+_Avoid_: Gate (that's the village's), stairs, door
+
 ### Crypt
 
 **Lich**:
