@@ -16,7 +16,7 @@ and mouse, following whichever you used last.
 | Input | Action |
 | --- | --- |
 | Touch the left half of the screen and drag | Move (floating stick) |
-| Tap the **weapon** button | Auto-aim at the nearest enemy and attack |
+| Tap the **weapon** button | Auto-aim at the nearest enemy and attack. Each weapon holds 3 shots of ammo (orange bar over your head) that reload one at a time |
 | Drag from the weapon button, then release | Aim manually and fire. The button floats like the stick: touch anywhere in the faint circle around it and it jumps under your finger; the aim is measured from where you touched. Dragging back to the middle buzzes (phones that support it); letting go there cancels, as in Brawl Stars |
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
@@ -84,7 +84,7 @@ Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.
 
 ## Layout
 
-- `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`)
+- `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`, `Ammo`)
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` exit,
   `~` water, `L` lava, `*` floor item), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
   lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
@@ -96,10 +96,10 @@ Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`, `MouseAim`, `TouchZones`) and `InputMode` (touch or
   keyboard and mouse)
-- `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`, `Battleaxe`, `LightningBolt`, `MephiticCloud`,
+- `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`, `Battleaxe`, `Knuckles`, `LightningBolt`, `MephiticCloud`,
   `Fireball`, `Crossbow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`), when a weapon fires
-  (`Wielder`: cooldown and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`),
+  (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
 - `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength) and the
   `Bestiary` that lists them with their map letters
@@ -118,7 +118,7 @@ Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.
   `GroundView` lays the 2D plane on the floor (floor, aim previews, telegraphs, fog), `MapView3D` stands walls
   and closed doors on it, and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
-  the floor texture shows). `models/` holds the models: `CharacterModel` (KayKit characters, animated) and
+  the floor texture shows). `models/` holds the models: `CharacterModel` (KayKit characters, animated), `HeroBars` (health and ammo over the hero) and
   `CharacterLook` (who wears what), and the simple ones (chests, loot, shots, torches, the stairs' arch)
 - `scripts/run` – `RunState`: what a run carries down the stairs (floor, gear, health, potions, experience);
   `Experience`: levels from kills, each adding maximum health

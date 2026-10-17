@@ -25,6 +25,10 @@ var bounces := 0
 ## Above zero, where the shot ends a poison cloud lingers for this long (see PoisonCloud).
 var cloud_seconds := 0.0
 var cloud_radius := 0.0
+## A chaining shot, like Jessie's in Brawl Stars, jumps from the foe it hits to the nearest other foe within
+## chain_range (never one it already hit), this many times.
+var chains := 0
+var chain_range := 0.0
 ## A pulling shot drags the first foe it hits back to where it was fired from.
 var pulls := false
 ## Seconds after the attack before this shot sets off, from wherever its attacker stands by then (a flurry).

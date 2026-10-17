@@ -4,7 +4,8 @@ extends Area2D
 ## A plain shot damages what it hits; an explosive shot bursts into an Explosion instead.
 ## A lobbed shot arcs over everything and bursts (or leaves its poison cloud) where it lands.
 ## A piercing shot passes through foes, hitting each once; a bouncing one glances off walls; a pulling one
-## drags the first foe it hits back to where it was fired from.
+## drags the first foe it hits back to where it was fired from; a chaining one jumps from the foe it hits to the
+## next nearest one.
 ## On the 2D plane (the floor) it draws only its shadow; the 3D view draws the shot itself, height() up.
 
 ## How high a lob arcs, relative to how far it travels, and never higher than LOB_MAX_HEIGHT.
@@ -20,6 +21,7 @@ var _shot: Shot
 var _time_left := 0.0
 var _spent := false
 var _bounces_left := 0
+var _chains_left := 0
 var _last_step := Vector2.ZERO
 var _already_hit := {}  # foe instance id -> true
 
@@ -34,6 +36,7 @@ func launch(shot: Shot) -> void:
 	position = shot.origin
 	_time_left = shot.lifetime()
 	_bounces_left = shot.bounces
+	_chains_left = shot.chains
 	if shot.lobbed:
 		collision_mask = 0
 	else:
@@ -82,8 +85,29 @@ func _on_body_entered(body: Node2D) -> void:
 		body.pull_toward(_shot.origin)
 	elif not _shot.explodes():
 		body.take_damage(_shot.damage, _shot.source)
+	if _chains_left > 0 and _chain_from(body):
+		return
 	if not _shot.pierces:
 		_finish()
+
+
+## Sends the shot on from the foe it just hit to the nearest foe in reach that it hasn't hit yet. Returns
+## whether there was one.
+func _chain_from(hit: Node2D) -> bool:
+	var foes: Array[Node2D] = []
+	var positions: Array[Vector2] = []
+	for foe: Node2D in get_tree().get_nodes_in_group(Player.GROUP if _shot.hurts_player else Enemy.GROUP):
+		if not _already_hit.has(foe.get_instance_id()):
+			foes.append(foe)
+			positions.append(foe.global_position)
+	var next := AutoAim.nearest_index(hit.global_position, positions, _shot.chain_range)
+	if next == AutoAim.NO_TARGET:
+		return false
+	_chains_left -= 1
+	global_position = hit.global_position
+	_shot.direction = global_position.direction_to(positions[next])
+	_time_left = _shot.chain_range / _shot.speed
+	return true
 
 
 ## Glances off the wall while it has bounces left, otherwise stops there.

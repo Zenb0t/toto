@@ -38,11 +38,19 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | --- | --- | --- |
 | Magic Missile (starter; id `wand`) | One magic bolt, Dungeon Crawl's first spell | Line |
 | Sword | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
-| Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (eased, so short drags give fine control up close); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
+| Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (a drag to the button's edge throws half as far; dragging on past the button throws up to the max range, 280); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
-| Lightning Bolt | Dungeon Crawl's bolt, shot like Rico's: passes through every enemy in its line (each hit once) and bounces off one wall | Line |
+| Lightning Bolt | Dungeon Crawl's bolt, shot like Jessie's: when it hits an enemy it jumps on to the nearest other enemy within 160, twice (never one it already hit) | Line |
 | Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 3 s that hurts enemies inside every 0.6 s. Doesn't hurt the thrower | Landing circle |
 | Battleaxe | Like Frank's hammer: a long wind-up, then a 180° sweep for 4 damage | Cone |
+| Knuckles | Like El Primo's fists: a flurry of 4 short, fast punches 0.07 s apart, alternating a little to each side, each thrown from where you stand by then. Fought bare-handed | Narrow cone |
+
+**Ammo, like Brawl Stars.** A weapon holds 3 charges (`Ammo`): each attack spends one, they reload one at a time
+(each weapon its own reload time), and there is only a short gap between attacks (0.3 s), so a burst of three is
+possible, then a wait. Over the hero's head (`HeroBars`): a green health bar with the number on it, and an orange
+segment per charge, the reloading one filling up in a darker orange. The attack button only darkens while empty.
+Enemies hold one charge that reloads 1.3× slower than the player's (Tune → Enemies: reload slowness), about the pace
+they had before ammo. Utilities keep a cooldown.
 
 | Utility | Behaviour | Aim |
 | --- | --- | --- |
@@ -68,7 +76,7 @@ picks it up; there is nothing to choose, unless that kind is full, then it stays
 might works, a ring in its colour shows on the floor around the hero. Each potion's numbers are in Tune.
 
 **Model (step 4).** `Weapon` and `Utility` are plain data objects (both `Item`s). Whoever wields a weapon owns
-*when* (a `Wielder`: cooldown, wind-up, auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s).
+*when* (a `Wielder`: ammo, wind-up, auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s).
 A utility turns an aim into a `UtilityEffect` (dash, shield time, healing) that the player applies. The buttons show the equipped
 item's name and colour. The starter gear is **Magic Missile** (one magic bolt) and a **Dash**. New behaviours
 (melee arc, explosions, spreads) are attack kinds: a weapon returns `Shot`s (projectiles, optionally
@@ -163,7 +171,7 @@ still decides how it fights). The map letter names the monster, so playtests sta
 | `o` | Orc | Sword | 5 | 1× | large | |
 | `W` | Orc wizard | Fireball | 4 | 0.95× | large | |
 | `d` | Dwarf | Crossbow | 8 | 0.7× | | The tank: slow and sturdy |
-| `e` | Deep elf mage | Lightning Bolt | 5 | 1.05× | | Pointy ears; bolts bounce off walls |
+| `e` | Deep elf mage | Lightning Bolt | 5 | 1.05× | | Pointy ears; bolts jump between foes |
 | `z` | Skeleton (undead) | Sword | 4 | 0.9× | | |
 | `x` | Skeleton archer (undead) | Crossbow | 4 | 0.9× | | |
 | `m` | Skeletal mage (undead) | Mephitic Cloud | 5 | 0.9× | | |

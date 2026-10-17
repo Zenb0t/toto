@@ -1,5 +1,5 @@
 extends GutTest
-## Lightning bolts pierce and bounce, poison clouds linger, and beckoning pulls.
+## Lightning bolts jump from enemy to enemy, shots bounce off walls, poison clouds linger, and beckoning pulls.
 
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
@@ -37,37 +37,67 @@ func _bolt(from: Vector2, direction: Vector2) -> Shot:
 	return weapon.attacks(from, direction, 0.0)[0]
 
 
-func test_a_lightning_bolt_hurts_every_enemy_in_its_line() -> void:
-	var first := _enemy_at(Vector2(100, 0))
-	var second := _enemy_at(Vector2(200, 0))
-	await wait_physics_frames(1)
-
-	_fire(_bolt(Vector2.ZERO, Vector2.RIGHT))
-	await wait_seconds(0.4)
-
-	assert_lt(first.health.current, first.health.maximum)
-	assert_lt(second.health.current, second.health.maximum)
+func _is_hurt(enemy: Enemy) -> bool:
+	return enemy.health.current < enemy.health.maximum
 
 
-func test_a_lightning_bolt_hits_each_enemy_only_once() -> void:
-	var enemy := _enemy_at(Vector2(100, 0))
-	await wait_physics_frames(1)
-
-	_fire(_bolt(Vector2.ZERO, Vector2.RIGHT))
-	await wait_seconds(0.6)
-
-	assert_eq(enemy.health.current, enemy.health.maximum - LightningBolt.new().damage)
+## Enemies that stand still, so a test controls where everyone is.
+func _still_enemy_at(position: Vector2) -> Enemy:
+	var enemy := _enemy_at(position)
+	enemy.set_physics_process(false)
+	return enemy
 
 
-func test_a_lightning_bolt_bounces_off_a_wall_and_comes_back() -> void:
-	_wall_at(Vector2(150, 0), Vector2(20, 300))
-	var behind := _enemy_at(Vector2(-80, 0))
+func test_a_lightning_bolt_jumps_from_the_enemy_it_hits_to_one_nearby() -> void:
+	var first := _still_enemy_at(Vector2(100, 0))
+	var off_the_line := _still_enemy_at(Vector2(100, 120))
 	await wait_physics_frames(1)
 
 	_fire(_bolt(Vector2.ZERO, Vector2.RIGHT))
 	await wait_seconds(0.5)
 
-	assert_lt(behind.health.current, behind.health.maximum)
+	assert_true(_is_hurt(first))
+	assert_true(_is_hurt(off_the_line))
+
+
+func test_a_lightning_bolt_does_not_jump_beyond_its_range() -> void:
+	var first := _still_enemy_at(Vector2(100, 0))
+	var far := _still_enemy_at(Vector2(100, LightningBolt.new().chain_range + 100))
+	await wait_physics_frames(1)
+
+	_fire(_bolt(Vector2.ZERO, Vector2.RIGHT))
+	await wait_seconds(0.5)
+
+	assert_true(_is_hurt(first))
+	assert_false(_is_hurt(far))
+
+
+func test_a_lightning_bolt_stops_after_its_last_jump_and_hits_each_enemy_once() -> void:
+	var pack: Array[Enemy] = []
+	for index in 4:
+		pack.append(_still_enemy_at(Vector2(100, index * 60)))
+	await wait_physics_frames(1)
+
+	_fire(_bolt(Vector2.ZERO, Vector2.RIGHT))
+	await wait_seconds(1.0)
+
+	var hurt := pack.filter(_is_hurt)
+	assert_eq(hurt.size(), 1 + LightningBolt.new().chains)
+	for enemy in hurt:
+		assert_eq(enemy.health.current, enemy.health.maximum - LightningBolt.new().damage)
+
+
+func test_a_shot_bounces_off_a_wall_and_comes_back() -> void:
+	_wall_at(Vector2(150, 0), Vector2(20, 300))
+	var behind := _enemy_at(Vector2(-80, 0))
+	await wait_physics_frames(1)
+	var shot := _bolt(Vector2.ZERO, Vector2.RIGHT)
+	shot.bounces = 1
+
+	_fire(shot)
+	await wait_seconds(0.5)
+
+	assert_true(_is_hurt(behind))
 
 
 func test_a_poison_cloud_keeps_hurting_enemies_inside_it_then_dissipates() -> void:

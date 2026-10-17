@@ -110,11 +110,12 @@ func test_the_dash_preview_shows_how_far_one_dash_goes() -> void:
 	assert_eq(dash.aim_range(), 120.0)
 
 
-func test_a_lightning_bolt_pierces_and_bounces() -> void:
+func test_a_lightning_bolt_chains_like_jessies_shot_instead_of_piercing() -> void:
 	var bolt: Shot = LightningBolt.new().attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)[0]
 
-	assert_true(bolt.pierces)
-	assert_gt(bolt.bounces, 0)
+	assert_false(bolt.pierces)
+	assert_eq(bolt.bounces, 0)
+	assert_gt(bolt.chains, 0)
 
 
 func test_a_mephitic_cloud_is_lobbed_where_aimed_and_leaves_a_cloud() -> void:
