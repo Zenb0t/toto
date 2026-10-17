@@ -265,6 +265,30 @@ blast or the battleaxe. Some hide a potion.
 
 ---
 
+## Epic G: Weapon archetypes and assets
+
+### G1. More weapon archetypes
+
+**Why.** `ArcWeapon` (a sweep across an arc: Dagger, Sword, Battleaxe) shows a weapon is its *motion* plus numbers,
+not a named item. New weapons should join an archetype, or start a new one when the motion is new.
+
+**Sketch.** Grow archetypes only when a weapon needs one:
+- **Stab**: a thrust along a line (a rapier, a spear's poke).
+- **Polearm**: long and narrow reach, slow to swing.
+- Grouping the others the same way: bolt (Magic Missile, Lightning Bolt, Crossbow, Knuckles) and lobbed (Fireball,
+  Mephitic Cloud).
+
+**Open questions.** Is the archetype the unit of tuning (a shared Tune page per archetype), or only of code?
+
+### G2. Weapon assets
+
+**Why.** The Dagger reuses the Sword's model and slash animation; the KayKit pack has no dagger.
+
+**Sketch.** A dagger model and a quicker stab animation, and one look per archetype so weapons read at a glance.
+Related to F4.
+
+---
+
 ## Process (later)
 
 When it's time to turn these into issues, follow a PRD → issues flow (in the style of Matt Pocock's skills): write

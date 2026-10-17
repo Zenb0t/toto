@@ -1,11 +1,10 @@
 class_name Battleaxe
-extends Sword
+extends ArcWeapon
 ## A heavy two-handed axe, swung like Frank's hammer in Brawl Stars: a long wind-up, then a wide, crushing
 ## sweep. Slow to use, so timing it is everything.
 
 
 func _init() -> void:
-	super()
 	id = "battleaxe"
 	display_name = "Battleaxe"
 	description = "A slow, wide and crushing swing."

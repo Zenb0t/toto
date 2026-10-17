@@ -1,6 +1,6 @@
 class_name MagicMissile
 extends Weapon
-## The starter weapon, Dungeon Crawl's first spell: a single bolt of magic.
+## Dungeon Crawl's first spell: a single bolt of magic. Goblins and apprentices cast it, and it can be found.
 ## Its id stays "wand" (what it was first called), so saved tuning keeps working.
 
 var shot_speed := 360.0

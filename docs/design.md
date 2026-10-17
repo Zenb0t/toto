@@ -36,13 +36,14 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 
 | Weapon | Behaviour | Aim shape |
 | --- | --- | --- |
-| Magic Missile (starter; id `wand`) | One magic bolt, Dungeon Crawl's first spell | Line |
-| Sword | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
+| Dagger (starter; an arc weapon) | A quick, short stab: reach 55, a 70° arc, 100 damage, reloads in 0.6 s. Two stabs kill a goblin, three a bandit; a full burst does half a Sword's | Cone |
+| Magic Missile (id `wand`) | One magic bolt, Dungeon Crawl's first spell. Goblins and apprentices cast it; the player finds it | Line |
+| Sword (an arc weapon) | The blade sweeps across an arc in front of you, hitting each enemy once as it passes | Cone |
 | Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (a drag to the button's edge throws half as far; dragging on past the button throws up to the max range, 280); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
 | Lightning Bolt | Dungeon Crawl's bolt, shot like Jessie's: when it hits an enemy it jumps on to the nearest other enemy within 160, twice (never one it already hit) | Line |
 | Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 3 s that hurts enemies inside every 0.6 s. Doesn't hurt the thrower | Landing circle |
-| Battleaxe | Like Frank's hammer: a long wind-up, then a 180° sweep for 400 damage | Cone |
+| Battleaxe (an arc weapon) | Like Frank's hammer: a long wind-up, then a 180° sweep for 400 damage | Cone |
 | Knuckles | Like El Primo's fists: a flurry of 4 short, fast punches 0.07 s apart, alternating a little to each side, each thrown from where you stand by then, 50 damage each (two punches to a Magic Missile). Fought bare-handed | Narrow cone |
 
 **Health points, like Brawl Stars.** Health and damage are counted in big numbers (the hero has 1000, a bandit
@@ -81,10 +82,14 @@ floor finds), sit beside chests (30%), and drop from enemies (10%, when they dro
 picks it up; there is nothing to choose, unless that kind is full, then it stays where it is. While haste or
 might works, a ring in its colour shows on the floor around the hero. Each potion's numbers are in Tune.
 
+**Arc weapons.** Dagger, Sword and Battleaxe share one archetype, `ArcWeapon`: a sweep across an arc in front of
+you. They differ only in their numbers (reach, arc, damage, reload, wind-up, sweep), each set in the weapon's
+own class, so a new arc weapon is just new numbers.
+
 **Model (step 4).** `Weapon` and `Utility` are plain data objects (both `Item`s). Whoever wields a weapon owns
 *when* (a `Wielder`: ammo, wind-up, auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s).
 A utility turns an aim into a `UtilityEffect` (dash, shield time, healing) that the player applies. The buttons show the equipped
-item's name and colour. The starter gear is **Magic Missile** (one magic bolt) and a **Dash**. New behaviours
+item's name and colour. The starter gear is the **Dagger** and a **Dash**. New behaviours
 (melee arc, explosions, spreads) are attack kinds: a weapon returns `Shot`s (projectiles, optionally
 explosive) and `Slash`es (melee arcs), and the world carries them out.
 
@@ -137,8 +142,12 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
 - **Compare and swap.** Standing on a drop shows a card: the item's name and one-line description, what it
   replaces (what you hold in the same slot), and **Take** / **Leave**. Taking it leaves your old item on the floor in its place, so a swap can be
   undone; the card only returns after you step off and on again, so nothing is swapped by accident.
-- **Runs start with Magic Missile and the Dash.** The HUD weapon switch stays as a testing aid for tuning each weapon, but the
-  choice is no longer saved.
+- **Runs start with the Dagger and the Dash.** Loot is meant to be a grind, so the starter is good enough for the first fights
+  (it kills goblins in two stabs) but clearly weaker than found weapons. The HUD weapon switch is a testing aid for
+  tuning each weapon: hidden by default, shown by Tune → Controls → "Show weapon switch" (the keyboard key always
+  works). Magic Missile stays an enemy weapon and can be found. Known risk: a melee start leaves no ranged answer to
+  a kiting boss; if playtests show it hurting, put a ranged weapon in the guaranteed chest. The weapon picked with the switch is not saved
+  between runs (the "Show weapon switch" setting is saved with the rest of the tuning).
 
 `LootTable` holds the rules (pure, given a seeded random generator). `Chest` and `WeaponDrop` only notice the
 player; `main.gd` decides what drops and does the swap.
