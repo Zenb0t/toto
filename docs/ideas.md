@@ -23,7 +23,7 @@ Suggested order (each epic leans on the ones before it):
 
 ### D1. Scale health and damage up (×10 or ×100)
 
-**Done** (×100, branch `ccr-84598e1b-ay8iry`, commit 47b4d16). D2 and D3 are still open.
+**Done** (×100, commit 47b4d16, on `main`). D2 and D3 are still open.
 
 **Why.** Health is 2–14 and damage 1–4. At that scale, the smallest change is huge: +1 damage doubles a Magic
 Missile, Might's "+1" is worth 50% on one weapon and 25% on another, and Tune → Health × rounds a kobold's 2
