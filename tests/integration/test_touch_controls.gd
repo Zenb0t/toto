@@ -232,3 +232,57 @@ func test_with_touch_off_the_stick_hides_and_stays_still() -> void:
 
 	assert_false(stick.visible)
 	assert_eq(stick.current_strength(), Vector2.ZERO)
+
+
+func test_a_tap_just_outside_the_button_but_inside_its_catch_zone_still_counts() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+	var beside := BUTTON_CENTER + Vector2(70, 0)  # The button's radius is 50; its catch zone reaches 80.
+
+	_touch(beside, true)
+	_touch(beside, false)
+	await wait_process_frames(2)
+
+	assert_signal_emit_count(button, "aim_released", 1)
+	assert_true(_last_release(button).is_auto)
+
+
+func test_the_aim_is_measured_from_where_the_finger_landed_not_from_the_button() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+	var landed := BUTTON_CENTER + Vector2(40, 0)
+
+	_touch(landed, true)
+	_drag(landed + Vector2(0, -120))
+	_touch(landed + Vector2(0, -120), false)
+	await wait_process_frames(2)
+
+	assert_almost_eq(_last_release(button).direction, Vector2.UP, Vector2(0.01, 0.01))
+
+
+func test_where_two_catch_zones_overlap_the_nearer_button_takes_the_touch() -> void:
+	var near := _aim_button()
+	var far := _aim_button()
+	far.position += Vector2(130, 0)
+	watch_signals(near)
+	watch_signals(far)
+	var between_but_nearer_the_first := BUTTON_CENTER + Vector2(55, 0)
+
+	_touch(between_but_nearer_the_first, true)
+	_touch(between_but_nearer_the_first, false)
+	await wait_process_frames(2)
+
+	assert_signal_emit_count(near, "aim_released", 1)
+	assert_signal_not_emitted(far, "aim_released")
+
+
+func test_a_smaller_catch_zone_ignores_touches_beside_the_button() -> void:
+	var button := _aim_button()
+	button.catch_scale = 1.0
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER + Vector2(70, 0), true)
+	_touch(BUTTON_CENTER + Vector2(70, 0), false)
+	await wait_process_frames(2)
+
+	assert_signal_not_emitted(button, "aim_released")

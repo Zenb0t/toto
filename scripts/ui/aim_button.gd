@@ -1,6 +1,9 @@
 class_name AimButton
 extends Control
 ## Round action button with Brawl Stars style aiming: tap for auto-aim, drag to aim, release to fire.
+## It floats like the move stick: a touch anywhere in its catch zone (a circle around it, larger than the
+## button) grabs it, the button jumps under the finger, and the aim is measured from where the finger landed.
+## Where catch zones overlap, the nearest button takes the touch.
 
 ## direction is zero while the finger is still inside the dead zone; strength is how far it was dragged (0..1).
 signal aim_changed(direction: Vector2, strength: float)
@@ -8,6 +11,11 @@ signal aim_released(release: AimGesture.Release)
 
 ## How far the finger must move before a press counts as manual aim instead of a tap, in viewport pixels.
 const DEFAULT_DEAD_ZONE := 32.0
+## How far around the button a touch still grabs it, as a multiple of the button's radius.
+const DEFAULT_CATCH_SCALE := 1.6
+## Every aim button is in this group, so overlapping catch zones can be settled.
+const GROUP := &"aim_buttons"
+const CATCH_ZONE_COLOR := Color(1, 1, 1, 0.05)
 const NO_TOUCH := -1
 const KNOB_TRAVEL := 0.6  ## How far the knob moves at full strength, relative to the button radius.
 const MIN_KNOB_TRAVEL := 0.25  ## Where the knob sits just past the dead zone, so aiming is always visible.
@@ -39,6 +47,11 @@ var accepts_touch := true:
 		if not value:
 			_forget_touch()
 
+var catch_scale := DEFAULT_CATCH_SCALE:
+	set(value):
+		catch_scale = value
+		queue_redraw()
+
 var dead_zone := DEFAULT_DEAD_ZONE:
 	set(value):
 		dead_zone = value
@@ -47,10 +60,13 @@ var dead_zone := DEFAULT_DEAD_ZONE:
 var _gesture := AimGesture.new(DEFAULT_DEAD_ZONE)
 var _touch_index := NO_TOUCH
 var _cooldown_ratio := 0.0
+## Where the finger landed, in this control's coordinates: the button is drawn there while held.
+var _touch_origin := Vector2.ZERO
 
 
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_IGNORE
+	add_to_group(GROUP)
 
 
 ## 1.0 = just used, 0.0 = ready. Drawn as a dark sweep over the button.
@@ -85,9 +101,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _on_touch(event: InputEventScreenTouch) -> void:
-	if event.pressed and _touch_index == NO_TOUCH and _contains(event.position):
+	if event.pressed and _touch_index == NO_TOUCH and _claims(event.position):
 		_touch_index = event.index
-		_gesture.begin(_global_center(), _radius())
+		_touch_origin = event.position - global_position
+		_gesture.begin(event.position, _radius())
 		aim_changed.emit(Vector2.ZERO, 0.0)
 		get_viewport().set_input_as_handled()
 		queue_redraw()
@@ -98,8 +115,10 @@ func _on_touch(event: InputEventScreenTouch) -> void:
 
 
 func _draw() -> void:
-	var center := size / 2.0
+	var rest := size / 2.0
 	var radius := _radius()
+	var center := _touch_origin if _gesture.is_active() else rest
+	draw_circle(rest, radius * catch_scale, CATCH_ZONE_COLOR)
 	draw_circle(center, radius, Color(color, 0.35 if _gesture.is_active() else 0.5))
 	if _cooldown_ratio > 0.0:
 		var sweep := TAU * _cooldown_ratio
@@ -127,5 +146,20 @@ func _global_center() -> Vector2:
 	return global_position + size / 2.0
 
 
-func _contains(point: Vector2) -> bool:
-	return point.distance_to(_global_center()) <= _radius()
+func _catch_radius() -> float:
+	return _radius() * catch_scale
+
+
+## Whether a new touch is this button's: inside its catch zone, and closer to it than to any other aim button
+## whose zone it is also in.
+func _claims(point: Vector2) -> bool:
+	var rivals: Array[AimButton] = []
+	var centers: Array[Vector2] = []
+	var radii: Array[float] = []
+	for each: AimButton in get_tree().get_nodes_in_group(GROUP):
+		if each.accepts_touch and each.is_visible_in_tree():
+			rivals.append(each)
+			centers.append(each._global_center())
+			radii.append(each._catch_radius())
+	var owner := TouchZones.owner_of(point, centers, radii)
+	return owner != TouchZones.NONE and rivals[owner] == self

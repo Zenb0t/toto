@@ -11,6 +11,7 @@ const ENEMY_COOLDOWN_MULTIPLIER := "enemy.cooldown_multiplier"
 const ENEMY_TELEGRAPH := "enemy.telegraph"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
 const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
+const CONTROLS_BUTTON_CATCH := "controls.button_catch"
 const LOOT_ENEMY_DROP_CHANCE := "loot.enemy_drop_chance"
 const LOOT_POTION_DROP_CHANCE := "loot.potion_drop_chance"
 const LOOT_CHEST_POTION_CHANCE := "loot.chest_potion_chance"
@@ -125,6 +126,8 @@ static func create() -> Tuning:
 		Tuning.Param.new(
 			CONTROLS_UTILITY_DEAD_ZONE, "Utility dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(
+			CONTROLS_BUTTON_CATCH, "Button catch area (x)", CONTROLS_GROUP, 1, 3, 0.1, AimButton.DEFAULT_CATCH_SCALE),
+		Tuning.Param.new(
 			CAMERA_PITCH, "Tilt (90 = top-down)", CAMERA_GROUP, 30, 90, 1, CameraFraming.DEFAULT_PITCH_DEGREES),
 		Tuning.Param.new(
 			CAMERA_DISTANCE, "Distance (cells)", CAMERA_GROUP, 6, 30, 0.5, CameraFraming.DEFAULT_DISTANCE),
@@ -221,6 +224,11 @@ static func weapon_dead_zone(tuning: Tuning) -> float:
 
 static func utility_dead_zone(tuning: Tuning) -> float:
 	return tuning.value(CONTROLS_UTILITY_DEAD_ZONE)
+
+
+## How far around the attack and utility buttons a touch still grabs them, as a multiple of their radius.
+static func button_catch_scale(tuning: Tuning) -> float:
+	return tuning.value(CONTROLS_BUTTON_CATCH)
 
 
 static func camera_framing(tuning: Tuning) -> CameraFraming:
