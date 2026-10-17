@@ -47,7 +47,8 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 
 **Ammo, like Brawl Stars.** A weapon holds 3 charges (`Ammo`): each attack spends one, they reload one at a time
 (each weapon its own reload time), and there is only a short gap between attacks (0.3 s), so a burst of three is
-possible, then a wait. Over the hero's head (`HeroBars`): a green health bar with the number on it, and an orange
+possible, then a wait. Attacking throws away the charge being reloaded, so a burst gets no bonus shot from
+reload progress made between its shots (it used to fit about 4); waiting for a charge to finish pays. Over the hero's head (`HeroBars`): a green health bar with the number on it, and an orange
 segment per charge, the reloading one filling up in a darker orange. The attack button only darkens while empty.
 Enemies hold one charge that reloads 1.1× slower than the player's (Tune → Enemies: reload slowness), the pace the
 playtest settled on (1.6× the old cooldown, from before ammo). Utilities keep a cooldown.

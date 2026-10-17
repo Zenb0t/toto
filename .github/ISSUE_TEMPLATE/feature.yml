@@ -1,0 +1,50 @@
+name: Feature
+description: A new idea or a change to how the game plays.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every feature has to be **useful**, **fun**, or both. If it's neither, it doesn't go in.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What's missing, boring, confusing or hard today, from the player's side.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What we'd add or change.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What's different once it's done. How would we notice it in a playtest?
+    validations:
+      required: true
+  - type: dropdown
+    id: value
+    attributes:
+      label: Value for the player
+      options:
+        - Useful
+        - Fun
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: value-why
+    attributes:
+      label: Why it's useful or fun
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: Reference
+      description: A game, mechanic, video or picture that shows the idea ("like X's Y"), with a link if there is one.
