@@ -50,7 +50,7 @@ _Avoid_: Dungeon entrance, portal
 ### Monsters
 
 **Band**:
-The monsters that live together at one home and start the same way, asleep or wandering. When one of them notices the hero, the whole band does.
+The monsters that live together at one home and start the same way, asleep or wandering. Each one gives up a chase on its own.
 _Avoid_: Group, pack, squad (that's how a band takes turns to attack)
 
 **Home**:
@@ -60,6 +60,10 @@ _Avoid_: Spawn, lair, post
 **Noise**:
 What the hero's attacks make: it wakes monsters close by, even ones that can't see the hero.
 _Avoid_: Sound, alarm
+
+**Shout**:
+The noise a monster makes when it notices the hero. Every monster it wakes shouts in turn, so a band, or a camp close by, wakes one after another.
+_Avoid_: Alert, call, aggro
 
 ### Crypt
 
