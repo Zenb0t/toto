@@ -77,7 +77,7 @@ static func is_caster(weapon_id: String) -> bool:
 ## The model in hand for a weapon.
 static func weapon_model(weapon_id: String) -> String:
 	match weapon_id:
-		"sword":
+		"sword", "dagger":
 			return "sword_1handed"
 		"battleaxe":
 			return "axe_2handed"
@@ -97,7 +97,7 @@ static func weapon_model(weapon_id: String) -> String:
 ## The animation of one attack with a weapon.
 static func attack_animation(weapon_id: String) -> String:
 	match weapon_id:
-		"sword":
+		"sword", "dagger":
 			return "1H_Melee_Attack_Slice_Horizontal"
 		"battleaxe":
 			return "2H_Melee_Attack_Slice"

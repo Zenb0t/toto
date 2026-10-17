@@ -24,7 +24,7 @@ and mouse, following whichever you used last.
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
 | **Map** (top left) | Show or hide the minimap; the choice is remembered |
 | Tap the minimap | Open the whole map, big on the screen (the game waits). Tap, click, Esc or M closes it |
-| **Weapon: …** (top right) | Testing aid: cycle through every weapon |
+| **Weapon: …** (top right) | Testing aid, hidden by default (Tune → Controls → Show weapon switch): cycle through every weapon |
 | **II** (top right) | Pause menu: resume, customize controls, tune gameplay, credits, restart run |
 
 **Keyboard and mouse**
@@ -62,7 +62,7 @@ chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and oft
 weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
-fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 with Magic Missile, the Dash and a Potion of
+fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 with the Dagger, the Dash and a Potion of
 Healing.
 
 ## Play on a phone
@@ -104,8 +104,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`, `MouseAim`, `TouchZones`) and `InputMode` (touch or
   keyboard and mouse)
-- `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Sword`, `Battleaxe`, `Knuckles`, `LightningBolt`, `MephiticCloud`,
-  `Fireball`, `Crossbow`, `Bow`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
+- `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Knuckles`, `LightningBolt`, `MephiticCloud`,
+  `Fireball`, `Crossbow`, `Bow`, or an `ArcWeapon` archetype: `Dagger`, `Sword`, `Battleaxe`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects, `Charge`: seconds held to strength), when a weapon fires
   (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead), what they are doing (`EnemyBrain`, a
   small state machine: idle, hunt, position, wind up, recover), how a room's enemies fight as a team (`Squad`:

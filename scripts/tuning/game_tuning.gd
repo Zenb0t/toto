@@ -19,6 +19,7 @@ const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
 const CONTROLS_BUTTON_CATCH := "controls.button_catch"
 const CONTROLS_HAPTIC := "controls.haptic_ms"
 const CONTROLS_DRAG_REACH := "controls.drag_reach"
+const CONTROLS_SHOW_WEAPON_SWITCH := "controls.show_weapon_switch"
 ## A short buzz, in milliseconds, when an aim comes back into the dead zone.
 const DEFAULT_HAPTIC_MS := 20
 const LOOT_ENEMY_DROP_CHANCE := "loot.enemy_drop_chance"
@@ -35,15 +36,15 @@ const LOOT_GROUP := "Loot"
 const CONTROLS_GROUP := "Controls"
 const CAMERA_GROUP := "Camera"
 const EQUIPPED_MARK := "  (equipped)"
-const DEFAULT_WEAPON_ID := "wand"
+const DEFAULT_WEAPON_ID := "dagger"
 const DEFAULT_UTILITY_ID := "dash"
 
 
 ## Every weapon, in the order the quick switch cycles through them.
 static func weapons() -> Array[Weapon]:
 	return [
-		MagicMissile.new(), Sword.new(), Fireball.new(), Crossbow.new(), LightningBolt.new(), MephiticCloud.new(),
-		Battleaxe.new(), Knuckles.new(), Bow.new(),
+		Dagger.new(), MagicMissile.new(), Sword.new(), Fireball.new(), Crossbow.new(), LightningBolt.new(),
+		MephiticCloud.new(), Battleaxe.new(), Knuckles.new(), Bow.new(),
 	]
 
 
@@ -149,6 +150,8 @@ static func create() -> Tuning:
 		Tuning.Param.new(
 			CONTROLS_DRAG_REACH, "Full drag reach (x button)", CONTROLS_GROUP, 1, 4, 0.1, AimButton.DEFAULT_DRAG_REACH),
 		Tuning.Param.new(CONTROLS_HAPTIC, "Haptic buzz (ms, 0 = off)", CONTROLS_GROUP, 0, 80, 5, DEFAULT_HAPTIC_MS),
+		Tuning.Param.new(
+			CONTROLS_SHOW_WEAPON_SWITCH, "Show weapon switch (0 = hide)", CONTROLS_GROUP, 0, 1, 1, 0),
 		Tuning.Param.new(
 			CAMERA_PITCH, "Tilt (90 = top-down)", CAMERA_GROUP, 30, 90, 1, CameraFraming.DEFAULT_PITCH_DEGREES),
 		Tuning.Param.new(
@@ -303,6 +306,11 @@ static func drag_reach(tuning: Tuning) -> float:
 ## How long the buzz lasts when an aim comes back into the dead zone, in milliseconds (0 = no buzz).
 static func haptic_ms(tuning: Tuning) -> int:
 	return roundi(tuning.value(CONTROLS_HAPTIC))
+
+
+## Whether the HUD shows the weapon switch, a testing aid that cycles through every weapon.
+static func shows_weapon_switch(tuning: Tuning) -> bool:
+	return tuning.value(CONTROLS_SHOW_WEAPON_SWITCH) >= 1.0
 
 
 static func camera_framing(tuning: Tuning) -> CameraFraming:

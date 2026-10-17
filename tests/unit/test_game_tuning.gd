@@ -41,8 +41,22 @@ func test_whole_number_settings_stay_whole() -> void:
 	assert_eq(bolts, 5)
 
 
-func test_an_unknown_weapon_falls_back_to_the_starter_wand() -> void:
-	assert_eq(GameTuning.weapon(GameTuning.create(), "banana").id, "wand")
+func test_an_unknown_weapon_falls_back_to_the_starter_dagger() -> void:
+	assert_eq(GameTuning.weapon(GameTuning.create(), "banana").id, "dagger")
+
+
+func test_runs_start_with_the_dagger_and_the_magic_missile_is_still_a_weapon() -> void:
+	assert_eq(RunState.new().weapon_id, "dagger")
+	assert_has(GameTuning.weapon_ids(), "wand")
+
+
+func test_the_weapon_switch_is_hidden_until_tune_shows_it() -> void:
+	var tuning := GameTuning.create()
+	assert_false(GameTuning.shows_weapon_switch(tuning))
+
+	tuning.set_value(GameTuning.CONTROLS_SHOW_WEAPON_SWITCH, 1)
+
+	assert_true(GameTuning.shows_weapon_switch(tuning))
 
 
 func test_the_quick_switch_visits_every_weapon_and_wraps_around() -> void:

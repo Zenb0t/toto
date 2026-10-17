@@ -575,6 +575,7 @@ func _apply_tuning(tuning: Tuning) -> void:
 	_player.move_speed = GameTuning.player_move_speed(tuning)
 	_world.framing = GameTuning.camera_framing(tuning)
 	_world.set_wall_height(GameTuning.wall_height(tuning))
+	_weapon_switch.visible = GameTuning.shows_weapon_switch(tuning)
 	_equip(GameTuning.weapon(tuning, _weapon_id), GameTuning.utility(tuning, _utility_id))
 	_attack_button.dead_zone = GameTuning.weapon_dead_zone(tuning)
 	_utility_button.dead_zone = GameTuning.utility_dead_zone(tuning)
@@ -620,7 +621,8 @@ func _on_layout_finished(layout: ControlLayout) -> void:
 	_pause_menu.return_to_panel()
 
 
-## Testing aid: cycles through every weapon, keeping each one's own tuning. Runs still start with the MagicMissile.
+## Testing aid: cycles through every weapon, keeping each one's own tuning. Runs still start with the Dagger, and
+## the HUD button stays hidden unless Tune → Controls shows it (the keyboard key always works).
 func _on_weapon_switch_pressed() -> void:
 	_weapon_id = GameTuning.next_weapon_id(_weapon_id)
 	_apply_tuning(_tuning)
