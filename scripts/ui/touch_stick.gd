@@ -30,6 +30,10 @@ var accepts_touch := true:
 		if not value:
 			_forget_touch()
 
+## On-screen controls inside the stick's area that keep their own touches (the minimap, the Map button):
+## a touch landing on one of them while it shows doesn't bring up the stick.
+var blockers: Array[Control] = []
+
 var _touch_index := NO_TOUCH
 var _origin := Vector2.ZERO
 var _finger := Vector2.ZERO
@@ -68,7 +72,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _on_touch(event: InputEventScreenTouch) -> void:
-	if event.pressed and _touch_index == NO_TOUCH and get_global_rect().has_point(event.position):
+	if event.pressed and _touch_index == NO_TOUCH and _owns(event.position):
 		_touch_index = event.index
 		_origin = event.position
 		_finger = event.position
@@ -78,6 +82,16 @@ func _on_touch(event: InputEventScreenTouch) -> void:
 		_touch_index = NO_TOUCH
 		strength_changed.emit(Vector2.ZERO)
 		queue_redraw()
+
+
+## Whether a touch landing here is the stick's: inside its area and not on a control that keeps its touches.
+func _owns(point: Vector2) -> bool:
+	if not get_global_rect().has_point(point):
+		return false
+	for blocker in blockers:
+		if is_instance_valid(blocker) and blocker.is_visible_in_tree() and blocker.get_global_rect().has_point(point):
+			return false
+	return true
 
 
 func _draw() -> void:
