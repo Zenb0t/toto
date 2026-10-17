@@ -15,6 +15,9 @@ signal returned_to_dead_zone
 const DEFAULT_DEAD_ZONE := 32.0
 ## How far around the button a touch still grabs it, as a multiple of the button's radius.
 const DEFAULT_CATCH_SCALE := 1.6
+## How far past the button a drag keeps adding strength (full strength), as a multiple of its radius. The
+## button's edge is half strength (see AimGesture).
+const DEFAULT_DRAG_REACH := 2.5
 ## Every aim button is in this group, so overlapping catch zones can be settled.
 const GROUP := &"aim_buttons"
 const CATCH_ZONE_COLOR := Color(1, 1, 1, 0.05)
@@ -51,6 +54,7 @@ var accepts_touch := true:
 		if not value:
 			_forget_touch()
 
+var drag_reach := DEFAULT_DRAG_REACH
 var catch_scale := DEFAULT_CATCH_SCALE:
 	set(value):
 		catch_scale = value
@@ -111,7 +115,7 @@ func _on_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed and _touch_index == NO_TOUCH and _claims(event.position):
 		_touch_index = event.index
 		_touch_origin = event.position - global_position
-		_gesture.begin(event.position, _radius())
+		_gesture.begin(event.position, _radius(), _radius() * drag_reach)
 		aim_changed.emit(Vector2.ZERO, 0.0)
 		get_viewport().set_input_as_handled()
 		queue_redraw()

@@ -494,6 +494,8 @@ func _apply_tuning(tuning: Tuning) -> void:
 	_utility_button.dead_zone = GameTuning.utility_dead_zone(tuning)
 	_attack_button.catch_scale = GameTuning.button_catch_scale(tuning)
 	_utility_button.catch_scale = GameTuning.button_catch_scale(tuning)
+	_attack_button.drag_reach = GameTuning.drag_reach(tuning)
+	_utility_button.drag_reach = GameTuning.drag_reach(tuning)
 	for enemies: Array in _enemies_by_room.values():
 		for enemy: Enemy in enemies:
 			enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier

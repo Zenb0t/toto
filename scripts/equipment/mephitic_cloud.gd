@@ -8,8 +8,6 @@ var shot_range := 380.0
 var damage := 1
 var cloud_radius := 75.0
 var cloud_seconds := 3.0
-## Above 1, short drags land closer to the player (see Fireball).
-var aim_curve := 2.0
 
 
 func _init() -> void:
@@ -45,14 +43,6 @@ func attacks(origin: Vector2, direction: Vector2, aim_distance: float) -> Array:
 
 func aim_range() -> float:
 	return shot_range
-
-
-func aim_distance(strength: float) -> float:
-	return shot_range * pow(clampf(strength, 0.0, 1.0), aim_curve)
-
-
-func strength_for_distance(distance: float) -> float:
-	return pow(clampf(distance / shot_range, 0.0, 1.0), 1.0 / aim_curve)
 
 
 func needs_line_of_sight() -> bool:

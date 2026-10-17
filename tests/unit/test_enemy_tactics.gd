@@ -39,12 +39,16 @@ func test_an_enemy_attacks_only_when_its_target_is_within_reach() -> void:
 	assert_false(EnemyTactics.can_attack(300.0, 12.0, 100.0))
 
 
-func test_melee_fighters_want_to_be_closer_than_shooters_and_throwers() -> void:
+func test_melee_fighters_want_to_be_closer_than_shooters() -> void:
 	var sword := Sword.new().ideal_distance()
 	var crossbow := Crossbow.new().ideal_distance()
 	var wand := MagicMissile.new().ideal_distance()
-	var fireball := Fireball.new().ideal_distance()
 
 	assert_lt(sword, crossbow)
 	assert_lt(crossbow, wand)
-	assert_lt(wand, fireball)
+
+
+func test_throwers_keep_well_clear_of_their_own_blast() -> void:
+	var fireball := Fireball.new()
+
+	assert_gt(fireball.ideal_distance(), fireball.blast_radius * 2.0)

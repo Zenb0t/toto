@@ -58,22 +58,6 @@ func test_a_full_drag_aims_the_fireball_at_its_max_range() -> void:
 	assert_eq(fireball.aim_distance(1.0), fireball.shot_range)
 
 
-func test_a_short_drag_aims_the_fireball_closer_than_its_share_of_the_range() -> void:
-	var fireball := Fireball.new()
-	fireball.shot_range = 400.0
-	fireball.aim_curve = 2.0
-
-	assert_almost_eq(fireball.aim_distance(0.5), 100.0, 0.001)
-
-
-func test_a_fireball_aim_curve_of_one_aims_in_proportion_to_the_drag() -> void:
-	var fireball := Fireball.new()
-	fireball.shot_range = 400.0
-	fireball.aim_curve = 1.0
-
-	assert_almost_eq(fireball.aim_distance(0.5), 200.0, 0.001)
-
-
 func test_a_weapon_aims_in_proportion_to_the_drag_by_default() -> void:
 	var wand := MagicMissile.new()
 
