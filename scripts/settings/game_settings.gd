@@ -7,6 +7,11 @@ const _LAYOUT_SECTION := "touch_controls"
 const _LAYOUT_KEY := "layout"
 const _TUNING_SECTION := "tuning"
 const _TUNING_KEY := "values"
+## How many health points one point of health was when the values were saved. Saves from before it
+## existed were on the old scale, where a hero had 10 health instead of 1000.
+const _TUNING_SCALE_KEY := "health_scale"
+const OLD_HEALTH_SCALE := 1
+const HEALTH_SCALE := 100
 
 const _MINIMAP_SECTION := "minimap"
 const _MINIMAP_KEY := "shown"
@@ -29,14 +34,23 @@ func save_layout(layout: ControlLayout) -> Error:
 
 func load_tuning() -> Tuning:
 	var tuning := GameTuning.create()
-	var data: Variant = _store.load_section(_TUNING_SECTION).get(_TUNING_KEY)
+	var section := _store.load_section(_TUNING_SECTION)
+	var data: Variant = section.get(_TUNING_KEY)
 	if data is Dictionary:
-		tuning.load_dict(data)
+		var factor := _points_factor(section.get(_TUNING_SCALE_KEY, OLD_HEALTH_SCALE))
+		tuning.load_dict(GameTuning.rescaled_points(data, factor))
 	return tuning
 
 
+## What saved health points are multiplied by to reach today's scale. A broken scale leaves them as they are.
+static func _points_factor(saved_scale: Variant) -> float:
+	if (saved_scale is int or saved_scale is float) and saved_scale > 0:
+		return float(HEALTH_SCALE) / saved_scale
+	return 1.0
+
+
 func save_tuning(tuning: Tuning) -> Error:
-	return _store.save_section(_TUNING_SECTION, {_TUNING_KEY: tuning.to_dict()})
+	return _store.save_section(_TUNING_SECTION, {_TUNING_KEY: tuning.to_dict(), _TUNING_SCALE_KEY: HEALTH_SCALE})
 
 
 

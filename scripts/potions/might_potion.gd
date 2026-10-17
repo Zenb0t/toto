@@ -2,7 +2,7 @@ class_name MightPotion
 extends Potion
 ## Hits harder for a while: every attack does extra damage.
 
-var bonus_damage := 1
+var bonus_damage := 100
 var duration := 8.0
 
 
@@ -16,7 +16,7 @@ func _init() -> void:
 
 func knobs() -> Array[Knob]:
 	return [
-		Knob.new("bonus_damage", "Extra damage", 1, 5, 1),
+		Knob.new("bonus_damage", "Extra damage", 10, 500, 10, true),
 		Knob.new("duration", "Duration (s)", 1.0, 20.0, 0.5),
 	]
 

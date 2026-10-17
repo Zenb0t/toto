@@ -15,7 +15,7 @@ signal attack_fired(attacks: Array)
 ## Every enemy is in this group, so area attacks can find them.
 const GROUP := &"enemies"
 const DEFAULT_MOVE_SPEED := 85.0
-const DEFAULT_MAX_HEALTH := 3
+const DEFAULT_MAX_HEALTH := 300
 ## Every kind of enemy is this much tougher than the Bestiary lists it.
 const DEFAULT_HEALTH_MULTIPLIER := 1.1
 ## Enemies hold one charge of ammo and reload it this many times slower than the player does with the same

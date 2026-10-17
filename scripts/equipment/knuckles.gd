@@ -7,7 +7,7 @@ extends Weapon
 var punches := 4
 var punch_range := 90.0
 var punch_speed := 900.0
-var damage := 1
+var damage := 50
 ## Punches land a little to either side of the aim, alternating.
 var spread_degrees := 8.0
 ## Seconds between two punches of a flurry.
@@ -30,7 +30,7 @@ func knobs() -> Array[Knob]:
 		Knob.new("punches", "Punches", 1, 8, 1),
 		Knob.new("punch_range", "Reach", 30, 200, 5),
 		Knob.new("punch_speed", "Punch speed", 200, 1500, 10),
-		Knob.new("damage", "Damage per punch", 1, 5, 1),
+		Knob.new("damage", "Damage per punch", 10, 500, 10, true),
 		Knob.new("spread_degrees", "Spread (deg)", 0, 30, 1),
 		Knob.new("punch_gap", "Between punches (s)", 0.0, 0.3, 0.01),
 	])

@@ -5,7 +5,7 @@ extends Weapon
 
 var shot_speed := 300.0
 var shot_range := 280.0
-var damage := 2
+var damage := 200
 var blast_radius := 70.0
 
 
@@ -24,7 +24,7 @@ func knobs() -> Array[Knob]:
 	result.append_array([
 		Knob.new("shot_speed", "Throw speed", 60, 800, 10),
 		Knob.new("shot_range", "Max range", 100, 1000, 10),
-		Knob.new("damage", "Damage", 1, 5, 1),
+		Knob.new("damage", "Damage", 10, 500, 10, true),
 		Knob.new("blast_radius", "Blast radius", 20, 200, 5),
 	])
 	return result

@@ -9,7 +9,7 @@ var display_name := ""
 ## Its symbol in the map format (see DungeonMapParser).
 var letter := ""
 var weapon_id := ""
-var max_health := 3
+var max_health := 300
 ## How fast it moves, relative to the tuned enemy speed.
 var speed_multiplier := 1.0
 ## How big it is, relative to an ordinary enemy: its body (what attacks hit) and its model.

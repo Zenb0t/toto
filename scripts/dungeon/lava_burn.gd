@@ -3,7 +3,7 @@ extends RefCounted
 ## How much lava hurts whoever stands in it: a burn the moment they step in, then another every
 ## BURN_INTERVAL while they stay. Stepping out resets it. Knows no nodes: the caller says who is where.
 
-const DAMAGE := 1
+const DAMAGE := 100
 const BURN_INTERVAL := 0.5
 
 var _time_in_lava := {}  # actor key -> seconds since the last burn

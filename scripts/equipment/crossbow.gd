@@ -6,7 +6,7 @@ var bolts := 3
 var spread_degrees := 30.0
 var shot_speed := 480.0
 var shot_range := 380.0
-var damage := 1
+var damage := 100
 
 
 func _init() -> void:
@@ -26,7 +26,7 @@ func knobs() -> Array[Knob]:
 		Knob.new("spread_degrees", "Spread (deg)", 0, 120, 5),
 		Knob.new("shot_speed", "Shot speed", 100, 1200, 10),
 		Knob.new("shot_range", "Range", 100, 1000, 10),
-		Knob.new("damage", "Damage", 1, 5, 1),
+		Knob.new("damage", "Damage", 10, 500, 10, true),
 	])
 	return result
 

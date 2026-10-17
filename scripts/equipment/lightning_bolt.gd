@@ -5,7 +5,7 @@ extends Weapon
 
 var shot_speed := 620.0
 var shot_range := 480.0
-var damage := 1
+var damage := 100
 ## How many times it jumps on from an enemy it hit, and how far it can jump.
 var chains := 2
 var chain_range := 160.0
@@ -26,7 +26,7 @@ func knobs() -> Array[Knob]:
 	result.append_array([
 		Knob.new("shot_speed", "Shot speed", 200, 1500, 10),
 		Knob.new("shot_range", "Range", 100, 1200, 10),
-		Knob.new("damage", "Damage", 1, 5, 1),
+		Knob.new("damage", "Damage", 10, 500, 10, true),
 		Knob.new("chains", "Jumps", 0, 5, 1),
 		Knob.new("chain_range", "Jump range", 40, 400, 10),
 	])

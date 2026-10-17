@@ -29,7 +29,7 @@ func test_a_monster_has_the_health_of_its_kind() -> void:
 
 func test_tuned_health_scales_every_kind_but_leaves_at_least_one() -> void:
 	assert_eq(_monster_at(Vector2.ZERO, "orc", 2.0).health.maximum, Bestiary.by_id("orc").max_health * 2)
-	assert_eq(_monster_at(Vector2(0, 100), "kobold", 0.1).health.maximum, 1)
+	assert_eq(_monster_at(Vector2(0, 100), "kobold", 0.001).health.maximum, 1)
 
 
 func test_a_big_monster_is_hit_from_farther_away() -> void:

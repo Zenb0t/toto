@@ -5,7 +5,7 @@ extends Weapon
 
 var shot_speed := 320.0
 var shot_range := 380.0
-var damage := 1
+var damage := 100
 var cloud_radius := 75.0
 var cloud_seconds := 3.0
 
@@ -24,7 +24,7 @@ func knobs() -> Array[Knob]:
 	var result := super.knobs()
 	result.append_array([
 		Knob.new("shot_range", "Max range", 100, 1000, 10),
-		Knob.new("damage", "Damage per tick", 1, 3, 1),
+		Knob.new("damage", "Damage per tick", 10, 300, 10, true),
 		Knob.new("cloud_radius", "Cloud radius", 20, 200, 5),
 		Knob.new("cloud_seconds", "Cloud time (s)", 0.5, 8.0, 0.1),
 	])

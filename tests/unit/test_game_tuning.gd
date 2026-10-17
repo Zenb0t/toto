@@ -146,9 +146,9 @@ func test_heal_is_no_longer_a_utility_it_is_a_potion() -> void:
 func test_each_potion_keeps_its_own_settings() -> void:
 	var tuning := GameTuning.create()
 
-	tuning.set_value(GameTuning.key("healing", "amount"), 7)
+	tuning.set_value(GameTuning.key("healing", "amount"), 700)
 
-	assert_eq((GameTuning.potion(tuning, "healing") as HealingPotion).amount, 7)
+	assert_eq((GameTuning.potion(tuning, "healing") as HealingPotion).amount, 700)
 	assert_eq(GameTuning.potion(tuning, "haste").id, "haste")
 
 
@@ -157,3 +157,15 @@ func test_healing_potions_turn_up_more_often_than_the_others() -> void:
 
 	assert_gt(weights["healing"], weights["haste"])
 	assert_gt(weights["healing"], weights["might"])
+
+
+func test_damage_and_healing_knobs_count_health_points() -> void:
+	var keys := GameTuning.points_keys()
+
+	assert_has(keys, GameTuning.key("sword", "damage"))
+	assert_has(keys, GameTuning.key("healing", "amount"))
+	assert_does_not_have(keys, GameTuning.key("sword", "windup"))
+
+
+func test_two_punches_do_what_one_magic_missile_does() -> void:
+	assert_eq(Knuckles.new().damage * 2, MagicMissile.new().shot_damage)

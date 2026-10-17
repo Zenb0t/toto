@@ -13,7 +13,7 @@ signal utility_used(utility_id: String)
 ## The player is in this group, so area attacks (like the fireball's blast) can find them.
 const GROUP := &"players"
 const DEFAULT_MOVE_SPEED := 140.0
-const MAX_HEALTH := 10
+const MAX_HEALTH := 1000
 const RADIUS := 12.0
 const BODY_COLOR := Color(0.35, 0.75, 1.0)
 const AIM_PREVIEW_COLOR := Color(1, 1, 1, 0.3)

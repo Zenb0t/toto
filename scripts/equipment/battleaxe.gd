@@ -15,5 +15,5 @@ func _init() -> void:
 	windup = 0.35
 	reach = 85.0
 	arc_degrees = 180.0
-	damage = 4
+	damage = 400
 	sweep_seconds = 0.25

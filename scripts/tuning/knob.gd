@@ -8,11 +8,16 @@ var label: String
 var min_value: float
 var max_value: float
 var step: float
+## Health points (damage, healing): these moved to a finer scale once, and old saves get scaled with them.
+var is_points: bool
 
 
-func _init(field_name: String, knob_label: String, minimum: float, maximum: float, step_size: float) -> void:
+func _init(
+		field_name: String, knob_label: String, minimum: float, maximum: float, step_size: float,
+		counts_points := false) -> void:
 	field = field_name
 	label = knob_label
 	min_value = minimum
 	max_value = maximum
 	step = step_size
+	is_points = counts_points

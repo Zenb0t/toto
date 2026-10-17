@@ -163,6 +163,31 @@ static func create() -> Tuning:
 	return Tuning.new(params)
 
 
+## The keys of knobs counted in health points (damage, healing), which old saves hold on an older scale.
+static func points_keys() -> Array[String]:
+	var keys: Array[String] = []
+	var tunables: Array = []
+	tunables.append_array(weapons())
+	tunables.append_array(utilities())
+	tunables.append_array(potions())
+	for each: Object in tunables:
+		for knob: Knob in each.knobs():
+			if knob.is_points:
+				keys.append(key(each.id, knob.field))
+	return keys
+
+
+## Saved values brought from an older health scale to this one: health points are multiplied by factor, the
+## rest stays as it was. Returns a new dictionary.
+static func rescaled_points(saved: Dictionary, factor: float) -> Dictionary:
+	var result := saved.duplicate()
+	for points_key in points_keys():
+		var value: Variant = result.get(points_key)
+		if value is float or value is int:
+			result[points_key] = value * factor
+	return result
+
+
 ## The Tune screen's menu: every group of knobs, sorted into sections. Weapons and utilities each get an
 ## entry under their section, with the equipped one marked.
 static func sections(equipped_weapon_id: String, equipped_utility_id: String) -> Array[TuningSection]:

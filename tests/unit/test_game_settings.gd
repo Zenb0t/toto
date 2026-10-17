@@ -33,6 +33,25 @@ func test_saved_tuning_is_there_next_time_the_game_starts() -> void:
 	assert_eq(_settings().load_tuning().value(GameTuning.key("wand", "windup")), 0.5)
 
 
+func test_saved_damage_is_there_next_time_the_game_starts() -> void:
+	var tuning := GameTuning.create()
+	tuning.set_value(GameTuning.key("sword", "damage"), 250)
+	_settings().save_tuning(tuning)
+
+	assert_eq(_settings().load_tuning().value(GameTuning.key("sword", "damage")), 250.0)
+
+
+func test_damage_saved_before_health_went_up_a_hundredfold_is_scaled_with_it() -> void:
+	var config := ConfigFile.new()
+	config.set_value("tuning", "values", {"sword.damage": 3, "wand.windup": 0.4})
+	config.save(PATH)
+
+	var tuning := _settings().load_tuning()
+
+	assert_eq(tuning.value(GameTuning.key("sword", "damage")), 300.0)
+	assert_eq(tuning.value(GameTuning.key("wand", "windup")), 0.4)
+
+
 func test_saving_tuning_keeps_the_saved_layout() -> void:
 	var layout := ControlLayout.new()
 	layout.set_diameter(ControlLayout.UTILITY, 222.0)

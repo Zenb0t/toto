@@ -2,7 +2,7 @@ class_name HealingPotion
 extends Potion
 ## Restores some health at once. The only way to heal: the Heal utility it replaced was too strong.
 
-var amount := 4
+var amount := 400
 
 
 func _init() -> void:
@@ -15,7 +15,7 @@ func _init() -> void:
 
 
 func knobs() -> Array[Knob]:
-	return [Knob.new("amount", "Health restored", 1, 10, 1)]
+	return [Knob.new("amount", "Health restored", 50, 1000, 10, true)]
 
 
 func effect() -> UtilityEffect:

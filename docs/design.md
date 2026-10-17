@@ -42,8 +42,13 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
 | Lightning Bolt | Dungeon Crawl's bolt, shot like Jessie's: when it hits an enemy it jumps on to the nearest other enemy within 160, twice (never one it already hit) | Line |
 | Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 3 s that hurts enemies inside every 0.6 s. Doesn't hurt the thrower | Landing circle |
-| Battleaxe | Like Frank's hammer: a long wind-up, then a 180° sweep for 4 damage | Cone |
-| Knuckles | Like El Primo's fists: a flurry of 4 short, fast punches 0.07 s apart, alternating a little to each side, each thrown from where you stand by then. Fought bare-handed | Narrow cone |
+| Battleaxe | Like Frank's hammer: a long wind-up, then a 180° sweep for 400 damage | Cone |
+| Knuckles | Like El Primo's fists: a flurry of 4 short, fast punches 0.07 s apart, alternating a little to each side, each thrown from where you stand by then, 50 damage each (two punches to a Magic Missile). Fought bare-handed | Narrow cone |
+
+**Health points, like Brawl Stars.** Health and damage are counted in big numbers (the hero has 1000, a bandit
+300, a Magic Missile does 100) rather than Dungeon Crawl's small ones, so weapons can be tuned finely (a punch
+does half a missile) and tiers can come later without fractions. Tuned values saved on the old scale (×1) are
+multiplied by 100 when loaded (`GameSettings`, knobs marked `Knob.is_points`).
 
 **Ammo, like Brawl Stars.** A weapon holds 3 charges (`Ammo`): each attack spends one, they reload one at a time
 (each weapon its own reload time), and there is only a short gap between attacks (0.3 s), so a burst of three is
@@ -59,16 +64,16 @@ playtest settled on (1.6× the old cooldown, from before ammo). Utilities keep a
 | Shield | Blocks all damage (your own blasts included) for a moment | None: tap anywhere |
 | Blink | Like Dungeon Crawl's scroll of blinking: an instant hop (140) where you aim. Walls and water stop it short; enemies don't, so it gets you out of a corner | Line as long as the hop |
 | Lesser Beckoning | Like Gene's magic hand: a quick bolt that drags the first enemy it hits back to where it was cast, cancelling the attack it was winding up | Line |
-| Frost Nova | A burst around you: 1 damage to every enemy in reach, and they act at half speed (moving, winding up, recovering) for 2.5 s. An icy ring on the floor marks a slowed enemy | The burst's circle around you |
+| Frost Nova | A burst around you: 100 damage to every enemy in reach, and they act at half speed (moving, winding up, recovering) for 2.5 s. An icy ring on the floor marks a slowed enemy | The burst's circle around you |
 
 **Potions** (consumables, like Dungeon Crawl's). Heal used to be a utility, but healing on a cooldown was too
 strong: it made every fight winnable by waiting. Healing is now only from potions, which run out.
 
 | Potion | Effect | How common |
 | --- | --- | --- |
-| Healing | Restores 4 health | 3 in 5 |
+| Healing | Restores 400 health | 3 in 5 |
 | Haste | Move 1.5× faster for 6 s | 1 in 5 |
-| Might | Every attack does +1 damage for 8 s | 1 in 5 |
+| Might | Every attack does +100 damage for 8 s | 1 in 5 |
 
 You carry up to 3 of each kind in the potion belt (buttons under the weapon switch, one per kind held, with
 the count); tap one to drink it. Runs start with one Potion of Healing. Potions lie on the floor (half of the
@@ -184,23 +189,23 @@ still decides how it fights). The map letter names the monster, so playtests sta
 
 | Letter | Monster | Weapon | Health | Speed | Size | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| `k` | Kobold | Sword | 2 | 1.25× | small | Quick and frail, comes in numbers |
-| `g` | Goblin | Magic Missile | 2 | 1.1× | small | |
-| `a` | Goblin archer | Crossbow | 2 | 1.1× | small | |
-| `s` | Bandit (human) | Sword | 3 | 1× | | |
-| `w` | Apprentice (human) | Magic Missile | 3 | 1× | | |
-| `c` | Crossbowman (human) | Crossbow | 3 | 1× | | |
-| `f` | Pyromancer (human) | Fireball | 3 | 1× | | |
-| `n` | Necromancer (human) | Mephitic Cloud | 4 | 0.95× | | |
-| `o` | Orc | Sword | 5 | 1× | large | |
-| `W` | Orc wizard | Fireball | 4 | 0.95× | large | |
-| `d` | Dwarf | Crossbow | 8 | 0.7× | | The tank: slow and sturdy |
-| `e` | Deep elf mage | Lightning Bolt | 5 | 1.05× | | Pointy ears; bolts jump between foes |
-| `z` | Skeleton (undead) | Sword | 4 | 0.9× | | |
-| `x` | Skeleton archer (undead) | Crossbow | 4 | 0.9× | | |
-| `m` | Skeletal mage (undead) | Mephitic Cloud | 5 | 0.9× | | |
-| `Z` | Skeleton warrior (undead) | Battleaxe | 7 | 0.85× | large | |
-| `O` | Ogre | Battleaxe | 14 | 0.6× | huge | +1 damage on every hit |
+| `k` | Kobold | Sword | 200 | 1.25× | small | Quick and frail, comes in numbers |
+| `g` | Goblin | Magic Missile | 200 | 1.1× | small | |
+| `a` | Goblin archer | Crossbow | 200 | 1.1× | small | |
+| `s` | Bandit (human) | Sword | 300 | 1× | | |
+| `w` | Apprentice (human) | Magic Missile | 300 | 1× | | |
+| `c` | Crossbowman (human) | Crossbow | 300 | 1× | | |
+| `f` | Pyromancer (human) | Fireball | 300 | 1× | | |
+| `n` | Necromancer (human) | Mephitic Cloud | 400 | 0.95× | | |
+| `o` | Orc | Sword | 500 | 1× | large | |
+| `W` | Orc wizard | Fireball | 400 | 0.95× | large | |
+| `d` | Dwarf | Crossbow | 800 | 0.7× | | The tank: slow and sturdy |
+| `e` | Deep elf mage | Lightning Bolt | 500 | 1.05× | | Pointy ears; bolts jump between foes |
+| `z` | Skeleton (undead) | Sword | 400 | 0.9× | | |
+| `x` | Skeleton archer (undead) | Crossbow | 400 | 0.9× | | |
+| `m` | Skeletal mage (undead) | Mephitic Cloud | 500 | 0.9× | | |
+| `Z` | Skeleton warrior (undead) | Battleaxe | 700 | 0.85× | large | |
+| `O` | Ogre | Battleaxe | 1400 | 0.6× | huge | +100 damage on every hit |
 
 Size is the body attacks hit, so an ogre is easier to hit than a kobold. Tune → Enemies scales every
 monster's health at once (Health ×). Models show the race: colour, size, pointy ears (kobolds, goblins, elves),
@@ -246,8 +251,8 @@ monsters, chests) is new. The HUD shows the floor; the pause menu shows the floo
 
 **Experience** (`Experience`). Like Dungeon Crawl's experience levels (or Brawl Stars' power cubes),
 defeating monsters makes the hero tougher, so the descent stays winnable without free healing. A kill is worth
-the monster's health in points (a kobold 2, an ogre 14); going from level n to n+1 takes 5×n points; each
-level adds 2 to maximum health (and heals those 2), up to level 10. Levels carry down the stairs. The HUD
+the monster's health in points (a kobold 200, an ogre 1400); going from level n to n+1 takes 500×n points; each
+level adds 200 to maximum health (and heals those 200), up to level 10. Levels carry down the stairs. The HUD
 shows the level and the progress toward the next; "LEVEL n!" rises over the hero.
 
 **Danger** (`DungeonDifficulty.danger`): one level per floor down, plus half a level per room away from the
@@ -286,7 +291,7 @@ wrong.
 **Terrain.** Deep water (`~`) blocks walking but not sight or shots: a shooter across a pool can hit you, and
 you can hit back, but nobody walks over. Shallow water (`,`, like Dungeon Crawl's) can be waded through, but
 everyone in it moves at 60% speed; enemies go round it when dry ground is close. The Lair's caves have
-puddles of it, and its lake and pool have shallow shores. Lava (`L`) can be crossed, but burns (1 damage on stepping in, then
+puddles of it, and its lake and pool have shallow shores. Lava (`L`) can be crossed, but burns (100 damage on stepping in, then
 every half second; the Shield blocks it). Enemies path around water and avoid lava when they can.
 
 **Fog of war** (`Exploration`, `FogView`). You see 16 cells around you (farther than any weapon reaches, so

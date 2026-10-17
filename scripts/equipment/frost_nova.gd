@@ -4,7 +4,7 @@ extends Utility
 ## them (movement and attacks) for a while. Aiming doesn't matter; holding the button shows the area.
 
 var radius := 110.0
-var damage := 1
+var damage := 100
 ## Slowed enemies act at this fraction of their speed.
 var slow_multiplier := 0.5
 var slow_seconds := 2.5
@@ -22,7 +22,7 @@ func _init() -> void:
 func knobs() -> Array[Knob]:
 	var result: Array[Knob] = [
 		Knob.new("radius", "Radius", 40, 300, 5),
-		Knob.new("damage", "Damage", 0, 5, 1),
+		Knob.new("damage", "Damage", 0, 500, 10, true),
 		Knob.new("slow_multiplier", "Slowed speed (x)", 0.1, 1.0, 0.05),
 		Knob.new("slow_seconds", "Slow time (s)", 0.5, 8.0, 0.1),
 	]

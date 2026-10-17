@@ -5,7 +5,7 @@ extends Weapon
 
 var shot_speed := 360.0
 var shot_range := 420.0
-var shot_damage := 1
+var shot_damage := 100
 
 
 func _init() -> void:
@@ -23,7 +23,7 @@ func knobs() -> Array[Knob]:
 	result.append_array([
 		Knob.new("shot_speed", "Shot speed", 100, 1200, 10),
 		Knob.new("shot_range", "Range", 100, 1000, 10),
-		Knob.new("shot_damage", "Damage", 1, 5, 1),
+		Knob.new("shot_damage", "Damage", 10, 500, 10, true),
 	])
 	return result
 

@@ -5,9 +5,9 @@ extends RefCounted
 
 const MAX_LEVEL := 10
 ## Going from level n to n + 1 takes n times this many points.
-const POINTS_PER_LEVEL := 5
+const POINTS_PER_LEVEL := 500
 ## Extra maximum health for every level above the first.
-const HEALTH_PER_LEVEL := 2
+const HEALTH_PER_LEVEL := 200
 
 var points := 0
 
