@@ -68,6 +68,7 @@ var _experience := Experience.new(_run.experience)
 @onready var _pause_menu: PauseMenu = $Overlay/PauseMenu
 @onready var _layout_editor: LayoutEditor = $Overlay/LayoutEditor
 @onready var _tuning_panel: TuningPanel = $Overlay/TuningPanel
+@onready var _credits_panel: CreditsPanel = $Overlay/CreditsPanel
 @onready var _run_summary: RunSummaryPanel = $Overlay/RunSummary
 
 
@@ -219,6 +220,8 @@ func _connect_menu() -> void:
 	_pause_menu.tuning_requested.connect(_on_tuning_requested)
 	_tuning_panel.tuning_changed.connect(_apply_tuning)
 	_tuning_panel.finished.connect(_on_tuning_finished)
+	_pause_menu.credits_requested.connect(_on_credits_requested)
+	_credits_panel.finished.connect(_on_credits_finished)
 	_run_summary.play_again_pressed.connect(_restart)
 
 
@@ -594,6 +597,16 @@ func _on_tuning_finished(tuning: Tuning) -> void:
 	_tuning = tuning
 	_apply_tuning(tuning)
 	_warn_if_failed(_settings.save_tuning(tuning), "the tuning")
+	_pause_menu.return_to_panel()
+
+
+func _on_credits_requested() -> void:
+	_hud_layer.hide()
+	_credits_panel.open()
+
+
+func _on_credits_finished() -> void:
+	_hud_layer.show()
 	_pause_menu.return_to_panel()
 
 

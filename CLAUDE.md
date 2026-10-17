@@ -72,7 +72,26 @@ database collection `tunings` (`text` = the exported JSON, `changed` = changed k
 the `ArtifactData` tool (`list` or `query` on collection `tunings` of the artifact URL), newest `savedAt` first.
 When the user settles on values, copy them into the class defaults.
 
+## Agent skills
+
+Matt Pocock's engineering skills are vendored in `.claude/skills/` (see its README): `/triage`, `/wayfinder`,
+`/to-spec`, `/to-tickets`, `/grill-me`, `/pr` and the skills they call.
+
+### Issue tracker
+
+GitHub Issues on `zenb0t/toto`; cloud sessions use the GitHub MCP tools instead of `gh`. Epics are wayfinder
+maps. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The default triage vocabulary (`bug` / `enhancement` + `needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix`), plus `wayfinder:*` for epics. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context; `docs/design.md` is the decision record (no ADR folder). See `docs/agents/domain.md`.
+
 ## Git
 
-Work happens on the session's feature branch; `main` holds the latest shipped state. Don't push to `main` or
-open PRs unless asked.
+Work happens on the session's feature branch; `main` holds the latest shipped state. Never push to `main`
+directly: changes reach it through a pull request (body shaped by the `pr` skill), which the maintainer merges.

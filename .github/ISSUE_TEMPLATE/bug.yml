@@ -1,0 +1,59 @@
+name: Bug
+description: Something in the game is broken or behaves wrongly.
+labels: ["bug", "needs-triage"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, in a sentence or two.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: As exact as you can. "Sometimes" is fine if that's all we know.
+      placeholder: |
+        1. Start a run
+        2. Go down to floor 2
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: seed
+    attributes:
+      label: Seed and floor
+      description: Shown in the pause menu. With the seed, the same map can be generated again.
+      placeholder: "seed 123456, floor 3"
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - Phone playtest (artifact page)
+        - Web build on a computer
+        - Godot editor / desktop build
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: "Pixel 8, Chrome 141"
+  - type: textarea
+    id: tuning
+    attributes:
+      label: Changed tuning
+      description: Anything changed in the Tune screen (or sent with Send to Claude) that might matter.
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshot or video
+      description: Drag files here.

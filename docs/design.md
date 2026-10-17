@@ -384,6 +384,11 @@ the level reached and the monsters slain, and a **Play again** button. Every att
 (the monster's name, "your own Fireball", "lava"), and the hero remembers what hurt them last. Kills are
 counted across floors (`RunState`); the lines are written by `RunSummary` (pure).
 
+**Credits.** Everything third-party that ships (the three KayKit packs, Godot and its default Noto Sans font) is
+listed in the pause menu's Credits screen. `Credits` is plain data and `CreditsPanel` only shows it, so a new
+asset pack means one new entry, and a test fails if a pack in `assets/` is not credited. CC0 does not require
+attribution; we credit anyway, and the MIT and OFL licenses of the engine and font do ask for it.
+
 **Characters** (phase 3, first pass). The models are KayKit's Adventurers and Skeletons packs (CC0, by Kay
 Lousberg, kaylousberg.com; in `assets/kaykit_adventurers` and `assets/kaykit_skeletons`): Knight, Barbarian,
 Mage, Rogue and hooded Rogue, and four skeletons, all on one rig, with weapons as separate models. `CharacterLook` (plain data) says who wears what:

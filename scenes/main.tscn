@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/touch_controls.tscn" id="2"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/ui/potion_bar.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/ui/run_summary_panel.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/ui/keyboard_mouse_controls.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/ui/credits_panel.gd" id="10"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -94,6 +95,15 @@ layer = 10
 [node name="LayoutEditor" parent="Overlay" instance=ExtResource("4")]
 
 [node name="TuningPanel" parent="Overlay" instance=ExtResource("5")]
+
+[node name="CreditsPanel" type="Control" parent="Overlay"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("10")
 
 [node name="RunSummary" type="Control" parent="Overlay"]
 layout_mode = 3
