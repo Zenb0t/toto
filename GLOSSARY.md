@@ -5,6 +5,48 @@ down the words the design uses for the first zone (village, plains, crypt).
 
 ## Language
 
+### World
+
+**Quadrant**:
+One map of the world's 3×3 grid, entered and left through its exits. The run starts in the centre quadrant.
+_Avoid_: Zone, region, level, floor (for an outdoor map)
+
+**Plains**:
+The open grassland of the centre quadrant around the village: groves, boulders, ponds and monster camps.
+_Avoid_: Field, overworld
+
+**Village**:
+The palisaded settlement in the centre of the plains where every run starts, with a gate on each side. No monsters live there, though they may chase the hero in.
+_Avoid_: Town, hub, base, safe zone
+
+**Inn**:
+The village building where the hero takes a full rest: full health after a short wait, with no risk and no limit on uses.
+_Avoid_: Tavern, hotel
+
+**Village lot**:
+One piece of the village, such as a house, the inn or the square, with its doorstep and the things that always stand by it. A village is fitted together from lots.
+_Avoid_: Plot, tile, building (a lot holds more than its building)
+
+**Square**:
+The open space at the heart of the village, with the well, where the streets from the four gates meet. The inn faces it.
+_Avoid_: Plaza, centre, market (that's a lot of its own)
+
+**Quadrant exit**:
+A gap in a quadrant's border leading to the neighbouring quadrant, one in the middle of each side. Blocked by a barricade until that quadrant exists.
+_Avoid_: Gate (that's the village's), stairs, door
+
+**Ruin**:
+A broken-walled set piece in one corner of the plains, home to the toughest group on the map and a guaranteed chest.
+_Avoid_: Vault (for the ruin itself), fort, castle
+
+**Camp**:
+The spot on the plains where one group of monsters lives, asleep or wandering. Camps farther from the village hold tougher groups.
+_Avoid_: Spawn, nest, lair (that's a branch)
+
+**Crypt entrance**:
+A small stone mausoleum on the plains with stairs down to the first level of the crypt.
+_Avoid_: Dungeon entrance, portal
+
 ### Crypt
 
 **Lich**:
