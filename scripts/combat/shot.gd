@@ -16,6 +16,23 @@ var blast_radius := 0.0
 var lobbed := false
 ## Enemies' shots hurt the player; the player's hurt enemies. (A blast hurts everyone either way.)
 var hurts_player := false
+## Who or what let it out, as a death message would name it ("an orc wizard", "your own Fireball").
+var source := ""
+## A piercing shot passes through whoever it hits (hitting each once) and only stops at walls.
+var pierces := false
+## How many times the shot bounces off walls before it stops.
+var bounces := 0
+## Above zero, where the shot ends a poison cloud lingers for this long (see PoisonCloud).
+var cloud_seconds := 0.0
+var cloud_radius := 0.0
+## A chaining shot, like Jessie's in Brawl Stars, jumps from the foe it hits to the nearest other foe within
+## chain_range (never one it already hit), this many times.
+var chains := 0
+var chain_range := 0.0
+## A pulling shot drags the first foe it hits back to where it was fired from.
+var pulls := false
+## Seconds after the attack before this shot sets off, from wherever its attacker stands by then (a flurry).
+var delay := 0.0
 var size := DEFAULT_SIZE
 var color := DEFAULT_COLOR
 
@@ -35,3 +52,7 @@ func lifetime() -> float:
 
 func explodes() -> bool:
 	return blast_radius > 0.0
+
+
+func leaves_cloud() -> bool:
+	return cloud_seconds > 0.0

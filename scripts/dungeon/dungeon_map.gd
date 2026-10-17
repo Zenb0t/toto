@@ -2,11 +2,13 @@ class_name DungeonMap
 extends RefCounted
 ## Read-only description of a dungeon: walkable cells, doors, rooms, terrain and spawn points.
 ## Rooms are areas separated by doors; a door belongs to every room it touches. A room's water and lava
-## are part of it: deep water can't be walked on but can be seen and shot across; lava can be walked on,
-## but it burns.
+## are part of it: deep water can't be walked on but can be seen and shot across; shallow water can be
+## waded through, slowly; lava can be walked on, but it burns.
 
-enum Terrain { FLOOR, WATER, LAVA }
+enum Terrain { FLOOR, WATER, LAVA, SHALLOW }
 
+## Wading through shallow water, everyone moves at this share of their speed.
+const WADING_SPEED := 0.6
 const NO_ROOM := -1
 const NO_CELL := Vector2i(-1, -1)
 
@@ -22,7 +24,7 @@ var loot_cells: Array[Vector2i] = []
 var _room_by_cell: Dictionary  # Vector2i -> int
 var _doors_by_room: Dictionary  # int -> Array[Vector2i]
 var _door_cells: Dictionary  # Vector2i -> true
-var _enemy_weapon_by_cell: Dictionary  # Vector2i -> weapon id
+var _monster_by_cell: Dictionary  # Vector2i -> monster id
 var _terrain_by_cell: Dictionary  # Vector2i -> Terrain, only for cells that aren't plain floor
 
 
@@ -32,7 +34,7 @@ func _init(
 	doors_by_room: Dictionary,
 	door_cells: Dictionary,
 	player_spawn_cell: Vector2i,
-	enemy_weapon_by_cell: Dictionary,
+	monster_by_cell: Dictionary,
 	number_of_rooms: int,
 	exit: Vector2i = NO_CELL,
 	terrain_by_cell: Dictionary = {},
@@ -43,17 +45,17 @@ func _init(
 	_doors_by_room = doors_by_room
 	_door_cells = door_cells
 	player_spawn = player_spawn_cell
-	_enemy_weapon_by_cell = enemy_weapon_by_cell
-	enemy_spawns.assign(enemy_weapon_by_cell.keys())
+	_monster_by_cell = monster_by_cell
+	enemy_spawns.assign(monster_by_cell.keys())
 	room_count = number_of_rooms
 	exit_cell = exit
 	_terrain_by_cell = terrain_by_cell
 	loot_cells = loot
 
 
-## The weapon id the enemy spawning at cell carries.
-func enemy_weapon_at(cell: Vector2i) -> String:
-	return _enemy_weapon_by_cell.get(cell, "")
+## The id of the monster (see Bestiary) spawning at cell, or "" if none does.
+func monster_at(cell: Vector2i) -> String:
+	return _monster_by_cell.get(cell, "")
 
 
 ## True for anything that isn't solid wall: room cells (water and lava included) and doors.
@@ -72,6 +74,11 @@ func is_see_through(cell: Vector2i) -> bool:
 
 func terrain_at(cell: Vector2i) -> Terrain:
 	return _terrain_by_cell.get(cell, Terrain.FLOOR)
+
+
+## How fast one moves on a cell, as a share of one's speed: slower wading through shallow water.
+func ground_speed(cell: Vector2i) -> float:
+	return WADING_SPEED if terrain_at(cell) == Terrain.SHALLOW else 1.0
 
 
 ## Where it is safe to stand or put something: walkable and not burning.

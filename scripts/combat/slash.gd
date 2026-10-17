@@ -12,6 +12,8 @@ var color: Color
 var sweep_seconds := 0.0
 ## An enemy's swing hurts the player; the player's hurts enemies.
 var hurts_player := false
+## Who or what let it out, as a death message would name it ("an orc wizard", "your own Fireball").
+var source := ""
 
 
 func _init(from: Vector2, toward: Vector2, slash_reach: float, arc: float, slash_damage: int, slash_color: Color) -> void:

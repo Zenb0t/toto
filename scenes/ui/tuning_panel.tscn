@@ -31,15 +31,21 @@ offset_bottom = 84.0
 grow_horizontal = 2
 theme_override_constants/separation = 16
 
+[node name="Back" type="Button" parent="Bar"]
+custom_minimum_size = Vector2(130, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "‹ Back"
+
 [node name="Title" type="Label" parent="Bar"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "Tune gameplay"
-vertical_alignment = 1
-
-[node name="Spacer" type="Control" parent="Bar"]
-layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+text = "Tune"
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Reset" type="Button" parent="Bar"]
 custom_minimum_size = Vector2(130, 72)

@@ -21,17 +21,9 @@ func test_a_shield_protects_for_its_duration_wherever_it_is_aimed() -> void:
 	assert_eq(effect.dash_seconds, 0.0)
 
 
-func test_a_heal_restores_its_amount() -> void:
-	var heal := Heal.new()
-	heal.amount = 4
-
-	assert_eq(heal.activate(Vector2.UP).heal_amount, 4)
-
-
 func test_only_the_dash_needs_an_aim_preview() -> void:
 	assert_not_null(Dash.new().aim_shape())
 	assert_null(Shield.new().aim_shape())
-	assert_null(Heal.new().aim_shape())
 
 
 func test_every_item_has_a_unique_id_and_a_description() -> void:
@@ -39,3 +31,39 @@ func test_every_item_has_a_unique_id_and_a_description() -> void:
 	for id in ids:
 		assert_eq(ids.count(id), 1, id)
 		assert_ne(GameTuning.item(GameTuning.create(), id).description, "", id)
+
+
+func test_a_blink_jumps_its_distance_toward_the_aim() -> void:
+	var blink := Blink.new()
+	blink.distance = 100.0
+
+	assert_eq(blink.activate(Vector2(0, -5)).blink_offset, Vector2(0, -100))
+
+
+func test_a_frost_nova_lets_out_a_chilling_burst() -> void:
+	var frost := FrostNova.new()
+
+	var effect := frost.activate(Vector2.RIGHT)
+
+	assert_eq(effect.attacks.size(), 1)
+	var nova: Nova = effect.attacks[0]
+	assert_eq(nova.radius, frost.radius)
+	assert_eq(nova.damage, frost.damage)
+	assert_lt(nova.slow_multiplier, 1.0)
+	assert_false(nova.hurts_player)
+
+
+func test_a_frost_nova_previews_the_area_around_you() -> void:
+	var shape := FrostNova.new().aim_shape()
+
+	assert_eq(shape.length, 0.0)
+	assert_eq(shape.end_radius, FrostNova.new().radius)
+
+
+func test_beckoning_throws_a_harmless_pulling_bolt_toward_the_aim() -> void:
+	var effect := Beckoning.new().activate(Vector2(0, 2))
+
+	var shot: Shot = effect.attacks[0]
+	assert_true(shot.pulls)
+	assert_eq(shot.damage, 0)
+	assert_eq(shot.direction, Vector2.DOWN)

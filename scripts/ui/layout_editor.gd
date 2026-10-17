@@ -105,7 +105,7 @@ func _screen_size() -> Vector2:
 func _draw() -> void:
 	var screen := _screen_size()
 	draw_rect(Rect2(Vector2.ZERO, screen), DIM_COLOR)
-	draw_rect(Rect2(0, 0, screen.x * ControlLayout.STICK_MAX_X, screen.y), STICK_ZONE_COLOR)
+	draw_rect(ControlLayout.stick_zone(screen), STICK_ZONE_COLOR)
 	var font := ThemeDB.fallback_font
 	for id in ControlLayout.IDS:
 		var rect := _layout.rect_in(id, screen)

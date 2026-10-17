@@ -10,8 +10,6 @@ var display_name := ""
 var description := ""
 var button_label := ""
 var color := Color.WHITE
-## Seconds between uses.
-var cooldown := 0.8
 
 
 ## The fields the Tune screen may change.

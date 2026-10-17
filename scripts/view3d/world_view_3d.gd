@@ -1,0 +1,186 @@
+class_name WorldView3D
+extends Node3D
+## The game as the player sees it: a 3D scene built over the 2D world that runs it. A fixed, Brawl
+## Stars-style camera follows the hero; the 2D plane lies on the floor (GroundView); walls and closed
+## doors stand on it (MapView3D); actors get 3D stand-ins that copy them (Puppets). Owns no game rules.
+
+const LIGHT_ROTATION_DEGREES := Vector3(-55.0, -25.0, 0.0)
+const AMBIENT_COLOR := Color(0.6, 0.6, 0.7)
+const AMBIENT_ENERGY := 0.8
+## How far up the screen from the camera's aim the floor texture is centred, in cells: a tilted camera
+## sees farther ahead than behind.
+const GROUND_LEAD := 2.0
+## Damage numbers: white over enemies, red over the hero, smaller than a level-up.
+const ENEMY_HIT_COLOR := Color(1.0, 0.95, 0.85)
+const HERO_HIT_COLOR := Color(1.0, 0.35, 0.3)
+const HIT_TEXT_SIZE := 0.6
+## Slower than this (pixels per second) counts as standing still, for the run animation.
+const MOVING_SPEED := 10.0
+## How long a fallen monster stays on the floor.
+const CORPSE_SECONDS := 1.4
+## The camera shakes briefly when the hero is hit, this far at first (in cells), settling over SHAKE_SECONDS.
+const SHAKE_DISTANCE := 0.12
+const SHAKE_SECONDS := 0.18
+
+## Where the camera sits. Takes effect on the next frame.
+var framing := CameraFraming.new()
+
+var _camera := Camera3D.new()
+var _ground := GroundView.new()
+var _map := MapView3D.new()
+var _puppets := Puppets.new()
+var _hero: Node2D
+var _shake_left := 0.0
+var _environment := Environment.new()
+
+
+func _init() -> void:
+	add_child(_ground)
+	add_child(_map)
+	add_child(_puppets)
+	add_child(_camera)
+	_add_lighting()
+
+
+## plane: the root of the 2D world, drawn on the floor from now on. Call once this view is in the tree.
+## look: the branch's (see BranchLook): its walls, what lies about, and the colour of its light.
+func show_world(plane: CanvasItem, map: DungeonMap, wall_cells: Array[Vector2i], look: BranchLook) -> void:
+	_ground.lay_down(plane)
+	_map.show_map(map, wall_cells, look)
+	_environment.ambient_light_color = look.ambient_color
+	_camera.current = true
+
+
+func set_wall_height(height: float) -> void:
+	_map.wall_height = height
+
+
+func set_doors_closed(door_cells: Array[Vector2i], closed: bool) -> void:
+	_map.set_doors_closed(door_cells, closed)
+
+
+func show_exploration(exploration: Exploration) -> void:
+	_map.show_exploration(exploration)
+
+
+## The camera follows the player, whose health and ammo show over their head (HeroBars).
+func add_player(player: Player) -> void:
+	_hero = player
+	var stand_in := CharacterModel.new(CharacterLook.hero())
+	var bars := HeroBars.new()
+	stand_in.add_child(bars)
+	_show_hits(player, player.health, stand_in, HERO_HIT_COLOR)
+	player.health.damaged.connect(func(_amount: int) -> void: _shake_left = SHAKE_SECONDS)
+	player.attack_fired.connect(func(_attacks: Array) -> void: stand_in.play_attack())
+	player.utility_used.connect(stand_in.play_utility)
+	# The hero's body hides when it dies; its model stays in view to fall.
+	player.died.connect(func() -> void:
+		bars.hide()
+		var model := _fall(player, -1.0)
+		if model != null:
+			model.visible = true)
+	_puppets.add(player, stand_in, func(model: CharacterModel) -> void:
+		model.face(player.facing)
+		model.hold(player.weapon.id)
+		model.show_moving(player.velocity.length() > MOVING_SPEED)
+		bars.show_state(player.health.current, player.health.maximum, player.ammo_fills()))
+
+
+## The model shows the enemy's race (see CharacterLook), at its size.
+func add_enemy(enemy: Enemy) -> void:
+	var monster := enemy.monster
+	var stand_in := CharacterModel.new(CharacterLook.of_monster(monster), true)
+	stand_in.scale = Vector3.ONE * monster.size
+	enemy.attack_fired.connect(func(_attacks: Array) -> void: stand_in.play_attack())
+	_show_hits(enemy, enemy.health, stand_in, ENEMY_HIT_COLOR)
+	enemy.defeated.connect(func(_defeated: Enemy) -> void:
+		add_child(DeathBurst.new(monster.color, WorldSpace.to_3d(enemy.global_position), monster.size))
+		_fall(enemy, CORPSE_SECONDS))
+	_puppets.add(enemy, stand_in, func(model: CharacterModel) -> void:
+		model.face(enemy.facing)
+		model.hold(enemy.weapon.id)
+		model.show_moving(enemy.velocity.length() > MOVING_SPEED)
+		model.show_health(float(enemy.health.current) / enemy.health.maximum))
+
+
+func add_projectile(projectile: Projectile) -> void:
+	var shot := projectile.shot()
+	_puppets.add(projectile, ShotModel.new(shot.color, shot.size), func(model: ShotModel) -> void:
+		model.lift(projectile.height()))
+
+
+func add_chest(chest: Chest) -> void:
+	_puppets.add(chest, ChestModel.new(), func(model: ChestModel) -> void:
+		model.show_open(chest.is_open()))
+
+
+func add_drop(drop: ItemDrop) -> void:
+	_puppets.add(drop, LootModel.new(), func(model: LootModel) -> void:
+		model.show_item(drop.item))
+
+
+func add_potion(drop: PotionDrop) -> void:
+	_puppets.add(drop, LootModel.new(), func(model: LootModel) -> void:
+		model.show_potion(drop.potion))
+
+
+## The actor's model stops following it and plays its death where it stands (see CharacterModel.play_death).
+func _fall(actor: Node2D, linger_seconds: float) -> CharacterModel:
+	var model: CharacterModel = _puppets.release(actor)
+	if model != null:
+		model.play_death(linger_seconds)
+	return model
+
+
+## Every hit flashes the model and pops its damage above the actor.
+func _show_hits(actor: Node2D, health: Health, model: CharacterModel, color: Color) -> void:
+	health.damaged.connect(func(amount: int) -> void:
+		if amount <= 0 or not is_instance_valid(model):
+			return
+		model.flash()
+		model.play_hit()
+		add_child(FloatingText.new(str(amount), color, WorldSpace.to_3d(actor.global_position), HIT_TEXT_SIZE)))
+
+
+## The point of the 2D plane shown under a spot of the screen (like the mouse cursor).
+func plane_point_at(screen_point: Vector2) -> Vector2:
+	return WorldSpace.floor_point(_camera.project_ray_origin(screen_point), _camera.project_ray_normal(screen_point))
+
+
+## A message rising from a spot on the 2D plane.
+func float_text(at: Vector2, message: String, color: Color) -> void:
+	add_child(FloatingText.new(message, color, WorldSpace.to_3d(at)))
+
+
+func _process(delta: float) -> void:
+	if not is_instance_valid(_hero):
+		return
+	_map.show_hero_at(DungeonView.world_to_cell(_hero.global_position))
+	var focus := WorldSpace.to_3d(_hero.global_position)
+	_camera.position = framing.eye(focus) + _shake(delta)
+	_camera.rotation = Vector3(-deg_to_rad(framing.pitch_degrees), 0.0, 0.0)
+	_camera.fov = framing.field_of_view
+	var lead := (framing.look_ahead + GROUND_LEAD) * DungeonView.TILE_SIZE
+	_ground.show_around(_hero.global_position + Vector2(0.0, -lead))
+
+
+## A small random jolt that fades out (looks only).
+func _shake(delta: float) -> Vector3:
+	if _shake_left <= 0.0:
+		return Vector3.ZERO
+	_shake_left -= delta
+	var strength := SHAKE_DISTANCE * maxf(_shake_left, 0.0) / SHAKE_SECONDS
+	return Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) * strength
+
+
+func _add_lighting() -> void:
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = LIGHT_ROTATION_DEGREES
+	add_child(sun)
+	_environment.background_mode = Environment.BG_CLEAR_COLOR
+	_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	_environment.ambient_light_color = AMBIENT_COLOR
+	_environment.ambient_light_energy = AMBIENT_ENERGY
+	var world_environment := WorldEnvironment.new()
+	world_environment.environment = _environment
+	add_child(world_environment)

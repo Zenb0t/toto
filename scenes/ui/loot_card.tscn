@@ -61,7 +61,7 @@ autowrap_mode = 3
 modulate = Color(1, 1, 1, 0.65)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "Replaces your Wand"
+text = "Replaces your Magic Missile"
 horizontal_alignment = 1
 
 [node name="Buttons" type="HBoxContainer" parent="Panel/Rows"]

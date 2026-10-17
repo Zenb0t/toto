@@ -7,6 +7,7 @@ signal opened
 signal closed
 signal customize_requested
 signal tuning_requested
+signal credits_requested
 signal restart_requested
 
 @onready var _open_button: Button = $OpenButton
@@ -19,13 +20,14 @@ func _ready() -> void:
 	$Panel/Items/Resume.pressed.connect(close)
 	$Panel/Items/Customize.pressed.connect(_open_sub_screen.bind(customize_requested))
 	$Panel/Items/Tune.pressed.connect(_open_sub_screen.bind(tuning_requested))
+	$Panel/Items/Credits.pressed.connect(_open_sub_screen.bind(credits_requested))
 	$Panel/Items/Restart.pressed.connect(restart_requested.emit)
 	_show_panel(false)
 
 
-## The run's dungeon seed, so a map worth keeping (or a broken one) can be reported.
-func show_seed(seed_value: int) -> void:
-	_seed_label.text = "Dungeon seed %d" % seed_value
+## The floor's dungeon seed, so a map worth keeping (or a broken one) can be reported.
+func show_seed(seed_value: int, floor_number := 1) -> void:
+	_seed_label.text = "%s (floor %d) · seed %d" % [Branch.for_floor(floor_number).display_name, floor_number, seed_value]
 
 
 ## True from open() until close(), including while a sub-screen is showing.

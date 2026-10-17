@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/touch_controls.tscn" id="2"]
@@ -6,6 +6,10 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/layout_editor.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/ui/tuning_panel.tscn" id="5"]
 [ext_resource type="PackedScene" path="res://scenes/ui/loot_card.tscn" id="6"]
+[ext_resource type="Script" path="res://scripts/ui/potion_bar.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/ui/run_summary_panel.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/ui/keyboard_mouse_controls.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/ui/credits_panel.gd" id="10"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -26,7 +30,7 @@ offset_top = 40.0
 offset_right = 900.0
 offset_bottom = 66.0
 theme_override_font_sizes/font_size = 13
-text = "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Cleared rooms leave a chest.  Find the gold stairs.  II: menu."
+text = "Left side: move."
 
 [node name="WeaponSwitch" type="Button" parent="Hud"]
 anchors_preset = 1
@@ -39,11 +43,47 @@ offset_bottom = 88.0
 grow_horizontal = 0
 focus_mode = 0
 theme_override_font_sizes/font_size = 24
-text = "Weapon: WAND"
+text = "Weapon: MISSILE"
+
+[node name="MapToggle" type="Button" parent="Hud"]
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 104.0
+offset_bottom = 114.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Map"
+
+[node name="Arrival" type="Label" parent="Hud"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 96.0
+offset_bottom = 190.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+
+[node name="PotionBar" type="HBoxContainer" parent="Hud"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -520.0
+offset_top = 100.0
+offset_right = -16.0
+offset_bottom = 164.0
+grow_horizontal = 0
+alignment = 2
+script = ExtResource("7")
 
 [node name="LootCard" parent="Hud" instance=ExtResource("6")]
 
 [node name="TouchControls" parent="." instance=ExtResource("2")]
+
+[node name="KeyboardMouse" type="Node" parent="."]
+script = ExtResource("9")
 
 [node name="Overlay" type="CanvasLayer" parent="."]
 process_mode = 3
@@ -54,3 +94,21 @@ layer = 10
 [node name="LayoutEditor" parent="Overlay" instance=ExtResource("4")]
 
 [node name="TuningPanel" parent="Overlay" instance=ExtResource("5")]
+
+[node name="CreditsPanel" type="Control" parent="Overlay"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("10")
+
+[node name="RunSummary" type="Control" parent="Overlay"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("8")

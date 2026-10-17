@@ -34,8 +34,8 @@ func _carry_out(attacks: Array, attacker: Node2D) -> void:
 			add_child_autofree(SlashEffect.new(attack, attacker))
 
 
-func _wand(windup: float) -> Wand:
-	var wand := Wand.new()
+func _wand(windup: float) -> MagicMissile:
+	var wand := MagicMissile.new()
 	wand.windup = windup
 	wand.shot_speed = 1000.0
 	return wand
@@ -75,7 +75,7 @@ func test_stepping_aside_during_the_telegraph_dodges_the_shot() -> void:
 
 func test_an_enemys_shot_flies_through_other_enemies() -> void:
 	var player := _spawn_player_at(Vector2(200, 0))
-	var bystander := _spawn_enemy_at(Vector2(100, 0), Wand.new())
+	var bystander := _spawn_enemy_at(Vector2(100, 0), MagicMissile.new())
 	var shooter := _spawn_enemy_at(Vector2.ZERO, _wand(0.1))
 
 	shooter.chase(player)
@@ -191,3 +191,59 @@ func test_a_fireball_thrower_lobs_over_the_wall() -> void:
 	await wait_seconds(0.8)
 
 	assert_lt(player.health.current, Player.MAX_HEALTH)
+
+
+## Enemies of one room, fighting as a team.
+func _spawn_squad_member_at(position: Vector2, weapon: Weapon, squad: Squad) -> Enemy:
+	var enemy := _spawn_enemy_at(position, weapon)
+	enemy.squad = squad
+	return enemy
+
+
+func test_a_squad_takes_turns_instead_of_firing_all_at_once() -> void:
+	var player := _spawn_player_at(Vector2(150, 0))
+	player.health = Health.new(100)
+	var squad := Squad.new()
+	squad.max_attackers = 1
+	squad.turn_gap_seconds = 0.0
+	var windup := 0.3
+	var fired_at: Array[int] = []
+	for y in [-20.0, 20.0]:
+		var shooter := _spawn_squad_member_at(Vector2(0, y), _wand(windup), squad)
+		shooter.attack_fired.connect(func(_attacks: Array) -> void: fired_at.append(Engine.get_physics_frames()))
+		shooter.chase(player)
+
+	await wait_seconds(1.0)
+
+	assert_eq(fired_at.size(), 2)
+	var gap_seconds := float(fired_at[1] - fired_at[0]) / Engine.physics_ticks_per_second
+	assert_gte(gap_seconds, windup)
+
+
+func test_squad_members_spread_out_around_the_player() -> void:
+	var player := _spawn_player_at(Vector2.ZERO)
+	var squad := Squad.new()
+	squad.flank_spread_degrees = 90.0
+	var left := _spawn_squad_member_at(Vector2(-150, -10), Sword.new(), squad)
+	var right := _spawn_squad_member_at(Vector2(-150, 10), Sword.new(), squad)
+	var start_gap := absf(angle_difference(left.position.angle(), right.position.angle()))
+
+	left.chase(player)
+	right.chase(player)
+	await wait_seconds(1.0)
+
+	var gap := absf(angle_difference(left.position.angle(), right.position.angle()))
+	assert_gt(gap, start_gap + deg_to_rad(30.0))
+
+
+func test_an_enemy_aims_ahead_of_a_player_on_the_move() -> void:
+	var player := _spawn_player_at(Vector2(200, 0))
+	var enemy := _spawn_enemy_at(Vector2.ZERO, _wand(0.3))
+	enemy.lead_share = 1.0
+	enemy.move_speed = 0.0
+
+	player.move(Vector2.DOWN)
+	enemy.chase(player)
+	await wait_physics_frames(3)
+
+	assert_gt(enemy.facing.y, 0.1)

@@ -10,6 +10,14 @@ const MIN_THICKNESS := 7
 ## Pillars are 2x2 blocks this many cells clear of the room's edge, so doorways and walls stay walkable.
 const PILLAR_SIZE := 2
 const PILLAR_EDGE_CLEARANCE := 2
+## Caves (see cave()): how thick the rock they start from is at least, how deep their walls wander in
+## from it, how wide each stretch of wall stays put, and how much of each corner is rounded off.
+const CAVE_MIN_THICKNESS := 11
+const CAVE_MAX_BITE := 2
+const CAVE_STRETCH := 3
+const CAVE_CORNER := 3
+## The middle of every side of a cave stays straight for this many cells each way, so a corridor can meet it.
+const CAVE_MOUTH := 3
 
 
 static func random_kind(rng: RandomNumberGenerator) -> Kind:
@@ -25,6 +33,44 @@ static func build(kind: Kind, bounds: Rect2i, rng: RandomNumberGenerator) -> Dic
 		Kind.MERGED:
 			return _union(_merged(bounds, rng))
 	return _union([rect(bounds, rng)])
+
+
+## A natural cave, like Dungeon Crawl's Lair and Mines: a rough rectangle whose walls wander in and out in
+## stretches of a few cells, with rounded corners. The middle of each side stays straight, so corridors can
+## still meet it. Always one piece, and at least MIN_THICKNESS thick.
+static func cave(bounds: Rect2i, rng: RandomNumberGenerator) -> Dictionary:
+	var size := Vector2i(
+		rng.randi_range(mini(CAVE_MIN_THICKNESS, bounds.size.x), bounds.size.x),
+		rng.randi_range(mini(CAVE_MIN_THICKNESS, bounds.size.y), bounds.size.y))
+	var area := Rect2i(bounds.position + (bounds.size - size) / 2, size)
+	var top := _wandering_edge(size.x, rng)
+	var bottom := _wandering_edge(size.x, rng)
+	var left := _wandering_edge(size.y, rng)
+	var right := _wandering_edge(size.y, rng)
+	var cells := {}
+	for y in size.y:
+		for x in size.x:
+			if y < top[x] or size.y - 1 - y < bottom[x] or x < left[y] or size.x - 1 - x < right[y]:
+				continue
+			var corner_x := mini(x, size.x - 1 - x)
+			var corner_y := mini(y, size.y - 1 - y)
+			if corner_x + corner_y < CAVE_CORNER:
+				continue
+			cells[area.position + Vector2i(x, y)] = true
+	return cells
+
+
+## How far a cave's wall bites in at each cell along a side: 0..CAVE_MAX_BITE, changing at most every
+## CAVE_STRETCH cells and by one at a time, and 0 in the middle (the mouth).
+static func _wandering_edge(length: int, rng: RandomNumberGenerator) -> PackedInt32Array:
+	var bites := PackedInt32Array()
+	bites.resize(length)
+	var bite := rng.randi_range(0, CAVE_MAX_BITE)
+	for i in length:
+		if i % CAVE_STRETCH == 0:
+			bite = clampi(bite + rng.randi_range(-1, 1), 0, CAVE_MAX_BITE)
+		bites[i] = 0 if absi(i - length / 2) <= CAVE_MOUTH else bite
+	return bites
 
 
 ## A rectangle at least MIN_THICKNESS on each side and at least half the bounds, centred give or take a cell.

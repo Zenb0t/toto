@@ -52,6 +52,21 @@ func test_the_stick_rests_in_the_left_half_where_it_can_be_touched() -> void:
 	assert_eq(layout.center_of(ControlLayout.STICK).x, ControlLayout.STICK_MAX_X)
 
 
+func test_the_stick_rests_below_the_top_of_the_screen() -> void:
+	var layout := ControlLayout.new()
+
+	layout.set_center(ControlLayout.STICK, Vector2(0.2, 0.0))
+
+	assert_almost_eq(layout.center_of(ControlLayout.STICK).y, ControlLayout.STICK_MIN_Y, 0.001)
+
+
+func test_the_stick_zone_leaves_the_top_left_corner_free_for_the_map_button() -> void:
+	var zone := ControlLayout.stick_zone(Vector2(1280, 720))
+
+	assert_false(zone.has_point(Vector2(60, 92)))
+	assert_true(zone.has_point(Vector2(200, 500)))
+
+
 func test_buttons_keep_their_relative_spot_on_a_wider_screen() -> void:
 	var layout := ControlLayout.new()
 	layout.set_center(ControlLayout.ATTACK, Vector2(0.8, 0.5))

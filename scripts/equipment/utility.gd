@@ -2,6 +2,9 @@ class_name Utility
 extends Item
 ## What the second button does: on a cooldown, it turns an aim direction into an effect on its user.
 
+## Seconds between uses.
+var cooldown := 0.8
+
 
 ## Default knob shared by every utility.
 func knobs() -> Array[Knob]:

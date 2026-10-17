@@ -2,8 +2,11 @@ class_name Door
 extends StaticBody2D
 ## A doorway that becomes a wall while its room is locked.
 
-const OPEN_COLOR := Color(0.3, 0.25, 0.22)
+## An open doorway shows a wooden threshold on the floor; a closed door stands in the 3D view.
+const THRESHOLD_COLOR := Color(0.42, 0.3, 0.2)
+const PLANK_COLOR := Color(0.3, 0.2, 0.13)
 const CLOSED_COLOR := Color(0.8, 0.5, 0.25)
+const PLANKS := 4
 
 var _tile_size: float
 var _shape := CollisionShape2D.new()
@@ -34,4 +37,11 @@ func set_closed(closed: bool) -> void:
 
 func _draw() -> void:
 	var half := _tile_size / 2.0
-	draw_rect(Rect2(-half, -half, _tile_size, _tile_size), CLOSED_COLOR if _closed else OPEN_COLOR)
+	var tile := Rect2(-half, -half, _tile_size, _tile_size)
+	if _closed:
+		draw_rect(tile, CLOSED_COLOR)
+		return
+	draw_rect(tile, THRESHOLD_COLOR)
+	for i in range(1, PLANKS):
+		var x := -half + _tile_size * i / PLANKS
+		draw_line(Vector2(x, -half), Vector2(x, half), PLANK_COLOR, 1.5)

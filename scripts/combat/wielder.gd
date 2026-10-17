@@ -1,11 +1,13 @@
 class_name Wielder
 extends RefCounted
-## Holds a weapon and runs its timing: the cooldown between attacks and the wind-up before each one.
+## Holds a weapon and runs its timing: its ammo (each attack spends a charge; they reload one at a time), the
+## short wait between attacks, and the wind-up before each one.
 ## With a target, the aim follows it during the wind-up (the player's auto-aim); without one, the aim
 ## stays where it was when the attack started (so an enemy's telegraphed attack can be dodged).
 
 var weapon: Weapon
-var _cooldown: Cooldown
+var _between_attacks: Cooldown
+var _ammo: Ammo
 var _direction := Vector2.ZERO
 var _aim_distance := 0.0
 var _target: Node2D
@@ -19,14 +21,21 @@ func _init(held: Weapon) -> void:
 
 func equip(held: Weapon) -> void:
 	weapon = held
-	_cooldown = Cooldown.new(held.cooldown)
+	_between_attacks = Cooldown.new(held.attack_interval)
+	_ammo = Ammo.new(held.ammo, held.reload)
 
 
-## Starts an attack unless the weapon is still cooling down. Returns whether it started.
+## Whether an attack could start now: it isn't winding one up, has ammo and didn't just attack.
+func is_ready() -> bool:
+	return not _winding_up and _between_attacks.is_ready() and _ammo.charges() > 0
+
+
+## Starts an attack unless the weapon is out of ammo or just attacked. Returns whether it started.
 ## aim_distance is how far away to aim (weapons that target a spot use it).
 func start(direction: Vector2, aim_distance: float, target: Node2D = null) -> bool:
-	if direction == Vector2.ZERO or not _cooldown.try_trigger():
+	if direction == Vector2.ZERO or not _between_attacks.is_ready() or not _ammo.try_spend():
 		return false
+	_between_attacks.try_trigger()
 	_direction = direction.normalized()
 	_aim_distance = aim_distance
 	_target = target
@@ -37,7 +46,8 @@ func start(direction: Vector2, aim_distance: float, target: Node2D = null) -> bo
 
 ## Moves time on. Returns the attacks released during this step, from origin: empty while waiting.
 func advance(delta: float, origin: Vector2) -> Array:
-	_cooldown.tick(delta)
+	_between_attacks.tick(delta)
+	_ammo.tick(delta)
 	if not _winding_up:
 		return []
 	if is_instance_valid(_target):
@@ -49,6 +59,12 @@ func advance(delta: float, origin: Vector2) -> Array:
 	_winding_up = false
 	_target = null
 	return weapon.attacks(origin, _direction, _aim_distance)
+
+
+## Cancels an attack being wound up (being yanked off your feet does that). The ammo stays spent.
+func interrupt() -> void:
+	_winding_up = false
+	_target = null
 
 
 func is_winding_up() -> bool:
@@ -63,6 +79,14 @@ func aim_distance() -> float:
 	return _aim_distance
 
 
-## 1.0 = just used, 0.0 = ready.
+## How long until the next attack can start: 1.0 = just used, 0.0 = ready. Out of ammo, it is what is left
+## of reloading the next charge.
 func cooldown_ratio() -> float:
-	return _cooldown.remaining_ratio()
+	if _ammo.charges() == 0:
+		return 1.0 - _ammo.level()
+	return _between_attacks.remaining_ratio()
+
+
+## How full each charge's segment of an ammo bar is (see Ammo.segment_fills).
+func ammo_fills() -> Array[float]:
+	return _ammo.segment_fills()

@@ -55,6 +55,16 @@ func test_reset_restores_every_default() -> void:
 	assert_eq(tuning.changed_keys(), [] as Array[String])
 
 
+func test_resetting_some_knobs_leaves_the_others_as_they_were() -> void:
+	var tuning := _tuning()
+	tuning.set_value(SPEED, 200.0)
+	tuning.set_value(DELAY, 0.5)
+
+	tuning.reset_keys([SPEED])
+
+	assert_eq(tuning.changed_keys(), [DELAY] as Array[String])
+
+
 func test_loading_ignores_unknown_keys_and_broken_values() -> void:
 	var tuning := _tuning()
 

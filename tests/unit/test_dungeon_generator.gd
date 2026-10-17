@@ -6,8 +6,9 @@ const SEEDS := 25
 var _parser := DungeonMapParser.new()
 
 
+## Seeds go through every floor (every branch: built halls, caves, the branch's vaults).
 func _map(seed_value: int) -> DungeonMap:
-	return _parser.parse(DungeonGenerator.new().generate(seed_value))
+	return _parser.parse(DungeonGenerator.new().generate(seed_value, seed_value % RunState.FLOOR_COUNT + 1))
 
 
 func _enemy_rooms(map: DungeonMap) -> Dictionary:
@@ -98,3 +99,33 @@ func test_items_lie_on_safe_floor_away_from_the_start_and_the_chest_spot() -> vo
 			assert_ne(room, map.room_at(map.player_spawn), "seed %d" % seed_value)
 			assert_ne(cell, map.room_center(room), "seed %d" % seed_value)
 	assert_gt(items, SEEDS / 2)
+
+
+func _average_monster_health(floor_number: int) -> float:
+	var total := 0.0
+	var count := 0
+	for seed_value in 15:
+		var map := _parser.parse(DungeonGenerator.new().generate(seed_value, floor_number))
+		for cell in map.enemy_spawns:
+			total += Bestiary.by_id(map.monster_at(cell)).max_health
+			count += 1
+	return total / count
+
+
+func test_deeper_floors_hold_tougher_monsters() -> void:
+	assert_gt(_average_monster_health(3), _average_monster_health(1))
+	assert_gt(_average_monster_health(5), _average_monster_health(3))
+
+
+func test_a_seed_makes_the_same_floor_every_time() -> void:
+	assert_eq(DungeonGenerator.new().generate(42, 3), DungeonGenerator.new().generate(42, 3))
+
+
+func test_the_lairs_caves_have_shallow_water_to_wade_through() -> void:
+	var wet := 0
+	for seed_value in 10:
+		var map := _parser.parse(DungeonGenerator.new().generate(seed_value, 2))
+		if not map.cells_with(DungeonMap.Terrain.SHALLOW).is_empty():
+			wet += 1
+
+	assert_gt(wet, 5)

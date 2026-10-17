@@ -4,7 +4,7 @@ const ORIGIN := Vector2(10, 20)
 
 
 func test_the_wand_fires_one_bolt_from_in_front_of_the_player() -> void:
-	var attacks := Wand.new().attacks(ORIGIN, Vector2(0, -5), 0.0)
+	var attacks := MagicMissile.new().attacks(ORIGIN, Vector2(0, -5), 0.0)
 
 	assert_eq(attacks.size(), 1)
 	var bolt: Shot = attacks[0]
@@ -14,7 +14,7 @@ func test_the_wand_fires_one_bolt_from_in_front_of_the_player() -> void:
 
 
 func test_a_shot_flies_for_as_long_as_its_range_allows() -> void:
-	var wand := Wand.new()
+	var wand := MagicMissile.new()
 	wand.shot_speed = 200.0
 	wand.shot_range = 500.0
 
@@ -58,24 +58,8 @@ func test_a_full_drag_aims_the_fireball_at_its_max_range() -> void:
 	assert_eq(fireball.aim_distance(1.0), fireball.shot_range)
 
 
-func test_a_short_drag_aims_the_fireball_closer_than_its_share_of_the_range() -> void:
-	var fireball := Fireball.new()
-	fireball.shot_range = 400.0
-	fireball.aim_curve = 2.0
-
-	assert_almost_eq(fireball.aim_distance(0.5), 100.0, 0.001)
-
-
-func test_a_fireball_aim_curve_of_one_aims_in_proportion_to_the_drag() -> void:
-	var fireball := Fireball.new()
-	fireball.shot_range = 400.0
-	fireball.aim_curve = 1.0
-
-	assert_almost_eq(fireball.aim_distance(0.5), 200.0, 0.001)
-
-
 func test_a_weapon_aims_in_proportion_to_the_drag_by_default() -> void:
-	var wand := Wand.new()
+	var wand := MagicMissile.new()
 
 	assert_almost_eq(wand.aim_distance(0.25), wand.aim_range() * 0.25, 0.001)
 
@@ -105,7 +89,7 @@ func test_the_crossbow_fans_its_bolts_around_the_aim() -> void:
 
 
 func test_each_weapon_previews_its_own_shape() -> void:
-	assert_eq(Wand.new().aim_shape().kind, AimShape.Kind.LINE)
+	assert_eq(MagicMissile.new().aim_shape().kind, AimShape.Kind.LINE)
 	assert_eq(Sword.new().aim_shape().kind, AimShape.Kind.CONE)
 	assert_eq(Crossbow.new().aim_shape().kind, AimShape.Kind.FAN)
 	assert_eq(Fireball.new().aim_shape().kind, AimShape.Kind.LOB)
@@ -124,3 +108,60 @@ func test_the_dash_preview_shows_how_far_one_dash_goes() -> void:
 	dash.dash_duration = 0.2
 
 	assert_eq(dash.aim_range(), 120.0)
+
+
+func test_a_lightning_bolt_chains_like_jessies_shot_instead_of_piercing() -> void:
+	var bolt: Shot = LightningBolt.new().attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)[0]
+
+	assert_false(bolt.pierces)
+	assert_eq(bolt.bounces, 0)
+	assert_gt(bolt.chains, 0)
+
+
+func test_a_mephitic_cloud_is_lobbed_where_aimed_and_leaves_a_cloud() -> void:
+	var weapon := MephiticCloud.new()
+
+	var shot: Shot = weapon.attacks(Vector2.ZERO, Vector2.UP, 200.0)[0]
+
+	assert_true(shot.lobbed)
+	assert_true(shot.leaves_cloud())
+	assert_eq(shot.travel_range, 200.0)
+	assert_false(shot.explodes())
+	assert_false(weapon.needs_line_of_sight())
+
+
+func test_a_battleaxe_hits_harder_and_wider_than_a_sword_but_slower() -> void:
+	var axe := Battleaxe.new()
+	var sword := Sword.new()
+
+	assert_gt(axe.damage, sword.damage)
+	assert_gt(axe.arc_degrees, sword.arc_degrees)
+	assert_gt(axe.reload, sword.reload)
+	assert_gt(axe.windup, sword.windup)
+	assert_ne(axe.id, sword.id)
+
+
+func test_knuckles_throw_a_quick_flurry_of_short_punches() -> void:
+	var knuckles := Knuckles.new()
+
+	var punches := knuckles.attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)
+
+	assert_eq(punches.size(), knuckles.punches)
+	for index in punches.size():
+		var punch: Shot = punches[index]
+		assert_almost_eq(punch.delay, index * knuckles.punch_gap, 0.0001)
+		assert_eq(punch.travel_range, knuckles.punch_range)
+
+
+func test_knuckle_punches_alternate_sides_of_the_aim() -> void:
+	var punches := Knuckles.new().attacks(Vector2.ZERO, Vector2.RIGHT, 0.0)
+
+	assert_lt((punches[0] as Shot).direction.y, 0.0)
+	assert_gt((punches[1] as Shot).direction.y, 0.0)
+
+
+func test_knuckles_reach_less_far_than_any_shooting_weapon() -> void:
+	var knuckles := Knuckles.new()
+
+	for shooter: Weapon in [MagicMissile.new(), Crossbow.new(), LightningBolt.new()]:
+		assert_lt(knuckles.aim_range(), shooter.aim_range(), shooter.id)

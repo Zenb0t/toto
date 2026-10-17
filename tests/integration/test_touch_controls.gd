@@ -142,12 +142,27 @@ func test_a_bigger_stick_needs_a_longer_thumb_drag_for_full_speed() -> void:
 	layout.set_diameter(ControlLayout.STICK, 300.0)
 	controls.apply_layout(layout)
 
-	_touch(Vector2(200, 400), true)
-	_drag(Vector2(275, 400))
+	var start := ControlLayout.stick_zone(get_viewport().get_visible_rect().size).get_center()
+
+	_touch(start, true)
+	_drag(start + Vector2(75, 0))
 	await wait_process_frames(2)
 
 	assert_almost_eq(controls.move_stick.current_strength(), Vector2(0.5, 0), Vector2(0.01, 0.01))
-	_touch(Vector2(275, 400), false)
+	_touch(start + Vector2(75, 0), false)
+
+
+func test_a_touch_at_the_top_left_leaves_the_stick_alone_so_the_map_button_gets_it() -> void:
+	var controls: TouchControls = TOUCH_CONTROLS_SCENE.instantiate()
+	add_child_autofree(controls)
+	var map_button_spot := Vector2(60, 92)
+
+	_touch(map_button_spot, true)
+	_drag(map_button_spot + Vector2(80, 0))
+	await wait_process_frames(2)
+
+	assert_eq(controls.move_stick.current_strength(), Vector2.ZERO)
+	_touch(map_button_spot + Vector2(80, 0), false)
 
 
 func test_pausing_mid_aim_cancels_the_shot_instead_of_leaving_the_button_stuck() -> void:
@@ -193,3 +208,126 @@ func test_a_drag_past_a_smaller_dead_zone_aims_manually() -> void:
 	var release := _last_release(button)
 	assert_false(release.is_auto)
 	assert_almost_eq(release.direction, Vector2.RIGHT, Vector2(0.01, 0.01))
+
+
+func test_with_touch_off_the_attack_button_ignores_touches() -> void:
+	var button := _aim_button()
+	button.accepts_touch = false
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER, true)
+	_touch(BUTTON_CENTER, false)
+	await wait_process_frames(2)
+
+	assert_signal_not_emitted(button, "aim_released")
+
+
+func test_turning_touch_off_mid_drag_lets_go_without_firing() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(0, -120))
+	await wait_process_frames(1)
+
+	button.accepts_touch = false
+	_touch(BUTTON_CENTER + Vector2(0, -120), false)
+	await wait_process_frames(1)
+
+	assert_signal_not_emitted(button, "aim_released")
+	assert_eq(get_signal_parameters(button, "aim_changed")[0], Vector2.ZERO)
+
+
+func test_with_touch_off_the_stick_hides_and_stays_still() -> void:
+	var stick := _stick()
+	stick.accepts_touch = false
+
+	_touch(Vector2(100, 100), true)
+	_drag(Vector2(180, 100))
+	await wait_process_frames(1)
+
+	assert_false(stick.visible)
+	assert_eq(stick.current_strength(), Vector2.ZERO)
+
+
+func test_a_tap_just_outside_the_button_but_inside_its_catch_zone_still_counts() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+	var beside := BUTTON_CENTER + Vector2(70, 0)  # The button's radius is 50; its catch zone reaches 80.
+
+	_touch(beside, true)
+	_touch(beside, false)
+	await wait_process_frames(2)
+
+	assert_signal_emit_count(button, "aim_released", 1)
+	assert_true(_last_release(button).is_auto)
+
+
+func test_the_aim_is_measured_from_where_the_finger_landed_not_from_the_button() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+	var landed := BUTTON_CENTER + Vector2(40, 0)
+
+	_touch(landed, true)
+	_drag(landed + Vector2(0, -120))
+	_touch(landed + Vector2(0, -120), false)
+	await wait_process_frames(2)
+
+	assert_almost_eq(_last_release(button).direction, Vector2.UP, Vector2(0.01, 0.01))
+
+
+func test_where_two_catch_zones_overlap_the_nearer_button_takes_the_touch() -> void:
+	var near := _aim_button()
+	var far := _aim_button()
+	far.position += Vector2(130, 0)
+	watch_signals(near)
+	watch_signals(far)
+	var between_but_nearer_the_first := BUTTON_CENTER + Vector2(55, 0)
+
+	_touch(between_but_nearer_the_first, true)
+	_touch(between_but_nearer_the_first, false)
+	await wait_process_frames(2)
+
+	assert_signal_emit_count(near, "aim_released", 1)
+	assert_signal_not_emitted(far, "aim_released")
+
+
+func test_a_smaller_catch_zone_ignores_touches_beside_the_button() -> void:
+	var button := _aim_button()
+	button.catch_scale = 1.0
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER + Vector2(70, 0), true)
+	_touch(BUTTON_CENTER + Vector2(70, 0), false)
+	await wait_process_frames(2)
+
+	assert_signal_not_emitted(button, "aim_released")
+
+
+func test_aiming_and_coming_back_into_the_dead_zone_is_reported_once() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(0, -120))
+	await wait_process_frames(1)  # Drags in the same frame are merged into one.
+	_drag(BUTTON_CENTER + Vector2(0, -5))
+	await wait_process_frames(1)
+	_drag(BUTTON_CENTER + Vector2(0, -3))
+	await wait_process_frames(1)
+
+	assert_signal_emit_count(button, "returned_to_dead_zone", 1)
+	_touch(BUTTON_CENTER, false)
+
+
+func test_wiggling_inside_the_dead_zone_reports_nothing() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(5, 5))
+	await wait_process_frames(1)
+	_drag(BUTTON_CENTER + Vector2(-5, 0))
+	await wait_process_frames(2)
+
+	assert_signal_not_emitted(button, "returned_to_dead_zone")
+	_touch(BUTTON_CENTER, false)

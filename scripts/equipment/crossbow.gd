@@ -15,7 +15,7 @@ func _init() -> void:
 	description = "A fan of bolts, strongest up close."
 	button_label = "CROSSBOW"
 	color = Color(0.55, 0.85, 0.4)
-	cooldown = 1.0
+	reload = 1.5
 	windup = 0.15
 
 
@@ -40,6 +40,10 @@ func attacks(origin: Vector2, direction: Vector2, _aim_distance: float) -> Array
 		shot.color = color
 		shots.append(shot)
 	return shots
+
+
+func travel_seconds(distance: float) -> float:
+	return distance / shot_speed
 
 
 func aim_range() -> float:
