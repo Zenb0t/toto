@@ -176,6 +176,8 @@ func _connect_controls() -> void:
 			_player.preview_aim(direction, _player.utility.aim_shape()))
 	_weapon_switch.pressed.connect(_on_weapon_switch_pressed)
 	_utility_button.aim_released.connect(_on_utility_released)
+	_attack_button.returned_to_dead_zone.connect(_buzz)
+	_utility_button.returned_to_dead_zone.connect(_buzz)
 	_loot_card.take_pressed.connect(_on_take_pressed)
 	_loot_card.leave_pressed.connect(_close_offer)
 	_potion_bar.drink_requested.connect(_drink)
@@ -250,6 +252,13 @@ func _on_attack_released(release: AimGesture.Release) -> void:
 		_player.attack(_player.facing)
 	else:
 		_player.attack(_player.global_position.direction_to(target.global_position), target)
+
+
+## Like Brawl Stars, a short buzz tells the thumb its aim came back into the dead zone (phones that support it).
+func _buzz() -> void:
+	var milliseconds := GameTuning.haptic_ms(_tuning)
+	if milliseconds > 0:
+		Input.vibrate_handheld(milliseconds)
 
 
 func _on_utility_released(release: AimGesture.Release) -> void:

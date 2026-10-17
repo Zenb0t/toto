@@ -286,3 +286,33 @@ func test_a_smaller_catch_zone_ignores_touches_beside_the_button() -> void:
 	await wait_process_frames(2)
 
 	assert_signal_not_emitted(button, "aim_released")
+
+
+func test_aiming_and_coming_back_into_the_dead_zone_is_reported_once() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(0, -120))
+	await wait_process_frames(1)  # Drags in the same frame are merged into one.
+	_drag(BUTTON_CENTER + Vector2(0, -5))
+	await wait_process_frames(1)
+	_drag(BUTTON_CENTER + Vector2(0, -3))
+	await wait_process_frames(1)
+
+	assert_signal_emit_count(button, "returned_to_dead_zone", 1)
+	_touch(BUTTON_CENTER, false)
+
+
+func test_wiggling_inside_the_dead_zone_reports_nothing() -> void:
+	var button := _aim_button()
+	watch_signals(button)
+
+	_touch(BUTTON_CENTER, true)
+	_drag(BUTTON_CENTER + Vector2(5, 5))
+	await wait_process_frames(1)
+	_drag(BUTTON_CENTER + Vector2(-5, 0))
+	await wait_process_frames(2)
+
+	assert_signal_not_emitted(button, "returned_to_dead_zone")
+	_touch(BUTTON_CENTER, false)

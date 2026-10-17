@@ -12,6 +12,9 @@ const ENEMY_TELEGRAPH := "enemy.telegraph"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
 const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
 const CONTROLS_BUTTON_CATCH := "controls.button_catch"
+const CONTROLS_HAPTIC := "controls.haptic_ms"
+## A short buzz, in milliseconds, when an aim comes back into the dead zone.
+const DEFAULT_HAPTIC_MS := 20
 const LOOT_ENEMY_DROP_CHANCE := "loot.enemy_drop_chance"
 const LOOT_POTION_DROP_CHANCE := "loot.potion_drop_chance"
 const LOOT_CHEST_POTION_CHANCE := "loot.chest_potion_chance"
@@ -127,6 +130,7 @@ static func create() -> Tuning:
 			CONTROLS_UTILITY_DEAD_ZONE, "Utility dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(
 			CONTROLS_BUTTON_CATCH, "Button catch area (x)", CONTROLS_GROUP, 1, 3, 0.1, AimButton.DEFAULT_CATCH_SCALE),
+		Tuning.Param.new(CONTROLS_HAPTIC, "Haptic buzz (ms, 0 = off)", CONTROLS_GROUP, 0, 80, 5, DEFAULT_HAPTIC_MS),
 		Tuning.Param.new(
 			CAMERA_PITCH, "Tilt (90 = top-down)", CAMERA_GROUP, 30, 90, 1, CameraFraming.DEFAULT_PITCH_DEGREES),
 		Tuning.Param.new(
@@ -229,6 +233,11 @@ static func utility_dead_zone(tuning: Tuning) -> float:
 ## How far around the attack and utility buttons a touch still grabs them, as a multiple of their radius.
 static func button_catch_scale(tuning: Tuning) -> float:
 	return tuning.value(CONTROLS_BUTTON_CATCH)
+
+
+## How long the buzz lasts when an aim comes back into the dead zone, in milliseconds (0 = no buzz).
+static func haptic_ms(tuning: Tuning) -> int:
+	return roundi(tuning.value(CONTROLS_HAPTIC))
 
 
 static func camera_framing(tuning: Tuning) -> CameraFraming:

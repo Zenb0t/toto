@@ -8,6 +8,8 @@ extends Control
 ## direction is zero while the finger is still inside the dead zone; strength is how far it was dragged (0..1).
 signal aim_changed(direction: Vector2, strength: float)
 signal aim_released(release: AimGesture.Release)
+## A drag that was aiming came back into the dead zone: letting go now is a tap (auto-aim). Worth a buzz.
+signal returned_to_dead_zone
 
 ## How far the finger must move before a press counts as manual aim instead of a tap, in viewport pixels.
 const DEFAULT_DEAD_ZONE := 32.0
@@ -95,7 +97,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		_on_touch(event)
 	elif event is InputEventScreenDrag and event.index == _touch_index:
+		var was_aiming := _gesture.is_manual()
 		_gesture.move_to(event.position)
+		if was_aiming and not _gesture.is_manual():
+			returned_to_dead_zone.emit()
 		aim_changed.emit(_gesture.direction(), _gesture.strength())
 		queue_redraw()
 
