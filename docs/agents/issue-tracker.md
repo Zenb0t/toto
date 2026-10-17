@@ -2,9 +2,20 @@
 
 Issues, specs and wayfinder maps for this repo live as GitHub issues in `zenb0t/toto`.
 
-**Which tool.** On a computer with the `gh` CLI, use `gh` as below. In a Claude Code cloud session there is no
-`gh`: use the GitHub MCP tools instead (`mcp__github__issue_write` to create or edit, `issue_read`,
-`list_issues` / `search_issues`, `add_issue_comment`, `sub_issue_write`). The conventions are the same either way.
+**Which tool.** On a computer with the `gh` CLI, use `gh` as below. In a Claude Code cloud session, use the GitHub
+MCP tools (`mcp__github__issue_write` to create or edit, `issue_read`, `list_issues` / `search_issues`,
+`add_issue_comment`, `sub_issue_write`). The conventions are the same either way.
+
+**Cloud workaround: `gh api`.** The MCP tools can't create labels, and refuse an issue whose labels don't exist yet.
+The cloud container does have `gh`: `gh auth status` reports an invalid token, but `gh api` calls still work
+because the session's proxy adds the credentials. Use it for what the MCP tools can't do:
+
+```sh
+gh api --method POST repos/zenb0t/toto/labels -f name="ready-for-agent" -f color="0e8a16" -f description="..."
+gh api --method POST repos/zenb0t/toto/issues/<number>/labels -f 'labels[]=ready-for-agent'
+```
+
+Colours and descriptions are in `docs/agents/triage-labels.md`.
 
 Every issue or comment written by an agent ends with the Claude Code attribution footer; triage comments also
 start with the triage disclaimer (see the `triage` skill).
