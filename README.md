@@ -24,7 +24,7 @@ and mouse, following whichever you used last.
 | **Map** (top left) | Show or hide the minimap; the choice is remembered |
 | Tap the minimap | Open the whole map, big on the screen (the game waits). Tap, click, Esc or M closes it |
 | **Weapon: …** (top right) | Testing aid: cycle through every weapon |
-| **II** (top right) | Pause menu: resume, customize controls, tune gameplay, restart run |
+| **II** (top right) | Pause menu: resume, customize controls, tune gameplay, credits, restart run |
 
 **Keyboard and mouse**
 
@@ -84,7 +84,10 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.itch.io/kaykit-adventurers),
 [KayKit Skeletons](https://kaylousberg.itch.io/kaykit-skeletons) and
 [KayKit Dungeon Remastered](https://kaylousberg.itch.io/kaykit-dungeon-remastered) by Kay Lousberg (CC0), in
-`assets/` with their licenses.
+`assets/` with their licenses. Also built with [Godot Engine](https://godotengine.org) (MIT) and its default font,
+Noto Sans (SIL OFL 1.1); tests use [GUT](https://github.com/bitwes/Gut) (MIT). The phone playtest page loads
+Pixelify Sans and IBM Plex Sans from Google Fonts (both SIL OFL 1.1). The pause menu's **Credits** screen lists
+what ships in the game (`scripts/ui/credits.gd`); add new third-party assets there.
 
 ## Layout
 
