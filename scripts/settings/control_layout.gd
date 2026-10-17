@@ -15,7 +15,7 @@ const MAX_DIAMETER := 320.0
 ## The stick floats inside the left half of the screen, so its resting spot stays there too.
 const STICK_MAX_X := 0.5
 ## ...below the top of the screen, which is left to the status lines and the Map button.
-const STICK_MIN_Y := 0.22
+const STICK_MIN_Y := 0.33
 ## Extra reach around a control when picking it up with a thumb.
 const GRAB_SLOP := 24.0
 

@@ -142,12 +142,14 @@ func test_a_bigger_stick_needs_a_longer_thumb_drag_for_full_speed() -> void:
 	layout.set_diameter(ControlLayout.STICK, 300.0)
 	controls.apply_layout(layout)
 
-	_touch(Vector2(200, 400), true)
-	_drag(Vector2(275, 400))
+	var start := ControlLayout.stick_zone(get_viewport().get_visible_rect().size).get_center()
+
+	_touch(start, true)
+	_drag(start + Vector2(75, 0))
 	await wait_process_frames(2)
 
 	assert_almost_eq(controls.move_stick.current_strength(), Vector2(0.5, 0), Vector2(0.01, 0.01))
-	_touch(Vector2(275, 400), false)
+	_touch(start + Vector2(75, 0), false)
 
 
 func test_a_touch_at_the_top_left_leaves_the_stick_alone_so_the_map_button_gets_it() -> void:
