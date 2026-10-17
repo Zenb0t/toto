@@ -165,3 +165,91 @@ func test_knuckles_reach_less_far_than_any_shooting_weapon() -> void:
 
 	for shooter: Weapon in [MagicMissile.new(), Crossbow.new(), LightningBolt.new()]:
 		assert_lt(knuckles.aim_range(), shooter.aim_range(), shooter.id)
+
+
+func _arrow(held_seconds: float, bow := Bow.new()) -> Shot:
+	return bow.charged_attacks(ORIGIN, Vector2.RIGHT, 0.0, held_seconds)[0]
+
+
+func test_a_quick_tap_of_the_bow_fires_a_weak_arrow_that_does_not_pierce() -> void:
+	var bow := Bow.new()
+
+	var arrow := _arrow(0.0, bow)
+
+	assert_eq(arrow.damage, bow.min_damage)
+	assert_false(arrow.pierces)
+
+
+func test_a_fully_charged_arrow_does_the_most_damage_and_pierces() -> void:
+	var bow := Bow.new()
+
+	var arrow := _arrow(bow.full_charge_seconds, bow)
+
+	assert_eq(arrow.damage, bow.max_damage)
+	assert_true(arrow.pierces)
+
+
+func test_charging_a_bow_past_full_is_capped() -> void:
+	var bow := Bow.new()
+
+	assert_eq(_arrow(bow.full_charge_seconds * 5.0, bow).damage, bow.max_damage)
+
+
+func test_a_bow_arrow_hits_harder_the_longer_it_is_drawn() -> void:
+	var bow := Bow.new()
+
+	var short := _arrow(bow.full_charge_seconds * 0.25, bow).damage
+	var long := _arrow(bow.full_charge_seconds * 0.75, bow).damage
+
+	assert_gt(short, bow.min_damage)
+	assert_gt(long, short)
+	assert_lt(long, bow.max_damage)
+
+
+func test_a_half_drawn_arrow_does_not_pierce() -> void:
+	assert_false(_arrow(Bow.new().full_charge_seconds * 0.9).pierces)
+
+
+func test_an_attacker_that_does_not_charge_shoots_the_bow_fully_charged() -> void:
+	var bow := Bow.new()
+
+	var arrow: Shot = bow.attacks(ORIGIN, Vector2.RIGHT, 0.0)[0]
+
+	assert_eq(arrow.damage, bow.max_damage)
+	assert_true(arrow.pierces)
+
+
+func test_the_bow_shoots_one_arrow_from_in_front_of_the_player() -> void:
+	var attacks := Bow.new().charged_attacks(ORIGIN, Vector2.UP, 0.0, 0.0)
+
+	assert_eq(attacks.size(), 1)
+	assert_eq((attacks[0] as Shot).origin, ORIGIN + Vector2.UP * Weapon.MUZZLE_DISTANCE)
+
+
+func test_the_bow_reaches_farther_and_flies_faster_than_the_crossbow() -> void:
+	var bow := Bow.new()
+	var crossbow := Crossbow.new()
+
+	assert_gt(bow.aim_range(), crossbow.aim_range())
+	assert_gt(bow.shot_speed, crossbow.shot_speed)
+
+
+func test_the_bow_previews_a_line() -> void:
+	assert_eq(Bow.new().aim_shape().kind, AimShape.Kind.LINE)
+
+
+func test_only_the_bow_charges_and_slows_the_hero_while_drawn() -> void:
+	assert_gt(Bow.new().charge_seconds(), 0.0)
+	assert_lt(Bow.new().charging_move_share(), 1.0)
+	for other: Weapon in [MagicMissile.new(), Crossbow.new(), Sword.new(), Fireball.new()]:
+		assert_eq(other.charge_seconds(), 0.0, other.id)
+		assert_eq(other.charging_move_share(), 1.0, other.id)
+
+
+func test_a_weapon_that_does_not_charge_attacks_the_same_however_long_the_button_was_held() -> void:
+	var wand := MagicMissile.new()
+
+	var tapped: Shot = wand.charged_attacks(ORIGIN, Vector2.RIGHT, 0.0, 0.0)[0]
+	var held: Shot = wand.charged_attacks(ORIGIN, Vector2.RIGHT, 0.0, 5.0)[0]
+
+	assert_eq(tapped.damage, held.damage)

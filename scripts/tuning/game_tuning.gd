@@ -43,7 +43,7 @@ const DEFAULT_UTILITY_ID := "dash"
 static func weapons() -> Array[Weapon]:
 	return [
 		MagicMissile.new(), Sword.new(), Fireball.new(), Crossbow.new(), LightningBolt.new(), MephiticCloud.new(),
-		Battleaxe.new(), Knuckles.new(),
+		Battleaxe.new(), Knuckles.new(), Bow.new(),
 	]
 
 
