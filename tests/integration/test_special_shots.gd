@@ -125,3 +125,62 @@ func test_beckoning_pulls_an_enemy_to_the_caster() -> void:
 
 	assert_lt(enemy.position.x, 60.0)
 	assert_eq(enemy.health.current, enemy.health.maximum, "pulled, not hurt")
+
+
+func _mephitic_cloud(foe_hurt_player := false) -> PoisonCloud:
+	var shot: Shot = MephiticCloud.new().attacks(Vector2.ZERO, Vector2.RIGHT, 100.0)[0]
+	return PoisonCloud.new(shot.cloud_radius, shot.damage, shot.cloud_seconds, foe_hurt_player, shot.first_tick_delay)
+
+
+func _tough_enemy_in_cloud() -> Enemy:
+	var enemy := _enemy_at(Vector2(20, 0))
+	enemy.set_physics_process(false)
+	enemy.set_max_health(5000)
+	return enemy
+
+
+func test_an_enemy_staying_in_a_mephitic_cloud_takes_500_spread_over_six_seconds() -> void:
+	var enemy := _tough_enemy_in_cloud()
+	var cloud := _mephitic_cloud()
+
+	add_child(cloud)
+	await wait_seconds(3.0)
+	assert_true(is_instance_valid(cloud), "still there after 3 s")
+	assert_between(5000 - enemy.health.current, 200, 250, "about half the damage by the half way point")
+
+	await wait_seconds(3.5)
+	assert_false(is_instance_valid(cloud), "gone after 6 s")
+	assert_eq(5000 - enemy.health.current, 500, "ticks at 0.6 ... 6.0 s: the last one counted once")
+
+
+func test_a_mephitic_cloud_does_no_damage_during_its_first_tick_delay() -> void:
+	var enemy := _tough_enemy_in_cloud()
+
+	add_child_autofree(_mephitic_cloud())
+	await wait_seconds(0.5)
+
+	assert_eq(enemy.health.current, 5000)
+
+
+func test_an_enemy_that_leaves_a_mephitic_cloud_within_the_grace_window_takes_nothing() -> void:
+	var enemy := _tough_enemy_in_cloud()
+	add_child_autofree(_mephitic_cloud())
+
+	await wait_seconds(0.4)
+	enemy.position = Vector2(400, 0)
+	await wait_seconds(6.5)
+
+	assert_eq(enemy.health.current, 5000)
+
+
+func test_a_cloud_deals_each_tick_once_including_the_one_when_it_ends() -> void:
+	var enemy := _enemy_at(Vector2(20, 0))
+	enemy.set_physics_process(false)
+	enemy.set_max_health(100)
+	var cloud := PoisonCloud.new(60.0, 1, 3.0, false, 0.6)
+
+	add_child(cloud)
+	await wait_seconds(3.5)
+
+	assert_false(is_instance_valid(cloud))
+	assert_eq(100 - enemy.health.current, 5, "ticks at 0.6, 1.2, 1.8, 2.4 and 3.0 s")

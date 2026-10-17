@@ -135,7 +135,7 @@ func _finish() -> void:
 		explosion.position = position
 		get_parent().add_child.call_deferred(explosion)
 	if _shot.leaves_cloud():
-		var cloud := PoisonCloud.new(_shot.cloud_radius, _shot.damage, _shot.cloud_seconds, _shot.hurts_player)
+		var cloud := PoisonCloud.new(_shot.cloud_radius, _shot.damage, _shot.cloud_seconds, _shot.hurts_player, _shot.first_tick_delay)
 		cloud.source = _shot.source
 		cloud.position = position
 		get_parent().add_child.call_deferred(cloud)

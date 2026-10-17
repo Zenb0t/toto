@@ -25,6 +25,8 @@ var bounces := 0
 ## Above zero, where the shot ends a poison cloud lingers for this long (see PoisonCloud).
 var cloud_seconds := 0.0
 var cloud_radius := 0.0
+## Seconds after landing before the cloud's first tick: a grace window to run out of it.
+var first_tick_delay := 0.0
 ## A chaining shot, like Jessie's in Brawl Stars, jumps from the foe it hits to the nearest other foe within
 ## chain_range (never one it already hit), this many times.
 var chains := 0

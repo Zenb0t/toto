@@ -41,7 +41,7 @@ Every item defines how it **aims** (shape + range) and what it **does**. Items c
 | Fireball | Lobbed like Barley's bottles in Brawl Stars: drag distance picks the landing spot (a drag to the button's edge throws half as far; dragging on past the button throws up to the max range, 280); arcs over walls and enemies and explodes where it lands, hurting the thrower too | Landing circle at the dragged distance |
 | Crossbow | A fan of bolts; strongest up close | Fan of lines |
 | Lightning Bolt | Dungeon Crawl's bolt, shot like Jessie's: when it hits an enemy it jumps on to the nearest other enemy within 160, twice (never one it already hit) | Line |
-| Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 3 s that hurts enemies inside every 0.6 s. Doesn't hurt the thrower | Landing circle |
+| Mephitic Cloud | Lobbed like the fireball (like Emz's zones): leaves a poison cloud for 6 s; the first tick comes 0.6 s after it lands (a grace window to run out of it), then one every 0.6 s: ticks at 0.6, 1.2 ... 6.0 s, 10 of 50 = 500 to one that stays. Damage only comes from standing inside; nothing lingers after leaving. It used to last 3 s at 100 a tick with a tick on landing (same 500 total, spread thinner). Enemy casters (Necromancer, Skeletal mage) get the same numbers and the same grace window through the weapon. Doesn't hurt the thrower | Landing circle |
 | Battleaxe | Like Frank's hammer: a long wind-up, then a 180° sweep for 400 damage | Cone |
 | Knuckles | Like El Primo's fists: a flurry of 4 short, fast punches 0.07 s apart, alternating a little to each side, each thrown from where you stand by then, 50 damage each (two punches to a Magic Missile). Fought bare-handed | Narrow cone |
 
