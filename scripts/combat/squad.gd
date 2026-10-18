@@ -1,6 +1,6 @@
 class_name Squad
 extends RefCounted
-## The enemies of one room fighting as a team: they take turns to attack instead of firing all at once, and
+## The monsters of one band fighting as a team: they take turns to attack instead of firing all at once, and
 ## spread out around their target instead of bunching up.
 ## Members are named by an id (any int that is unique in the squad, like the enemy's instance id).
 

@@ -103,6 +103,13 @@ func test_hurt_monsters_heal_while_away_at_the_rate_regeneration_sets() -> void:
 	assert_eq(GameTuning.enemy_regeneration(tuning), Regeneration.DEFAULT_HEALTH_PER_SECOND)
 
 
+func test_the_enemy_drop_chance_is_tuned_under_loot_and_starts_rare() -> void:
+	var tuning := GameTuning.create()
+
+	assert_eq(tuning.param(GameTuning.LOOT_ENEMY_DROP_CHANCE).group, GameTuning.LOOT_GROUP)
+	assert_almost_eq(GameTuning.enemy_drop_chance(tuning), 0.02, 0.005)
+
+
 func test_enemies_open_straight_onto_their_knobs() -> void:
 	var enemies := _section("Enemies", GameTuning.sections("wand", "dash"))
 

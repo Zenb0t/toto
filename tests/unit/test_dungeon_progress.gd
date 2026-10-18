@@ -5,11 +5,12 @@ const ROOM_B := 1
 const EMPTY_ROOM := 2
 
 
+## Both rooms with enemies lock (like trap rooms or a boss arena).
 func _progress() -> DungeonProgress:
-	return DungeonProgress.new({ROOM_A: 2, ROOM_B: 1})
+	return DungeonProgress.new({ROOM_A: 2, ROOM_B: 1}, [ROOM_A, ROOM_B])
 
 
-func test_entering_a_room_with_enemies_locks_it() -> void:
+func test_entering_a_locking_room_with_enemies_locks_it() -> void:
 	var progress := _progress()
 	watch_signals(progress)
 
@@ -88,3 +89,13 @@ func test_extra_defeats_in_a_cleared_room_are_ignored() -> void:
 
 	assert_eq(progress.enemies_left_in(ROOM_B), 0)
 	assert_eq(progress.total_enemies_left(), 2)
+
+
+func test_walking_into_an_ordinary_room_with_enemies_does_not_lock_it() -> void:
+	var progress := DungeonProgress.new({ROOM_A: 2})
+	watch_signals(progress)
+
+	progress.enter_room(ROOM_A)
+
+	assert_eq(progress.locked_room, DungeonProgress.NO_ROOM)
+	assert_signal_not_emitted(progress, "room_locked")

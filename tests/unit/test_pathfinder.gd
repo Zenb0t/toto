@@ -84,3 +84,12 @@ func test_paths_go_round_shallow_water_when_dry_ground_is_close() -> void:
 
 	for point in path:
 		assert_ne(map.terrain_at(DungeonView.world_to_cell(point)), DungeonMap.Terrain.SHALLOW, str(point))
+
+
+func test_floor_is_safe_footing_but_walls_water_and_lava_are_not() -> void:
+	var finder := Pathfinder.new(_parser.parse(POOL))
+
+	assert_true(finder.is_safe_footing(_at(Vector2i(2, 2))))
+	assert_false(finder.is_safe_footing(_at(Vector2i(0, 2))))
+	assert_false(finder.is_safe_footing(_at(Vector2i(4, 1))))
+	assert_false(finder.is_safe_footing(_at(Vector2i(4, 2))))

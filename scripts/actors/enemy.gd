@@ -1,20 +1,29 @@
 class_name Enemy
 extends CharacterBody2D
-## An armed monster (see Bestiary): idles until told to chase, then fights its target with its weapon the way the weapon
-## wants (see EnemyTactics). What it is doing is decided by its EnemyBrain (idle, hunt, position, wind up,
-## recover); this node carries it out. Before each attack it stops and shows where the attack will go, and its
+## An armed monster (see Bestiary): fights its target with its weapon the way the weapon wants (see
+## EnemyTactics). Settled at a home with its band, it first sleeps there (showing a "z") or wanders slowly about
+## it, and only goes after its target once it notices it (see Awareness): it shows a "!", stands still a moment,
+## then hunts. What it is doing is decided by its EnemyBrain (asleep, wander, noticing, idle, hunt, position,
+## wind up, recover); this node carries it out. Before each attack it stops and shows where the attack will go, and its
 ## aim stays put, so the player can see it coming and get out of the way.
-## In a Squad, it takes turns to attack with the rest of its room and spreads out around the target.
+## In a Squad, it takes turns to attack with the rest of its band and spreads out around the target.
 ## With navigation, an enemy that can't see its target walks around walls to find it, and only attacks
 ## through them with a weapon that lobs.
 
 signal defeated(enemy: Enemy)
+## It has just noticed its target (seen it, been hurt, or heard a noise or a shout). It shouts: see Awareness.
+signal noticed(enemy: Enemy)
 ## The Shots and Slashes of one attack, for the world to carry out. They hurt the player.
 signal attack_fired(attacks: Array)
 
 ## Every enemy is in this group, so area attacks can find them.
 const GROUP := &"enemies"
 const DEFAULT_MOVE_SPEED := 85.0
+## A wandering enemy strolls at this share of its speed.
+const DEFAULT_WANDER_SPEED_SHARE := 0.5
+## What shows over its head: asleep, or just noticed its target.
+const ASLEEP_MARK := "z"
+const NOTICING_MARK := "!"
 const DEFAULT_MAX_HEALTH := 300
 ## Every kind of enemy is this much tougher than the Bestiary lists it.
 const DEFAULT_HEALTH_MULTIPLIER := 1.1
@@ -57,7 +66,7 @@ var navigation: Pathfinder
 var weapon: Weapon:
 	get:
 		return _wielder.weapon
-## Optional: the room's team. Without one, the enemy attacks whenever it can and doesn't flank.
+## Optional: its band's team. Without one, the enemy attacks whenever it can and doesn't flank.
 var squad: Squad
 ## How much it aims ahead of a moving target (see EnemyTactics.lead).
 var lead_share := EnemyTactics.DEFAULT_LEAD_SHARE
@@ -67,6 +76,21 @@ var recover_seconds: float:
 		return _brain.recover_seconds
 	set(value):
 		_brain.recover_seconds = value
+## How long it stands still once it notices its target (see EnemyBrain).
+var noticing_seconds: float:
+	get:
+		return _brain.noticing_seconds
+	set(value):
+		_brain.noticing_seconds = value
+## When it notices its target while asleep or wandering (its sight radii can be tuned).
+var awareness: Awareness:
+	get:
+		return _brain.awareness
+## Where its band lives (see settle()).
+var home := Vector2.ZERO
+## How far from home it wanders, in pixels.
+var wander_radius := Band.DEFAULT_WANDER_RADIUS_CELLS * DungeonView.TILE_SIZE
+var wander_speed_share := DEFAULT_WANDER_SPEED_SHARE
 
 var _wielder := Wielder.new(Sword.new())
 var _brain := EnemyBrain.new()
@@ -78,6 +102,12 @@ var _pull_velocity := Vector2.ZERO
 var _pull_time_left := 0.0
 var _slow_multiplier := 1.0
 var _slow_time_left := 0.0
+## Took damage, or was alerted by its band, since the brain last heard of it.
+var _hurt := false
+var _alerted := false
+var _wander_goal := Vector2.ZERO
+var _has_wander_goal := false
+var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
@@ -86,6 +116,7 @@ func _ready() -> void:
 	# Neighbours circle in different directions, so a group spreads out instead of moving as a blob.
 	_strafe_sign = 1.0 if get_instance_id() % 2 == 0 else -1.0
 	health.died.connect(_on_died)
+	health.damaged.connect(func(_amount: int) -> void: _hurt = true)
 
 
 ## Must be called before the enemy is added to the tree.
@@ -119,8 +150,30 @@ func arm(new_weapon: Weapon) -> void:
 	queue_redraw()
 
 
+## Its foe. An enemy settled at home (asleep or wandering) only goes after it once it notices it.
 func chase(target: Node2D) -> void:
 	_target = target
+
+
+## Lives at home with its band, asleep or wandering about it, until it notices its target.
+func settle(at_home: Vector2, start: Band.Start) -> void:
+	home = at_home
+	_brain.state = EnemyBrain.State.ASLEEP if start == Band.Start.ASLEEP else EnemyBrain.State.WANDER
+
+
+## It heard a noise or a shout (see Awareness): a calm enemy notices the target.
+func alert() -> void:
+	_alerted = true
+
+
+## What shows over its head: ASLEEP_MARK, NOTICING_MARK, or nothing.
+func mark() -> String:
+	match _brain.state:
+		EnemyBrain.State.ASLEEP:
+			return ASLEEP_MARK
+		EnemyBrain.State.NOTICING:
+			return NOTICING_MARK
+	return ""
 
 
 func take_damage(amount: int, _source := "") -> void:
@@ -182,8 +235,15 @@ func _senses() -> EnemyBrain.Senses:
 	var senses := EnemyBrain.Senses.new()
 	senses.has_target = is_instance_valid(_target)
 	senses.winding_up = _wielder.is_winding_up()
+	senses.hurt = _hurt
+	senses.alerted = _alerted
+	_hurt = false
+	_alerted = false
 	if senses.has_target:
-		senses.sees_target = _sees(_target.global_position)
+		senses.target_cells = global_position.distance_to(_target.global_position) / DungeonView.TILE_SIZE
+		# A calm enemy doesn't look for a target that is too far to notice.
+		if senses.target_cells <= _brain.notice_range_cells():
+			senses.sees_target = _sees(_target.global_position)
 		senses.has_turn = _brain.is_looking_for_a_turn() and _may_attack(senses.sees_target) and _claim_turn()
 	return senses
 
@@ -200,7 +260,12 @@ func _claim_turn() -> bool:
 
 
 func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
-	if to == EnemyBrain.State.POSITION:
+	if to == EnemyBrain.State.NOTICING:
+		# Forget the stroll: once the pause is over it plans its way to the target at once.
+		_path.clear()
+		_repath_left = 0.0
+		noticed.emit(self)
+	elif to == EnemyBrain.State.POSITION:
 		_path.clear()
 	elif to == EnemyBrain.State.WINDUP:
 		_start_attack()
@@ -227,8 +292,9 @@ func _target_velocity() -> Vector2:
 	return _target.velocity if _target is CharacterBody2D else Vector2.ZERO
 
 
+## Only members going after the target count for its flank spots, not those still asleep or wandering.
 func _report_to_squad() -> void:
-	if squad != null and is_instance_valid(_target):
+	if squad != null and is_instance_valid(_target) and not _brain.is_calm():
 		squad.report_bearing(get_instance_id(), _bearing())
 
 
@@ -240,6 +306,8 @@ func _bearing() -> float:
 ## Unit-or-shorter direction to move in, for what the brain is doing.
 func _movement() -> Vector2:
 	match _brain.state:
+		EnemyBrain.State.WANDER:
+			return _wander_direction() * wander_speed_share
 		EnemyBrain.State.HUNT:
 			return _path_direction(_target.global_position)
 		EnemyBrain.State.POSITION:
@@ -253,6 +321,21 @@ func _movement() -> Vector2:
 	return Vector2.ZERO
 
 
+## Strolls from one spot near home to the next. Spots out of sight of home (in the next room, say), and spots
+## it shouldn't stand on (lava), are skipped.
+func _wander_direction() -> Vector2:
+	if not _has_wander_goal or global_position.distance_to(_wander_goal) < WAYPOINT_REACHED:
+		var goal := EnemyTactics.wander_goal(home, wander_radius, _rng)
+		_has_wander_goal = navigation == null or (navigation.is_safe_footing(goal) and navigation.can_see(home, goal))
+		_wander_goal = goal
+		_repath_left = 0.0
+		return Vector2.ZERO
+	var direction := _path_direction(_wander_goal)
+	if direction == Vector2.ZERO:
+		_has_wander_goal = false
+	return direction
+
+
 ## How far round the target this enemy's spot in the squad is (0 without a squad).
 func _flank_gap() -> float:
 	if squad == null:
@@ -263,6 +346,9 @@ func _flank_gap() -> float:
 func _update_facing() -> void:
 	if _wielder.is_winding_up():
 		facing = _wielder.aim_direction()
+	elif _brain.is_calm():
+		if velocity != Vector2.ZERO:
+			facing = velocity.normalized()
 	elif is_instance_valid(_target) and _path.is_empty():
 		facing = global_position.direction_to(_target.global_position)
 	elif velocity != Vector2.ZERO:

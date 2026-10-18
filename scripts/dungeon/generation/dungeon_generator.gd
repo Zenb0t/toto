@@ -220,7 +220,7 @@ func _hides_loot(slot: Vector2i, graph: RoomGraph, room: Dictionary, rng: Random
 	return rng.randf() < DEAD_END_LOOT_CHANCE
 
 
-## The exit sits in the corner of its room farthest from the middle (where the chest appears), clear of the walls.
+## The exit sits in the corner of its room farthest from the middle, clear of the walls.
 func _exit_cell(room: Dictionary) -> Vector2i:
 	var area := _main_area(room)
 	var middle := _center_cell(room)
@@ -268,7 +268,7 @@ func _clear_of_edge(cell: Vector2i, area: Dictionary, clearance: int) -> bool:
 	return true
 
 
-## Where the chest will appear: the same rule DungeonMap.room_center uses on the parsed room.
+## The room's middle: the same rule DungeonMap.room_center (where a chest goes) uses on the parsed room.
 func _center_cell(room: Dictionary) -> Vector2i:
 	var area := _main_area(room)
 	return DungeonMap.middle_cell(area.keys().filter(func(cell: Vector2i) -> bool: return room[cell] == FLOOR))

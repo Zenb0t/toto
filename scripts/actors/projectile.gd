@@ -18,6 +18,9 @@ const WALL_LAYER_BIT := 1
 const PLAYER_LAYER_BIT := 2
 const ENEMY_LAYER_BIT := 4
 
+## An explosive shot burst, here (it makes noise: see Awareness).
+signal exploded(at: Vector2)
+
 var _shot: Shot
 var _time_left := 0.0
 var _spent := false
@@ -135,6 +138,7 @@ func _finish() -> void:
 		var explosion := Explosion.new(_shot.blast_radius, _shot.damage, _shot.color, _shot.source)
 		explosion.position = position
 		get_parent().add_child.call_deferred(explosion)
+		exploded.emit(global_position)
 	if _shot.leaves_burning_ground():
 		var fire := BurningGround.new(_shot.blast_radius, _shot.burn_damage, _shot.burn_seconds)
 		fire.source = _shot.source

@@ -22,7 +22,7 @@ const ARRIVAL_FADE_SECONDS := 1.0
 const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 ## How often line of sight is worked out again.
 const SIGHT_UPDATE_SECONDS := 0.1
-const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Cleared rooms leave a chest.  Gold stairs lead down, silver ones back up.  II: menu."
+const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Gold stairs lead down, silver ones back up.  II: menu."
 const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item.  Q: next weapon.  Esc: menu."
 
 var _rng := RandomNumberGenerator.new()
@@ -48,9 +48,11 @@ var _stage: MapStage
 var _record: MapRecord
 var _player: Player
 var _progress: DungeonProgress
-var _enemies_by_room := {}  # int -> Array[Enemy]
+var _enemies_by_room := {}  # int -> Array[Enemy]: each room's band (its home is the room)
 var _squads_by_room := {}  # int -> Squad: each room's enemies fight as a team
 var _spawn_cells := {}  # Enemy -> its spawn cell, which is how the record knows it
+## Who hears the hero's noise and a monster's shout (see Awareness); tuned like each enemy's own.
+var _hearing := Awareness.new()
 var _floor_loot_cells := {}  # PickupArea -> its loot cell, for the floor items not taken yet
 ## The stairs the hero arrived on: they only lead on once the hero has stepped off them.
 var _arrival_cell := DungeonMap.NO_CELL
@@ -151,7 +153,6 @@ func _enter_map() -> void:
 	_spawn_dropped_items()
 	_update_sight()
 	_progress = _create_progress()
-	_spawn_chests_of_cleared_rooms()
 	_apply_tuning(_tuning)
 	_in_play = true
 	_refresh_hud()
@@ -208,6 +209,7 @@ func _spawn_player(hero: HeroState, cell: Vector2i) -> Player:
 	player.health = Health.restored(hero.max_health, hero.health)
 	player.position = DungeonView.cell_center(cell)
 	player.attack_fired.connect(_spawn_attacks.bind(player))
+	player.attack_fired.connect(func(_attacks: Array) -> void: _make_noise(player.global_position))
 	player.health_changed.connect(func(_current: int, _maximum: int) -> void: _refresh_hud())
 	player.died.connect(func() -> void: _end_run(RunSummary.Ending.DIED))
 	_stage.add_actor(player)
@@ -216,12 +218,14 @@ func _spawn_player(hero: HeroState, cell: Vector2i) -> Player:
 
 
 ## The map's monsters, but for those killed on an earlier visit; the ones left hurt have healed for the time the
-## hero was away.
+## hero was away. Each room's monsters are a band living there, asleep or wandering (the same for the same map),
+## until one of them notices the hero.
 func _spawn_enemies() -> void:
 	for cell in _stage.map.enemy_spawns:
 		if _record.is_killed(cell):
 			continue
 		var room := _stage.map.room_at(cell)
+		var home := cell if room == DungeonMap.NO_ROOM else _stage.map.room_center(room)
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
 		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
@@ -231,7 +235,11 @@ func _spawn_enemies() -> void:
 		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
 		enemy.navigation = _stage.pathfinder
 		enemy.squad = _squads_by_room.get_or_add(room, Squad.new())
+		enemy.settle(DungeonView.cell_center(home),
+			Band.start_of(_stage.spec.seed_value, room, GameTuning.band_wandering_share(_tuning)))
+		enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
+		enemy.noticed.connect(_on_enemy_noticed)
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
 		_stage.add_actor(enemy)
 		_stage.world.add_enemy(enemy)
@@ -261,20 +269,11 @@ func _spawn_dropped_items() -> void:
 			_spawn_drop(item.position, item.item_id)
 
 
-## Rooms whose monsters were all killed on an earlier visit keep their chest, open if it was opened.
-func _spawn_chests_of_cleared_rooms() -> void:
-	var fought_in := {}
-	for cell in _stage.map.enemy_spawns:
-		fought_in[_stage.map.room_at(cell)] = true
-	for room: int in fought_in:
-		if _progress.is_cleared(room):
-			_spawn_chest(room)
-
-
 func _create_progress() -> DungeonProgress:
 	var counts := {}
 	for room: int in _enemies_by_room:
 		counts[room] = _enemies_by_room[room].size()
+	# No room is marked as locking yet (trap rooms and the boss arena will be): monsters come when they notice.
 	var progress := DungeonProgress.new(counts)
 	progress.room_locked.connect(_on_room_locked)
 	progress.room_cleared.connect(_on_room_cleared)
@@ -425,25 +424,22 @@ func _on_utility_released(release: AimGesture.Release) -> void:
 	_player.use_utility(release.direction if not release.is_auto else _player.facing)
 
 
-## Closest enemy in the room the player is fighting in (or standing in), at any distance. Null if none.
+## Closest enemy the hero can see, at any distance. Null if none.
 func _auto_aim_target() -> Enemy:
-	var enemies: Array = _enemies_by_room.get(_combat_room(), [])
+	var enemies: Array[Enemy] = []
 	var positions: Array[Vector2] = []
-	for enemy: Enemy in enemies:
-		positions.append(enemy.global_position)
+	for band: Array in _enemies_by_room.values():
+		for enemy: Enemy in band:
+			if _stage.exploration.is_visible(DungeonView.world_to_cell(enemy.global_position)):
+				enemies.append(enemy)
+				positions.append(enemy.global_position)
 	var nearest := AutoAim.nearest_index(_player.global_position, positions, INF)
 	return null if nearest == AutoAim.NO_TARGET else enemies[nearest]
 
 
-func _combat_room() -> int:
-	if _progress.locked_room != DungeonProgress.NO_ROOM:
-		return _progress.locked_room
-	return _stage.map.room_at(DungeonView.world_to_cell(_player.global_position))
-
-
 # --- Rooms and combat ----------------------------------------------------------------------------
 
-## Lock a room only once the player is a full tile past its doorway, so a closing door can't trap them in it.
+## Lock a (locking) room only once the player is a full tile past its doorway, so a closing door can't trap them in it.
 ## Stepping on the stairs down, once their room is clear, leads down (or out, from the last floor); the stairs
 ## up always lead up. The stairs the hero arrived on only lead on once stepped off.
 func _track_player_room() -> void:
@@ -463,15 +459,51 @@ func _on_room_locked(room: int) -> void:
 	_stage.view.set_room_closed(room, true)
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), true)
 	_sight_origin = DungeonMap.NO_CELL
-	for enemy: Enemy in _enemies_by_room[room]:
-		enemy.chase(_player)
 
 
 func _on_room_cleared(room: int) -> void:
 	_stage.view.set_room_closed(room, false)
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), false)
 	_sight_origin = DungeonMap.NO_CELL
-	_spawn_chest(room)
+
+
+## A monster that notices the hero shouts, waking the rest of its band and whoever else hears it (see Awareness).
+## Each one woken notices in turn and shouts too; a monster that is already awake is not woken again, so the
+## chain ends.
+func _on_enemy_noticed(noticer: Enemy) -> void:
+	var listeners: Array[Enemy] = []
+	var bands := PackedInt32Array()  # each listener's band: the room it lives in
+	for room: int in _enemies_by_room:
+		for enemy: Enemy in _enemies_by_room[room]:
+			listeners.append(enemy)
+			bands.append(room)
+	var shouter := listeners.find(noticer)
+	if shouter == -1:
+		return
+	for index in _hearing.shout_hearers(shouter, _cells_of(listeners), bands):
+		listeners[index].alert()
+
+
+## The hero's attack or a blast makes noise at a point (world position), waking monsters that hear it.
+func _make_noise(at: Vector2) -> void:
+	var listeners := _all_enemies()
+	for index in _hearing.noise_hearers(at / DungeonView.TILE_SIZE, _cells_of(listeners)):
+		listeners[index].alert()
+
+
+func _all_enemies() -> Array[Enemy]:
+	var all: Array[Enemy] = []
+	for enemies: Array in _enemies_by_room.values():
+		all.append_array(enemies)
+	return all
+
+
+## Where the enemies are, in cells.
+func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
+	var cells := PackedVector2Array()
+	for enemy in enemies:
+		cells.append(enemy.global_position / DungeonView.TILE_SIZE)
+	return cells
 
 
 func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
@@ -506,6 +538,7 @@ func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 func _launch(shot: Shot) -> void:
 	var projectile: Projectile = PROJECTILE_SCENE.instantiate()
 	projectile.launch(shot)
+	projectile.exploded.connect(_make_noise)
 	_stage.add_effect(projectile)
 	_stage.world.add_projectile(projectile)
 
@@ -571,6 +604,8 @@ func _burn(actor: Node2D, delta: float) -> void:
 
 # --- Loot ----------------------------------------------------------------------------------------
 
+## A chest at a room's centre, open if the record says it was opened. Clearing a room no longer leaves one
+## (loot is earned); set pieces that hold a chest, like the ruin, place theirs with this.
 func _spawn_chest(room: int) -> void:
 	var chest := Chest.new(_record.is_chest_opened(room))
 	chest.position = DungeonView.cell_center(_stage.map.room_center(room))
@@ -699,6 +734,11 @@ func _apply_tuning(tuning: Tuning) -> void:
 			enemy.arm(GameTuning.enemy_weapon(tuning, enemy.weapon.id))
 			enemy.lead_share = GameTuning.enemy_lead_share(tuning)
 			enemy.recover_seconds = GameTuning.enemy_recover_seconds(tuning)
+			enemy.noticing_seconds = GameTuning.enemy_noticing_seconds(tuning)
+			enemy.wander_speed_share = GameTuning.enemy_wander_speed_share(tuning)
+			enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
+			GameTuning.tune_awareness(enemy.awareness, tuning)
+	GameTuning.tune_awareness(_hearing, tuning)
 	for squad: Squad in _squads_by_room.values():
 		GameTuning.tune_squad(squad, tuning)
 

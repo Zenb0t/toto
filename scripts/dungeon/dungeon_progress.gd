@@ -1,6 +1,8 @@
 class_name DungeonProgress
 extends RefCounted
-## Room-lock rules: walking into a room that still has enemies locks you in until they are all defeated.
+## Room rules: which rooms still have enemies, and the lock. Walking into a locking room (a trap room, a boss
+## arena) that still has enemies locks you in until they are all defeated. Ordinary rooms never lock: their
+## monsters come for you when they notice you (see Awareness).
 
 signal room_locked(room: int)
 signal room_cleared(room: int)
@@ -10,11 +12,14 @@ const NO_ROOM := -1
 
 var locked_room := NO_ROOM
 var _enemies_left_by_room: Dictionary  # int -> int
+var _locking_rooms := {}  # int -> true
 
 
-## enemies_by_room maps each room id to how many enemies start in it.
-func _init(enemies_by_room: Dictionary) -> void:
+## enemies_by_room maps each room id to how many enemies start in it; locking_rooms are the rooms that lock.
+func _init(enemies_by_room: Dictionary, locking_rooms: Array[int] = []) -> void:
 	_enemies_left_by_room = enemies_by_room.duplicate()
+	for room in locking_rooms:
+		_locking_rooms[room] = true
 
 
 func enemies_left_in(room: int) -> int:
@@ -32,8 +37,12 @@ func is_cleared(room: int) -> bool:
 	return enemies_left_in(room) == 0
 
 
+func is_locking(room: int) -> bool:
+	return _locking_rooms.has(room)
+
+
 func enter_room(room: int) -> void:
-	if locked_room != NO_ROOM or room == NO_ROOM or is_cleared(room):
+	if locked_room != NO_ROOM or not is_locking(room) or is_cleared(room):
 		return
 	locked_room = room
 	room_locked.emit(room)

@@ -22,10 +22,10 @@ Anything that doesn't help answer that is deferred.
 | Build identity | No heroes. Your build is your equipment, and equipment comes from RNG | DCSS-style "make do with what you find" |
 | Equipment slots | **Weapon** (attack button) + **Utility** (second button, on a cooldown) | Smallest set where builds feel different |
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
-| Loot sources | Guaranteed chest per cleared room, plus rare enemy drops | Predictable pacing, with occasional surprises |
+| Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
 | Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass) and go down 5 floors and out. Each floor's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first floor's lead out to the mausoleum). Other rooms are optional. The first zone (village, camps, the ruin, a 3-level crypt and the Lich) replaces this descent piece by piece, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent, now with somewhere open to start from |
-| Rooms | Entering a room with enemies locks its doors until they're all defeated | Forces fights and gives clear pacing |
+| Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`; trap rooms and the boss arena, none yet) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
 | Look | 3D shown over a 2D game: a fixed, tilted Brawl Stars-style camera; fantasy characters (humans, goblins, dwarfs) later | Brawl Stars' readability, with the game rules untouched |
@@ -79,7 +79,7 @@ strong: it made every fight winnable by waiting. Healing is now only from potion
 
 You carry up to 3 of each kind in the potion belt (buttons under the weapon switch, one per kind held, with
 the count); tap one to drink it. Runs start with one Potion of Healing. Potions lie on the floor (half of the
-floor finds), sit beside chests (30%), and drop from enemies (10%, when they drop no gear). Walking over one
+floor finds), sit beside chests (30%, for the rare chest), and drop from enemies (10%, when they drop no gear). Walking over one
 picks it up; there is nothing to choose, unless that kind is full, then it stays where it is. While haste or
 might works, a ring in its colour shows on the floor around the hero. Each potion's numbers are in Tune.
 
@@ -134,9 +134,12 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
 
 ## Loot (step 6)
 
-- **Chests.** Clearing a room leaves a chest at its centre. Walking onto it opens it and drops a weapon.
-  The open chest stays, so you can see which rooms you have looted.
-- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot, default 5%) to drop a weapon.
+- **Earned loot.** Clearing a room leaves nothing: gear is scarce, so a new piece is a moment. It comes from
+  the floor (dead ends and vaults hide finds, see Floors), from rare enemy drops and from chests.
+- **Chests.** Set pieces hold them (none on today's maps; the ruin's and trap rooms' come with the first zone).
+  Walking onto one opens it and drops a find. The open chest stays, so you can see what you have looted.
+- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot → "Enemy drop chance", default 2%) to drop
+  its weapon. (Room chests used to set the pacing and drops were 5%.)
 - **What drops.** Chests hold a random weapon or utility you don't already hold (a duplicate is no choice).
   An enemy's rare drop is the weapon it fought with (or a random find if you already hold that one).
   On the floor, weapons are round and utilities square.
@@ -147,7 +150,7 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
   (it kills goblins in two stabs) but clearly weaker than found weapons. The HUD weapon switch is a testing aid for
   tuning each weapon: hidden by default, shown by Tune → Controls → "Show weapon switch" (the keyboard key always
   works). Magic Missile stays an enemy weapon and can be found. Known risk: a melee start leaves no ranged answer to
-  a kiting boss; if playtests show it hurting, put a ranged weapon in the guaranteed chest. The weapon picked with the switch is not saved
+  a kiting boss; if playtests show it hurting, put a ranged weapon in the ruin's chest. The weapon picked with the switch is not saved
   between runs (the "Show weapon switch" setting is saved with the rest of the tuning).
 
 `LootTable` holds the rules (pure, given a seeded random generator). `Chest` and `WeaponDrop` only notice the
@@ -182,13 +185,39 @@ Within their comfortable range they circle the player instead of standing still.
 
 | State | What the enemy does | Leaves when |
 | --- | --- | --- |
-| Idle | Waits | Its room locks and it gets a target |
+| Asleep | Sleeps at home, a "z" over its head | It notices the hero (see Bands): Noticing |
+| Wander | Strolls slowly (half speed) to random spots within 6 cells of home, in sight of home and off lava | It notices the hero: Noticing |
+| Noticing | Shows a "!" and stands still for 0.4 s, then goes after the hero | The pause is over: Hunt or Position |
+| Idle | Waits (an awake enemy with no target) | It gets a target |
 | Hunt | Can't see the player: walks around walls (`Pathfinder`) | It sees the player, or gets its turn (lobbing weapons attack over walls) |
 | Position | Keeps to its weapon's distance, at its flank spot | It loses sight, or gets its turn |
 | Wind-up | Stands still and telegraphs the attack, aim locked | The attack is released (or a Beckoning yanks it) |
 | Recover | Steps aside (alternating sides) for 0.35 s | Recovered: back to Hunt or Position |
 
-**Teamwork** (`Squad`, one per room). Enemies no longer all fire at once: a room lets at most 2 enemies wind
+**Bands** (`Band`, `Awareness`). The monsters of one **home** are a band; in the dungeon a home is a room
+(camps and the ruin come later). A band starts **asleep** at home or **wandering** about it; which is decided
+per home from the map's seed (`Band.start_of`: a quarter of bands wander), so the same map starts the same way.
+A monster **notices** the hero only when it can see them (line of sight) within **4 cells asleep** or **9
+cells wandering**; there are no dice. Taking damage wakes it at once, and so does hearing a noise or a shout
+(below). `Awareness` holds the rules (the radii are its fields; damage, noise and shouts count as noticing);
+`EnemyBrain` asks it while the enemy is calm, and a calm enemy only checks its line of sight once the hero is
+within its radius. All of it is in Tune → Enemies: notice when asleep, notice when wandering, hero's noise
+carries, monster's shout carries, noticing pause, wander speed, wander radius, bands wandering (for maps built
+after).
+
+**Noise and shouts** (`Awareness.noise_hearers`, `shout_hearers`). Fighting has consequences beyond the target.
+The hero's attacks, hit or miss, make **noise**, and so does every blast where it bursts; it wakes monsters
+within **8 cells, through walls** (only distance counts, so the rules are never told where walls are). A monster
+that notices the hero **shouts**: the rest of its band hears it however far they are (a band joins its own),
+and so does any other monster within **8 cells**, and each of those shouts in turn: a careless fight can pull
+in a camp nearby. The chain ends because a calm
+monster notices once (`Enemy.noticed` fires on the way into Noticing) and an awake one ignores what it hears.
+The nodes only route events: `Player.attack_fired` and `Projectile.exploded` reach `main.gd` (`_make_noise`),
+and `Enemy.noticed` too (`_on_enemy_noticed`); main hands the positions in cells (and, for a shout, each monster's band) to
+`Awareness`, which says who hears, and calls `Enemy.alert()` on them. Enemy attacks make no noise: those enemies are awake already.
+Auto-aim picks the nearest enemy the hero can see, wherever it is.
+
+**Teamwork** (`Squad`, one per band). Once a band fights, its members take turns as a squad. Enemies no longer all fire at once: a band lets at most 2 enemies wind
 up at the same time, and starts their attacks at least 0.35 s apart, so attacks come in a rhythm the player
 can read and dodge one by one. They also spread out: seen from the player, neighbours take spots 70° apart,
 centred on where the group already stands and in the order they stand (nobody crosses over), so a group
@@ -291,8 +320,7 @@ The run keeps one record per visited map. It holds:
   same seed would no longer give the same map.
 
 What makes a record match its regenerated map is **stable ids from map position**: an enemy is its spawn cell, a
-floor item its loot cell, a chest its room. A room whose monsters were all killed gets its chest back (open if it
-was opened). **Floor loot is seeded**: what lies on a loot cell is rolled from the map's seed and the cell alone
+floor item its loot cell, a chest its room (an opened chest comes back open). **Floor loot is seeded**: what lies on a loot cell is rolled from the map's seed and the cell alone
 (`LootTable.floor_find`), not from what the hero holds, so a floor item seen, left and come back to is the same
 (it may be something the hero already holds). **Regeneration** (`Regeneration`): hurt monsters heal while the hero
 is away, 10 health a second by default (Tune → Enemies → "Heal while away"), in one-second steps counted from the run
@@ -397,8 +425,8 @@ wrong.
    their enemies are picked as if two rooms deeper. Rooms are optional, so walking away is a real choice.
 5. **Floor loot** (`*`): vault treasure, and half of the dead ends (rooms with one way in) hide an item: a potion or
    gear, rolled from the map's seed and the cell (see Floors). Exploring pays.
-6. **Exit** (the stairs down, `>`): in the deepest room, in its corner farthest from the middle (where the chest
-   appears). The start is the **stairs up** (`<`) on every floor, the first included (it leads back to the plains).
+6. **Exit** (the stairs down, `>`): in the deepest room, in its corner farthest from the middle (where chests used
+   to appear, kept so seeds still make the same maps). The start is the **stairs up** (`<`) on every floor, the first included (it leads back to the plains).
 
 **Terrain.** Deep water (`~`) blocks walking but not sight or shots: a shooter across a pool can hit you, and
 you can hit back, but nobody walks over. Shallow water (`,`, like Dungeon Crawl's) can be waded through, but
@@ -520,6 +548,8 @@ Mage, Rogue and hooded Rogue, and four skeletons, all on one rig, with weapons a
 - Characters stand idle, run while moving, play their attack when it is released, and flinch when hit.
   When they die they fall where they stand: a monster's body lingers a moment (with the burst of chunks),
   the hero's stays down until the summary. Animations only run while the character is in sight.
+- A monster shows a mark over its health bar: a "z" while it sleeps, a "!" while it notices the hero
+  (`Enemy.mark`, shown by `CharacterModel.show_mark`).
 - Size: the animations are imported once (with the Knight) and shared, so the five models add about 2 MB
   to the phone download.
 
