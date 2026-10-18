@@ -6,7 +6,7 @@ extends RefCounted
 ## The numbers are tunable (Tune → World, see knobs), and the defaults live here.
 
 ## Bumped whenever the same recipe and seed would make a different map.
-const VERSION := 4
+const VERSION := 5
 ## The first lone campfire lies at most this many cells beyond the village's clear radius (see village_radius).
 const NEAR_CAMPFIRE_BEYOND_VILLAGE := 12
 ## Each side's quadrant exit is this many cells wide, in the middle of the side.
@@ -53,6 +53,14 @@ var campfire_count := 3
 var campfire_spacing := 35
 ## The least distance in cells between a lone campfire and any camp.
 var campfire_camp_gap := 12
+## Whether the quadrant has a ruin at all (only a recipe made by without_ruin has none).
+var has_ruin := true
+## The ruin in one corner (see Ruins): how many of its four possible wall gaps are open (a number between the least and
+## the most, rolled per map), and how many monsters its band holds at least. The band always has more than the biggest
+## camp's, so it is the map's toughest.
+var ruin_gaps_min := 2
+var ruin_gaps_max := 3
+var ruin_band_size := 7
 ## Dirt roads from the village gates to this many of the four exits (see QuadrantRoads), and how much they wander: 0 runs
 ## them straight where nothing is in the way, more sends them along the noise's valleys.
 var road_count := 2
@@ -66,9 +74,7 @@ static func plains() -> QuadrantRecipe:
 
 ## The same quadrant with nothing in the way: no groves, boulders or ponds. Always valid (see QuadrantGenerator).
 func without_obstacles() -> QuadrantRecipe:
-	var plain := QuadrantRecipe.new()
-	for knob in knobs():
-		plain.set(knob.field, get(knob.field))
+	var plain := _copy()
 	plain.grove_share = 0.0
 	plain.boulder_count = 0
 	plain.pond_count = 0
@@ -77,12 +83,25 @@ func without_obstacles() -> QuadrantRecipe:
 
 ## The same quadrant with no camps or campfires: the last resort for a size that has no room for them.
 func without_camps() -> QuadrantRecipe:
-	var empty := QuadrantRecipe.new()
-	for knob in knobs():
-		empty.set(knob.field, get(knob.field))
+	var empty := _copy()
 	empty.camp_count = 0
 	empty.campfire_count = 0
 	return empty
+
+
+## The same quadrant without its ruin: the last resort for a size too small to fit one in a corner beside the village.
+func without_ruin() -> QuadrantRecipe:
+	var open := _copy()
+	open.has_ruin = false
+	return open
+
+
+func _copy() -> QuadrantRecipe:
+	var copy := QuadrantRecipe.new()
+	for knob in knobs():
+		copy.set(knob.field, get(knob.field))
+	copy.has_ruin = has_ruin
+	return copy
 
 
 func size() -> Vector2i:
@@ -105,6 +124,18 @@ func center() -> Vector2i:
 ## The cells inside the border.
 func interior() -> Rect2i:
 	return Rect2i(Vector2i.ONE * border_thickness, size() - Vector2i.ONE * border_thickness * 2)
+
+
+## Which corner of the map a cell lies toward: (-1 or 1, -1 or 1) for left/right and top/bottom of the middle.
+func corner_of(cell: Vector2i) -> Vector2i:
+	var offset := cell - center()
+	return Vector2i(1 if offset.x >= 0 else -1, 1 if offset.y >= 0 else -1)
+
+
+## How far out along each axis a cell lies, 0 (the middle line) to 1 (the edge of the map).
+func outward_by_axis(cell: Vector2i) -> Vector2:
+	var offset := Vector2(cell - center()).abs()
+	return Vector2(offset.x / (width / 2.0), offset.y / (height / 2.0))
 
 
 ## How far out a cell lies: 0 in the middle, 1 at the edge of the map, measured to the nearest side in the same
@@ -155,6 +186,9 @@ func knobs() -> Array[Knob]:
 		Knob.new("campfire_count", "Lone campfires", 0, 6, 1),
 		Knob.new("campfire_spacing", "Campfires, least apart (cells)", 10, 60, 1),
 		Knob.new("campfire_camp_gap", "Campfire from a camp, least (cells)", 4, 30, 1),
+		Knob.new("ruin_gaps_min", "Ruin wall gaps, least", 1, 4, 1),
+		Knob.new("ruin_gaps_max", "Ruin wall gaps, most", 1, 4, 1),
+		Knob.new("ruin_band_size", "Ruin band (monsters, least)", 4, 12, 1),
 		Knob.new("road_count", "Dirt roads to exits", 0, 4, 1),
 		Knob.new("road_bend", "Road wander", 0.0, 8.0, 0.5),
 	]

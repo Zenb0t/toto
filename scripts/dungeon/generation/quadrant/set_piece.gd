@@ -1,6 +1,6 @@
 class_name SetPiece
 extends RefCounted
-## A hand-made piece to stamp into a quadrant (the village, the crypt entrance, camps and campfires; the ruin later),
+## A hand-made piece to stamp into a quadrant (the village, the crypt entrance, the ruin, camps and campfires),
 ## written in the map format. The placer (SetPiecePlacer) finds it a spot by these rules and stamps it.
 ## Plain data.
 
@@ -24,6 +24,11 @@ var kind: String
 var spacing := {}
 ## The anchor must lie within this many cells of the quadrant's middle (0: no limit).
 var max_from_centre := 0.0
+## The anchor must lie at least this share of the way out along both axes (0: anywhere), i.e. in a corner of the quadrant.
+var corner_share := 0.0
+## Kinds of piece that may not lie in the same corner of the quadrant as this one (see QuadrantRecipe.corner_of). It
+## counts both ways.
+var other_corner_than: Array[String] = []
 
 
 func _init(
@@ -52,12 +57,31 @@ func near_centre(cells: float) -> SetPiece:
 	return self
 
 
+## The same piece, kept in a corner of the quadrant: at least this share of the way out along both axes. Returns itself.
+func in_corner(share: float) -> SetPiece:
+	corner_share = share
+	return self
+
+
+## The same piece, kept out of the corner any piece of these kinds lies in. Returns itself.
+func in_other_corner_than(kinds: Array[String]) -> SetPiece:
+	other_corner_than = kinds
+	return self
+
+
+## Whether this piece and the other may not share a corner, by either's rule.
+func must_differ_in_corner_from(other: SetPiece) -> bool:
+	return other.kind in other_corner_than or kind in other.other_corner_than
+
+
 ## A copy with another drawing of the same size (a camp with its monsters drawn in).
 func with_rows(drawing: PackedStringArray) -> SetPiece:
 	var copy := SetPiece.new(id, drawing, anchor_symbol, min_outward, apron, at_center)
 	copy.kind = kind
 	copy.spacing = spacing
 	copy.max_from_centre = max_from_centre
+	copy.corner_share = corner_share
+	copy.other_corner_than = other_corner_than
 	return copy
 
 

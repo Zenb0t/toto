@@ -219,6 +219,11 @@ func _dress(figure: Node3D, look: CharacterLook) -> void:
 			_meshes.append(child)
 			if skin_tint != CharacterLook.NO_TINT and _names_any(child.name, SKIN_PARTS):
 				_tint(child, skin_tint)
+	if look.body_tint != CharacterLook.NO_TINT:
+		for mesh in _meshes:
+			_tint(mesh, look.body_tint)
+	if look.costume == LichDress.COSTUME:
+		_meshes.append_array(LichDress.put_on(skeleton))
 
 
 static func _names_any(part_name: String, words: Array[String]) -> bool:

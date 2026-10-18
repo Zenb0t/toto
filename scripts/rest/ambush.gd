@@ -78,7 +78,8 @@ func _area_monsters(map: DungeonMap, fire: Vector2i) -> Array[String]:
 		var db := Vector2(b - fire).length_squared()
 		return da < db if da != db else (a.y < b.y if a.y != b.y else a.x < b.x))
 	var area: Array[String] = []
-	for cell: Vector2i in spawns.slice(0, AREA_SPAWNS):
+	var ordinary := spawns.filter(func(cell: Vector2i) -> bool: return map.monster_at(cell) != Lich.ID)
+	for cell: Vector2i in ordinary.slice(0, AREA_SPAWNS):
 		area.append(map.monster_at(cell))
 	if area.is_empty():
 		area.append(FALLBACK_MONSTER)

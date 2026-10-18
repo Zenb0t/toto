@@ -59,6 +59,17 @@ func test_a_killed_monster_is_no_longer_hurt() -> void:
 	assert_eq(record.to_dict().hurt, [])
 
 
+func test_the_lich_dead_is_remembered_and_round_trips_through_a_dictionary() -> void:
+	var record := MapRecord.new(1)
+	assert_false(record.is_lich_dead())
+
+	record.kill_lich()
+
+	assert_true(record.is_lich_dead())
+	assert_true(MapRecord.from_dict(record.to_dict()).is_lich_dead())
+	assert_false(MapRecord.from_dict(MapRecord.new(1).to_dict()).is_lich_dead())
+
+
 func test_a_campfire_comes_back_as_it_was_left_through_a_dictionary_too() -> void:
 	var profile := RestProfile.campfire()
 	var fire := Campfire.new(profile, Campfire.State.EMBERS, 42.0)
