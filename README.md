@@ -85,7 +85,7 @@ you took stay gone, items you dropped stay where they fell and the map stays exp
 heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. The third level's farthest room is the **boss arena**: a hall with four pillars that block shots and the **Lich**'s crypt at
 its far end. It locks when you walk in and opens when he dies. The Lich, a dark purple skeleton mage with a crown, a robe and a
 staff, starts awake, never gives up, keeps his distance (back off as you close in) and casts one telegraphed spell at a time with a
-short pause between: for now only the Mephitic Cloud (more spells follow). Hurt from a doorway before the arena locks, he withdraws into a nook of his crypt that no doorway can see, so you have to walk in. Killing him **wins the run**: a summary says
+short pause between: the Mephitic Cloud and, as his rarest spell (every third cast), the Bone Spray: three waves of five bone shards in a half circle, each wave offset from the last, that pillars stop (Summon Undead follows). Hurt from a doorway before the arena locks, he withdraws into a nook of his crypt that no doorway can see, so you have to walk in. Killing him **wins the run**: a summary says
 "You killed the Lich", and **Keep exploring** carries on in the same world, with him still dead. Tune → Lich holds every number of his.
 If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash and a Potion of
 Healing.
@@ -151,7 +151,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   noticing, idle, hunt, position, wind up, recover, check, return, retreat; `Awareness` also decides when a hunter gives up), which spell the Lich casts next (`SpellPicker`), how a band fights as a team (`Squad`: taking turns, flank
   spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
-- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), `Lich` (the boss: his tunable numbers and Bestiary entry), the
+- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), `Lich` (the boss: his tunable numbers and Bestiary entry), `BoneSpray` (his spray of shards: the pattern and its numbers), the
   `Bestiary` that lists them with their map letters, and `Band` (which home a monster lives at, a campfire or its
   room, and how the monsters of one home start: asleep or wandering, from the map's seed) and `Camps` (which campfire a monster lives at)
 - `scripts/potions` – consumables: `Potion` (`HealingPotion`, `HastePotion`, `MightPotion`) and the `PotionBelt`

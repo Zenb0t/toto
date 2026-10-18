@@ -128,6 +128,7 @@ func test_the_number_of_clouds_between_bone_sprays_is_tunable() -> void:
 
 func test_a_lich_who_knows_only_the_cloud_casts_nothing_else() -> void:
 	var picker := SpellPicker.new()
+	picker.known = [SPELL.CLOUD]
 
 	for _i in 6:
 		assert_eq(_cast(picker, SpellPicker.Situation.new(0)), SPELL.CLOUD)
@@ -150,3 +151,33 @@ func test_the_summon_cap_never_passes_ten() -> void:
 
 	assert_eq(picker.cap(0.1), SpellPicker.MAX_SUMMON_CAP)
 	assert_ne(picker.pick(SpellPicker.Situation.new(10, 0.1)), SPELL.SUMMON)
+
+
+func test_as_shipped_he_knows_the_cloud_and_bone_spray_but_not_yet_summoning() -> void:
+	var picker := SpellPicker.new()
+
+	assert_has(picker.known, SPELL.CLOUD)
+	assert_has(picker.known, SPELL.BONE_SPRAY)
+	assert_does_not_have(picker.known, SPELL.SUMMON)
+
+
+func test_as_shipped_he_casts_cloud_cloud_bone_spray_whatever_stands_around_him() -> void:
+	var picker := SpellPicker.new()
+
+	var spells: Array[SPELL] = []
+	for _i in 6:
+		spells.append(_cast(picker, SpellPicker.Situation.new(0)))
+
+	assert_eq(spells, [SPELL.CLOUD, SPELL.CLOUD, SPELL.BONE_SPRAY, SPELL.CLOUD, SPELL.CLOUD, SPELL.BONE_SPRAY])
+
+
+func test_bone_spray_is_his_rarest_spell() -> void:
+	var picker := _knowing_everything()
+	var full := SpellPicker.Situation.new(picker.summon_cap)
+	var casts := {SPELL.CLOUD: 0, SPELL.BONE_SPRAY: 0}
+
+	for _i in 30:
+		casts[_cast(picker, full)] += 1
+
+	assert_lt(casts[SPELL.BONE_SPRAY], casts[SPELL.CLOUD])
+	assert_eq(casts[SPELL.BONE_SPRAY], 10)

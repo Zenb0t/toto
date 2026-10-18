@@ -371,12 +371,29 @@ chase. He casts **one spell at a time** by **`SpellPicker`**, a small rule like 
 else Cloud, Cloud, Bone Spray round and round; `begin`/`end` bracket a cast (the enemy calls `end` when the wind-up
 is over) and the pause (1.5 s, 0.8 s in phase two) starts at `end`. Phase two is below half his health: shorter
 pause, cap +2, the cap starting at 5 and never past 10. Each spell is telegraphed (a cast is the weapon's wind-up with
-its red preview). **Only Mephitic Cloud ships** (his weapon, lobbed like the existing weapon, reload 0 because the
-pause is his pace): `SpellPicker.known` holds only the Cloud, so the picker skips the others; #48 (Bone Spray)
-and #49 (Summon Undead, the skeleton count in `SpellPicker.Situation` and phase two) add their spell to `known` and
-carry it out in `Enemy._start_attack`. Every Lich number is a Knob (Tune → Lich: his health, speed, size and kept
-distance, and the spell rule's pauses, phase threshold, cap, cap bonus and Clouds between sprays); health and size
+its red preview). **Mephitic Cloud and Bone Spray ship** (the Cloud is his weapon, lobbed like the existing weapon, reload 0 because the
+pause is his pace): `SpellPicker.known` holds the Cloud and Bone Spray, so the picker skips Summon Undead, and with no
+skeletons to raise (the cap treated as full) he casts Cloud, Cloud, Bone Spray round and round, Bone Spray being the rarest
+(one cast in `clouds_per_spray + 1`, 2 by default); #49 (Summon Undead, the skeleton count in `SpellPicker.Situation` and phase two)
+adds its spell to `known` and carries it out in `Enemy._start_attack`, where it then comes first whenever the cap is not full and
+the Cloud/Spray cycle only runs while it is. A spell with a weapon of its own is carried out by swapping it in: `Enemy.spell_weapons`
+(spell -> weapon, set by `main.gd` from `GameTuning.lich_spell_weapons`) is equipped for that cast only and the enemy goes back to
+its own weapon when the wind-up is over. Every Lich number is a Knob (Tune → Lich: his health, speed, size and kept
+distance, the spell rule's pauses, phase threshold, cap, cap bonus and Clouds between sprays, and the Bone Spray's numbers below); health and size
 apply the next time the level is entered, the rest live. 3000 health is a guess, to be tuned in play.
+
+*Bone Spray* (#48, a test of footwork). `BoneSpray` is a `Weapon` (so the Enemy telegraphs and releases it like any other
+attack) whose pattern is pure: `wave_angles_degrees(wave)` (`Spread.angles_degrees` over the half circle, 5 shards at -90, -45, 0, 45, 90
+degrees from the aim, which is the hero), `wave_turn_degrees` (the first wave straight at the hero, the second turned by
+`wave_offset_degrees`, the third back, and so on, so every wave is offset from the last; the default 22.5 degrees is half the gap
+between neighbouring shards, so the second wave comes through the first one's gaps while a hero who stands still is hit by the first and
+the third), `shard_directions`, `start_point` (each shard starts `start_distance_cells`, 1.5, out from him along its own direction)
+and `wave_delay`. `attacks()` turns it into 15 ordinary `Shot`s, the later waves carrying `Shot.delay` (0.4 s between waves);
+`main.gd._follow_up` releases a delayed shot from where its attacker stands then, keeping its start distance out (it used to move
+it to the muzzle, which is what Knuckles wanted and still gets, since its shots start at the muzzle). The shards are plain straight shots: walls and
+the arena's pillars stop them. The telegraph is the weapon's wind-up (0.5 s) with the cone preview over the half circle. Knobs (Tune → Lich):
+shards per wave, waves, spread, offset between waves, time between waves, start distance, shard speed, range, damage and the telegraph.
+The spell is over when the wind-up is, so the later waves fly during his pause. Defaults (80 damage, 200 speed) are guesses for play.
 
 *The win.* When he dies `main.gd` tells the run (`Run.lich_killed()`: `Run.won`, and the map's `MapRecord` remembers
 `lich_dead`; his spawn cell is among the killed as for every monster, so he is still dead when the hero comes back and

@@ -51,7 +51,7 @@ func test_the_tune_screen_has_a_lich_section_holding_his_knobs() -> void:
 		func(param: Tuning.Param) -> bool: return param.group == GameTuning.LICH_GROUP)
 
 	assert_not_null(lich_section)
-	assert_eq(in_group.size(), Lich.new().knobs().size() + SpellPicker.new().knobs().size())
+	assert_eq(in_group.size(), Lich.new().knobs().size() + SpellPicker.new().knobs().size() + BoneSpray.new().knobs().size())
 
 
 func test_the_lich_casts_as_often_as_his_pause_lets_him() -> void:

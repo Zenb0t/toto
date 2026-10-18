@@ -104,11 +104,16 @@ var never_gives_up := false
 ## Optional: a caster that casts one spell at a time with a pause between (the Lich). Without one, it attacks
 ## whenever its weapon is ready and it has its turn.
 var spell_picker: SpellPicker
+## Optional: the weapon each spell casts with, other than the one it is armed with (the Lich's Bone Spray); the
+## spell wields it for that cast only.
+var spell_weapons := {}  # SpellPicker.Spell -> Weapon
 ## How far from its target it likes to stay, in cells; 0 keeps the distance its weapon likes (a kiter that backs
 ## off when the target comes closer sets this).
 var keep_distance_cells := 0.0
 
 var _wielder := Wielder.new(Sword.new())
+## The weapon it is armed with, which it goes back to after casting a spell with another.
+var _own_weapon: Weapon = _wielder.weapon
 var _brain := EnemyBrain.new()
 var _target: Node2D
 var _strafe_sign := 1.0
@@ -168,6 +173,7 @@ func set_current_health(current: int) -> void:
 
 
 func arm(new_weapon: Weapon) -> void:
+	_own_weapon = new_weapon
 	_wielder.equip(new_weapon)
 	queue_redraw()
 
@@ -338,6 +344,8 @@ func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
 	if from == EnemyBrain.State.WINDUP:
 		if spell_picker != null:
 			spell_picker.end(float(health.current) / health.maximum)
+		if weapon != _own_weapon:
+			_wielder.equip(_own_weapon)
 		_end_turn()
 		# Step aside the other way next time, so its moves are harder to read.
 		_strafe_sign = -_strafe_sign
@@ -359,12 +367,15 @@ func _goal_of_giving_up() -> Vector2:
 	return home
 
 
-## A caster picks its spell first (see SpellPicker); the Cloud is the weapon's own attack. The Lich's other spells
-## are carried out here when they are built.
+## A caster picks its spell first (see SpellPicker); the Cloud is the weapon's own attack, a spell with a weapon of
+## its own (spell_weapons: Bone Spray) is cast with that one until the cast is over. Summon Undead is carried out
+## here when it is built.
 func _start_attack() -> void:
 	if spell_picker != null:
 		var spell := spell_picker.pick(SpellPicker.Situation.new(0, float(health.current) / health.maximum))
 		spell_picker.begin(spell)
+		if spell_weapons.has(spell):
+			_wielder.equip(spell_weapons[spell])
 	_start_weapon_attack()
 
 

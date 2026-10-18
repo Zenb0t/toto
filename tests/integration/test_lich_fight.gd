@@ -4,7 +4,9 @@ extends GutTest
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
+const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 const CELL := DungeonView.TILE_SIZE
+const WALL_LAYER_BIT := 1
 
 var _fired := 0
 
@@ -228,3 +230,81 @@ func test_a_lich_in_his_hideout_fights_as_before_once_the_arena_locks() -> void:
 	await wait_seconds(2.0)
 
 	assert_gt(_fired, 0, "once the room has locked he casts")
+
+
+## Lets the spray's shards fly as the game does: the first wave at once, the later ones after their delay.
+func _release(spray: BoneSpray, from: Vector2, aim: Vector2) -> void:
+	for attack: Shot in spray.attacks(from, aim, 0.0):
+		attack.hurts_player = true
+		if attack.delay > 0.0:
+			get_tree().create_timer(attack.delay).timeout.connect(_launch.bind(attack))
+		else:
+			_launch(attack)
+
+
+func _launch(shot: Shot) -> void:
+	var projectile: Projectile = PROJECTILE_SCENE.instantiate()
+	projectile.launch(shot)
+	add_child_autofree(projectile)
+
+
+func _pillar_at(position: Vector2, size: Vector2) -> void:
+	var pillar := StaticBody2D.new()
+	pillar.collision_layer = WALL_LAYER_BIT
+	var shape := CollisionShape2D.new()
+	var box := RectangleShape2D.new()
+	box.size = size
+	shape.shape = box
+	pillar.add_child(shape)
+	pillar.position = position
+	add_child_autofree(pillar)
+
+
+func test_the_waves_of_bone_spray_hit_a_hero_who_stands_in_their_way() -> void:
+	var hero := _hero_at(Vector2(5 * CELL, 0))
+
+	_release(BoneSpray.new(), Vector2.ZERO, Vector2.RIGHT)
+	await wait_seconds(2.5)
+
+	assert_lt(hero.health.current, Player.MAX_HEALTH)
+	assert_eq((Player.MAX_HEALTH - hero.health.current) % BoneSpray.DEFAULT_DAMAGE, 0, "whole shards hit")
+	assert_gte(Player.MAX_HEALTH - hero.health.current, 2 * BoneSpray.DEFAULT_DAMAGE, "the first and the third wave aim at him")
+
+
+func test_a_hero_standing_in_the_gap_between_shards_is_missed() -> void:
+	var spray := BoneSpray.new()
+	spray.waves = 1
+	var gap_direction := Vector2.RIGHT.rotated(deg_to_rad(22.5))
+	var hero := _hero_at(gap_direction * 5 * CELL)
+
+	_release(spray, Vector2.ZERO, Vector2.RIGHT)
+	await wait_seconds(2.5)
+
+	assert_eq(hero.health.current, Player.MAX_HEALTH)
+
+
+func test_a_pillar_between_the_lich_and_the_hero_blocks_the_shards() -> void:
+	var hero := _hero_at(Vector2(5 * CELL, 0))
+	_pillar_at(Vector2(2.5 * CELL, 0), Vector2(2 * CELL, 6 * CELL))
+
+	_release(BoneSpray.new(), Vector2.ZERO, Vector2.RIGHT)
+	await wait_seconds(2.5)
+
+	assert_eq(hero.health.current, Player.MAX_HEALTH, "every shard stopped at the pillar")
+
+
+func test_the_lich_casts_the_spray_as_its_turn_comes_and_goes_back_to_his_cloud() -> void:
+	var spells := SpellPicker.new()
+	spells.pause_seconds = 0.1
+	spells.clouds_per_spray = 1
+	var hero := _hero_at(Vector2(8 * CELL, 0))
+	var lich := _lich(spells)
+	lich.spell_weapons = {SpellPicker.Spell.BONE_SPRAY: BoneSpray.new()}
+	var sizes: Array[int] = []
+	lich.attack_fired.connect(func(attacks: Array) -> void: sizes.append(attacks.size()))
+	lich.chase(hero)
+
+	await wait_seconds(6.0)
+
+	assert_gte(sizes.size(), 3)
+	assert_eq(sizes.slice(0, 3), [1, 15, 1], "a Cloud, a Bone Spray of 3 x 5 shards, then a Cloud again")
