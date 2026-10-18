@@ -3,10 +3,10 @@ extends GutTest
 
 func test_each_floor_of_the_descent_is_a_different_branch() -> void:
 	var seen := {}
-	for floor_number in range(1, RunState.FLOOR_COUNT + 1):
+	for floor_number in range(1, WorldLayout.FLOOR_COUNT + 1):
 		seen[Branch.for_floor(floor_number).id] = true
 
-	assert_eq(seen.size(), RunState.FLOOR_COUNT)
+	assert_eq(seen.size(), WorldLayout.FLOOR_COUNT)
 
 
 func test_the_descent_starts_in_the_mostly_built_dungeon() -> void:

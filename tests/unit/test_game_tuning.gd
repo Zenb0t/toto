@@ -46,7 +46,7 @@ func test_an_unknown_weapon_falls_back_to_the_starter_dagger() -> void:
 
 
 func test_runs_start_with_the_dagger_and_the_magic_missile_is_still_a_weapon() -> void:
-	assert_eq(RunState.new().weapon_id, "dagger")
+	assert_eq(HeroState.new().weapon_id, "dagger")
 	assert_has(GameTuning.weapon_ids(), "wand")
 
 

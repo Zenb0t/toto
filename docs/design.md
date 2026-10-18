@@ -23,7 +23,7 @@ Anything that doesn't help answer that is deferred.
 | Equipment slots | **Weapon** (attack button) + **Utility** (second button, on a cooldown) | Smallest set where builds feel different |
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
 | Loot sources | Guaranteed chest per cleared room, plus rare enemy drops | Predictable pacing, with occasional surprises |
-| Dungeon | Generated each run from a seed shown in the pause menu (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
+| Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
 | Goal | Go down 5 floors and out. Each floor's stairs sit in the room farthest from the start and only work once that room is clear. Other rooms are optional | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent |
 | Rooms | Entering a room with enemies locks its doors until they're all defeated | Forces fights and gives clear pacing |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
@@ -264,11 +264,22 @@ the dark."). The Dungeon itself has the odd cave (15% of its rooms).
 Like Dungeon Crawl, a run is a descent: **5 floors**, each a new branch (see Branches), each more dangerous
 than the last.
 The stairs (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
-fifth floor they lead out, and the run is won. Dying, or restarting from the menu, starts over from floor 1.
+fifth floor they lead out, and the run is won. Dying, or restarting from the menu, starts over from floor 1 in a
+new world, with a new seed.
 
-Taking the stairs carries the run down (`RunState`): the weapon and utility held, health as it is (no free
-healing between floors: potions are the only healing), the potion belt and experience. Everything else (the map, the
-monsters, chests) is new. The HUD shows the floor; the pause menu shows the floor and its seed.
+Taking the stairs carries the hero down (`HeroState`): the weapon and utility held, health as it is (no free
+healing between floors: potions are the only healing), the potion belt, experience and kills. Everything else (the map,
+the monsters, chests) is new. The HUD shows the floor; the pause menu shows the world seed and the floor.
+
+**The run and its maps.** One run-level owner, `Run` (pure), lives for the whole run: the world seed, the hero's
+carried state and which map is current. Each map has an id and a spec (`MapSpec`: which generator recipe, which
+seed); `WorldLayout` lists the maps of a world, derives each map's seed from the world seed (the same world seed
+always gives the same floors) and holds the transition rule: from this map, through this exit, to which map and
+which spot on it. The game no longer reloads its scene: taking the stairs frees the current map (`MapStage`: the
+parsed map, its floor, fog, 3D view, actors and loot) and builds the next one inside the running game; the
+composition root (`main.gd`) keeps the controls, HUD and menus wired once. Starting over does the same with
+`Run.next_world`. Rebuilding a floor takes about 0.3 s on a desktop (about 40 ms of it generating and parsing the
+map, the rest building the nodes), behind the "Down to…" message; on phones it is still to be measured.
 
 **Experience** (`Experience`). Like Dungeon Crawl's experience levels (or Brawl Stars' power cubes),
 defeating monsters makes the hero tougher, so the descent stays winnable without free healing. A kill is worth
@@ -403,7 +414,7 @@ Like Dungeon Crawl's tombstone, a run ends with a summary instead of an instant 
 "You escaped the dungeon!"), what killed you and on which floor ("Killed by an orc wizard on floor 3 of 5"),
 the level reached and the monsters slain, and a **Play again** button. Every attack carries its source
 (the monster's name, "your own Fireball", "lava"), and the hero remembers what hurt them last. Kills are
-counted across floors (`RunState`); the lines are written by `RunSummary` (pure).
+counted across floors (`HeroState`); the lines are written by `RunSummary` (pure).
 
 **Credits.** Everything third-party that ships (the three KayKit packs, Godot and its default Noto Sans font) is
 listed in the pause menu's Credits screen. `Credits` is plain data and `CreditsPanel` only shows it, so a new

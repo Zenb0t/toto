@@ -25,9 +25,9 @@ func _ready() -> void:
 	_show_panel(false)
 
 
-## The floor's dungeon seed, so a map worth keeping (or a broken one) can be reported.
-func show_seed(seed_value: int, floor_number := 1) -> void:
-	_seed_label.text = "%s (floor %d) · seed %d" % [Branch.for_floor(floor_number).display_name, floor_number, seed_value]
+## The world's seed, so a world worth keeping (or a broken one) can be reported, and the map the hero is on.
+func show_seed(world_seed: int, map: MapSpec) -> void:
+	_seed_label.text = "World seed %d · %s (floor %d)" % [world_seed, map.branch().display_name, map.floor_number]
 
 
 ## True from open() until close(), including while a sub-screen is showing.
