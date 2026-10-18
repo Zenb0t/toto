@@ -8,6 +8,10 @@ extends Control
 
 signal tuning_changed(tuning: Tuning)
 signal finished(tuning: Tuning)
+## From the World page: start the next world (a new seed), or this world's seed again. Both come after finished,
+## so the tuning just edited is the one the new world is made with.
+signal new_world_requested
+signal same_seed_requested
 
 const FONT_SIZE := 20
 const MENU_FONT_SIZE := 26
@@ -39,6 +43,7 @@ var _sections: Array[TuningSection] = []
 ## The page showing: no section is the main menu; a section with no group is the list of its groups.
 var _section: TuningSection
 var _group := ""
+var _world_seed := 0
 var _rows := {}  # param key -> Row
 
 @onready var _columns: Array[VBoxContainer] = [$Scroll/Columns/Left, $Scroll/Columns/Right]
@@ -58,10 +63,12 @@ func _ready() -> void:
 	hide()
 
 
-## sections: the menu (see GameTuning.sections). Opens on it.
-func open(tuning: Tuning, sections: Array[TuningSection]) -> void:
+## sections: the menu (see GameTuning.sections). Opens on it. world_seed: the seed of the world being played,
+## shown on the World page.
+func open(tuning: Tuning, sections: Array[TuningSection], world_seed := 0) -> void:
 	_tuning = tuning.copy()
 	_sections = sections
+	_world_seed = world_seed
 	_show_page(null, "")
 	show()
 
@@ -163,12 +170,32 @@ func _build_group_menu(section: TuningSection) -> void:
 
 func _build_rows(group: String) -> void:
 	var rows: Array[Control] = []
+	if group == GameTuning.WORLD_GROUP:
+		rows.append_array(_world_actions())
 	for each in _tuning.params():
 		if each.group == group:
 			rows.append(_row(each))
 	_fill_columns(rows)
 	for key: String in _rows:
 		_refresh_row(key)
+
+
+## The World page opens with the world's seed and the two ways to start a world.
+func _world_actions() -> Array[Control]:
+	var seed_label := _label("World seed %d" % _world_seed, LABEL_WIDTH * 2)
+	seed_label.name = "Seed"
+	seed_label.custom_minimum_size.y = ROW_HEIGHT
+	return [
+		seed_label,
+		_action_button("NewWorld", "New world", func() -> void: _start_world(new_world_requested)),
+		_action_button("SameSeedAgain", "Same seed again", func() -> void: _start_world(same_seed_requested)),
+	]
+
+
+## Applies the tuning and closes the screen, then asks for the world.
+func _start_world(request: Signal) -> void:
+	_on_done_pressed()
+	request.emit()
 
 
 ## The first half down the left column, the rest down the right, so the page reads top to bottom.
@@ -212,12 +239,23 @@ func _menu_button(id: String, text: String, groups: Array[String], on_pressed: C
 	return button
 
 
+func _action_button(id: String, text: String, on_pressed: Callable) -> Button:
+	var button := Button.new()
+	button.name = id
+	button.text = text
+	button.custom_minimum_size.y = MENU_BUTTON_HEIGHT
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_size_override("font_size", MENU_FONT_SIZE)
+	button.pressed.connect(on_pressed)
+	return button
+
+
 func _row(param: Tuning.Param) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.name = param.key.replace(".", "_")
 	row.custom_minimum_size.y = ROW_HEIGHT
 
-	var name_label := _label(param.label + ("\n(next run)" if param.next_run_only else ""), LABEL_WIDTH)
+	var name_label := _label(param.label + ("\n(next world)" if param.next_run_only else ""), LABEL_WIDTH)
 	var minus := _step_button("-", func() -> void: nudge(param.key, -1))
 	var slider := HSlider.new()
 	slider.name = "Slider"

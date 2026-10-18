@@ -94,7 +94,7 @@ func _ready() -> void:
 	_connect_keyboard_mouse()
 	_connect_menu()
 	_touch_controls.apply_layout(_layout)
-	_start_run(Run.random(_rng))
+	_start_run(Run.random(_rng, GameTuning.plains_recipe(_tuning)))
 	_show_input_mode(_keyboard_mouse.mode)
 
 
@@ -325,6 +325,8 @@ func _connect_menu() -> void:
 	_pause_menu.tuning_requested.connect(_on_tuning_requested)
 	_tuning_panel.tuning_changed.connect(_apply_tuning)
 	_tuning_panel.finished.connect(_on_tuning_finished)
+	_tuning_panel.new_world_requested.connect(_restart)
+	_tuning_panel.same_seed_requested.connect(_restart_with_same_seed)
 	_pause_menu.credits_requested.connect(_on_credits_requested)
 	_credits_panel.finished.connect(_on_credits_finished)
 	_run_summary.play_again_pressed.connect(_restart)
@@ -738,7 +740,7 @@ func _on_weapon_switch_pressed() -> void:
 
 func _on_tuning_requested() -> void:
 	_hud_layer.hide()
-	_tuning_panel.open(_tuning, GameTuning.sections(_weapon_id, _utility_id))
+	_tuning_panel.open(_tuning, GameTuning.sections(_weapon_id, _utility_id), _run.world_seed)
 
 
 func _on_tuning_finished(tuning: Tuning) -> void:
@@ -795,9 +797,13 @@ func _refresh_hud() -> void:
 		return
 	var leads_out := _run.destination(WorldLayout.Exit.STAIRS_DOWN).leaves_world()
 	var goal := "Find the way out" if leads_out else "Find the stairs down"
-	_hud.text = "%s (floor %d/%d)    Level %d (%d%%)    HP %d/%d    %s" % [
-		_branch().display_name, _stage.spec.floor_number, WorldLayout.FLOOR_COUNT,
-		_experience.level(), roundi(_experience.progress() * 100), _player.health.current,
+	var place := "The %s" % _branch().display_name
+	if _branch().outdoors:
+		goal = "Find the crypt entrance"
+	else:
+		place = "%s (floor %d/%d)" % [_branch().display_name, _stage.spec.floor_number, WorldLayout.FLOOR_COUNT]
+	_hud.text = "%s    Level %d (%d%%)    HP %d/%d    %s" % [
+		place, _experience.level(), roundi(_experience.progress() * 100), _player.health.current,
 		_player.health.maximum, goal]
 
 
@@ -807,7 +813,8 @@ func _carried_hero() -> HeroState:
 		_weapon_id, _utility_id, _player.health, _belt.to_dict(), _experience.points, _run.hero.kills)
 
 
-## Down (or up) to the next floor with everything the player holds, or out of the dungeon from the last one.
+## Down (or up) to the next map with everything the player holds: from the plains into the crypt entrance and back,
+## down the floors, or out of the dungeon from the last one.
 func _take_stairs(exit: WorldLayout.Exit) -> void:
 	if not _in_play:
 		return
@@ -841,12 +848,21 @@ func _end_run(ending: RunSummary.Ending) -> void:
 	_run_summary.show_summary(ending, RunSummary.lines(_run, _experience.level(), ending, _player.last_hurt_by))
 
 
-## Dying or restarting from the menu starts a new world with a new seed.
+## Dying, restarting from the menu or New world in the Tune screen starts a new world with a new seed.
 func _restart() -> void:
+	_begin_world(_run.next_world(_rng, GameTuning.plains_recipe(_tuning)))
+
+
+## Same seed again in the Tune screen: this world's seed from the start, made with the tuning as it is now.
+func _restart_with_same_seed() -> void:
+	_begin_world(_run.same_world_again(GameTuning.plains_recipe(_tuning)))
+
+
+func _begin_world(run: Run) -> void:
 	_run_summary.hide()
 	_hud_layer.show()
 	if _pause_menu.is_open():
 		_pause_menu.close()
 	get_tree().paused = false
 	_leave_map()
-	_start_run(_run.next_world(_rng))
+	_start_run(run)
