@@ -62,7 +62,7 @@ static func map_ids() -> Array[String]:
 static func spec(
 		world_seed: int, map_id: String, plains := QuadrantRecipe.plains(), crypt := CryptRecipe.new()) -> MapSpec:
 	if map_id == PLAINS_ID:
-		return MapSpec.new(map_id, MapSpec.Recipe.QUADRANT, 0, map_seed(world_seed, map_id), plains)
+		return MapSpec.new(map_id, MapSpec.Recipe.QUADRANT, 0, map_seed(world_seed, map_id), plains, crypt)
 	return MapSpec.new(map_id, MapSpec.Recipe.DUNGEON_FLOOR, _floor_number(map_id), map_seed(world_seed, map_id), null, crypt)
 
 

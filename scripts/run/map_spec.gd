@@ -19,7 +19,8 @@ var floor_number: int
 var seed_value: int
 ## What a QUADRANT map is made of (null for the other recipes).
 var quadrant: QuadrantRecipe
-## What a DUNGEON_FLOOR map (a level of the crypt) is made of.
+## What the crypt's levels are made of: a DUNGEON_FLOOR map is one; every map reads its room bands' wandering
+## share from it (see room_wandering_share).
 var crypt: CryptRecipe
 
 

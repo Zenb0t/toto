@@ -66,7 +66,11 @@ static func all() -> Array[Branch]:
 
 ## The crypt: the branch every level of the descent is in. The others stay in code for later ideas.
 static func crypt() -> Branch:
-	return all()[3]
+	for each in all():
+		if each.id == "crypt":
+			return each
+	push_error("No crypt branch")
+	return all()[0]
 
 
 ## The branch the nth entry of all() gives a floor (the last one for anything deeper): how the descent once

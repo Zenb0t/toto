@@ -214,3 +214,10 @@ func test_the_crypt_specs_hand_their_recipe_to_the_levels_it_makes() -> void:
 
 func test_the_plains_are_named_the_plains() -> void:
 	assert_eq(WorldLayout.spec(11, WorldLayout.PLAINS_ID).place_name(), "The plains")
+
+
+func test_the_plains_spec_carries_the_tuned_crypt_recipe_too_for_any_band_living_in_a_room() -> void:
+	var crypt := CryptRecipe.new()
+	crypt.wandering_share = 0.4
+
+	assert_eq(WorldLayout.spec(11, WorldLayout.PLAINS_ID, QuadrantRecipe.plains(), crypt).room_wandering_share(), 0.4)
