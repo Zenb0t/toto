@@ -22,7 +22,8 @@ extends RefCounted
 ## the attack. RECOVER: steps aside for a moment before looking for its next turn.
 ## A hunter with a home (Senses.has_home) gives up once it hasn't seen the target for a while or the target is
 ## far from home. CHECK: walks to the spot it last saw the target. RETURN: walks home, then wanders again. Both
-## are awake and out of the fight; they notice the target again within the wander sight radius.
+## are awake and out of the fight; they notice the target again within the wander sight radius, as long as the
+## target is back within its territory (closer to home than it gives up at).
 
 enum State { IDLE, ASLEEP, WANDER, NOTICING, HUNT, POSITION, WINDUP, RECOVER, CHECK, RETURN }
 
@@ -79,7 +80,7 @@ func update(delta: float, senses: Senses) -> State:
 			if awareness.notices(_cues(senses)):
 				_notice()
 		State.CHECK, State.RETURN:
-			if awareness.notices(_cues(senses)):
+			if awareness.notices(_cues(senses)) and awareness.in_territory(senses.target_cells_from_home):
 				_notice()
 			elif not senses.arrived:
 				pass

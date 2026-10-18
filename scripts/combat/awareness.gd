@@ -69,7 +69,13 @@ func notices(cues: Cues) -> bool:
 func gives_up(chase: Chase) -> bool:
 	if chase.never_gives_up:
 		return false
-	return chase.seconds_unseen >= give_up_seconds or chase.hero_cells_from_home >= give_up_cells
+	return chase.seconds_unseen >= give_up_seconds or not in_territory(chase.hero_cells_from_home)
+
+
+## Whether the hero, this many cells from a monster's home, is within the territory it hunts in. A monster that
+## gave up doesn't notice a hero outside it again, or it would give up again at once, back and forth at the edge.
+func in_territory(hero_cells_from_home: float) -> bool:
+	return hero_cells_from_home < give_up_cells
 
 
 ## Which of the listeners hear a noise (the hero's attack, a blast) made at origin: their indexes. All in cells.

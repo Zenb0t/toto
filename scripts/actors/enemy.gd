@@ -287,7 +287,8 @@ func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
 		_path.clear()
 	elif to == EnemyBrain.State.CHECK:
 		# It leaves the fight: it frees its turn and its flank spot for the rest of its band.
-		_end_turn()
+		if squad != null:
+			squad.leave(get_instance_id())
 		_start_walk()
 	elif to == EnemyBrain.State.RETURN:
 		_start_walk()

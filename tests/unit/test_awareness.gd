@@ -176,3 +176,10 @@ func test_the_give_up_time_and_distance_follow_the_awareness_fields() -> void:
 
 	assert_true(awareness.gives_up(_chase(2.0)))
 	assert_true(awareness.gives_up(_chase(0.0, 10.0)))
+
+
+func test_the_hunting_territory_ends_where_a_hunter_gives_up() -> void:
+	var awareness := Awareness.new()
+
+	assert_true(awareness.in_territory(23.9))
+	assert_false(awareness.in_territory(24.0))

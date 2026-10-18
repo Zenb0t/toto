@@ -217,7 +217,9 @@ hero inside its territory (the node remembers it; a hero seen 24+ cells from hom
 to the brain as `Senses.arrived` (close enough, or no path on, so a walled-off spot never strands it). A monster
 that is checking or returning is awake and can **notice the hero again**, with the same rule and radius as a
 wandering monster (**9 cells**, in sight; a deliberate choice: it is awake and strolling, and a separate radius
-would be one more number nobody tunes); it then pauses on a "!" and hunts, and **shouts again** (`noticed` fires on
+would be one more number nobody tunes), but only once the hero is back **within 24 cells of its home**
+(`Awareness.in_territory`): a hero it gave up on at the edge would otherwise be noticed and given up on again
+every few frames, with a "!" and a shout each time; it then pauses on a "!" and hunts, and **shouts again** (`noticed` fires on
 the way into Noticing), which is fine: a band that settled down can be woken again. The shout chain still ends,
 because only calm monsters hear a shout and a checking or returning one is busy. While it checks or returns a
 monster is out of the fight for its **Squad**: it frees its attack turn and flank spot when it gives up (`Squad.leave`) and

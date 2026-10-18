@@ -317,3 +317,11 @@ func test_a_monster_that_noticed_again_does_not_give_up_at_once() -> void:
 	brain.update(1.0, _hunter_senses(true))
 
 	assert_eq(_lose_sight_for(brain, 4.0), EnemyBrain.State.HUNT)
+
+
+func test_a_monster_that_gave_up_at_the_edge_of_its_territory_does_not_notice_the_hero_there_again() -> void:
+	var brain := _hunting_at_home()
+	brain.update(STEP, _hunter_senses(true, 24.0))
+
+	assert_eq(brain.update(STEP, _hunter_senses(true, 24.0)), EnemyBrain.State.CHECK)
+	assert_eq(brain.update(STEP, _hunter_senses(true, 23.0)), EnemyBrain.State.NOTICING, "back in its territory")
