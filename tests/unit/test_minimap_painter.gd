@@ -101,3 +101,31 @@ func test_cells_seen_before_but_out_of_view_are_darker_than_cells_in_view() -> v
 	var image := MinimapPainter.paint(map, exploration, Vector2i(8, 1))
 
 	assert_lt(image.get_pixel(2, 1).v, MinimapPainter.FLOOR_COLOR.v, "remembered")
+
+
+func test_groves_boulders_and_exits_show_once_seen() -> void:
+	var map := DungeonMapParser.new().parse("""
+#######
+#P.TB=#
+#######
+""")
+	var exploration := _explored_from(map, Vector2i(1, 1), _sees_everything)
+
+	var image := MinimapPainter.paint(map, exploration, Vector2i(1, 1))
+
+	_assert_colour(image.get_pixel(3, 1), MinimapPainter.GROVE_COLOR)
+	_assert_colour(image.get_pixel(4, 1), MinimapPainter.BOULDER_COLOR)
+	_assert_colour(image.get_pixel(5, 1), MinimapPainter.BARRICADE_COLOR)
+
+
+func test_groves_never_seen_stay_blank() -> void:
+	var map := DungeonMapParser.new().parse("""
+#####
+#P.T#
+#####
+""")
+	var exploration := Exploration.new()
+
+	var image := MinimapPainter.paint(map, exploration, Vector2i(1, 1))
+
+	assert_eq(image.get_pixel(3, 1).a, 0.0)

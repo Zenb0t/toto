@@ -25,6 +25,12 @@ const LIT := 1.0
 ## Walls right in front of the hero (toward the camera) are cut down to this share of their height, so they
 ## don't hide the hero.
 const CUTAWAY_SHARE := 0.3
+## Outdoors, tree groves stand this many times as tall as a wall (a little more or less, cell by cell), boulders
+## are low cover and barricades come up to a man's chest.
+const GROVE_HEIGHT := 1.25
+const GROVE_HEIGHT_VARIATION := 0.5
+const BOULDER_HEIGHT := 0.4
+const BARRICADE_HEIGHT := 0.8
 
 ## Height of the walls, in cells. Closed doors are as tall.
 var wall_height := DEFAULT_WALL_HEIGHT:
@@ -47,6 +53,7 @@ var _shown := {}  # Vector2i -> the brightness last shown, so a refresh only tou
 var _exploration: Exploration
 var _cut_cells := {}  # Vector2i -> true, walls cut down in front of the hero
 var _look := BranchLook.dungeon()
+var _map: DungeonMap
 var _stairs_cell := DungeonMap.NO_CELL
 var _stairs := StairsModel.new()
 var _stairs_up_cell := DungeonMap.NO_CELL
@@ -68,14 +75,18 @@ func _init() -> void:
 ## wall_cells: the walls to stand up (those next to open cells).
 func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.dungeon()) -> void:
 	_look = look
-	# Pillars are carved columns, trees (the Lair's), or plain rock like the walls around them.
+	_map = map
+	# Pillars are carved columns, trees (the Lair's), or plain rock like the walls around them. A boulder or
+	# a barricade standing on its own is not one.
 	var pillars: Array[Vector2i] = []
 	var trees: Array[Vector2i] = []
+	var free_standing := DungeonDecor.pillar_cells(map, wall_cells).filter(
+		func(cell: Vector2i) -> bool: return map.blocker_at(cell) in [DungeonMap.NO_BLOCKER, DungeonMap.Blocker.GROVE])
 	match look.pillar_style:
 		BranchLook.PillarStyle.COLUMN:
-			pillars = DungeonDecor.pillar_cells(map, wall_cells)
+			pillars.assign(free_standing)
 		BranchLook.PillarStyle.TREE:
-			trees = DungeonDecor.pillar_cells(map, wall_cells)
+			trees.assign(free_standing)
 	_column_cells = pillars
 	_block_cells.clear()
 	for cell in wall_cells:
@@ -217,7 +228,7 @@ func _refresh(everything := false) -> void:
 		_shown[cell] = shade
 		var is_door := _door_cells.has(cell)
 		_place_block(i, cell, shade, DOOR_COLOR if is_door else _wall_color(cell))
-		_place_cap(i, cell, shade, DOOR_CAP_COLOR if is_door else _look.cap_color, 1.0 + CAP_OVERHANG * 2.0)
+		_place_cap(i, cell, shade, DOOR_CAP_COLOR if is_door else _cap_color(cell), 1.0 + CAP_OVERHANG * 2.0)
 	for j in _column_cells.size():
 		var cell := _column_cells[j]
 		var shade := brightness(cell)
@@ -259,7 +270,21 @@ func _place_column(index: int, cell: Vector2i, shade: float) -> void:
 
 
 func _height_at(cell: Vector2i) -> float:
-	return wall_height * (CUTAWAY_SHARE if _cut_cells.has(cell) else 1.0)
+	return wall_height * _height_share(cell) * (CUTAWAY_SHARE if _cut_cells.has(cell) else 1.0)
+
+
+## How tall a block is compared with a wall: groves rise (unevenly, like a forest), boulders sit low.
+func _height_share(cell: Vector2i) -> float:
+	if _map == null:
+		return 1.0
+	match _map.blocker_at(cell):
+		DungeonMap.Blocker.GROVE:
+			return GROVE_HEIGHT + GROVE_HEIGHT_VARIATION * (DungeonDecor.noise(cell, 17) - 0.5)
+		DungeonMap.Blocker.BOULDER:
+			return BOULDER_HEIGHT
+		DungeonMap.Blocker.BARRICADE:
+			return BARRICADE_HEIGHT
+	return 1.0
 
 
 ## A hidden piece shrinks to nothing; a flattened one would still darken the floor.
@@ -270,9 +295,29 @@ func _upright(cell: Vector2i, size: Vector3, center_height: float, shade: float)
 
 ## The branch's wall colour, streaked with its veins (ore in the Mines, moss in the Lair) on some blocks.
 func _wall_color(cell: Vector2i) -> Color:
+	if _map != null:
+		match _map.blocker_at(cell):
+			DungeonMap.Blocker.GROVE:
+				return _look.grove_color
+			DungeonMap.Blocker.BOULDER:
+				return _look.boulder_color
+			DungeonMap.Blocker.BARRICADE:
+				return _look.barricade_color
 	if _look.vein_color.a > 0.0 and DungeonDecor.noise(cell, 15) < VEIN_SHARE:
 		return _look.wall_color.lerp(Color(_look.vein_color, 1.0), VEIN_STRENGTH)
 	return _look.wall_color
+
+
+func _cap_color(cell: Vector2i) -> Color:
+	if _map != null:
+		match _map.blocker_at(cell):
+			DungeonMap.Blocker.GROVE:
+				return _look.grove_cap_color
+			DungeonMap.Blocker.BOULDER:
+				return _look.boulder_cap_color
+			DungeonMap.Blocker.BARRICADE:
+				return _look.barricade_cap_color
+	return _look.cap_color
 
 
 func _stone(color: Color, cell: Vector2i, shade: float) -> Color:
