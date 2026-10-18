@@ -24,9 +24,11 @@ static func start_of(
 
 
 ## The band a monster spawning at this cell belongs to: a camp's monsters live at its campfire, any others at
-## the middle of their room (or where they stand, outside any room). room_share and camp_share are the shares of
-## each kind of band that start wandering.
+## the middle of their room (or where they stand, outside any room), the ruin's at its middle (and always wandering).
+## room_share and camp_share are the shares of each kind of band that start wandering.
 static func home_of(map: DungeonMap, spawn_cell: Vector2i, room_share: float, camp_share: float) -> Home:
+	if map.ruin_cell != DungeonMap.NO_CELL and Ruins.is_home_of(map.ruin_cell, spawn_cell):
+		return Home.new(Ruins.NUMBER, map.ruin_cell, Ruins.WANDERING_SHARE)
 	var campfire := Camps.campfire_of(map, spawn_cell)
 	if campfire != DungeonMap.NO_CELL:
 		return Home.new(Camps.band_id(map, campfire), campfire, camp_share)

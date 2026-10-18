@@ -61,9 +61,9 @@ boulders for cover, ponds and a thick forest border with a barricaded exit in th
 the grass, halfway to the border or farther, stands a small stone mausoleum: the crypt entrance, with no road to it. Step
 onto its stairs to go down into the **crypt**, 3 levels of tombs and undead (the HUD says "Crypt level 2"), all grown from one world seed (shown in the pause menu), inspired by
 Dungeon Crawl Stone Soup. The first level's silver stairs lead back out to the mausoleum. Six **camps** dot the plains, each a band of 2-4 goblins and kobolds round a campfire (asleep or wandering), bigger and tougher
-the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. Two 3-wide dirt roads wind from the village gates to two of the four exits (picked by the seed) to follow across the map; they only change the colour of the ground. Campfires
+the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. In one corner of the map (never the crypt entrance's) stands the **ruin**, a walled courtyard with two or three gaps in its wall, the map's toughest band (always wandering) and a guaranteed chest holding a piece of gear; it stays open once looted. Two 3-wide dirt roads wind from the village gates to two of the four exits (picked by the seed) to follow across the map; they only change the colour of the ground. Campfires
 show on the minimap once seen, and monsters killed on the plains stay dead. No monster lives in the village, and no camp stands in it or the grass round it.
-Tune → World holds the knobs of the plains (the village among them) and of the crypt (how far its campfire lies from the stairs, how many bands wander) and starts a new world or the same seed again. The crypt's levels: oddly
+Tune → World holds the knobs of the plains (the village and the ruin's gaps and band among them) and of the crypt (how far its campfire lies from the stairs, how many bands wander) and starts a new world or the same seed again. The crypt's levels: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
@@ -136,7 +136,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `scripts/dungeon`, holds its map letters and what a map knows of it)
 - `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
   `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
-  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires; `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
+  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires, the ruin (`Ruins`: its drawing, gaps, band); `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
   `BranchLook` (what each place is: the plains, Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
   (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces), `BossArena` (the Lich's room on crypt level 3), `CryptRecipe` and `CryptCampfire` (the crypt's Knobs; which room holds the campfire),
