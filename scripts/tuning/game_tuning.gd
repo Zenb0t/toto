@@ -30,6 +30,7 @@ const CONTROLS_BUTTON_CATCH := "controls.button_catch"
 const CONTROLS_HAPTIC := "controls.haptic_ms"
 const CONTROLS_DRAG_REACH := "controls.drag_reach"
 const CONTROLS_SHOW_WEAPON_SWITCH := "controls.show_weapon_switch"
+const WORLD_WARP := "world.warp"
 ## A short buzz, in milliseconds, when an aim comes back into the dead zone.
 const DEFAULT_HAPTIC_MS := 20
 const LOOT_ENEMY_DROP_CHANCE := "loot.enemy_drop_chance"
@@ -42,6 +43,7 @@ const CAMERA_LOOK_AHEAD := "camera.look_ahead"
 const CAMERA_WALL_HEIGHT := "camera.wall_height"
 const PLAYER_GROUP := "Player"
 const ENEMIES_GROUP := "Enemies"
+const LICH_GROUP := "Lich"
 const LOOT_GROUP := "Loot"
 const CONTROLS_GROUP := "Controls"
 const CAMERA_GROUP := "Camera"
@@ -136,7 +138,11 @@ static func create() -> Tuning:
 	params.append_array(_item_params(RestProfile.campfire(), REST_GROUP))
 	params.append_array(_item_params(RestProfile.inn(), REST_GROUP))
 	params.append_array(_item_params(MonstersAround.new(), REST_GROUP))
+	params.append_array(_item_params(Ambush.new(), REST_GROUP))
 	params.append_array(_item_params(CryptRecipe.new(), WORLD_GROUP, true))
+	params.append(Tuning.Param.new(WORLD_WARP, "Warp (0 = off)", WORLD_GROUP, 0, 1, 1, 0))
+	params.append_array(_item_params(Lich.new(), LICH_GROUP))
+	params.append_array(_item_params(SpellPicker.new(), LICH_GROUP))
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", ENEMIES_GROUP, 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, Enemy.DEFAULT_HEALTH_MULTIPLIER, true),
@@ -247,6 +253,7 @@ static func sections(equipped_weapon_id: String, equipped_utility_id: String) ->
 		_items_section("Utilities", utilities(), utility_group, equipped_utility_id),
 		_items_section("Potions", potions(), potion_group, ""),
 		TuningSection.new(ENEMIES_GROUP, [ENEMIES_GROUP]),
+		TuningSection.new(LICH_GROUP, [LICH_GROUP]),
 		TuningSection.new(LOOT_GROUP, [LOOT_GROUP]),
 		TuningSection.new(CONTROLS_GROUP, [CONTROLS_GROUP]),
 		TuningSection.new(CAMERA_GROUP, [CAMERA_GROUP]),
@@ -268,6 +275,34 @@ static func enemy_weapon(tuning: Tuning, weapon_id: String) -> Weapon:
 	result.ammo = 1
 	result.reload *= tuning.value(ENEMY_COOLDOWN_MULTIPLIER)
 	result.windup += tuning.value(ENEMY_TELEGRAPH)
+	return result
+
+
+## The Lich with the tuned numbers (Tune → Lich).
+static func lich(tuning: Tuning) -> Lich:
+	var result := Lich.new()
+	_apply_knobs(result, tuning)
+	return result
+
+
+## The Lich's spell rule with the tuned numbers: a new one, ready to cast.
+static func lich_spells(tuning: Tuning) -> SpellPicker:
+	var result := SpellPicker.new()
+	tune_spells(result, tuning)
+	return result
+
+
+## Applies the tuned numbers to a spell rule, keeping its pause and what it is casting.
+static func tune_spells(target: SpellPicker, tuning: Tuning) -> void:
+	_apply_knobs(target, tuning)
+
+
+## The weapon a monster fights with: the enemy version of its weapon. The Lich casts as often as his spell pause
+## lets him (see SpellPicker), so his Cloud has no reload of its own.
+static func monster_weapon(tuning: Tuning, monster: Monster) -> Weapon:
+	var result := enemy_weapon(tuning, monster.weapon_id)
+	if monster.id == Lich.ID:
+		result.reload = 0.0
 	return result
 
 
@@ -393,6 +428,11 @@ static func shows_weapon_switch(tuning: Tuning) -> bool:
 	return tuning.value(CONTROLS_SHOW_WEAPON_SWITCH) >= 1.0
 
 
+## Whether the World page lists the places to warp to, a playtest aid.
+static func warp_enabled(tuning: Tuning) -> bool:
+	return tuning.value(WORLD_WARP) >= 1.0
+
+
 static func camera_framing(tuning: Tuning) -> CameraFraming:
 	var framing := CameraFraming.new()
 	framing.pitch_degrees = tuning.value(CAMERA_PITCH)
@@ -423,6 +463,13 @@ static func inn_profile(tuning: Tuning) -> RestProfile:
 ## When resting is refused because of monsters around (Tune → Rest).
 static func monsters_around(tuning: Tuning) -> MonstersAround:
 	var rule := MonstersAround.new()
+	_apply_knobs(rule, tuning)
+	return rule
+
+
+## How likely resting at a campfire is to bring an ambush, how big and how soon (Tune → Rest).
+static func ambush(tuning: Tuning) -> Ambush:
+	var rule := Ambush.new()
 	_apply_knobs(rule, tuning)
 	return rule
 

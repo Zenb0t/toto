@@ -2,8 +2,10 @@ class_name MapRecord
 extends RefCounted
 ## What the hero changed on one map, so the map can be thrown away on leaving and made again from its seed on
 ## return, the way it was left: monsters killed, chests opened, floor items taken, items dropped, cells explored
-## and monsters left hurt, and the state of its campfires. Things are known by where the map puts them (an enemy by its spawn cell, a floor item
-## by its loot cell, a chest by its room), which is what lets a record match its regenerated map.
+## and monsters left hurt, the state of its campfires, how many times each has been lit (the ambush rolls spent) and
+## whether the Lich is dead. Things are known by where the map puts them (an enemy by its spawn cell, a floor item by its
+## loot cell, a chest by the id of what holds it: a room, or a set piece like the ruin, see Ruins.NUMBER), which is what
+## lets a record match its regenerated map.
 ## Pure; to_dict / from_dict give a plain dictionary for saving a run later.
 
 ## Something lying on the floor that the map didn't start with (a swapped-out weapon, a chest's find, a drop).
@@ -23,12 +25,14 @@ class DroppedItem:
 ## The version of the generator that made the map (see MapSpec.generator_version).
 var generator_version: int
 var _killed := {}  # Vector2i (spawn cell) -> true
-var _opened_chests := {}  # int (room) -> true
+var _opened_chests := {}  # int (chest id) -> true
 var _taken_loot := {}  # Vector2i (loot cell) -> true
 var _explored: Array[Vector2i] = []
 var _dropped: Array[DroppedItem] = []
 var _hurt := {}  # Vector2i (spawn cell) -> {"health": int, "left_at": float}
+var _lich_dead := false
 var _campfires := {}  # Vector2i (campfire cell) -> {"state": Campfire.State, "seconds_left": float}
+var _lightings := {}  # Vector2i (campfire cell) -> int: how many times it has been lit (each made its ambush roll)
 
 
 func _init(made_by_version: int) -> void:
@@ -44,12 +48,21 @@ func is_killed(enemy_id: Vector2i) -> bool:
 	return _killed.has(enemy_id)
 
 
-func open_chest(room: int) -> void:
-	_opened_chests[room] = true
+## The Lich died on this map (his spawn cell is also among the killed).
+func kill_lich() -> void:
+	_lich_dead = true
 
 
-func is_chest_opened(room: int) -> bool:
-	return _opened_chests.has(room)
+func is_lich_dead() -> bool:
+	return _lich_dead
+
+
+func open_chest(chest_id: int) -> void:
+	_opened_chests[chest_id] = true
+
+
+func is_chest_opened(chest_id: int) -> bool:
+	return _opened_chests.has(chest_id)
 
 
 func take_loot(loot_cell: Vector2i) -> void:
@@ -108,6 +121,20 @@ func campfire_at(cell: Vector2i, profile: RestProfile) -> Campfire:
 	return Campfire.new(profile, left.state as Campfire.State, left.seconds_left)
 
 
+## How many times the campfire at a cell has been lit. Each lighting makes one ambush roll (see Ambush), so this
+## is also the number of rolls spent there; a lighting's roll is never made twice.
+func lightings_of(cell: Vector2i) -> int:
+	return _lightings.get(cell, 0)
+
+
+## The campfire at a cell is being lit: spends its next ambush roll and returns that lighting's number (0 for the
+## first time), which is what the roll is seeded by.
+func spend_lighting(cell: Vector2i) -> int:
+	var lighting := lightings_of(cell)
+	_lightings[cell] = lighting + 1
+	return lighting
+
+
 func to_dict() -> Dictionary:
 	var hurt := []
 	for enemy_id: Vector2i in _hurt:
@@ -121,6 +148,9 @@ func to_dict() -> Dictionary:
 	for cell: Vector2i in _campfires:
 		campfires.append({"cell": _cell_to_data(cell), "state": _campfires[cell].state,
 			"seconds_left": _campfires[cell].seconds_left})
+	var lightings := []
+	for cell: Vector2i in _lightings:
+		lightings.append({"cell": _cell_to_data(cell), "count": _lightings[cell]})
 	return {
 		"generator_version": generator_version,
 		"killed": _cells_to_data(_killed.keys()),
@@ -129,7 +159,9 @@ func to_dict() -> Dictionary:
 		"explored": _cells_to_data(_explored),
 		"dropped": dropped,
 		"hurt": hurt,
+		"lich_dead": _lich_dead,
 		"campfires": campfires,
+		"lightings": lightings,
 	}
 
 
@@ -138,8 +170,8 @@ static func from_dict(data: Dictionary) -> MapRecord:
 	var record := MapRecord.new(int(data.get("generator_version", 0)))
 	for cell in _cells_from_data(data.get("killed", [])):
 		record.kill(cell)
-	for room: Variant in data.get("opened_chests", []):
-		record.open_chest(int(room))
+	for chest_id: Variant in data.get("opened_chests", []):
+		record.open_chest(int(chest_id))
 	for cell in _cells_from_data(data.get("taken_loot", [])):
 		record.take_loot(cell)
 	record.remember_explored(_cells_from_data(data.get("explored", [])))
@@ -148,11 +180,15 @@ static func from_dict(data: Dictionary) -> MapRecord:
 		var at: Array = item.position
 		dropped.append(DroppedItem.new(item.item, item.potion, Vector2(at[0], at[1])))
 	record.remember_dropped(dropped)
+	if data.get("lich_dead", false):
+		record.kill_lich()
 	for left: Dictionary in data.get("hurt", []):
 		record._hurt[_cell_from_data(left.enemy)] = {"health": int(left.health), "left_at": float(left.left_at)}
 	for fire: Dictionary in data.get("campfires", []):
 		record._campfires[_cell_from_data(fire.cell)] = {
 			"state": int(fire.state), "seconds_left": float(fire.seconds_left)}
+	for lit: Dictionary in data.get("lightings", []):
+		record._lightings[_cell_from_data(lit.cell)] = int(lit.count)
 	return record
 
 

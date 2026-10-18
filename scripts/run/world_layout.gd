@@ -2,11 +2,11 @@ class_name WorldLayout
 extends RefCounted
 ## Which maps a world holds and how they connect: the plains (the centre quadrant, where a run starts), whose
 ## crypt entrance leads down into the crypt: FLOOR_COUNT levels, each one's stairs down leading to the next level's
-## stairs up (and back). Until the Lich waits at the bottom, the last level's stairs lead out of the world (the run
-## is won). The first level's stairs up lead back out to the mausoleum. Every map's seed comes from the world seed, so the same world seed always gives the same maps. Pure.
+## stairs up (and back). The last level has no stairs down: its boss arena, where the Lich waits, is the end of the
+## world (killing him wins the run, and play goes on). The first level's stairs up lead back out to the mausoleum. Every map's seed comes from the world seed, so the same world seed always gives the same maps. Pure.
 
 ## The levels of the crypt.
-const FLOOR_COUNT := 3
+const FLOOR_COUNT := CryptRecipe.LEVELS
 const PLAINS_ID := "plains"
 ## exit_at's answer for a cell that leads nowhere.
 const NO_EXIT := -1
@@ -23,22 +23,21 @@ enum Spot {
 	START,
 	STAIRS_DOWN,
 	STAIRS_UP,
+	## Beside the ruin's chest and just outside the arena's door: only warping lands here (see Warp).
+	RUIN,
+	ARENA_DOOR,
 }
 
 
-## Where an exit leads: a map and the spot on it, or out of the world (the run is won).
+## Where an exit leads: a map and the spot on it.
 class Destination:
 	extends RefCounted
-	## Empty when the exit leads out of the world.
 	var map_id: String
 	var spot: Spot
 
 	func _init(to_map_id: String, at_spot := Spot.START) -> void:
 		map_id = to_map_id
 		spot = at_spot
-
-	func leaves_world() -> bool:
-		return map_id == ""
 
 
 ## The map a run starts on.
@@ -71,14 +70,19 @@ static func map_seed(world_seed: int, map_id: String) -> int:
 	return ("%d/%s" % [world_seed, map_id]).hash()
 
 
+## Whether a map has stairs down: every crypt level but the last, and the way down from the plains (the crypt
+## entrance).
+static func has_stairs_down(map_id: String) -> bool:
+	return _floor_number(map_id) < FLOOR_COUNT
+
+
 ## The transition rule: where taking an exit from a map leads. Stairs lead to the matching stairs on the
 ## other floor, so going down and back up puts the hero where they were.
 static func destination(from_map_id: String, exit: Exit) -> Destination:
 	var floor_number := _floor_number(from_map_id)
 	match exit:
 		Exit.STAIRS_DOWN:
-			if floor_number == FLOOR_COUNT:
-				return Destination.new("")
+			assert(floor_number < FLOOR_COUNT, "the last level has no stairs down")
 			return Destination.new(floor_id(floor_number + 1), Spot.STAIRS_UP)
 		Exit.STAIRS_UP:
 			assert(floor_number > 0, "the plains have no stairs up")
@@ -96,6 +100,10 @@ static func arrival_cell(map: DungeonMap, spot: Spot) -> Vector2i:
 			return map.exit_cell
 		Spot.STAIRS_UP:
 			return map.stairs_up_cell
+		Spot.RUIN:
+			return Warp.cell_beside_ruin(map)
+		Spot.ARENA_DOOR:
+			return Warp.cell_outside_arena(map)
 	return map.player_spawn
 
 

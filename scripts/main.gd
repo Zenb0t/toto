@@ -30,6 +30,8 @@ const INN_RESTING_TEXT := "Resting..."
 const INN_RESTED_TEXT := "Fully rested"
 const INN_INTERRUPTED_TEXT := "Rest interrupted"
 const REST_REFUSED_COLOR := Color(1.0, 0.45, 0.4)
+## Floats up when a lighting brings an ambush, before the ambushers arrive.
+const AMBUSH_WARNING_TEXT := "Something is coming..."
 const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item, or rest at a campfire or the inn.  Q: next weapon.  Esc: menu."
 
 var _rng := RandomNumberGenerator.new()
@@ -68,6 +70,12 @@ var _rest_spots := {}  # Vector2i (its cell) -> RestSpot: the map's campfires as
 ## The campfires a band still holds (they burn for it and can't be rested at), until its last monster dies.
 var _held_campfires := {}  # Vector2i -> true
 var _rest_profile := RestProfile.campfire()
+var _ambush := Ambush.new()
+## Ambushes on their way (hit by a lighting, not arrived yet), and the monsters that arrived in one. Ambushers
+## belong to no spawn cell, so the record never holds them: they are not saved, and the lighting's spent roll is
+## all that keeps another ambush from coming for it.
+var _ambush_parties: Array[AmbushParty] = []
+var _ambushers := {}  # Enemy -> true
 var _inn: InnSpot  # the inn's doorstep, or null (only the plains have a village)
 var _inn_in_reach := false
 var _monsters_around := MonstersAround.new()
@@ -126,6 +134,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_run.advance(delta)
 	_update_rest_offer()
+	_tick_ambushes(delta)
 	_player.move(_move_input())
 	var mouse_held := _keyboard_mouse.is_attack_held() and _in_play
 	if mouse_held and _player.weapon.charge_seconds() > 0.0:
@@ -174,6 +183,7 @@ func _enter_map() -> void:
 	_arrival_cell = WorldLayout.arrival_cell(_stage.map, _run.arrival_spot)
 	_player = _spawn_player(hero, _arrival_cell)
 	_spawn_enemies()
+	_spawn_ruin_chest()
 	_spawn_campfires()
 	_spawn_inn()
 	_spawn_floor_loot()
@@ -201,6 +211,8 @@ func _leave_map() -> void:
 	_floor_loot_cells.clear()
 	_rest_spots.clear()
 	_held_campfires.clear()
+	_ambush_parties.clear()
+	_ambushers.clear()
 	_fire_in_reach = DungeonMap.NO_CELL
 	_inn = null
 	_inn_in_reach = false
@@ -262,17 +274,28 @@ func _spawn_enemies() -> void:
 		if _record.is_killed(cell):
 			continue
 		var band := Band.home_of(_stage.map, cell, _stage.spec.room_wandering_share(), _camp_wandering_share())
+		var locking := _stage.map.locking_kind(_stage.map.room_at(cell)) != LockingRoom.NONE
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
 		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
+		if monster.id == Lich.ID:
+			monster = GameTuning.lich(_tuning).monster()
+			enemy.spell_picker = GameTuning.lich_spells(_tuning)
 		enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
 		enemy.set_current_health(_record.health_on_return(
 			cell, enemy.health.maximum, _run.seconds_played, GameTuning.enemy_regeneration(_tuning)))
-		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
+		enemy.arm(GameTuning.monster_weapon(_tuning, monster))
 		enemy.navigation = _stage.pathfinder
 		enemy.squad = _squads_by_band.get_or_add(band.id, Squad.new())
-		enemy.settle(DungeonView.cell_center(band.cell), Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share))
-		enemy.chase(_player)
+		enemy.settle(
+			DungeonView.cell_center(band.cell),
+			Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share, locking))
+		# The band of a locking room is awake but ignores the hero until the room locks (see _on_room_locked), and
+		# keeps to its room meanwhile: strolling out through a door, it would be shut out when the room locks.
+		if locking:
+			enemy.wander_cells = _cell_set(_stage.map.cells_of_room(_stage.map.room_at(cell)))
+		else:
+			enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.noticed.connect(_on_enemy_noticed)
 		enemy.defeated.connect(_on_enemy_defeated.bind(band.id))
@@ -280,6 +303,14 @@ func _spawn_enemies() -> void:
 		_stage.world.add_enemy(enemy)
 		_enemies_by_band.get_or_add(band.id, []).append(enemy)
 		_spawn_cells[enemy] = cell
+
+
+## A set of cells (cell -> true), for Enemy.wander_cells.
+static func _cell_set(cells: Array[Vector2i]) -> Dictionary:
+	var result := {}
+	for cell in cells:
+		result[cell] = true
+	return result
 
 
 ## The map's campfires as the record has them (unlit if never lit), and which a band still holds.
@@ -344,8 +375,8 @@ func _create_progress() -> DungeonProgress:
 	for cell: Vector2i in _spawn_cells.values():
 		var room := _stage.map.room_at(cell)
 		counts[room] = counts.get(room, 0) + 1
-	# No room is marked as locking yet (trap rooms and the boss arena will be): monsters come when they notice.
-	var progress := DungeonProgress.new(counts)
+	# Only the rooms the map marks lock (the boss arena, trap rooms): in the others monsters come when they notice.
+	var progress := DungeonProgress.new(counts, _stage.map.locking_room_ids())
 	# A locking room's band never gives up the chase.
 	for enemy: Enemy in _spawn_cells:
 		enemy.never_gives_up = progress.is_locking(_stage.map.room_at(_spawn_cells[enemy]))
@@ -401,9 +432,11 @@ func _connect_menu() -> void:
 	_tuning_panel.finished.connect(_on_tuning_finished)
 	_tuning_panel.new_world_requested.connect(_restart)
 	_tuning_panel.same_seed_requested.connect(_restart_with_same_seed)
+	_tuning_panel.warp_requested.connect(_warp_to)
 	_pause_menu.credits_requested.connect(_on_credits_requested)
 	_credits_panel.finished.connect(_on_credits_finished)
 	_run_summary.play_again_pressed.connect(_restart)
+	_run_summary.keep_playing_pressed.connect(_keep_playing)
 
 
 # --- Input routing -------------------------------------------------------------------------------
@@ -533,10 +566,14 @@ func _track_player_room() -> void:
 		_take_stairs(exit)
 
 
+## A locking room seals with the hero in it, and its band, which ignored the hero until now, wakes and attacks.
 func _on_room_locked(room: int) -> void:
 	_stage.view.set_room_closed(room, true)
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), true)
 	_sight_origin = DungeonMap.NO_CELL
+	for enemy: Enemy in _spawn_cells:
+		if _stage.map.room_at(_spawn_cells[enemy]) == room:
+			enemy.wake(_player)
 
 
 func _on_room_cleared(room: int) -> void:
@@ -585,15 +622,21 @@ func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
 
 
 func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
-	var spawn_cell: Vector2i = _spawn_cells[enemy]
-	_record.kill(spawn_cell)
-	_refresh_held_campfires()
-	_spawn_cells.erase(enemy)
 	_enemies_by_band[band].erase(enemy)
-	_progress.record_defeat(_stage.map.room_at(spawn_cell))
+	if _ambushers.has(enemy):
+		_ambushers.erase(enemy)  # not a spawn of the map: nothing to record, no room to clear
+	else:
+		var spawn_cell: Vector2i = _spawn_cells[enemy]
+		_record.kill(spawn_cell)
+		_refresh_held_campfires()
+		_spawn_cells.erase(enemy)
+		_progress.record_defeat(_stage.map.room_at(spawn_cell))
 	_run.hero.kills += 1
 	_grow_from(enemy.monster)
 	_refresh_hud()
+	if enemy.monster.id == Lich.ID:
+		_run.lich_killed()
+		_win()
 	if LootTable.rolls_enemy_drop(GameTuning.enemy_drop_chance(_tuning), _rng):
 		var drop_id := LootTable.enemy_drop_id(enemy.weapon.id, GameTuning.item_ids(), _held_ids(), _rng)
 		_spawn_drop(enemy.position, drop_id)
@@ -741,7 +784,62 @@ func _rest() -> void:
 	if refusal != "":
 		_stage.world.float_text(_player.global_position, refusal, REST_REFUSED_COLOR)
 		return
-	spot.rest()
+	if spot.rest():
+		_roll_ambush(_fire_in_reach)
+
+
+## Each lighting of a campfire makes one seeded ambush roll (see Ambush); a spent roll stays in the record. On a hit
+## the ambushers are on their way: they arrive after the rule's delay.
+func _roll_ambush(fire: Vector2i) -> void:
+	var lighting := _record.spend_lighting(fire)
+	var seed_value := _stage.spec.seed_value
+	var outdoors := _stage.spec.branch().outdoors
+	if not _ambush.hits(seed_value, fire, lighting, outdoors):
+		return
+	var cells := AmbushPlacement.cells(
+		_stage.map, fire, _rest_profile.light_radius_cells, _ambush.margin_cells, _ambush.size,
+		Ambush.placement_rng(seed_value, fire, lighting))
+	if cells.is_empty():
+		return  # no ground outside the light for anyone to come from: no warning for nobody
+	var crew := _ambush.crew(_stage.map, fire, seed_value, lighting)
+	crew.resize(cells.size())
+	_ambush_parties.append(AmbushParty.new(crew, cells, _ambush.delay_seconds, fire))
+	_stage.world.float_text(_player.global_position, AMBUSH_WARNING_TEXT, REST_REFUSED_COLOR)
+
+
+## Moves the ambushes on their way on; the ones that are due arrive.
+func _tick_ambushes(delta: float) -> void:
+	if not _in_play:
+		return
+	for party in _ambush_parties.duplicate():
+		if party.tick(delta):
+			_ambush_parties.erase(party)
+			_spawn_ambushers(party)
+
+
+## The ambushers appear at the edge of the light, already hunting the hero. They are a band of their own at the
+## campfire, fight as a squad and can give up like any hunter, but are never recorded as the map's monsters.
+func _spawn_ambushers(party: AmbushParty) -> void:
+	var band := Ambush.band_id(_stage.map, party.fire)
+	for index in party.cells.size():
+		var enemy: Enemy = ENEMY_SCENE.instantiate()
+		enemy.position = DungeonView.cell_center(party.cells[index])
+		var monster := Bestiary.by_id(party.monster_ids[index])
+		enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
+		enemy.arm(GameTuning.monster_weapon(_tuning, monster))
+		enemy.navigation = _stage.pathfinder
+		var squad: Squad = _squads_by_band.get_or_add(band, Squad.new())
+		GameTuning.tune_squad(squad, _tuning)
+		enemy.squad = squad
+		_tune_enemy(enemy, _tuning)
+		enemy.ambush(_player, DungeonView.cell_center(party.fire))
+		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
+		enemy.noticed.connect(_on_enemy_noticed)
+		enemy.defeated.connect(_on_enemy_defeated.bind(band))
+		_stage.add_actor(enemy)
+		_stage.world.add_enemy(enemy)
+		_enemies_by_band.get_or_add(band, []).append(enemy)
+		_ambushers[enemy] = true
 
 
 ## Sits down at the inn: a 3 s rest that moving or a hit cancels (see InnRest). Nothing happens while already resting.
@@ -778,20 +876,26 @@ func _monsters_near_hero() -> Array[MonstersAround.Nearby]:
 
 # --- Loot ----------------------------------------------------------------------------------------
 
-## A chest at a room's centre, open if the record says it was opened. Clearing a room no longer leaves one
-## (loot is earned); set pieces that hold a chest, like the ruin, place theirs with this.
-func _spawn_chest(room: int) -> void:
-	var chest := Chest.new(_record.is_chest_opened(room))
-	chest.position = DungeonView.cell_center(_stage.map.room_center(room))
-	chest.opened.connect(_open_chest.bind(chest.position, room))
+## The ruin's guaranteed chest, if the map has a ruin.
+func _spawn_ruin_chest() -> void:
+	if _stage.map.ruin_cell != DungeonMap.NO_CELL:
+		_spawn_chest(Ruins.NUMBER, _stage.map.ruin_cell)
+
+
+## A chest on a cell, open if the record says it was opened. It is known by the id of whatever holds it: a room, or a
+## set piece like the ruin (see Ruins.NUMBER). Clearing a room no longer leaves one (loot is earned).
+func _spawn_chest(chest_id: int, cell: Vector2i) -> void:
+	var chest := Chest.new(_record.is_chest_opened(chest_id))
+	chest.position = DungeonView.cell_center(cell)
+	chest.opened.connect(_open_chest.bind(chest.position, chest_id))
 	_stage.add_on_floor.call_deferred(chest)
 	_stage.world.add_chest(chest)
 
 
 ## A chest holds a random weapon or utility the player doesn't already have, picked when it opens, and
 ## sometimes a potion beside it.
-func _open_chest(at: Vector2, room: int) -> void:
-	_record.open_chest(room)
+func _open_chest(at: Vector2, chest_id: int) -> void:
+	_record.open_chest(chest_id)
 	_spawn_drop(at, LootTable.pick_item_id(GameTuning.item_ids(), _held_ids(), _rng))
 	if LootTable.rolls(GameTuning.chest_potion_chance(_tuning), _rng):
 		_spawn_potion(_spot_beside(at), LootTable.pick_potion_id(GameTuning.potion_weights(), _rng))
@@ -904,23 +1008,32 @@ func _apply_tuning(tuning: Tuning) -> void:
 	_utility_button.drag_reach = GameTuning.drag_reach(tuning)
 	for enemies: Array in _enemies_by_band.values():
 		for enemy: Enemy in enemies:
-			enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier
-			enemy.arm(GameTuning.enemy_weapon(tuning, enemy.weapon.id))
-			enemy.lead_share = GameTuning.enemy_lead_share(tuning)
-			enemy.recover_seconds = GameTuning.enemy_recover_seconds(tuning)
-			enemy.noticing_seconds = GameTuning.enemy_noticing_seconds(tuning)
-			enemy.wander_speed_share = GameTuning.enemy_wander_speed_share(tuning)
-			enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
-			GameTuning.tune_awareness(enemy.awareness, tuning)
+			enemy.arm(GameTuning.monster_weapon(tuning, enemy.monster))
+			_tune_enemy(enemy, tuning)
 	GameTuning.tune_awareness(_hearing, tuning)
 	_rest_profile = GameTuning.rest_profile(tuning)
 	_monsters_around = GameTuning.monsters_around(tuning)
+	_ambush = GameTuning.ambush(tuning)
 	for spot: RestSpot in _rest_spots.values():
 		spot.fire.profile = _rest_profile
 	if _inn != null:
 		_inn.rest.profile = GameTuning.inn_profile(tuning)
 	for squad: Squad in _squads_by_band.values():
 		GameTuning.tune_squad(squad, tuning)
+
+
+## The tuned pace, awareness and wandering of one monster (its weapon is armed separately).
+func _tune_enemy(enemy: Enemy, tuning: Tuning) -> void:
+	enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier
+	enemy.lead_share = GameTuning.enemy_lead_share(tuning)
+	enemy.recover_seconds = GameTuning.enemy_recover_seconds(tuning)
+	enemy.noticing_seconds = GameTuning.enemy_noticing_seconds(tuning)
+	enemy.wander_speed_share = GameTuning.enemy_wander_speed_share(tuning)
+	enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
+	GameTuning.tune_awareness(enemy.awareness, tuning)
+	if enemy.monster.id == Lich.ID:
+		enemy.keep_distance_cells = GameTuning.lich(tuning).keep_distance_cells
+		GameTuning.tune_spells(enemy.spell_picker, tuning)
 
 
 ## The attack button shows the weapon, or REST while the hero can rest at a campfire or the inn's doorstep.
@@ -1035,10 +1148,11 @@ func _branch() -> Branch:
 func _refresh_hud() -> void:
 	if not _in_play:
 		return
-	var leads_out := _run.destination(WorldLayout.Exit.STAIRS_DOWN).leaves_world()
-	var goal := "Find the way out" if leads_out else "Find the stairs down"
+	var goal := "Find the stairs down"
 	if _branch().outdoors:
 		goal = "Find the crypt entrance"
+	elif not WorldLayout.has_stairs_down(_stage.spec.id):
+		goal = "The Lich is dead" if _run.won else "Kill the Lich"
 	var place := _place().name
 	_hud.text = "%s    Level %d (%d%%)    HP %d/%d    %s" % [
 		place, _experience.level(), roundi(_experience.progress() * 100), _player.health.current,
@@ -1052,17 +1166,30 @@ func _carried_hero() -> HeroState:
 
 
 ## Down (or up) to the next map with everything the player holds: from the plains into the crypt entrance and back,
-## down the floors, or out of the dungeon from the last one.
+## and down the floors (the last has no stairs down: the Lich's arena is the end).
 func _take_stairs(exit: WorldLayout.Exit) -> void:
 	if not _in_play:
 		return
-	var destination := _run.travel(exit, _carried_hero())
-	if destination.leaves_world():
-		_end_run(RunSummary.Ending.ESCAPED)
-		return
-	_in_play = false
+	_run.travel(exit, _carried_hero())
 	var way := "Down" if exit == WorldLayout.Exit.STAIRS_DOWN else "Up"
-	_hud.text = "%s to the %s..." % [way, _run.current_map().branch().display_name]
+	await _move_to_run_map("%s to the %s..." % [way, _run.current_map().branch().display_name])
+
+
+## Warp (Tune → World, a playtest aid): to a place of the slice with everything the player holds, through the same
+## leave-and-enter as the stairs, so the map left is written down and the one entered is replayed.
+func _warp_to(target_id: String) -> void:
+	var target := Warp.target(target_id)
+	if not _in_play or target == null:
+		return
+	_run.warp(target, _carried_hero())
+	_resume_game()
+	await _move_to_run_map("Warping to %s..." % target.label.to_lower())
+
+
+## Leaves the map for the run's current one (which the run has just been told to go to).
+func _move_to_run_map(message: String) -> void:
+	_in_play = false
+	_hud.text = message
 	var run := _run
 	await get_tree().create_timer(DESCEND_DELAY_SECONDS).timeout
 	if run != _run:
@@ -1086,6 +1213,30 @@ func _end_run(ending: RunSummary.Ending) -> void:
 	_run_summary.show_summary(ending, RunSummary.lines(_run, _experience.level(), ending, _player.last_hurt_by))
 
 
+## The Lich is dead: a moment to see it, then the run's summary. Dismissing it carries on playing in the same world
+## (see _keep_playing). A hero who dies in that moment gets the death summary instead. The moment only runs while
+## the game does, so the summary never opens over the pause menu or the map (whose closing would unpause under it).
+func _win() -> void:
+	var run := _run
+	await get_tree().create_timer(SUMMARY_DELAY_SECONDS, false).timeout
+	if run != _run or not _in_play:
+		return  # The player started over or died meanwhile.
+	_in_play = false
+	get_tree().paused = true
+	_hud_layer.hide()
+	_run_summary.show_summary(
+		RunSummary.Ending.WON, RunSummary.lines(_run, _experience.level(), RunSummary.Ending.WON, ""))
+
+
+## "Keep exploring" on the win summary: back to the same world, the Lich still dead.
+func _keep_playing() -> void:
+	_run_summary.hide()
+	_hud_layer.show()
+	get_tree().paused = false
+	_in_play = true
+	_refresh_hud()
+
+
 ## Dying, restarting from the menu or New world in the Tune screen starts a new world with a new seed.
 func _restart() -> void:
 	_begin_world(_run.next_world(_rng, GameTuning.plains_recipe(_tuning), GameTuning.crypt_recipe(_tuning)))
@@ -1097,10 +1248,15 @@ func _restart_with_same_seed() -> void:
 
 
 func _begin_world(run: Run) -> void:
+	_resume_game()
+	_leave_map()
+	_start_run(run)
+
+
+## Closes the summary and the pause menu and lets the game run.
+func _resume_game() -> void:
 	_run_summary.hide()
 	_hud_layer.show()
 	if _pause_menu.is_open():
 		_pause_menu.close()
 	get_tree().paused = false
-	_leave_map()
-	_start_run(run)

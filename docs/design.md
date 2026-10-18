@@ -24,8 +24,8 @@ Anything that doesn't help answer that is deferred.
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
 | Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
-| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass) and go down the **crypt**'s 3 levels and out (until the Lich, #47, waits at the bottom). Each level's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first level's lead out to the mausoleum). Other rooms are optional. The first zone (village, camps, the ruin, a 3-level crypt and the Lich) replaces this descent piece by piece, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent, now with somewhere open to start from |
-| Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`; trap rooms and the boss arena, none yet) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
+| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass), go down the **crypt**'s 3 levels and kill the **Lich** in his boss arena at the bottom: that **wins** the run (a summary, "You killed the Lich"; dismissing it plays on in the same world, the Lich staying dead). Each level's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first level's lead out to the mausoleum). **The last level has no stairs down: the arena is the end** (decided in #47: stairs that did nothing would be a trap for the player; the interim "last stairs lead out" win of #42 is gone). Other rooms are optional. The rest of the first zone (the ruin, trap rooms, the Lich's other spells) follows, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; a boss at the bottom gives the descent an end, and the world stays open to explore afterwards |
+| Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`: the boss arena, and trap rooms later) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
 | Look | 3D shown over a 2D game: a fixed, tilted Brawl Stars-style camera; fantasy characters (humans, goblins, dwarfs) later | Brawl Stars' readability, with the game rules untouched |
@@ -136,7 +136,8 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
 
 - **Earned loot.** Clearing a room leaves nothing: gear is scarce, so a new piece is a moment. It comes from
   the floor (dead ends and vaults hide finds, see Floors), from rare enemy drops and from chests.
-- **Chests.** Set pieces hold them (none on today's maps; the ruin's and trap rooms' come with the first zone).
+- **Chests.** Set pieces hold them: the ruin's is guaranteed (below, "The ruin"); trap rooms' come with the first zone. A chest is known in
+  the map record by the id of what holds it (a room number, or `Ruins.NUMBER`), so an opened one stays open on return.
   Walking onto one opens it and drops a find. The open chest stays, so you can see what you have looted.
 - **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot → "Enemy drop chance", default 2%) to drop
   its weapon. (Room chests used to set the pacing and drops were 5%.)
@@ -197,7 +198,7 @@ Within their comfortable range they circle the player instead of standing still.
 | Recover | Steps aside (alternating sides) for 0.35 s | Recovered: back to Hunt or Position |
 
 **Bands** (`Band`, `Awareness`). The monsters of one **home** are a band; in the dungeon a home is a room,
-on the plains a **camp's campfire** (the ruin comes later). A band starts **asleep** at home or **wandering** about it; which is decided
+on the plains a **camp's campfire**, or the middle of the **ruin**. A band starts **asleep** at home or **wandering** about it; which is decided
 per home from the map's seed (`Band.start_of`; in the crypt 15% of bands wander, on the plains each camp by its
 chance asleep), so the same map starts the same way. None starts awake.
 A monster **notices** the hero only when it can see them (line of sight) within **4 cells asleep** or **9
@@ -227,7 +228,7 @@ monster is out of the fight for its **Squad**: it frees its attack turn and flan
 reports no bearing until it hunts again, as a calm monster doesn't (`EnemyBrain.is_out_of_the_fight`). A home can be
 marked **never gives up** (`Enemy.never_gives_up`, `Senses.never_gives_up`): its hunters hunt on however long and
 far. `main.gd` sets it from `DungeonProgress.is_locking` of the room each monster spawned in, so the Lich's arena and
-sealed trap rooms, once they are marked as locking, get it without further wiring. A camp's monsters give up like any
+sealed trap rooms (marked as locking rooms, see the crypt section) get it without further wiring. A camp's monsters give up like any
 other and walk back to their campfire. Tune → Enemies: give up after unseen (s), give up
 beyond home (cells).
 
@@ -321,10 +322,50 @@ of today's `DungeonGenerator` in the Crypt branch (see Branches), each more dang
 **crypt entrance** (the mausoleum's stairs) leads down to level 1's stairs up, and those lead back out onto the
 mausoleum (`WorldLayout`: the plains are map `plains`, the levels `crypt_1` to `crypt_3`; the map's depth picks
 the generator's danger, and the branch is always the crypt, see `MapSpec.branch`). Every level starts on its
-stairs up (`DungeonGenerator.VERSION` 3).
-The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
-third level they lead out, and the run is won. **Interim win:** the Lich (#47) will replace that, waiting in
-an arena at the bottom; until then the last stairs still win the run.
+stairs up (`DungeonGenerator.VERSION` 4).
+The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down on the first
+two levels. **The third level has no stairs down**: its farthest room is the boss arena (next section).
+
+**The boss arena and the Lich** (#47). On the last level the room farthest from the stairs up is the **boss arena**
+(`BossArena`, a pure generation step; farthest, so never the start room, never the campfire's room, which
+`CryptCampfire` keeps off the farthest room, and room for trap rooms to stay clear of it). It is a 24x16 hall
+with **four 2x2 pillars** (they block walking and shots, not the lobbed Cloud) and **the Lich's crypt** at the front:
+an 8x3 recess in the middle of the north wall where he stands. No other monster and no loot is generated in it.
+Because every other room can be reached without passing through it, locking it never cuts the level in two.
+
+*Locking rooms.* A map marks a room that locks with one **mark letter** on a floor cell of it (`LockingRoom`: `A` the
+boss arena, `R` a trap room, for #46 to reuse), which the parser reads into `DungeonMap.locking_rooms`
+(room -> kind; `locking_room_ids()` feeds `DungeonProgress`, whose lock rule was already there). The arena locks when
+the hero is a full tile inside and opens when its last monster, the Lich, dies. A locking room's band is **awake but
+inattentive** until it seals: `Band.start_of(..., locking)` makes it wander (never sleep), and `main.gd` does not
+give it the hero as a target, so the Lich cannot walk out through an open door after sighting the hero down the
+corridor. It also **wanders only inside its room** (`Enemy.wander_cells`): strolling out into a corridor, the Lich would be
+shut out when the arena locks and the hero locked in with nobody to kill (found in review: the default 6-cell
+wander radius keeps him in by luck of geometry, but at 8 cells, which Tune allows, he could leave on 92 of 300
+seeds). When the room locks, `main.gd` calls `Enemy.wake(hero)` on its band (target plus `alert()`), so it attacks at
+once (the #34 review note: `_on_room_locked` used to wake nobody). Its monsters never give up (`never_gives_up`).
+
+*The Lich* (`Lich`, `Bestiary` entry `lich`, map letter `l`, a unique monster, not the Necromancer). A Skeleton Mage
+dressed in code (`LichDress`: 1.3x size, dark purple all over, a gold crown, glowing eyes, a long robe and a staff
+from plain shapes on the skeleton's bones). He **keeps his distance** (`Enemy.keep_distance_cells`, default 8 cells: a
+kiter that backs off at full speed when the hero comes within three quarters of it and closes in beyond a quarter
+more, through the same `EnemyTactics.move_direction` as every ranged monster) and the hero, faster than him, has to
+chase. He casts **one spell at a time** by **`SpellPicker`**, a small rule like `EnemyTactics`: `pick(situation)` is
+`NONE` while a cast is on or the pause lasts, and otherwise Summon Undead whenever fewer skeletons live than the cap,
+else Cloud, Cloud, Bone Spray round and round; `begin`/`end` bracket a cast (the enemy calls `end` when the wind-up
+is over) and the pause (1.5 s, 0.8 s in phase two) starts at `end`. Phase two is below half his health: shorter
+pause, cap +2, the cap starting at 5 and never past 10. Each spell is telegraphed (a cast is the weapon's wind-up with
+its red preview). **Only Mephitic Cloud ships** (his weapon, lobbed like the existing weapon, reload 0 because the
+pause is his pace): `SpellPicker.known` holds only the Cloud, so the picker skips the others; #48 (Bone Spray)
+and #49 (Summon Undead, the skeleton count in `SpellPicker.Situation` and phase two) add their spell to `known` and
+carry it out in `Enemy._start_attack`. Every Lich number is a Knob (Tune → Lich: his health, speed, size and kept
+distance, and the spell rule's pauses, phase threshold, cap, cap bonus and Clouds between sprays); health and size
+apply the next time the level is entered, the rest live. 3000 health is a guess, to be tuned in play.
+
+*The win.* When he dies `main.gd` tells the run (`Run.lich_killed()`: `Run.won`, and the map's `MapRecord` remembers
+`lich_dead`; his spawn cell is among the killed as for every monster, so he is still dead when the hero comes back and
+the arena no longer locks), and after a moment shows the summary (`RunSummary.Ending.WON`, "You killed the Lich") with
+**Keep exploring** (same world, the HUD says "The Lich is dead") and **Play again** (a new world).
 
 **The crypt's campfire.** Each level has exactly one campfire (the map letter `F`, the same walkable scenery as the
 plains' lone campfires), in an **ordinary room**: not the arrival room, not the stairs-down room and never a vault
@@ -359,7 +400,8 @@ The run keeps one record per visited map. It holds:
 - the cells explored (`Exploration.seen_cells` out, `Exploration.restore` in), so the fog and minimap keep the
   hero's progress;
 - monsters left hurt: their health and the run time they were left at;
-- campfires: each one's state (unlit, burning, embers) and the seconds it has left, by its cell (see **Resting**);
+- campfires: each one's state (unlit, burning, embers) and the seconds it has left, by its cell (see **Resting**),
+  and how many times each has been lit (`lightings_of`, `spend_lighting`): the ambush rolls spent;
 - the version of the generator that made the map (`DungeonGenerator.VERSION`), so a saved record can tell when the
   same seed would no longer give the same map.
 
@@ -380,6 +422,16 @@ parsed map, its floor, fog, 3D view, actors and loot) and builds the next one in
 composition root (`main.gd`) keeps the controls, HUD and menus wired once. Starting over does the same with
 `Run.next_world`. Rebuilding a floor takes about 0.3 s on a desktop (about 40 ms of it generating and parsing the
 map, the rest building the nodes), behind the "Down to…" message; on phones it is still to be measured.
+
+**Warp** (playtest aid, #50). Tune → World → "Warp (0 = off)", off by default, lists the village, the ruin, the crypt
+entrance, crypt levels 1-3 and the Lich's arena. A `Warp.Target` is a `WorldLayout.Destination` (map id and spot),
+the same pair an exit yields, and `Run.warp` applies it like `Run.travel` does; `main.gd` then leaves and enters the
+map exactly as for stairs, so the old map's record is written and the new one replayed, and the carried hero and all
+records are untouched. Landing spots reuse existing marks where there are some (the start by the inn; the crypt
+entrance's stairs down, where coming up from level 1 lands; each level's stairs up) and `Warp` finds two more as new
+`Spot`s: the nearest walkable cell to the ruin's chest, other than the chest's own (inside the walls or in a gap,
+never in a wall), and a standable cell beside the arena's first door, outside the room, so the arena still locks
+when the hero walks in. Stairs the hero lands on only trigger once left, as when arriving normally.
 
 **Experience** (`Experience`). Like Dungeon Crawl's experience levels (or Brawl Stars' power cubes),
 defeating monsters makes the hero tougher, so the descent stays winnable without free healing. A kill is worth
@@ -406,7 +458,7 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 | Border (`QuadrantBorder`) | A forest of groves, 5 cells thick, all round |
 | Exits (`QuadrantExits`) | A 3-wide lane through the border in the middle of each side, with a barricade across its outer end (the way is shut until that quadrant exists) and a cleared approach inside the border |
 | Village (`VillageGenerator`) | Draws the village (next section) from the recipe's size and the quadrant's random numbers |
-| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
+| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the ruin second (in a corner, below), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
 | Fill the camps (`CampCrews.dress`) | Draws a band of monsters into each reserved camp by how far out it lies (below) |
 | Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
 | Roads (`QuadrantRoads`) | Dirt roads (letter **`r`**, terrain `ROAD`) from the village gates to **2** of the 4 exits (Knob `road_count`, 0-4), the exits picked by a seeded shuffle; a road leaves by the gate on its exit's side. See below |
@@ -415,12 +467,12 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
 generator reports how many tries it took). If every try fails (a recipe asking for the impossible), the last resort is
 the same quadrant without groves, boulders and ponds; if a set piece still finds no spot (Tune → World can make the
-plains too small or the village too big for it), the same without camps and campfires (a plains too small for them); if even that fails, the default recipe without obstacles, so no tuning leaves the world
+plains too small or the village too big for it), the same without the ruin (a plains with no free corner for it), without camps and campfires (a plains too small for them), or without both; if even that fails, the default recipe without obstacles, so no tuning leaves the world
 without a map. The same recipe and seed always
 give the same map (`QuadrantRecipe.VERSION` goes in the map's record).
 
 **Set pieces** (`SetPiece`: a drawing in the map format, its key cell, how far out it must lie, its margin) are stamped by
-**one shared placer**; the camps, campfires, the ruin and the village of later tickets are new pieces for the same two
+**one shared placer**; the camps, campfires, the ruin and the village are pieces for the same two
 calls. The first is the **crypt entrance** (`SetPieces.crypt_entrance`): a 5x5 stone mausoleum with its door facing the
 camera and the stairs down inside, at least halfway out from the middle (0 in the middle, 1 at the border, measured to
 the nearest side in the same proportion on both axes: `QuadrantRecipe.outward`), with no road to it. Stepping onto its
@@ -429,8 +481,30 @@ stairs goes down, through the same transition rule as any stairs, to the first f
 **Rules to know.** The "walkable at least 70%" share is counted over the ground *inside* the border (a thick border would
 otherwise eat it). Groves and barricades stop walking, sight and shots; boulders are small cover: they stop walking and
 shots but sight passes over them (`DungeonMap.is_see_through`). Deep water stops feet but not shots, as in the dungeon.
-For now the plains hold monsters only in camps and no loot (the ruin and the rest come in later tickets), and the hero
+The plains hold monsters in camps and in the ruin, and loot only in the ruin's chest; the hero
 starts in the village, in front of the inn.
+
+**The ruin** (#39, `Ruins`, `SetPieces.ruin`) is a 25x19 walled courtyard hand-written in the vault format with a broken shrine
+in the middle, where the chest stands. Walls are ordinary `#` (the crypt entrance's too) and rubble is boulders `B`; no new look.
+The drawing has four possible 3-wide **gaps** (the `o` cells: north, south, west, east); each map opens a seeded 2 or 3 of them (Knobs
+`ruin_gaps_min` / `ruin_gaps_max`, default 2 and 3), and the drawing is mirrored randomly, so one design reads as many ruins.
+*Where.* In a **corner**: the chest (the piece's anchor, so the validator checks it can be reached) lies at least 40% of the way
+out along both axes (`SetPiece.corner_share`), and never in the same corner (which of the four quarters round the middle,
+`QuadrantRecipe.corner_of`) as the crypt entrance. The ruin is reserved right after the village, the crypt entrance after it, and the rule
+holds both ways (`SetPiece.other_corner_than`), so the crypt entrance keeps its "at least halfway out" rule and just takes another quarter.
+*Who.* The map's toughest band, made like a camp at the very edge (goblins and goblin archers, no kobolds) but always one monster
+bigger than the biggest camp can be (Knob `ruin_band_size`, default 7, raised to that if the camp Knobs are tuned up), so its threat
+(`CampCrews.threat`) is above every camp's whatever the seeds roll. It always starts wandering (`Ruins.WANDERING_SHARE` 1.0) and its
+home is the chest cell, the ruin's middle: `Band.home_of` takes monsters within 6 cells of the chest for the ruin's band, id
+`Ruins.NUMBER` (2,000,000: clear of room numbers from 0 and camp ids from 1,000,000).
+*What.* The chest (map letter **`$`**, at most one per map, parsed to `DungeonMap.ruin_cell`) is guaranteed: `main.gd` places it with
+`_spawn_chest(Ruins.NUMBER, cell)`, and opening it records `Ruins.NUMBER` in the `MapRecord`, so it stays open after the hero leaves and
+returns. It holds one gear piece the hero doesn't hold (`LootTable.pick_item_id`), and sometimes a potion. Size is not a Knob: the
+drawing is fixed, and a plains too small to fit it in a corner beside the village (100x60 at the Tune minimum) is made without a ruin, by one more
+last-resort step of the generator (`QuadrantRecipe.without_ruin`); when the ruin has no corner anywhere beside the village
+(`SetPiecePlacer.fits_anywhere`, every spot tried), the generator skips the remaining tries, which would all fail the same way and
+each cost a village. *Planned lever:* a melee start has no ranged answer to a kiting Lich (#8); if playtests show it hurting, the first fix is
+a ranged weapon in this chest (not built).
 
 **The village** (#40) is the first piece the placer stamps, in the very middle (`SetPiece.at_center`), and the safe place
 the run starts in. It is 36x28 cells by default (Tune → World) and made by pure steps (`scripts/dungeon/generation/village`),
@@ -536,8 +610,7 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   the campfire's are the class defaults, all Knobs in **Tune -> Rest**. The inn is the second profile,
   `RestProfile.inn()`: a **3 s** rest (`rest_seconds`), healing up to **100%** of max health, no embers, reach 1 cell
   from the doorstep, and `cancels_on_move`. Its Knobs (id `inn`) are only the rest time and the reach; the heal and
-  the rest are the same fields the campfire uses. An ambush roll (#44) will be another field; `Campfire`,
-  `InnRest` and `MonstersAround` never name a place.
+  the rest are the same fields the campfire uses. `Campfire`, `InnRest` and `MonstersAround` never name a place.
 - `MonstersAround` is the shared "may the hero rest" rule: **refused while any monster on the map is hunting the
   hero (`EnemyBrain.is_hunting`: noticing, hunting, in position, attacking), or any awake monster is within 16
   cells and in line of sight** (Knob). Sleeping monsters don't block. The game describes each monster as a
@@ -567,9 +640,33 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   ("Resting..." floats up) and after 3 s is healed to full ("Fully rested"). **Moving** (stick or keys held past
   a tenth of full push, `Player.is_moving`, so a thumb resting on the floating stick doesn't count; or being carried
   off the doorstep, by a dash or a blink) or **being hit** (`Health.damaged`) cancels it ("Rest interrupted", nothing healed, the time
-  already waited is lost). There is no ambush and no limit: after a finish or a cancel the hero can rest again at once.
+  already waited is lost). The inn never rolls an ambush and has no limit: after a finish or a cancel the hero can rest again at once.
   Pressing REST during a rest does nothing. Unlike the campfire, the monsters rule is asked only when the rest begins:
   a monster that starts hunting mid-rest ends it only by hitting the hero.
+- **Campfire ambushes** (#44): resting in the wild is a gamble. Lighting a campfire (`RestSpot.rest()` succeeding;
+  a refused rest rolls nothing, the inn never rolls) makes **one seeded roll**, `Ambush.hits(map_seed, campfire cell,
+  lighting, outdoors)`: **30% on the plains, 45% in the crypt**. The dice are seeded by the map's seed, the campfire's
+  cell and the **lighting number** (0 for the first time it is lit), so the same lighting always gives the same
+  answer: no re-roll by leaving and returning, reloading or retrying (a new run with the same seed replays the same
+  luck, like everything else the seed decides). `MapRecord.spend_lighting(cell)` returns the lighting's number and
+  counts it, written the moment the fire is lit (not on leaving) and kept through the dictionary; the next
+  lighting (after the embers) is a new roll.
+  On a hit a floating "Something is coming..." warns the hero, and after `delay_seconds` (**4 s**, only while the
+  hero is on the map: `AmbushParty.tick`) **3 monsters** arrive. **Who:** `Ambush.crew` draws from "the area's
+  monsters": the monsters the map itself spawns nearest the campfire (its 6 nearest spawn cells), so the plains
+  send goblins and kobolds by distance from the centre, the ruin's toughest group when it is the nearest, and a crypt
+  level its usual monsters; a map with none sends kobolds. **Where:** `AmbushPlacement.cells` picks cells just
+  outside the light (light radius + `margin_cells` 1.5, in a 1.5-cell band that widens up to 5 more cells if it holds
+  too few), on standable ground the fire can be walked to, not doors, at least 1.5 cells apart; seeded the same way.
+  **How:** `Enemy.ambush(hero, home)` starts them already **hunting** (no noticing pause, no shout), with the campfire
+  as home, so they are ordinary hunters: they take turns as a `Squad` of their own (`Ambush.band_id`, from 3,000,000: clear of rooms, camps and the ruin) and give up like
+  any monster (#36: out of sight for 5 s, or the hero 24 cells from the fire), walking back to the fire. They count as
+  hunters for `MonstersAround`, so the hero cannot rest again until they are dead or have given up.
+  **Never respawn:** ambushers belong to no spawn cell and are never put in the map record (no kill is recorded,
+  none is saved hurt, no room progress). Leaving the map drops them and any ambush still on its way; the spent roll
+  keeps that lighting from ambushing again, and coming back finds the map as the record has it. Kills still count
+  and drop loot as usual. Knobs in **Tune -> Rest** (id `ambush`): chance on the plains, chance in the crypt,
+  ambushers (1-6), arrival delay and distance outside the light.
 
 **Look.** The plains have their own `Branch` (outdoors, so the HUD and the arrival banner say "the plains" and the run
 summary "on the plains") and `BranchLook`: grass ground, no torches, trees for small free-standing groves. Big groves
@@ -718,7 +815,7 @@ deterministic), so it costs nothing to store and never changes how the game play
 ## End of a run
 
 Like Dungeon Crawl's tombstone, a run ends with a summary instead of an instant restart: "You died" (or
-"You escaped the dungeon!"), what killed you and on which floor ("Killed by an orc wizard on floor 3 of 5"),
+"You killed the Lich", which wins the run and lets you play on), what killed you and on which floor ("Killed by an orc wizard on floor 3 of 5"),
 the level reached and the monsters slain, and a **Play again** button. Every attack carries its source
 (the monster's name, "your own Fireball", "lava"), and the hero remembers what hurt them last. Kills are
 counted across floors (`HeroState`); the lines are written by `RunSummary` (pure).

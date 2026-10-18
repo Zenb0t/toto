@@ -60,3 +60,9 @@ func test_a_monster_away_from_any_campfire_lives_where_the_dungeons_bands_do() -
 
 	assert_ne(home.cell, Vector2i(3, 1))
 	assert_eq(home.wandering_share, 0.25)
+
+
+func test_the_band_of_a_locking_room_is_always_awake_never_asleep() -> void:
+	for home in 50:
+		assert_eq(Band.start_of(3, home, 0.0, true), Band.Start.WANDERING)
+		assert_eq(Band.start_of(3, home, 0.0), Band.Start.ASLEEP)

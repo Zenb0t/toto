@@ -23,8 +23,8 @@ and mouse, following whichever you used last.
 | Hold the weapon button (**Bow**) | Draws the bow: the longer you hold before letting go, the harder the arrow hits, up to a full charge at 1.5 s, which also pierces. You walk slower while drawing; the aim line fills up as it charges. A tap is a weak arrow |
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
-| Weapon button reads **REST** (by an unlit campfire, when nothing is hunting you) | Light it: it burns about 10 s and heals you up to half your health while you stand in its light. Stepping out pauses the healing; a hit or an attack stops it. Then it lies in embers (a countdown shows) for about 90 s, counted only while you are on that map. Refused while a monster hunts you or an awake one is in sight (sleeping ones don't count); a camp's fire is theirs until the last monster dies |
-| Weapon button reads **REST** (on the village inn's doorstep, when nothing is hunting you) | Sit for 3 s: you are fully healed. Moving or a hit cancels it; there is no ambush and no limit, so you can rest again at once. Refused while a monster hunts you or an awake one is in sight |
+| Weapon button reads **REST** (by an unlit campfire, when nothing is hunting you) | Light it: it burns about 10 s and heals you up to half your health while you stand in its light. Stepping out pauses the healing; a hit or an attack stops it. Then it lies in embers (a countdown shows) for about 90 s, counted only while you are on that map. Refused while a monster hunts you or an awake one is in sight (sleeping ones don't count); a camp's fire is theirs until the last monster dies. **Resting in the wild is a gamble:** each time you light a campfire there is a seeded chance (30% on the plains, 45% in the crypt) that 3 of the area's monsters arrive at the edge of the light a few seconds later, already hunting you. Leaving and coming back can't re-roll it |
+| Weapon button reads **REST** (on the village inn's doorstep, when nothing is hunting you) | Sit for 3 s: you are fully healed. Moving or a hit cancels it; the inn never has an ambush and no limit, so you can rest again at once. Refused while a monster hunts you or an awake one is in sight |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
 | **Map** (top left) | Show or hide the minimap; the choice is remembered |
 | Tap the minimap | Open the whole map, big on the screen (the game waits). Tap, click, Esc or M closes it |
@@ -49,7 +49,7 @@ and mouse, following whichever you used last.
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 **Tune gameplay** exposes the numbers that shape the feel, sorted into a menu: Player, Weapons, Utilities,
-Potions, Enemies, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light; the inn's rest time and reach), Camera (tilt, distance, field of view,
+Potions, Enemies, Lich, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light; ambush chances, size and delay; the inn's rest time and reach), Camera (tilt, distance, field of view,
 look-ahead, wall height) and World (the plains' size, groves, ponds and the rest; they shape the next world, with
 **New world** and **Same seed again** buttons). Weapons, Utilities and Potions list every item, so any of them can be tuned (the equipped
 one is marked). Entries you changed show in gold; Reset resets the page you're on. Changes apply live and are
@@ -61,9 +61,9 @@ boulders for cover, ponds and a thick forest border with a barricaded exit in th
 the grass, halfway to the border or farther, stands a small stone mausoleum: the crypt entrance, with no road to it. Step
 onto its stairs to go down into the **crypt**, 3 levels of tombs and undead (the HUD says "Crypt level 2"), all grown from one world seed (shown in the pause menu), inspired by
 Dungeon Crawl Stone Soup. The first level's silver stairs lead back out to the mausoleum. Six **camps** dot the plains, each a band of 2-4 goblins and kobolds round a campfire (asleep or wandering), bigger and tougher
-the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. Two 3-wide dirt roads wind from the village gates to two of the four exits (picked by the seed) to follow across the map; they only change the colour of the ground. Campfires
+the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. In one corner of the map (never the crypt entrance's) stands the **ruin**, a walled courtyard with two or three gaps in its wall, the map's toughest band (always wandering) and a guaranteed chest holding a piece of gear; it stays open once looted. Two 3-wide dirt roads wind from the village gates to two of the four exits (picked by the seed) to follow across the map; they only change the colour of the ground. Campfires
 show on the minimap once seen, and monsters killed on the plains stay dead. No monster lives in the village, and no camp stands in it or the grass round it.
-Tune → World holds the knobs of the plains (the village among them) and of the crypt (how far its campfire lies from the stairs, how many bands wander) and starts a new world or the same seed again. The crypt's levels: oddly
+Tune → World holds the knobs of the plains (the village and the ruin's gaps and band among them) and of the crypt (how far its campfire lies from the stairs, how many bands wander) and starts a new world or the same seed again. **Warp** (a playtest aid, off by default: set "Warp (0 = off)" to 1) adds a button per place to the page: the village (by the inn, the start), the ruin (beside its chest), the crypt entrance (in front of the mausoleum), crypt levels 1 to 3 (on their stairs up) and the Lich's arena (just outside its door, so walking in still locks it). It keeps what you carry and every map's record. The crypt's levels: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
@@ -72,17 +72,22 @@ their heads) or wanders slowly about it; one notices you only when it can see yo
 wandering; in the crypt most bands sleep, a few wander and none starts awake) or when you hurt it, shows a "!", and comes for you. Your attacks and blasts make noise that wakes monsters
 within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
 so a careless fight can pull in a nearby band. You can escape a chase: a monster gives up after 5 seconds without
-seeing you, or when you are 24 cells from its home, checks where it last saw you and walks home, noticing you again if it sees you on the way. Rooms don't lock, so you
-can sneak past or pick your fight. Loot is earned, not handed out:
+seeing you, or when you are 24 cells from its home, checks where it last saw you and walks home, noticing you again if it sees you on the way. Ordinary rooms don't lock, so you
+can sneak past or pick your fight; only the Lich's arena does. Loot is earned, not handed out:
 clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
 hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
 weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. About one in fifty drops
 its weapon. Rooms get tougher the deeper you go, and each level more than the last. Each level has one campfire in an ordinary room a few rooms from the stairs (a rest spot later). Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
-third level's stairs lead out (until the Lich waits there). On every level you arrive on silver stairs that lead back up, onto the gold
+third level has no stairs down: its farthest room is the **boss arena** (see below). On every level you arrive on silver stairs that lead back up, onto the gold
 stairs of the level above (the first level's onto the mausoleum). The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
 you took stay gone, items you dropped stay where they fell and the map stays explored (the plains too). Monsters you left hurt
-heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash and a Potion of
+heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. The third level's farthest room is the **boss arena**: a hall with four pillars that block shots and the **Lich**'s crypt at
+its far end. It locks when you walk in and opens when he dies. The Lich, a dark purple skeleton mage with a crown, a robe and a
+staff, starts awake, never gives up, keeps his distance (back off as you close in) and casts one telegraphed spell at a time with a
+short pause between: for now only the Mephitic Cloud (more spells follow). Killing him **wins the run**: a summary says
+"You killed the Lich", and **Keep exploring** carries on in the same world, with him still dead. Tune → Lich holds every number of his.
+If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash and a Potion of
 Healing.
 
 ## Play on a phone
@@ -125,16 +130,16 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item, and outdoors `T` tree grove, `B` boulder, `=` barricade, and the village's `Y` palisade, `G` gate, `:` street, `U` well, `X` prop, `D` inn doorstep, `I C S M` inn, church, smithy, market, `1`-`4` houses, `@` start), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
   lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
   torches and their light), moving liquids (`LiquidView`), room rules: enemies left per room, and the lock
-  of rooms marked as locking (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
+  of rooms marked as locking (`DungeonProgress`; `LockingRoom`: the arena and trap marks), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/dungeon/generation/village` – the village, stamped in the plains' middle: `VillageGenerator` runs `VillagePalisade`,
   `VillageStreets`, `VillageLotPacker` (with the hand-written `VillageLots`), `VillageProps` and `VillageRules` (`Village`, in
   `scripts/dungeon`, holds its map letters and what a map knows of it)
 - `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
   `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
-  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires; `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
+  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires, the ruin (`Ruins`: its drawing, gaps, band); `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
   `BranchLook` (what each place is: the plains, Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
-  (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces), `CryptRecipe` and `CryptCampfire` (the crypt's Knobs; which room holds the campfire),
+  (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces), `BossArena` (the Lich's room on crypt level 3), `CryptRecipe` and `CryptCampfire` (the crypt's Knobs; which room holds the campfire),
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`, `MouseAim`, `TouchZones`) and `InputMode` (touch or
   keyboard and mouse)
@@ -143,10 +148,10 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects, `PoisonStatus` so poison clouds don't stack, `ChainFalloff` for the Lightning Bolt's weaker jumps, `Charge`: seconds held to strength), when a weapon fires
   (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead, where to wander), when a calm monster
   notices the hero and who hears a noise or shout (`Awareness`), what they are doing (`EnemyBrain`, a small state machine: asleep, wander,
-  noticing, idle, hunt, position, wind up, recover, check, return; `Awareness` also decides when a hunter gives up), how a band fights as a team (`Squad`: taking turns, flank
+  noticing, idle, hunt, position, wind up, recover, check, return; `Awareness` also decides when a hunter gives up), which spell the Lich casts next (`SpellPicker`), how a band fights as a team (`Squad`: taking turns, flank
   spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
-- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), the
+- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), `Lich` (the boss: his tunable numbers and Bestiary entry), the
   `Bestiary` that lists them with their map letters, and `Band` (which home a monster lives at, a campfire or its
   room, and how the monsters of one home start: asleep or wandering, from the map's seed) and `Camps` (which campfire a monster lives at)
 - `scripts/potions` – consumables: `Potion` (`HealingPotion`, `HastePotion`, `MightPotion`) and the `PotionBelt`
@@ -176,7 +181,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Place` ("The village", or the map's own name: "The plains", "Crypt level 2", for the HUD and banner); `Experience`: levels from
   kills, each adding maximum health
 - `scripts/rest` – resting at a campfire: `Campfire` (unlit, burning, embers), `RestProfile` (its numbers, Knobs),
-  `MonstersAround` (when resting is refused), `RestOffer` (when the button reads REST, and the refusal), `RestSpot` (the node that carries a campfire out in the world), and the inn's `InnRest` (a 3 s rest, cancelled by moving or a hit) with `InnSpot` (its node on the doorstep)
+  `MonstersAround` (when resting is refused), `Ambush` (the seeded roll of each campfire lighting and who comes), `AmbushPlacement` (where they appear) and `AmbushParty` (the countdown), `RestOffer` (when the button reads REST, and the refusal), `RestSpot` (the node that carries a campfire out in the world), and the inn's `InnRest` (a 3 s rest, cancelled by moving or a hit) with `InnSpot` (its node on the doorstep)
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
   (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
   routes controls to the player and applies the room rules (a camp's monsters, or the monsters of a room, are a band: settled at its home, the campfire or the room's middle,

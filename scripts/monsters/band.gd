@@ -12,17 +12,23 @@ const DEFAULT_WANDERING_SHARE := 0.25
 const DEFAULT_WANDER_RADIUS_CELLS := 6.0
 
 
-## How the band living at a home starts, on the map with this seed.
-static func start_of(map_seed: int, home: int, wandering_share := DEFAULT_WANDERING_SHARE) -> Start:
+## How the band living at a home starts, on the map with this seed. The band of a locking room (the boss arena, a
+## trap room) is always awake: it wanders until the room locks.
+static func start_of(
+		map_seed: int, home: int, wandering_share := DEFAULT_WANDERING_SHARE, locking := false) -> Start:
+	if locking:
+		return Start.WANDERING
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([map_seed, home])
 	return Start.WANDERING if rng.randf() < wandering_share else Start.ASLEEP
 
 
 ## The band a monster spawning at this cell belongs to: a camp's monsters live at its campfire, any others at
-## the middle of their room (or where they stand, outside any room). room_share and camp_share are the shares of
-## each kind of band that start wandering.
+## the middle of their room (or where they stand, outside any room), the ruin's at its middle (and always wandering).
+## room_share and camp_share are the shares of each kind of band that start wandering.
 static func home_of(map: DungeonMap, spawn_cell: Vector2i, room_share: float, camp_share: float) -> Home:
+	if map.ruin_cell != DungeonMap.NO_CELL and Ruins.is_home_of(map.ruin_cell, spawn_cell):
+		return Home.new(Ruins.NUMBER, map.ruin_cell, Ruins.WANDERING_SHARE)
 	var campfire := Camps.campfire_of(map, spawn_cell)
 	if campfire != DungeonMap.NO_CELL:
 		return Home.new(Camps.band_id(map, campfire), campfire, camp_share)

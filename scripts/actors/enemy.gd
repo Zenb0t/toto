@@ -93,8 +93,17 @@ var home := Vector2.ZERO
 ## How far from home it wanders, in pixels.
 var wander_radius := Band.DEFAULT_WANDER_RADIUS_CELLS * DungeonView.TILE_SIZE
 var wander_speed_share := DEFAULT_WANDER_SPEED_SHARE
+## Optional: the only cells it wanders over (Vector2i -> true). A locking room's band keeps to its room, so it is
+## still inside when the room locks; empty lets it wander anywhere near home and in sight of it.
+var wander_cells := {}
 ## Its home never gives up the chase (the Lich's arena, a sealed trap room): set by whoever builds the band.
 var never_gives_up := false
+## Optional: a caster that casts one spell at a time with a pause between (the Lich). Without one, it attacks
+## whenever its weapon is ready and it has its turn.
+var spell_picker: SpellPicker
+## How far from its target it likes to stay, in cells; 0 keeps the distance its weapon likes (a kiter that backs
+## off when the target comes closer sets this).
+var keep_distance_cells := 0.0
 
 var _wielder := Wielder.new(Sword.new())
 var _brain := EnemyBrain.new()
@@ -171,9 +180,24 @@ func settle(at_home: Vector2, start: Band.Start) -> void:
 	_brain.state = EnemyBrain.State.ASLEEP if start == Band.Start.ASLEEP else EnemyBrain.State.WANDER
 
 
+## Arrives already hunting its target (an ambusher, see Ambush): no noticing pause, no shout. It lives at home like
+## any other monster, so it gives up the chase as they do (see Awareness) and goes back there.
+func ambush(target: Node2D, at_home: Vector2) -> void:
+	chase(target)
+	home = at_home
+	_has_home = true
+	_brain.state = EnemyBrain.State.HUNT
+
+
 ## It heard a noise or a shout (see Awareness): a calm enemy notices the target.
 func alert() -> void:
 	_alerted = true
+
+
+## Its room has just locked (the boss arena, a trap room): it goes after the target, which it ignored until now.
+func wake(target: Node2D) -> void:
+	chase(target)
+	alert()
 
 
 ## What shows over its head: ASLEEP_MARK, NOTICING_MARK, or nothing.
@@ -237,6 +261,8 @@ func _physics_process(delta: float) -> void:
 		return
 	# A slowed enemy's own clock runs slow: it moves, winds up and recovers at a fraction of its pace.
 	var pace := _slow_multiplier if is_slowed() else 1.0
+	if spell_picker != null:
+		spell_picker.advance(delta * pace)
 	_release(_wielder.advance(delta * pace, global_position))
 	_repath_left -= delta
 	_report_to_squad()
@@ -275,6 +301,8 @@ func _senses() -> EnemyBrain.Senses:
 
 
 func _may_attack(sees_target: bool) -> bool:
+	if spell_picker != null and not spell_picker.is_ready():
+		return false
 	if not _wielder.is_ready() or not (sees_target or not weapon.needs_line_of_sight()):
 		return false
 	return EnemyTactics.can_attack(global_position.distance_to(_target.global_position), Player.RADIUS, weapon.aim_range())
@@ -306,6 +334,8 @@ func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
 	elif to == EnemyBrain.State.WINDUP:
 		_start_attack()
 	if from == EnemyBrain.State.WINDUP:
+		if spell_picker != null:
+			spell_picker.end(float(health.current) / health.maximum)
 		_end_turn()
 		# Step aside the other way next time, so its moves are harder to read.
 		_strafe_sign = -_strafe_sign
@@ -322,8 +352,17 @@ func _goal_of_giving_up() -> Vector2:
 	return _last_seen if _brain.state == EnemyBrain.State.CHECK else home
 
 
-## Aims ahead of a moving target, where it will be when the attack arrives.
+## A caster picks its spell first (see SpellPicker); the Cloud is the weapon's own attack. The Lich's other spells
+## are carried out here when they are built.
 func _start_attack() -> void:
+	if spell_picker != null:
+		var spell := spell_picker.pick(SpellPicker.Situation.new(0, float(health.current) / health.maximum))
+		spell_picker.begin(spell)
+	_start_weapon_attack()
+
+
+## Aims ahead of a moving target, where it will be when the attack arrives.
+func _start_weapon_attack() -> void:
 	var to_target := _target.global_position - global_position
 	var seconds := weapon.windup + weapon.travel_seconds(to_target.length())
 	var aim := EnemyTactics.lead(to_target, _target_velocity(), seconds, lead_share)
@@ -364,7 +403,7 @@ func _movement() -> Vector2:
 			return _path_direction(_target.global_position)
 		EnemyBrain.State.POSITION:
 			var to_target := _target.global_position - global_position
-			var ideal := weapon.ideal_distance()
+			var ideal := keep_distance_cells * DungeonView.TILE_SIZE if keep_distance_cells > 0.0 else weapon.ideal_distance()
 			return EnemyTactics.move_direction(to_target, ideal, ideal * SLACK_SHARE, _strafe_sign, _flank_gap())
 		EnemyBrain.State.RECOVER:
 			if not is_instance_valid(_target):
@@ -373,12 +412,13 @@ func _movement() -> Vector2:
 	return Vector2.ZERO
 
 
-## Strolls from one spot near home to the next. Spots out of sight of home (in the next room, say), and spots
-## it shouldn't stand on (lava), are skipped.
+## Strolls from one spot near home to the next. Spots out of sight of home (in the next room, say), spots it
+## shouldn't stand on (lava) and spots outside its wander_cells are skipped.
 func _wander_direction() -> Vector2:
 	if not _has_wander_goal or global_position.distance_to(_wander_goal) < WAYPOINT_REACHED:
 		var goal := EnemyTactics.wander_goal(home, wander_radius, _rng)
-		_has_wander_goal = navigation == null or (navigation.is_safe_footing(goal) and navigation.can_see(home, goal))
+		_has_wander_goal = (navigation == null or (navigation.is_safe_footing(goal) and navigation.can_see(home, goal))) \
+				and (wander_cells.is_empty() or wander_cells.has(DungeonView.world_to_cell(goal)))
 		_wander_goal = goal
 		_repath_left = 0.0
 		return Vector2.ZERO
