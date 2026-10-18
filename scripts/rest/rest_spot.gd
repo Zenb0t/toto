@@ -1,11 +1,15 @@
 class_name RestSpot
 extends Node2D
 ## Carries out a Campfire in the world: stands where the fire is, lets time move on for it while the hero is on its
-## map (the game is paused, or the map gone, when not), heals the hero standing in its light, and ends the healing
-## when the hero is hit or attacks. The rules are the Campfire's; this only feeds it the hero.
+## map (the game is paused, or the map gone, when not), heals the hero standing in its light, and, once the hero
+## rests at it (rest()), ends the healing when they are hit or attack. A hit or an attack ends the rest only at the
+## fire the hero rests at, never at another fire burning on the map. The rules are the Campfire's; this only feeds
+## it the hero.
 
 var fire: Campfire
 var _hero: Player
+## The hero lit it to rest (rest()), so their hits and attacks end the healing.
+var _rested_at := false
 
 
 func _init(campfire: Campfire, at: Vector2) -> void:
@@ -13,11 +17,23 @@ func _init(campfire: Campfire, at: Vector2) -> void:
 	position = at
 
 
-## The hero this fire heals and listens to: a hit or an attack of theirs ends the healing.
+## The hero this fire heals and listens to: once they rest at it, a hit or an attack of theirs ends the healing.
 func attend(hero: Player) -> void:
 	_hero = hero
-	hero.health.damaged.connect(func(_amount: int) -> void: fire.interrupt())
-	hero.attack_fired.connect(func(_attacks: Array) -> void: fire.interrupt())
+	hero.health.damaged.connect(func(_amount: int) -> void: _end_rest())
+	hero.attack_fired.connect(func(_attacks: Array) -> void: _end_rest())
+
+
+## The hero lights it to rest. False when it can't be lit (burning or in embers).
+func rest() -> bool:
+	_rested_at = fire.light()
+	return _rested_at
+
+
+func _end_rest() -> void:
+	if _rested_at:
+		fire.interrupt()
+		_rested_at = false
 
 
 ## How far the hero is from the fire, in cells.

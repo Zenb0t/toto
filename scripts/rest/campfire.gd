@@ -20,11 +20,13 @@ var _healing_ended := false
 var _heal_carry := 0.0
 
 
-## A campfire as it was left: restored from a record (see MapRecord.campfire_at) with the time it had left.
+## A campfire as it was left: restored from a record (see MapRecord.campfire_at) with the time it had left. One
+## left burning burns on but heals no more: the hero ended that rest by leaving the map.
 func _init(rest_profile := RestProfile.campfire(), start := State.UNLIT, seconds_left := 0.0) -> void:
 	profile = rest_profile
 	state = start
 	_seconds_left = maxf(seconds_left, 0.0) if start != State.UNLIT else 0.0
+	_healing_ended = start != State.UNLIT
 
 
 func can_light() -> bool:

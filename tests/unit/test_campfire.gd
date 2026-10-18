@@ -152,6 +152,15 @@ func test_a_campfire_restored_with_time_left_carries_on_from_there() -> void:
 	assert_true(embers.can_light())
 
 
+func test_a_campfire_restored_burning_burns_on_but_heals_no_more() -> void:
+	var burning := Campfire.new(_profile, Campfire.State.BURNING, 5.0)
+
+	assert_eq(_run(burning, 2.0), 0, "leaving the map ended that rest")
+	_run(burning, 3.0 + STEP)
+
+	assert_eq(burning.state, Campfire.State.EMBERS)
+
+
 func test_light_reaches_the_profiles_radius_and_no_further() -> void:
 	assert_true(_profile.lights(_profile.light_radius_cells))
 	assert_false(_profile.lights(_profile.light_radius_cells + 0.1))

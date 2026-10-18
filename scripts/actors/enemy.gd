@@ -23,15 +23,6 @@ const GROUP := &"enemies"
 const DEFAULT_MOVE_SPEED := 85.0
 ## A wandering enemy strolls at this share of its speed.
 const DEFAULT_WANDER_SPEED_SHARE := 0.5
-## It has noticed the hero and is after them (see EnemyBrain.is_hunting).
-func is_hunting() -> bool:
-	return _brain.is_hunting()
-
-
-func is_asleep() -> bool:
-	return _brain.is_asleep()
-
-
 ## What shows over its head: asleep, or just noticed its target.
 const ASLEEP_MARK := "z"
 const NOTICING_MARK := "!"
@@ -209,6 +200,15 @@ func take_poison(amount: int, source: String, now: float) -> void:
 func slow(multiplier: float, seconds: float) -> void:
 	_slow_multiplier = multiplier
 	_slow_time_left = maxf(_slow_time_left, seconds)
+
+
+## It has noticed the hero and is after them (see EnemyBrain.is_hunting).
+func is_hunting() -> bool:
+	return _brain.is_hunting()
+
+
+func is_asleep() -> bool:
+	return _brain.is_asleep()
 
 
 func is_slowed() -> bool:

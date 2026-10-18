@@ -492,7 +492,9 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   health, max_health)` moves time on and returns the whole health points healed. It burns 10 s, then lies in
   **embers for 90 s** before it can be lit again. While it burns, a hero in its light (2.5 cells) heals 50 health a
   second **up to 50% of their maximum health** (never past it). Stepping out of the light pauses the healing (the
-  fire burns on); a hit or an attack (`interrupt()`) ends the healing for that lighting.
+  fire burns on); a hit or an attack (`interrupt()`) ends the healing for that lighting. A fire left burning when
+  the hero leaves the map burns on when they come back but heals no more: leaving ended that rest (so the record
+  needs no "interrupted" flag).
 - `RestProfile` holds the numbers a place of rest follows (heal share, rate, burn, embers, light radius, reach):
   the campfire's are the class defaults, all Knobs in **Tune -> Rest**. The inn (#45) will be another profile
   (3 s, full heal, no embers) and an ambush roll another field of it; `Campfire` and `MonstersAround` never name a
@@ -503,16 +505,21 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   `MonstersAround.Nearby`; a refusal shows a floating message ("Can't rest: something is hunting you").
 - `RestSpot` (a node per campfire) is the carrying out: it ticks its `Campfire` every physics frame, so the burn
   and the cooldown **only run while the hero is on the map** (the map is gone, and the game paused, otherwise),
-  heals the hero and listens for their hits and attacks. `MapRecord` keeps each campfire's state and seconds left by
+  heals the hero and, once the hero rests at it (`RestSpot.rest()`), listens for their hits and attacks: a hit or an
+  attack ends the rest only at the fire the hero rests at, never at another fire burning on the map. `MapRecord` keeps each campfire's state and seconds left by
   its cell (`remember_campfire`, `campfire_at`; also through the dictionary), written on leaving.
 - A camp's campfire is **held by its band** (`Camps.is_held`: any monster of the camp not killed in the record):
   no Rest, and it burns for them. Once its last monster dies it goes out and is a campfire like the others; kills
   stay in the record, so a cleared camp's fire is usable on return. Any map with `F` cells works the same (plains,
   and the crypt's).
-- **The attack button becomes REST** (E on the keyboard, which takes a floor item first when one is on offer)
-  while an unlit, un-held campfire is within reach (2 cells). Pressing it lights the fire or, with monsters around,
-  shows the refusal. With the mouse, left click still attacks. Known rough edge: near a lone campfire in a fight the
-  touch button reads REST and refuses instead of attacking.
+- **The attack button becomes REST** while an unlit, un-held campfire is within reach (2 cells) **and no monster
+  hunts the hero** (`RestOffer.shows_rest`): in a fight the button stays the attack, so a campfire never takes the
+  weapon away mid-fight. With an awake monster merely in sight (watched) it still reads REST, and pressing it shows
+  the refusal ("Can't rest: something is watching"); nobody is attacking then. **E** on the keyboard (which takes a
+  floor item first when one is on offer) asks to rest at the un-held campfire in reach whatever the verdict, and
+  answers with `RestOffer.refusal`: the monsters-around message, or "The fire is still embers: 42 s". With the mouse,
+  left click still attacks. The monsters are only looked over while an unlit fire is in reach, and line of sight
+  only worked out for awake monsters within the 16 cells.
 
 **Look.** The plains have their own `Branch` (outdoors, so the HUD and the arrival banner say "the plains" and the run
 summary "on the plains") and `BranchLook`: grass ground, no torches, trees for small free-standing groves. Big groves
