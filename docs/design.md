@@ -452,7 +452,7 @@ village's `fallbacks` and `attempts` are kept by the generator for tests and bug
 **Village lots** (`VillageLots.DESIGNS`) are drawings in the map format of a building plus one row of ground in front, which holds
 the doorstep `D` and what always stands by it (a barrel `X`). Every drawing faces south, the door on the bottom row. `H` is a
 house wall and gets its colour digit (`1`-`4`) when the village is done; the inn keeps its `D`, which is the **inn's doorstep**
-the later Rest rule (#45) looks for (`DungeonMap.village.inn_doorstep`); every other lot's `D` is plain ground. Footprints follow
+the inn's Rest looks for (`DungeonMap.village.inn_doorstep`; see **Resting**); every other lot's `D` is plain ground. Footprints follow
 the art at scale 6: small house 5x5, big house 5x6, smithy 8x7, church 6x7, inn 7x8, market 11x8. A new lot is a new entry (and
 a model in `VillageModels`).
 
@@ -533,9 +533,11 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   the hero leaves the map burns on when they come back but heals no more: leaving ended that rest (so the record
   needs no "interrupted" flag).
 - `RestProfile` holds the numbers a place of rest follows (heal share, rate, burn, embers, light radius, reach):
-  the campfire's are the class defaults, all Knobs in **Tune -> Rest**. The inn (#45) will be another profile
-  (3 s, full heal, no embers) and an ambush roll another field of it; `Campfire` and `MonstersAround` never name a
-  place. (Cancelling by moving, which the inn needs, is not built yet.)
+  the campfire's are the class defaults, all Knobs in **Tune -> Rest**. The inn is the second profile,
+  `RestProfile.inn()`: a **3 s** rest (`rest_seconds`), healing up to **100%** of max health, no embers, reach 1 cell
+  from the doorstep, and `cancels_on_move`. Its Knobs (id `inn`) are only the rest time and the reach; the heal and
+  the rest are the same fields the campfire uses. An ambush roll (#44) will be another field; `Campfire`,
+  `InnRest` and `MonstersAround` never name a place.
 - `MonstersAround` is the shared "may the hero rest" rule: **refused while any monster on the map is hunting the
   hero (`EnemyBrain.is_hunting`: noticing, hunting, in position, attacking), or any awake monster is within 16
   cells and in line of sight** (Knob). Sleeping monsters don't block. The game describes each monster as a
@@ -557,6 +559,16 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   answers with `RestOffer.refusal`: the monsters-around message, or "The fire is still embers: 42 s". With the mouse,
   left click still attacks. The monsters are only looked over while an unlit fire is in reach, and line of sight
   only worked out for awake monsters within the 16 cells.
+- **The inn's rest** (#45) is `InnRest` (pure: `begin()`, `tick(delta, hero_moving)`, `interrupt()`, `heal_for()`) carried
+  out by `InnSpot`, a node standing on the inn's doorstep (`village.inn_doorstep`, plains only). On the doorstep
+  (`RestProfile.is_within_reach`) the attack button reads **REST** (E too) by the same `RestOffer.shows_rest`: calm or
+  watched shows it, a **hunting** monster leaves the button the attack. Pressing it asks `MonstersAround` first: hunted or
+  watched is refused with the same floating message (`RestOffer.inn_refusal`), E included. Otherwise the hero sits
+  ("Resting..." floats up) and after 3 s is healed to full ("Fully rested"). **Moving** (stick or keys held,
+  `Player.is_moving`) or **being hit** (`Health.damaged`) cancels it ("Rest interrupted", nothing healed, the time
+  already waited is lost). There is no ambush and no limit: after a finish or a cancel the hero can rest again at once.
+  Pressing REST during a rest does nothing. Unlike the campfire, the monsters rule is asked only when the rest begins:
+  a monster that starts hunting mid-rest ends it only by hitting the hero.
 
 **Look.** The plains have their own `Branch` (outdoors, so the HUD and the arrival banner say "the plains" and the run
 summary "on the plains") and `BranchLook`: grass ground, no torches, trees for small free-standing groves. Big groves
