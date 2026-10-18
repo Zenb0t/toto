@@ -6,7 +6,7 @@ extends RefCounted
 ## The numbers are tunable (Tune → World, see knobs), and the defaults live here.
 
 ## Bumped whenever the same recipe and seed would make a different map.
-const VERSION := 1
+const VERSION := 2
 ## Each side's quadrant exit is this many cells wide, in the middle of the side.
 const EXIT_WIDTH := 3
 
@@ -27,8 +27,14 @@ var pond_count := 6
 ## A pond's deep water is about this many cells from its middle to its edge, plus a shallow shore around it.
 var pond_radius_min := 3
 var pond_radius_max := 6
-## The hero starts in the middle; this many cells around it stay clear (the village replaces that spot later).
-var safe_ring := 20
+## The village in the middle of the plains (see VillageGenerator): its size, and the share of its leftover ground
+## that gets barrels and crates.
+var village_width := 36
+var village_height := 28
+var village_prop_share := 0.15
+## How much bigger than the models themselves the village's buildings, well and palisade are drawn (KayKit's
+## Medieval Hexagon pieces are tiny next to a cell).
+var building_scale := 6.0
 ## The crypt entrance lies at least this far out from the middle (0 the middle, 1 the border; see outward).
 var crypt_min_outward := 0.5
 
@@ -53,6 +59,15 @@ func size() -> Vector2i:
 	return Vector2i(width, height)
 
 
+func village_size() -> Vector2i:
+	return Vector2i(village_width, village_height)
+
+
+## Round the middle, this far out stays clear of ponds and groves (the village and the grass round it).
+func village_radius() -> float:
+	return Vector2(village_size()).length() / 2.0 + SetPieces.VILLAGE_APRON
+
+
 func center() -> Vector2i:
 	return size() / 2
 
@@ -69,7 +84,7 @@ func outward(cell: Vector2i) -> float:
 	return maxf(offset.x / (width / 2.0), offset.y / (height / 2.0))
 
 
-## The pieces to stamp in, in order (see SetPiecePlacer).
+## The pieces to stamp in after the village, in order (see SetPiecePlacer).
 func set_pieces() -> Array[SetPiece]:
 	return [SetPieces.crypt_entrance(crypt_min_outward)]
 
@@ -86,6 +101,9 @@ func knobs() -> Array[Knob]:
 		Knob.new("pond_count", "Ponds", 0, 20, 1),
 		Knob.new("pond_radius_min", "Pond radius, least", 2, 8, 1),
 		Knob.new("pond_radius_max", "Pond radius, most", 3, 12, 1),
-		Knob.new("safe_ring", "Clear ring around the start", 5, 40, 1),
+		Knob.new("village_width", "Village width (cells)", 24, 60, 2),
+		Knob.new("village_height", "Village height (cells)", 20, 44, 2),
+		Knob.new("village_prop_share", "Village barrels and crates (share)", 0.0, 0.4, 0.01),
+		Knob.new("building_scale", "Village art scale (x)", 2.0, 10.0, 0.5),
 		Knob.new("crypt_min_outward", "Crypt entrance, least out (0-1)", 0.2, 0.9, 0.05),
 	]

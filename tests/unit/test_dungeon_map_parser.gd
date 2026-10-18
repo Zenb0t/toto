@@ -315,5 +315,13 @@ func test_the_well_and_barrels_are_in_the_way_but_low_enough_to_see_over() -> vo
 
 
 func test_no_village_letter_is_also_a_monster() -> void:
-	for letter in Village.solid_letters() + [Village.GATE, Village.STREET, Village.DOORSTEP]:
+	for letter in Village.solid_letters() + [Village.GATE, Village.STREET, Village.DOORSTEP, Village.START]:
 		assert_false(letter in Bestiary.letters(), "%s is a monster" % letter)
+
+
+func test_a_start_marked_with_an_at_sign_is_a_spawn_on_beaten_earth() -> void:
+	var map := _parser.parse(VILLAGE.replace("F..DP", "F..D@"))
+
+	assert_eq(map.player_spawn, Vector2i(4, 4))
+	assert_eq(map.terrain_at(Vector2i(4, 4)), DungeonMap.Terrain.PATH)
+	assert_true(map.is_walkable(Vector2i(4, 4)))

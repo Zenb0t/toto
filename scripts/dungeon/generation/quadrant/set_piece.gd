@@ -15,14 +15,19 @@ var anchor_symbol: String
 var min_outward := 0.0
 ## Cells around the piece cleared to plain ground, so it is never walled in by a grove.
 var apron := 2
+## The piece goes in the middle of the quadrant instead of a spot found for it (the village).
+var at_center := false
 
 
-func _init(piece_id: String, drawing: PackedStringArray, anchor: String, outward := 0.0, clear_margin := 2) -> void:
+func _init(
+		piece_id: String, drawing: PackedStringArray, anchor: String, outward := 0.0, clear_margin := 2,
+		in_the_middle := false) -> void:
 	id = piece_id
 	rows = drawing
 	anchor_symbol = anchor
 	min_outward = outward
 	apron = clear_margin
+	at_center = in_the_middle
 
 
 func size() -> Vector2i:

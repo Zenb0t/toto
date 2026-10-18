@@ -14,14 +14,13 @@ func _gate() -> SetPiece:
 	return SetPiece.new("gate", PackedStringArray(["#.#", "#>#"]), ">", 0.6, 1)
 
 
-func test_a_piece_lands_as_far_out_as_it_asks_and_clear_of_the_start() -> void:
+func test_a_piece_lands_as_far_out_as_it_asks() -> void:
 	for seed_value in 30:
 		var placements := SetPiecePlacer.reserve(_recipe, [_gate()], [], _rng(seed_value))
 
 		assert_eq(placements.size(), 1, "seed %d" % seed_value)
 		var anchor := placements[0].anchor_cell()
 		assert_gte(_recipe.outward(anchor), 0.6, "seed %d" % seed_value)
-		assert_gt(Vector2(anchor - _recipe.center()).length(), _recipe.safe_ring, "seed %d" % seed_value)
 		assert_true(_recipe.interior().encloses(placements[0].rect().grow(1)), "seed %d" % seed_value)
 
 
@@ -58,3 +57,27 @@ func test_stamping_draws_the_piece_and_clears_the_ground_around_it() -> void:
 	assert_eq(grid.at(Vector2i(7, 7)), ".", "the apron is plain ground")
 	assert_eq(grid.at(Vector2i(10, 10)), ".")
 	assert_eq(grid.at(Vector2i(5, 5)), "T", "further out is untouched")
+
+
+func _village_piece(columns: int, rows: int) -> SetPiece:
+	var drawing := PackedStringArray()
+	for _y in rows:
+		drawing.append("F".repeat(columns))
+	return SetPiece.new("village", drawing, "F", 0.0, 3, true)
+
+
+func test_the_village_goes_in_the_middle_and_the_pieces_after_it_keep_clear_of_it() -> void:
+	var pieces: Array[SetPiece] = [_village_piece(36, 28), _gate()]
+
+	for seed_value in 20:
+		var placements := SetPiecePlacer.reserve(_recipe, pieces, [], _rng(seed_value))
+
+		assert_eq(placements.size(), 2, "seed %d" % seed_value)
+		assert_eq(placements[0].rect().get_center(), _recipe.center(), "seed %d" % seed_value)
+		assert_false(placements[0].rect().grow(3).intersects(placements[1].rect().grow(1)), "seed %d" % seed_value)
+
+
+func test_a_village_too_big_for_the_quadrant_is_left_without_a_spot() -> void:
+	var placements := SetPiecePlacer.reserve(_recipe, [_village_piece(40, 100)], [], _rng(1))
+
+	assert_eq(placements.size(), 0)

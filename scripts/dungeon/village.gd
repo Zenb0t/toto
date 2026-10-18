@@ -23,6 +23,8 @@ const PROP := "X"
 const DOORSTEP := "D"
 ## Beaten earth: the streets and the square (walkable).
 const STREET := ":"
+## The hero's start on beaten earth: a `P` that doesn't turn the street under it into grass.
+const START := "@"
 
 
 ## A building: its kind, its colour (houses only: 0 to HOUSE_COLORS - 1) and the cells it covers.

@@ -10,7 +10,7 @@ extends RefCounted
 ##   T  tree grove    B  boulder    =  barricade (outdoors: each blocks walking, see DungeonMap.Blocker)
 ##   The village (see Village): F palisade   G gate (floor)   :  street or square (walkable beaten earth)
 ##   U  well   X  barrel or crate   D  the inn's doorstep (floor)   I inn   C church   S smithy   M market
-##   1 2 3 4  a house, by colour
+##   1 2 3 4  a house, by colour   @  the hero's start on a street (like P)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
 ##   w apprentice  c crossbowman  f pyromancer  n necromancer  o orc  W orc wizard  d dwarf
 ##   e deep elf mage  O ogre  z skeleton  x skeleton archer  m skeletal mage  Z skeleton warrior
@@ -38,13 +38,13 @@ func parse(ascii: String) -> DungeonMap:
 
 	var enemy_symbols := Bestiary.letters()
 	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, STAIRS_UP, LOOT, WATER, LAVA, SHALLOW,
-		Village.GATE, Village.STREET, Village.DOORSTEP] + enemy_symbols)
+		Village.GATE, Village.STREET, Village.DOORSTEP, Village.START] + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
 	var exit_cells := _cells_matching(rows, [EXIT])
 	assert(exit_cells.size() <= 1, "map has more than one exit")
 	var stairs_up_cells := _cells_matching(rows, [STAIRS_UP])
 	assert(stairs_up_cells.size() <= 1, "map has more than one stairs up")
-	var player_cells := _cells_matching(rows, [PLAYER])
+	var player_cells := _cells_matching(rows, [PLAYER, Village.START])
 	if player_cells.is_empty():
 		player_cells = stairs_up_cells
 	assert(player_cells.size() == 1, "map needs exactly one player spawn (or stairs up to start on)")
@@ -158,7 +158,7 @@ func _terrain_by_cell(rows: PackedStringArray) -> Dictionary:
 		terrain[cell] = DungeonMap.Terrain.LAVA
 	for cell in _cells_matching(rows, [SHALLOW]):
 		terrain[cell] = DungeonMap.Terrain.SHALLOW
-	for cell in _cells_matching(rows, [Village.STREET]):
+	for cell in _cells_matching(rows, [Village.STREET, Village.START]):
 		terrain[cell] = DungeonMap.Terrain.PATH
 	return terrain
 

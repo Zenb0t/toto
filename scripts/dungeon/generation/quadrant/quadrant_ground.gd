@@ -1,14 +1,14 @@
 class_name QuadrantGround
 extends RefCounted
 ## The first generation step of a quadrant: the ground. Grass everywhere, seeded-noise tree groves, boulders
-## and ponds (deep water with a shallow shore), then the middle kept clear around the hero's start. Pure: the
+## and ponds (deep water with a shallow shore), then the middle kept clear for the village. Pure: the
 ## caller passes the random number generator.
 
 const NOISE_OCTAVES := 2
 ## How rough a pond's edge is: its radius varies by this share, following noise.
 const POND_WOBBLE := 0.35
 const SHORE_WIDTH := 1.5
-## Ponds stay this far from the border and from the clear ring around the start.
+## Ponds stay this far from the border and from the village.
 const POND_MARGIN := 3
 const PLACEMENT_TRIES := 20
 
@@ -17,7 +17,7 @@ static func lay(grid: QuadrantGrid, recipe: QuadrantRecipe, rng: RandomNumberGen
 	_raise_groves(grid, recipe, rng)
 	_scatter_boulders(grid, recipe, rng)
 	_dig_ponds(grid, recipe, rng)
-	_clear_start(grid, recipe)
+	_clear_village_spot(grid, recipe)
 
 
 ## Turns walkable cells that can't be reached from `from` into groves, so no pocket of ground is cut off by the
@@ -78,7 +78,7 @@ static func _dig_ponds(grid: QuadrantGrid, recipe: QuadrantRecipe, rng: RandomNu
 		for _try in PLACEMENT_TRIES:
 			var middle := Vector2i(
 				rng.randi_range(room.position.x, room.end.x - 1), rng.randi_range(room.position.y, room.end.y - 1))
-			if Vector2(middle - recipe.center()).length() > recipe.safe_ring + reach:
+			if Vector2(middle - recipe.center()).length() > recipe.village_radius() + reach:
 				_fill_pond(grid, middle, radius, shape)
 				break
 
@@ -96,12 +96,7 @@ static func _fill_pond(grid: QuadrantGrid, middle: Vector2i, radius: int, shape:
 				grid.put(cell, QuadrantGrid.SHALLOW_WATER)
 
 
-## The hero's start in the middle, and the ring of open grass around it.
-static func _clear_start(grid: QuadrantGrid, recipe: QuadrantRecipe) -> void:
-	var area := recipe.interior()
-	var middle := recipe.center()
-	for y in range(area.position.y, area.end.y):
-		for x in range(area.position.x, area.end.x):
-			if Vector2(x - middle.x, y - middle.y).length() <= recipe.safe_ring:
-				grid.put(Vector2i(x, y), QuadrantGrid.GRASS)
-	grid.put(middle, QuadrantGrid.START)
+## The ground the village will stand on, and the grass round it, as open grass.
+static func _clear_village_spot(grid: QuadrantGrid, recipe: QuadrantRecipe) -> void:
+	var village := Rect2i(recipe.center() - recipe.village_size() / 2, recipe.village_size())
+	grid.fill_rect(village.grow(SetPieces.VILLAGE_APRON).intersection(recipe.interior()), QuadrantGrid.GRASS)
