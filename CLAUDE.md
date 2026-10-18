@@ -28,13 +28,21 @@ unzip -j templates.tpz 'templates/web*' -d ~/.local/share/godot/export_templates
 
 ## Tests
 
+CI (`.github/workflows/tests.yml`) runs `tools/ci/run_tests.sh` on every pull request and push to `main`;
+don't hand over a PR whose check is red. Run the same thing locally before committing:
+
 ```sh
 G=<scratchpad>/Godot_v4.4.1-stable_linux.x86_64
+tools/ci/run_tests.sh $G                                  # import + all tests + boot check, as CI (~2-3 min)
 $G --headless --import                                    # after adding new scripts (class names)
 $G --headless -s addons/gut/gut_cmdln.gd -gexit           # all tests (.gutconfig.json)
 $G --headless -s addons/gut/gut_cmdln.gd -gselect=test_loot -gexit   # one file
 ```
 
+The script fails if a test fails (GUT exits 1), if any log line says `SCRIPT ERROR` while testing (a test
+file that doesn't parse is skipped and GUT still exits 0, so this is the only signal), or if booting the game
+headless for 900 frames logs a `SCRIPT ERROR`. Results and logs land in `build/test-results/` (`junit.xml`,
+`import.log`, `gut.log`, `boot.log`); CI uploads them as the `test-results` artifact.
 A "Test script has 2 unfreed children" warning in the projectile tests is pre-existing.
 Screenshots of the real game: `xvfb-run -s "-screen 0 1280x720x24" $G --rendering-driver opengl3 -s <script.gd>`
 with a SceneTree script that instantiates `res://scenes/main.tscn` and saves `root.get_texture().get_image()`.
