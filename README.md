@@ -1,5 +1,7 @@
 # Toto
 
+[![Tests](https://github.com/Zenb0t/toto/actions/workflows/tests.yml/badge.svg)](https://github.com/Zenb0t/toto/actions/workflows/tests.yml)
+
 A small real-time dungeon crawler for mobile: Dungeon Crawl Stone Soup's "the RNG shapes your build" meets
 Brawl Stars' twin-stick touch combat. Built with Godot 4.4. It plays on a flat 2D plane and is shown in 3D, with
 a tilted Brawl Stars-style camera (placeholder models for now).
@@ -89,11 +91,18 @@ Web export needs Godot's 4.4.1 export templates installed.
 ## Test
 
 ```sh
-godot --headless --import
-godot --headless -s addons/gut/gut_cmdln.gd
+tools/ci/run_tests.sh <godot-4.4.1-binary>
 ```
 
-Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
+Imports the project, runs the [GUT](https://github.com/bitwes/Gut) suite (vendored in `addons/gut`) and boots
+the game headless, failing on any test failure or GDScript error. GitHub Actions runs the same script on every
+pull request and push to `main` (`.github/workflows/tests.yml`). To run only the tests, or one file:
+
+```sh
+godot --headless --import
+godot --headless -s addons/gut/gut_cmdln.gd -gexit
+godot --headless -s addons/gut/gut_cmdln.gd -gselect=test_loot -gexit
+```
 
 ## Credits
 
