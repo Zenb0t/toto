@@ -422,6 +422,16 @@ composition root (`main.gd`) keeps the controls, HUD and menus wired once. Start
 `Run.next_world`. Rebuilding a floor takes about 0.3 s on a desktop (about 40 ms of it generating and parsing the
 map, the rest building the nodes), behind the "Down to…" message; on phones it is still to be measured.
 
+**Warp** (playtest aid, #50). Tune → World → "Warp (0 = off)", off by default, lists the village, the ruin, the crypt
+entrance, crypt levels 1-3 and the Lich's arena. A `Warp.Target` is a `WorldLayout.Destination` (map id and spot),
+the same pair an exit yields, and `Run.warp` applies it like `Run.travel` does; `main.gd` then leaves and enters the
+map exactly as for stairs, so the old map's record is written and the new one replayed, and the carried hero and all
+records are untouched. Landing spots reuse existing marks where there are some (the start by the inn; the crypt
+entrance's stairs down, where coming up from level 1 lands; each level's stairs up) and `Warp` finds two more as new
+`Spot`s: the nearest walkable cell to the ruin's chest, other than the chest's own (inside the walls or in a gap,
+never in a wall), and a standable cell beside the arena's first door, outside the room, so the arena still locks
+when the hero walks in. Stairs the hero lands on only trigger once left, as when arriving normally.
+
 **Experience** (`Experience`). Like Dungeon Crawl's experience levels (or Brawl Stars' power cubes),
 defeating monsters makes the hero tougher, so the descent stays winnable without free healing. A kill is worth
 the monster's health in points (a kobold 200, an ogre 1400); going from level n to n+1 takes 500×n points; each
