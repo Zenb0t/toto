@@ -23,6 +23,10 @@ var skin_tint := NO_TINT
 var stretch := Vector3.ONE
 ## Whether the model keeps its hat or helmet. Orcs and ogres go bareheaded, so their skin shows.
 var wears_hat := true
+## Multiplies the colour of every part of the model, not only its skin (the Lich is dark purple all over).
+var body_tint := NO_TINT
+## A costume built in code on top of the model (see LichDress), or "" for none.
+var costume := ""
 
 
 func _init(model_name: String, tint := NO_TINT, body_stretch := Vector3.ONE, hat := true) -> void:
@@ -40,7 +44,17 @@ static func hero() -> CharacterLook:
 	return CharacterLook.new("Knight")
 
 
+## The Lich: a Skeleton Mage without his hat, dark purple all over, in the costume of LichDress.
+static func lich() -> CharacterLook:
+	var look := CharacterLook.new("Skeleton_Mage", NO_TINT, Vector3.ONE, false)
+	look.body_tint = Lich.COLOR.lightened(0.45)
+	look.costume = LichDress.COSTUME
+	return look
+
+
 static func of_monster(monster: Monster) -> CharacterLook:
+	if monster.id == Lich.ID:
+		return lich()
 	match monster.race:
 		"kobold":
 			return CharacterLook.new("Rogue_Hooded", Color(0.85, 0.6, 0.4))

@@ -24,7 +24,7 @@ Anything that doesn't help answer that is deferred.
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
 | Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
-| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass) and go down the **crypt**'s 3 levels and out (until the Lich, #47, waits at the bottom). Each level's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first level's lead out to the mausoleum). Other rooms are optional. The first zone (village, camps, the ruin, a 3-level crypt and the Lich) replaces this descent piece by piece, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent, now with somewhere open to start from |
+| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass), go down the **crypt**'s 3 levels and kill the **Lich** in his boss arena at the bottom: that **wins** the run (a summary, "You killed the Lich"; dismissing it plays on in the same world, the Lich staying dead). Each level's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first level's lead out to the mausoleum). **The last level has no stairs down: the arena is the end** (decided in #47: stairs that did nothing would be a trap for the player; the interim "last stairs lead out" win of #42 is gone). Other rooms are optional. The rest of the first zone (the ruin, trap rooms, the Lich's other spells) follows, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; a boss at the bottom gives the descent an end, and the world stays open to explore afterwards |
 | Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`; trap rooms and the boss arena, none yet) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
@@ -227,7 +227,7 @@ monster is out of the fight for its **Squad**: it frees its attack turn and flan
 reports no bearing until it hunts again, as a calm monster doesn't (`EnemyBrain.is_out_of_the_fight`). A home can be
 marked **never gives up** (`Enemy.never_gives_up`, `Senses.never_gives_up`): its hunters hunt on however long and
 far. `main.gd` sets it from `DungeonProgress.is_locking` of the room each monster spawned in, so the Lich's arena and
-sealed trap rooms, once they are marked as locking, get it without further wiring. A camp's monsters give up like any
+sealed trap rooms (marked as locking rooms, see the crypt section) get it without further wiring. A camp's monsters give up like any
 other and walk back to their campfire. Tune → Enemies: give up after unseen (s), give up
 beyond home (cells).
 
@@ -321,10 +321,47 @@ of today's `DungeonGenerator` in the Crypt branch (see Branches), each more dang
 **crypt entrance** (the mausoleum's stairs) leads down to level 1's stairs up, and those lead back out onto the
 mausoleum (`WorldLayout`: the plains are map `plains`, the levels `crypt_1` to `crypt_3`; the map's depth picks
 the generator's danger, and the branch is always the crypt, see `MapSpec.branch`). Every level starts on its
-stairs up (`DungeonGenerator.VERSION` 3).
-The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
-third level they lead out, and the run is won. **Interim win:** the Lich (#47) will replace that, waiting in
-an arena at the bottom; until then the last stairs still win the run.
+stairs up (`DungeonGenerator.VERSION` 4).
+The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down on the first
+two levels. **The third level has no stairs down**: its farthest room is the boss arena (next section).
+
+**The boss arena and the Lich** (#47). On the last level the room farthest from the stairs up is the **boss arena**
+(`BossArena`, a pure generation step; farthest, so never the start room, never the campfire's room, which
+`CryptCampfire` keeps off the farthest room, and room for trap rooms to stay clear of it). It is a 24x16 hall
+with **four 2x2 pillars** (they block walking and shots, not the lobbed Cloud) and **the Lich's crypt** at the front:
+an 8x3 recess in the middle of the north wall where he stands. No other monster and no loot is generated in it.
+Because every other room can be reached without passing through it, locking it never cuts the level in two.
+
+*Locking rooms.* A map marks a room that locks with one **mark letter** on a floor cell of it (`LockingRoom`: `A` the
+boss arena, `R` a trap room, for #46 to reuse), which the parser reads into `DungeonMap.locking_rooms`
+(room -> kind; `locking_room_ids()` feeds `DungeonProgress`, whose lock rule was already there). The arena locks when
+the hero is a full tile inside and opens when its last monster, the Lich, dies. A locking room's band is **awake but
+inattentive** until it seals: `Band.start_of(..., locking)` makes it wander (never sleep), and `main.gd` does not
+give it the hero as a target, so the Lich cannot walk out through an open door after sighting the hero down the
+corridor. When the room locks, `main.gd` calls `Enemy.wake(hero)` on its band (target plus `alert()`), so it attacks at
+once (the #34 review note: `_on_room_locked` used to wake nobody). Its monsters never give up (`never_gives_up`).
+
+*The Lich* (`Lich`, `Bestiary` entry `lich`, map letter `l`, a unique monster, not the Necromancer). A Skeleton Mage
+dressed in code (`LichDress`: 1.3x size, dark purple all over, a gold crown, glowing eyes, a long robe and a staff
+from plain shapes on the skeleton's bones). He **keeps his distance** (`Enemy.keep_distance_cells`, default 8 cells: a
+kiter that backs off at full speed when the hero comes within three quarters of it and closes in beyond a quarter
+more, through the same `EnemyTactics.move_direction` as every ranged monster) and the hero, faster than him, has to
+chase. He casts **one spell at a time** by **`SpellPicker`**, a small rule like `EnemyTactics`: `pick(situation)` is
+`NONE` while a cast is on or the pause lasts, and otherwise Summon Undead whenever fewer skeletons live than the cap,
+else Cloud, Cloud, Bone Spray round and round; `begin`/`end` bracket a cast (the enemy calls `end` when the wind-up
+is over) and the pause (1.5 s, 0.8 s in phase two) starts at `end`. Phase two is below half his health: shorter
+pause, cap +2, the cap starting at 5 and never past 10. Each spell is telegraphed (a cast is the weapon's wind-up with
+its red preview). **Only Mephitic Cloud ships** (his weapon, lobbed like the existing weapon, reload 0 because the
+pause is his pace): `SpellPicker.known` holds only the Cloud, so the picker skips the others; #48 (Bone Spray)
+and #49 (Summon Undead, the skeleton count in `SpellPicker.Situation` and phase two) add their spell to `known` and
+carry it out in `Enemy._start_attack`. Every Lich number is a Knob (Tune → Lich: his health, speed, size and kept
+distance, and the spell rule's pauses, phase threshold, cap, cap bonus and Clouds between sprays); health and size
+apply the next time the level is entered, the rest live. 3000 health is a guess, to be tuned in play.
+
+*The win.* When he dies `main.gd` tells the run (`Run.lich_killed()`: `Run.won`, and the map's `MapRecord` remembers
+`lich_dead`; his spawn cell is among the killed as for every monster, so he is still dead when the hero comes back and
+the arena no longer locks), and after a moment shows the summary (`RunSummary.Ending.WON`, "You killed the Lich") with
+**Keep exploring** (same world, the HUD says "The Lich is dead") and **Play again** (a new world).
 
 **The crypt's campfire.** Each level has exactly one campfire (the map letter `F`, the same walkable scenery as the
 plains' lone campfires), in an **ordinary room**: not the arrival room, not the stairs-down room and never a vault
@@ -698,7 +735,7 @@ deterministic), so it costs nothing to store and never changes how the game play
 ## End of a run
 
 Like Dungeon Crawl's tombstone, a run ends with a summary instead of an instant restart: "You died" (or
-"You escaped the dungeon!"), what killed you and on which floor ("Killed by an orc wizard on floor 3 of 5"),
+"You killed the Lich", which wins the run and lets you play on), what killed you and on which floor ("Killed by an orc wizard on floor 3 of 5"),
 the level reached and the monsters slain, and a **Play again** button. Every attack carries its source
 (the monster's name, "your own Fireball", "lava"), and the hero remembers what hurt them last. Kills are
 counted across floors (`HeroState`); the lines are written by `RunSummary` (pure).

@@ -82,3 +82,16 @@ func test_a_monster_shows_the_mark_it_is_given_over_its_head() -> void:
 	model.show_mark(Enemy.ASLEEP_MARK)
 
 	assert_eq(model.shown_mark(), Enemy.ASLEEP_MARK)
+
+
+func test_the_lich_is_a_hatless_skeleton_mage_dressed_in_code() -> void:
+	var look := CharacterLook.of_monster(Bestiary.by_id(Lich.ID))
+	var plain_mage := _model(CharacterLook.of_monster(Bestiary.by_id("skeletal_mage")))
+	var lich := _model(look)
+
+	assert_eq(look.model, "Skeleton_Mage")
+	assert_false(look.wears_hat)
+	assert_eq(look.costume, LichDress.COSTUME)
+	assert_ne(look.body_tint, CharacterLook.NO_TINT)
+	assert_gt(lich.find_children("*", "MeshInstance3D", true, false).size(),
+		plain_mage.find_children("*", "MeshInstance3D", true, false).size() + LichDress.CROWN_SPIKES)
