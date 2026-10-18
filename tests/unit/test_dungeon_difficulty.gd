@@ -79,7 +79,7 @@ func test_now_and_then_a_room_holds_enemies_from_deeper_in() -> void:
 
 
 func test_each_floor_down_is_more_dangerous() -> void:
-	for floor_number in range(1, RunState.FLOOR_COUNT):
+	for floor_number in range(1, WorldLayout.FLOOR_COUNT):
 		assert_gt(DungeonDifficulty.danger(1, floor_number + 1), DungeonDifficulty.danger(1, floor_number))
 
 

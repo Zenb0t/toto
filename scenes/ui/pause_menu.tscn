@@ -61,7 +61,7 @@ horizontal_alignment = 1
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "Dungeon seed"
+text = "World seed"
 horizontal_alignment = 1
 
 [node name="Resume" type="Button" parent="Panel/Items"]

@@ -52,7 +52,7 @@ saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
 A run is a descent through 5 floors, each a different branch (the Dungeon, the Lair's caves, the Orcish
-Mines, the Crypt, the Depths) and a new dungeon (its seed is shown in the pause menu), inspired by
+Mines, the Crypt, the Depths) and a new dungeon, all grown from one world seed (shown in the pause menu), inspired by
 Dungeon Crawl Stone Soup: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
@@ -62,7 +62,7 @@ chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and oft
 weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
-fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 with the Dagger, the Dash and a Potion of
+fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 of a new world (a new seed) with the Dagger, the Dash and a Potion of
 Healing.
 
 ## Play on a phone
@@ -130,7 +130,12 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
   the floor texture shows). `models/` holds the models: `CharacterModel` (KayKit characters, animated), `HeroBars` (health and ammo over the hero) and
   `CharacterLook` (who wears what), and the simple ones (chests, loot, shots, torches, the stairs' arch, the bow in hand: `BowModel`, picked with the others by `WeaponModel`)
-- `scripts/run` – `RunState`: what a run carries down the stairs (floor, gear, health, potions, experience);
-  `Experience`: levels from kills, each adding maximum health
-- `scripts/main.gd` – composition root (one floor): wires controls to the player and applies the room rules
+- `scripts/run` – the run-level owner `Run` (world seed, the hero's carried state, which map is current) and its
+  pure parts: `HeroState` (what the hero carries between maps: gear, health, potions, experience, kills), `MapSpec`
+  (a map's id, generator recipe and seed) and `WorldLayout` (the world's maps, their seeds from the world seed, and
+  where each exit leads); `MapStage` (one built map in the running game: the parsed map, its floor, fog, 3D view
+  and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Experience`: levels from
+  kills, each adding maximum health
+- `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
+  (rebuilt in place on the stairs and on starting over), routes controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests
