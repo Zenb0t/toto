@@ -4,7 +4,7 @@ extends RefCounted
 ## piece by its rules (inside the border, out of the way of the exits, as far out as the piece wants, no farther from
 ## the middle than it allows, clear of the pieces before it and as far from them as their spacing rules say; the
 ## village goes in the middle, and comes first, so every other piece keeps off it and its margin), then it stamps each
-## piece on its spot and clears the ground around it. The ruin will use the same two calls. Pure.
+## piece on its spot and clears the ground around it. The ruin uses the same two calls. Pure.
 
 
 ## A piece and the spot reserved for it.
@@ -51,6 +51,21 @@ static func stamp(grid: QuadrantGrid, placement: Placement) -> void:
 			grid.put(placement.origin + Vector2i(x, y), placement.piece.rows[y][x])
 
 
+## Whether the piece has any spot at all beside the pieces already placed, trying every spot rather than a random few:
+## when it has none, no number of tries will find one (the caller can give the piece up at once).
+static func fits_anywhere(
+		recipe: QuadrantRecipe, piece: SetPiece, keep_clear: Array[Rect2i], placed: Array[Placement]
+) -> bool:
+	var inside := recipe.interior().grow(-1)
+	var most := inside.end - piece.size() - Vector2i.ONE * piece.apron
+	var least := inside.position + Vector2i.ONE * piece.apron
+	for y in range(least.y, most.y + 1):
+		for x in range(least.x, most.x + 1):
+			if _is_allowed(recipe, Placement.new(piece, Vector2i(x, y)), keep_clear, placed):
+				return true
+	return false
+
+
 static func _find_spot(
 		recipe: QuadrantRecipe, piece: SetPiece, keep_clear: Array[Rect2i], placed: Array[Placement],
 		rng: RandomNumberGenerator
@@ -82,12 +97,19 @@ static func _is_allowed(
 	var limit := candidate.piece.max_from_centre
 	if limit > 0.0 and centre.distance_to(Vector2(candidate.anchor_cell())) > limit:
 		return false
+	if candidate.piece.corner_share > 0.0:
+		var out := recipe.outward_by_axis(candidate.anchor_cell())
+		if minf(out.x, out.y) < candidate.piece.corner_share:
+			return false
 	var footprint := candidate.rect().grow(candidate.piece.apron)
 	for area in keep_clear:
 		if area.intersects(footprint):
 			return false
 	for other in placed:
 		if other.rect().grow(other.piece.apron).intersects(footprint):
+			return false
+		if candidate.piece.must_differ_in_corner_from(other.piece) \
+				and recipe.corner_of(candidate.anchor_cell()) == recipe.corner_of(other.anchor_cell()):
 			return false
 		var apart := candidate.piece.least_distance_to(other.piece)
 		if Vector2(candidate.anchor_cell()).distance_to(Vector2(other.anchor_cell())) < apart:

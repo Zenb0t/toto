@@ -149,6 +149,15 @@ func test_a_chest_opened_before_leaving_is_still_open_on_return() -> void:
 	assert_false(run.record_of(run.current_map_id).is_chest_opened(3))
 
 
+func test_the_ruins_chest_stays_open_after_leaving_the_plains_and_returning() -> void:
+	var run := Run.new(3)
+	run.record_of(run.current_map_id).open_chest(Ruins.NUMBER)
+
+	_down_and_back(run)
+
+	assert_true(run.record_of(run.current_map_id).is_chest_opened(Ruins.NUMBER))
+
+
 func test_a_floor_item_taken_before_leaving_is_still_gone_on_return() -> void:
 	var run := Run.new(3)
 	run.record_of(run.current_map_id).take_loot(Vector2i(30, 12))

@@ -171,6 +171,7 @@ func _enter_map() -> void:
 	_arrival_cell = WorldLayout.arrival_cell(_stage.map, _run.arrival_spot)
 	_player = _spawn_player(hero, _arrival_cell)
 	_spawn_enemies()
+	_spawn_ruin_chest()
 	_spawn_campfires()
 	_spawn_inn()
 	_spawn_floor_loot()
@@ -762,20 +763,26 @@ func _monsters_near_hero() -> Array[MonstersAround.Nearby]:
 
 # --- Loot ----------------------------------------------------------------------------------------
 
-## A chest at a room's centre, open if the record says it was opened. Clearing a room no longer leaves one
-## (loot is earned); set pieces that hold a chest, like the ruin, place theirs with this.
-func _spawn_chest(room: int) -> void:
-	var chest := Chest.new(_record.is_chest_opened(room))
-	chest.position = DungeonView.cell_center(_stage.map.room_center(room))
-	chest.opened.connect(_open_chest.bind(chest.position, room))
+## The ruin's guaranteed chest, if the map has a ruin.
+func _spawn_ruin_chest() -> void:
+	if _stage.map.ruin_cell != DungeonMap.NO_CELL:
+		_spawn_chest(Ruins.NUMBER, _stage.map.ruin_cell)
+
+
+## A chest on a cell, open if the record says it was opened. It is known by the id of whatever holds it: a room, or a
+## set piece like the ruin (see Ruins.NUMBER). Clearing a room no longer leaves one (loot is earned).
+func _spawn_chest(chest_id: int, cell: Vector2i) -> void:
+	var chest := Chest.new(_record.is_chest_opened(chest_id))
+	chest.position = DungeonView.cell_center(cell)
+	chest.opened.connect(_open_chest.bind(chest.position, chest_id))
 	_stage.add_on_floor.call_deferred(chest)
 	_stage.world.add_chest(chest)
 
 
 ## A chest holds a random weapon or utility the player doesn't already have, picked when it opens, and
 ## sometimes a potion beside it.
-func _open_chest(at: Vector2, room: int) -> void:
-	_record.open_chest(room)
+func _open_chest(at: Vector2, chest_id: int) -> void:
+	_record.open_chest(chest_id)
 	_spawn_drop(at, LootTable.pick_item_id(GameTuning.item_ids(), _held_ids(), _rng))
 	if LootTable.rolls(GameTuning.chest_potion_chance(_tuning), _rng):
 		_spawn_potion(_spot_beside(at), LootTable.pick_potion_id(GameTuning.potion_weights(), _rng))

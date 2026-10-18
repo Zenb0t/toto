@@ -39,6 +39,8 @@ var loot_cells: Array[Vector2i] = []
 var village: Village
 ## Where campfires burn (walkable scenery; see Camps for the ones that are a band's home).
 var campfire_cells: Array[Vector2i] = []
+## Where the ruin's guaranteed chest stands (its middle, and its band's home), or NO_CELL for a map without a ruin.
+var ruin_cell: Vector2i = NO_CELL
 
 var _room_by_cell: Dictionary  # Vector2i -> int
 var _doors_by_room: Dictionary  # int -> Array[Vector2i]
@@ -63,6 +65,7 @@ func _init(
 	blocker_by_cell: Dictionary = {},
 	village_on_map: Village = null,
 	campfires: Array[Vector2i] = [],
+	ruin_chest: Vector2i = NO_CELL,
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -79,6 +82,7 @@ func _init(
 	_blocker_by_cell = blocker_by_cell
 	village = village_on_map
 	campfire_cells = campfires
+	ruin_cell = ruin_chest
 
 
 ## The id of the monster (see Bestiary) spawning at cell, or "" if none does.
