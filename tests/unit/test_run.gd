@@ -31,8 +31,9 @@ func test_the_same_world_seed_gives_the_same_maps() -> void:
 
 	for _map in WorldLayout.map_ids().size():
 		assert_eq(first.current_map().ascii(), again.current_map().ascii(), first.current_map_id)
-		first.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
-		again.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+		if WorldLayout.has_stairs_down(first.current_map_id):
+			first.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+			again.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
 
 
 func test_another_world_seed_gives_other_floors() -> void:
@@ -44,7 +45,7 @@ func test_the_crypt_entrance_leads_down_to_the_first_floor_with_everything_the_h
 
 	var destination := run.travel(WorldLayout.Exit.STAIRS_DOWN, _hero_holding("sword", 9))
 
-	assert_false(destination.leaves_world())
+	assert_eq(destination.map_id, run.current_map_id)
 	assert_eq(run.current_map().floor_number, 1)
 	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_UP)
 	assert_eq(run.hero.weapon_id, "sword")
@@ -56,16 +57,50 @@ func test_the_crypt_entrance_leads_down_to_the_first_floor_with_everything_the_h
 	assert_eq(run.hero.kills, 9)
 
 
-func test_the_last_floors_stairs_lead_out_of_the_world() -> void:
+func test_killing_the_lich_wins_the_run_and_play_goes_on_in_the_same_world() -> void:
 	var run := Run.new(7)
 	for _floor in WorldLayout.FLOOR_COUNT:
-		assert_false(run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new()).leaves_world())
+		run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	var world_seed := run.world_seed
+	var arena := run.current_map_id
+	assert_false(run.won)
 
-	var destination := run.travel(WorldLayout.Exit.STAIRS_DOWN, _hero_holding("bow", 30))
+	run.lich_killed()
 
-	assert_true(destination.leaves_world())
-	assert_eq(run.current_map().floor_number, WorldLayout.FLOOR_COUNT, "the hero stays where they won")
-	assert_eq(run.hero.kills, 30, "the summary counts every kill")
+	assert_true(run.won)
+	assert_eq(run.world_seed, world_seed, "the same world")
+	assert_eq(run.current_map_id, arena, "the hero stays where they are")
+	assert_true(run.record_of(arena).is_lich_dead(), "the map's record remembers it")
+
+
+func test_returning_to_the_last_level_finds_the_lich_still_dead() -> void:
+	var run := Run.new(7)
+	for _floor in WorldLayout.FLOOR_COUNT:
+		run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	var arena := run.current_map_id
+	run.record_of(arena).kill(_lich_spawn(run))
+	run.lich_killed()
+
+	run.travel(WorldLayout.Exit.STAIRS_UP, HeroState.new())
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+
+	assert_eq(run.current_map_id, arena)
+	assert_true(run.record_of(arena).is_lich_dead())
+	assert_true(run.record_of(arena).is_killed(_lich_spawn(run)))
+	assert_true(run.won, "and the run stays won")
+
+
+func _lich_spawn(run: Run) -> Vector2i:
+	var map := DungeonMapParser.new().parse(run.current_map().ascii())
+	return map.enemy_spawns.filter(func(cell: Vector2i) -> bool: return map.monster_at(cell) == Lich.ID)[0]
+
+
+func test_a_new_world_is_not_won() -> void:
+	var run := Run.new(1)
+	run.lich_killed()
+
+	assert_false(run.next_world(_seeded_rng(2)).won)
+	assert_false(run.same_world_again().won)
 
 
 func test_the_next_world_has_a_different_seed_and_a_fresh_hero_on_the_plains() -> void:
@@ -89,7 +124,7 @@ func test_the_first_floors_stairs_up_lead_back_out_to_the_crypt_entrance() -> vo
 
 	var destination := run.travel(WorldLayout.Exit.STAIRS_UP, _hero_holding("sword", 4))
 
-	assert_false(destination.leaves_world())
+	assert_eq(destination.map_id, run.current_map_id)
 	assert_eq(run.current_map_id, WorldLayout.PLAINS_ID)
 	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_DOWN)
 	assert_eq(run.hero.weapon_id, "sword")

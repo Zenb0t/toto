@@ -2,9 +2,9 @@ class_name MapRecord
 extends RefCounted
 ## What the hero changed on one map, so the map can be thrown away on leaving and made again from its seed on
 ## return, the way it was left: monsters killed, chests opened, floor items taken, items dropped, cells explored
-## and monsters left hurt, and the state of its campfires. Things are known by where the map puts them (an enemy by its
-## spawn cell, a floor item by its loot cell, a chest by the id of what holds it: a room, or a set piece like the ruin,
-## see Ruins.NUMBER), which is what lets a record match its regenerated map.
+## and monsters left hurt, the state of its campfires and whether the Lich is dead. Things are known by where the map puts
+## them (an enemy by its spawn cell, a floor item by its loot cell, a chest by the id of what holds it: a room, or a set
+## piece like the ruin, see Ruins.NUMBER), which is what lets a record match its regenerated map.
 ## Pure; to_dict / from_dict give a plain dictionary for saving a run later.
 
 ## Something lying on the floor that the map didn't start with (a swapped-out weapon, a chest's find, a drop).
@@ -29,6 +29,7 @@ var _taken_loot := {}  # Vector2i (loot cell) -> true
 var _explored: Array[Vector2i] = []
 var _dropped: Array[DroppedItem] = []
 var _hurt := {}  # Vector2i (spawn cell) -> {"health": int, "left_at": float}
+var _lich_dead := false
 var _campfires := {}  # Vector2i (campfire cell) -> {"state": Campfire.State, "seconds_left": float}
 
 
@@ -43,6 +44,15 @@ func kill(enemy_id: Vector2i) -> void:
 
 func is_killed(enemy_id: Vector2i) -> bool:
 	return _killed.has(enemy_id)
+
+
+## The Lich died on this map (his spawn cell is also among the killed).
+func kill_lich() -> void:
+	_lich_dead = true
+
+
+func is_lich_dead() -> bool:
+	return _lich_dead
 
 
 func open_chest(chest_id: int) -> void:
@@ -130,6 +140,7 @@ func to_dict() -> Dictionary:
 		"explored": _cells_to_data(_explored),
 		"dropped": dropped,
 		"hurt": hurt,
+		"lich_dead": _lich_dead,
 		"campfires": campfires,
 	}
 
@@ -149,6 +160,8 @@ static func from_dict(data: Dictionary) -> MapRecord:
 		var at: Array = item.position
 		dropped.append(DroppedItem.new(item.item, item.potion, Vector2(at[0], at[1])))
 	record.remember_dropped(dropped)
+	if data.get("lich_dead", false):
+		record.kill_lich()
 	for left: Dictionary in data.get("hurt", []):
 		record._hurt[_cell_from_data(left.enemy)] = {"health": int(left.health), "left_at": float(left.left_at)}
 	for fire: Dictionary in data.get("campfires", []):

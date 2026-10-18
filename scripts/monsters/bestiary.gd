@@ -36,6 +36,8 @@ static func all() -> Array[Monster]:
 		Monster.new("skeletal_mage", "Skeletal mage", "m", "mephitic_cloud", 500, 0.9, 1.0, 0, "undead", UNDEAD_COLOR),
 		Monster.new("skeleton_warrior", "Skeleton warrior", "Z", "battleaxe", 700, 0.85, 1.1, 0, "undead", UNDEAD_COLOR),
 		Monster.new("ogre", "Ogre", "O", "battleaxe", 1400, 0.6, 1.6, 100, "ogre", OGRE_COLOR),
+		# The unique boss of the crypt: no room is generated with him, only the boss arena (see Lich).
+		Lich.new().monster(),
 	]
 
 

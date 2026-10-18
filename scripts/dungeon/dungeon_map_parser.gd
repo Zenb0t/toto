@@ -14,9 +14,10 @@ extends RefCounted
 ##   The village (see Village): Y palisade   G gate (floor)   :  street or square (walkable beaten earth)
 ##   U  well   X  barrel or crate   D  the inn's doorstep (floor)   I inn   C church   S smithy   M market
 ##   1 2 3 4  a house, by colour   @  the hero's start on a street (like P)
+##   A  boss arena, R  trap room: a mark on a floor cell of a room that locks when the hero walks in (see LockingRoom)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
 ##   w apprentice  c crossbowman  f pyromancer  n necromancer  o orc  W orc wizard  d dwarf
-##   e deep elf mage  O ogre  z skeleton  x skeleton archer  m skeletal mage  Z skeleton warrior
+##   e deep elf mage  O ogre  z skeleton  x skeleton archer  m skeletal mage  Z skeleton warrior  l the Lich
 
 const WALL := "#"
 const FLOOR := "."
@@ -44,7 +45,7 @@ func parse(ascii: String) -> DungeonMap:
 
 	var enemy_symbols := Bestiary.letters()
 	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, STAIRS_UP, LOOT, WATER, LAVA, SHALLOW, CAMPFIRE,
-		RUIN_CHEST, Village.GATE, Village.STREET, Village.DOORSTEP, Village.START, ROAD] + enemy_symbols)
+		RUIN_CHEST, Village.GATE, Village.STREET, Village.DOORSTEP, Village.START, ROAD] + LockingRoom.marks() + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
 	var exit_cells := _cells_matching(rows, [EXIT])
 	assert(exit_cells.size() <= 1, "map has more than one exit")
@@ -78,8 +79,18 @@ func parse(ascii: String) -> DungeonMap:
 		_blockers_by_cell(rows),
 		_village(rows),
 		_cells_matching(rows, [CAMPFIRE]),
+		_locking_rooms(rows, room_by_cell),
 		ruin_cells[0] if not ruin_cells.is_empty() else DungeonMap.NO_CELL,
 	)
+
+
+## The rooms that carry a locking mark (see LockingRoom), by kind.
+func _locking_rooms(rows: PackedStringArray, room_by_cell: Dictionary) -> Dictionary:
+	var locking := {}
+	for mark in LockingRoom.marks():
+		for cell in _cells_matching(rows, [mark]):
+			locking[room_by_cell[cell]] = LockingRoom.kind_of(mark)
+	return locking
 
 
 func _blockers_by_cell(rows: PackedStringArray) -> Dictionary:

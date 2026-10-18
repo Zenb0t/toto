@@ -23,9 +23,12 @@ func test_one_kill_is_counted_in_the_singular() -> void:
 	assert_eq(lines[2], "1 monster slain.")
 
 
-func test_an_escape_is_celebrated() -> void:
-	assert_eq(RunSummary.title(RunSummary.Ending.ESCAPED), "You escaped the dungeon!")
-	assert_string_starts_with(RunSummary.lines(_run_on_floor(WorldLayout.FLOOR_COUNT, 40), 9, RunSummary.Ending.ESCAPED, "")[0], "Escaped")
+func test_killing_the_lich_is_celebrated_with_the_run_so_far() -> void:
+	var lines := RunSummary.lines(_run_on_floor(WorldLayout.FLOOR_COUNT, 40), 9, RunSummary.Ending.WON, "")
+
+	assert_eq(RunSummary.title(RunSummary.Ending.WON), "You killed the Lich")
+	assert_has(lines, "Reached level 9.")
+	assert_has(lines, "40 monsters slain.")
 
 
 func test_monsters_are_named_with_the_right_article() -> void:
