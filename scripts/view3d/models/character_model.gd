@@ -167,7 +167,8 @@ func show_health(ratio: float) -> void:
 
 ## A short text over its head (see Enemy.mark), or nothing when empty.
 func show_mark(text: String) -> void:
-	_mark.text = text
+	if _mark.text != text:
+		_mark.text = text
 
 
 func shown_mark() -> String:

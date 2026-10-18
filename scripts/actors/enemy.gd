@@ -6,7 +6,7 @@ extends CharacterBody2D
 ## then hunts. What it is doing is decided by its EnemyBrain (asleep, wander, noticing, idle, hunt, position,
 ## wind up, recover); this node carries it out. Before each attack it stops and shows where the attack will go, and its
 ## aim stays put, so the player can see it coming and get out of the way.
-## In a Squad, it takes turns to attack with the rest of its room and spreads out around the target.
+## In a Squad, it takes turns to attack with the rest of its band and spreads out around the target.
 ## With navigation, an enemy that can't see its target walks around walls to find it, and only attacks
 ## through them with a weapon that lobs.
 
@@ -66,7 +66,7 @@ var navigation: Pathfinder
 var weapon: Weapon:
 	get:
 		return _wielder.weapon
-## Optional: the room's team. Without one, the enemy attacks whenever it can and doesn't flank.
+## Optional: its band's team. Without one, the enemy attacks whenever it can and doesn't flank.
 var squad: Squad
 ## How much it aims ahead of a moving target (see EnemyTactics.lead).
 var lead_share := EnemyTactics.DEFAULT_LEAD_SHARE
@@ -261,7 +261,9 @@ func _claim_turn() -> bool:
 
 func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
 	if to == EnemyBrain.State.NOTICING:
+		# Forget the stroll: once the pause is over it plans its way to the target at once.
 		_path.clear()
+		_repath_left = 0.0
 		noticed.emit(self)
 	elif to == EnemyBrain.State.POSITION:
 		_path.clear()
