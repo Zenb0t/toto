@@ -164,12 +164,13 @@ func test_the_crypt_entrance_stands_in_a_stone_mausoleum() -> void:
 		assert_true(map.is_walkable(map.exit_cell + Vector2i(0, 2)), "its door faces south, seed %d" % seed_value)
 
 
-func test_the_only_monsters_are_the_ones_living_in_camps() -> void:
+func test_the_only_monsters_are_the_ones_living_in_camps_or_in_the_ruin() -> void:
 	for seed_value in SEEDS:
 		var map: DungeonMap = _map_by_seed[seed_value]
 		assert_gt(map.enemy_spawns.size(), 0, "seed %d" % seed_value)
 		for cell in map.enemy_spawns:
-			assert_ne(Camps.campfire_of(map, cell), DungeonMap.NO_CELL, "seed %d" % seed_value)
+			var in_a_camp := Camps.campfire_of(map, cell) != DungeonMap.NO_CELL
+			assert_true(in_a_camp or Ruins.is_home_of(map.ruin_cell, cell), "seed %d" % seed_value)
 
 
 func test_the_whole_plains_is_one_open_room_so_no_door_ever_locks() -> void:
