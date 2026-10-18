@@ -458,6 +458,7 @@ keep fixed ones. A piece standing between the camera and the hero turns see-thro
 are cut down): the cells in front of the hero count as hiding, and a taller piece hides from farther off and wider
 (`CameraFraming.cells_hiding(hero_cell, height)`); props are too low to hide the hero. Streets and the square are drawn as beaten
 earth. Size: the pack adds about 1.3 MB of source (`.gltf`, `.bin`, one shared 15 KB te
+
 **Dirt roads** (#41, `QuadrantRoads`) are landmarks to follow across a 160x90 map. Each is 3 cells wide, like the gate and the exit
 it joins, and bends gently. Decisions: the step runs *after* the set pieces are stamped, so the road is routed round them
 (nothing is moved for a road). Routing is `AStarGrid2D` over the cells where a 3x3 block is all open grass, with the cost of a cell
@@ -467,8 +468,10 @@ front of the village gate's middle, and the cell in front of the exit's barricad
 ponds (shallows included: they would be fords, and this is about landmarks) or the village, and keep out of every other set piece's
 footprint (apron plus 1 cell), so no camp, campfire, monster or crypt entrance is on or touching a road. That
 rule is by construction, so a future set piece (the ruin) is avoided without the road knowing it. Both roads are routed before
-either is drawn; they may run along or cross each other. If one has no way through, the whole map is made again (as for any
-broken rule). Roads only recolour grass: walkable like it, same speed and sight, and nothing is placed on them. The crypt entrance
+either is drawn; they may run along or cross each other. The seed shuffles the four exits and the roads go to the first ones
+that can be reached (boulders and ponds sometimes shut a 3-wide way to one); only if fewer than `road_count` can is the whole map
+made again (as for any broken rule). Why: remaking the map for one shut exit cost extra tries on 10 of 25 seeds and made the
+plains about 50% slower to build; with the fallback no seed of those needs one. Roads only recolour grass: walkable like it, same speed and sight, and nothing is placed on them. The crypt entrance
 is never a road's end. Map letter **`r`** (parser: `Terrain.ROAD`, walkable like floor); the minimap paints it a darker tan than
 the village streets (`MinimapPainter.ROAD_COLOR`), and the ground is drawn as dry earth (`BranchLook.road_color`). `QuadrantRecipe.VERSION` is 4.
 

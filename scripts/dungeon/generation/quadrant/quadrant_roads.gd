@@ -9,7 +9,8 @@ extends RefCounted
 ## crypt entrance, camps, campfires...): every piece other than the village is avoided with its apron and one more cell,
 ## so a road never touches one. Roads only recolour grass, so they change nothing about what can be walked on or seen,
 ## and nothing is placed on them afterwards. Two roads may run along or cross each other.
-## All the roads are routed before any is drawn; if one can't be, nothing is drawn and the caller makes the map again.
+## The seed shuffles the four exits and the roads go to the first that can be reached. All the roads are routed before
+## any is drawn; if fewer exits than asked can be reached, nothing is drawn and the caller makes the map again.
 ## Pure: the caller passes the random number generator.
 
 ## How wide a road is, in cells.
@@ -20,13 +21,14 @@ const PIECE_GAP := 1
 const BEND_SIZE := 16.0
 
 
-## Draws the roads and returns true, or draws nothing and returns false if one of them has no way through.
+## Draws the roads and returns true, or draws nothing and returns false if fewer exits than asked have a way through.
 static func lay(
 		grid: QuadrantGrid, recipe: QuadrantRecipe, placements: Array[SetPiecePlacer.Placement],
 		rng: RandomNumberGenerator
 ) -> bool:
-	var sides := _pick_sides(recipe.road_count, rng)
-	if sides.is_empty():
+	var count := clampi(recipe.road_count, 0, QuadrantExits.SIDES.size())
+	var sides := _shuffled_sides(rng)
+	if count == 0:
 		return true
 	var open := _open_centres(grid, placements)
 	var route := AStarGrid2D.new()
@@ -45,15 +47,21 @@ static func lay(
 			route.set_point_weight_scale(cell, 1.0 + recipe.road_bend * (noise.get_noise_2dv(Vector2(cell)) + 1.0) / 2.0)
 	var village := _village_of(placements)
 	var roads: Array[Vector2i] = []
+	var laid := 0
 	for side in sides:
+		if laid == count:
+			break
 		var from_gate := village.origin + VillagePalisade.outside_cell(village.piece.size(), side)
 		var to_exit := QuadrantExits.front_cell(recipe, side)
 		var way := route.get_id_path(from_gate + side, to_exit - side)
 		if way.is_empty():
-			return false
+			continue
+		laid += 1
 		roads.append(from_gate)
 		roads.append_array(way)
 		roads.append(to_exit)
+	if laid < count:
+		return false
 	for centre in roads:
 		_paint(grid, centre)
 	return true
@@ -96,15 +104,15 @@ static func _paint(grid: QuadrantGrid, centre: Vector2i) -> void:
 				grid.put(cell, QuadrantGrid.ROAD)
 
 
-## Which sides get a road: that many of the four, picked by the seed (a shuffle).
-static func _pick_sides(count: int, rng: RandomNumberGenerator) -> Array[Vector2i]:
+## The four sides in the order the seed tries them for a road (a shuffle).
+static func _shuffled_sides(rng: RandomNumberGenerator) -> Array[Vector2i]:
 	var sides: Array[Vector2i] = QuadrantExits.SIDES.duplicate()
 	for i in range(sides.size() - 1, 0, -1):
 		var j := rng.randi_range(0, i)
 		var swap := sides[i]
 		sides[i] = sides[j]
 		sides[j] = swap
-	return sides.slice(0, clampi(count, 0, sides.size()))
+	return sides
 
 
 static func _village_of(placements: Array[SetPiecePlacer.Placement]) -> SetPiecePlacer.Placement:
