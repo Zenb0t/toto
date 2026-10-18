@@ -1,10 +1,10 @@
 class_name SetPiecePlacer
 extends RefCounted
 ## The one place that puts hand-made set pieces into a quadrant (see SetPiece): first it reserves a spot for each
-## piece by its rules (inside the border, out of the way of the clear ring round the start and of the exits, as far
-## out as the piece wants, no farther from the middle than it allows, clear of the other pieces and as far from
-## them as their spacing rules say), then it stamps each piece on its spot and clears the ground
-## around it. Camps, campfires, the ruin and the village will use the same two calls. Pure.
+## piece by its rules (inside the border, out of the way of the exits, as far out as the piece wants, no farther from
+## the middle than it allows, clear of the pieces before it and as far from them as their spacing rules say; the
+## village goes in the middle, and comes first, so every other piece keeps off it and its margin), then it stamps each
+## piece on its spot and clears the ground around it. The ruin will use the same two calls. Pure.
 
 
 ## A piece and the spot reserved for it.
@@ -57,6 +57,10 @@ static func _find_spot(
 ) -> Placement:
 	var piece_size := piece.size()
 	var inside := recipe.interior().grow(-1)
+	if piece.at_center:
+		var middle := Placement.new(piece, recipe.center() - piece_size / 2)
+		var fits := inside.encloses(middle.rect().grow(piece.apron))
+		return middle if fits and _is_allowed(recipe, middle, keep_clear, placed) else null
 	var most := inside.end - piece_size - Vector2i.ONE * piece.apron
 	var least := inside.position + Vector2i.ONE * piece.apron
 	if most.x < least.x or most.y < least.y:
@@ -72,15 +76,13 @@ static func _find_spot(
 static func _is_allowed(
 		recipe: QuadrantRecipe, candidate: Placement, keep_clear: Array[Rect2i], placed: Array[Placement]
 ) -> bool:
-	if recipe.outward(candidate.anchor_cell()) < candidate.piece.min_outward:
+	if not candidate.piece.at_center and recipe.outward(candidate.anchor_cell()) < candidate.piece.min_outward:
 		return false
 	var centre := Vector2(recipe.center())
 	var limit := candidate.piece.max_from_centre
 	if limit > 0.0 and centre.distance_to(Vector2(candidate.anchor_cell())) > limit:
 		return false
 	var footprint := candidate.rect().grow(candidate.piece.apron)
-	if _distance_to_rect(Vector2(recipe.center()), footprint) <= recipe.safe_ring + 1:
-		return false
 	for area in keep_clear:
 		if area.intersects(footprint):
 			return false
@@ -92,9 +94,3 @@ static func _is_allowed(
 			return false
 	return true
 
-
-## How far a point is from the nearest cell of a rectangle (0 inside it).
-static func _distance_to_rect(point: Vector2, area: Rect2i) -> float:
-	var nearest := Vector2(
-		clampf(point.x, area.position.x, area.end.x - 1), clampf(point.y, area.position.y, area.end.y - 1))
-	return point.distance_to(nearest)

@@ -1,7 +1,7 @@
 class_name MapStage
 extends Node2D
 ## One map in the running game, built from its spec: the plan (DungeonMap), how enemies find their way
-## (Pathfinder), what the hero has seen (Exploration), and the nodes that show it: the floor and walls
+## (Pathfinder), what the hero has seen (Exploration, which knows the village from the start), and the nodes that show it: the floor and walls
 ## (DungeonView), the fog (FogView) and the 3D view (WorldView3D). Actors, loot and attacks go under it, so
 ## leaving the map frees it whole and the next map is built the same way. Holds no game rules.
 
@@ -19,6 +19,9 @@ func _init(map_spec: MapSpec) -> void:
 	spec = map_spec
 	map = DungeonMapParser.new().parse(map_spec.ascii())
 	pathfinder = Pathfinder.new(map)
+	# A village is home: the hero knows it all before taking a step.
+	if map.village != null:
+		exploration.restore(map.village.cells())
 
 
 func _ready() -> void:

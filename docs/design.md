@@ -383,18 +383,19 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 
 | Step | What it does |
 | --- | --- |
-| Ground (`QuadrantGround`) | Grass; tree groves where seeded noise (`FastNoiseLite`) is highest, cut so exactly the recipe's share of the ground is grove however the noise falls; boulders on grass; ponds (deep water, wobbly edge, a shallow shore 1.5 cells wide) clear of the middle and the border; then the ring of ~20 cells round the hero's start (the village will take that spot) cleared to plain grass |
+| Ground (`QuadrantGround`) | Grass; tree groves where seeded noise (`FastNoiseLite`) is highest, cut so exactly the recipe's share of the ground is grove however the noise falls; boulders on grass; ponds (deep water, wobbly edge, a shallow shore 1.5 cells wide) clear of the middle and the border; then the middle, where the village will stand (its size plus 3 cells of margin), cleared to plain grass |
 | Border (`QuadrantBorder`) | A forest of groves, 5 cells thick, all round |
 | Exits (`QuadrantExits`) | A 3-wide lane through the border in the middle of each side, with a barricade across its outer end (the way is shut until that quadrant exists) and a cleared approach inside the border |
-| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the ring round the start, the exits and the other pieces, and as far from them as the pieces' spacing rules say |
+| Village (`VillageGenerator`) | Draws the village (next section) from the recipe's size and the quadrant's random numbers |
+| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
 | Fill the camps (`CampCrews.dress`) | Draws a band of monsters into each reserved camp by how far out it lies (below) |
 | Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
-| Validate (`QuadrantRules`) | At least `min_walkable_share` (70%) of the ground inside the border walkable, the start in the middle, every exit's front cell and every piece's key cell reachable, the ring round the start clear |
+| Validate (`QuadrantRules`) | At least `min_walkable_share` (70%) of the ground inside the border walkable, the start inside the village, every exit's front cell, every piece's key cell and the outside of every village gate reachable |
 
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
 generator reports how many tries it took). If every try fails (a recipe asking for the impossible), the last resort is
 the same quadrant without groves, boulders and ponds; if a set piece still finds no spot (Tune → World can make the
-plains too small or the clear ring too wide for it), the same without camps and campfires (a plains too small for them); if even that fails, the default recipe without obstacles, so no tuning leaves the world
+plains too small or the village too big for it), the same without camps and campfires (a plains too small for them); if even that fails, the default recipe without obstacles, so no tuning leaves the world
 without a map. The same recipe and seed always
 give the same map (`QuadrantRecipe.VERSION` goes in the map's record).
 
@@ -409,16 +410,63 @@ stairs goes down, through the same transition rule as any stairs, to the first f
 otherwise eat it). Groves and barricades stop walking, sight and shots; boulders are small cover: they stop walking and
 shots but sight passes over them (`DungeonMap.is_see_through`). Deep water stops feet but not shots, as in the dungeon.
 For now the plains hold monsters only in camps and no loot (the ruin and the rest come in later tickets), and the hero
-starts in the middle.
+starts in the village, in front of the inn.
 
+**The village** (#40) is the first piece the placer stamps, in the very middle (`SetPiece.at_center`), and the safe place
+the run starts in. It is 36x28 cells by default (Tune → World) and made by pure steps (`scripts/dungeon/generation/village`),
+each a class of its own, from the quadrant's random numbers:
+
+| Step | What it does |
+| --- | --- |
+| Palisade (`VillagePalisade`) | A wall of `Y` all round with a 3-cell gate (`G`) in the middle of each side, in line with the plains' own exits |
+| Streets (`VillageStreets`) | A plus of 3-wide streets (`:`, walkable beaten earth) from the four gates to a 9x9 square with a 3x3 well (`U`) in the middle. The seed moves the square up to 2 cells off the middle on each axis, so the streets don't always cross at the same place |
+| Lots (`VillageLotPacker`, `VillageLots`) | In this order: the **inn**, whose door must face the square; one or two of the **smithy, market, church**; three to five **houses** (a small or a big one). A lot is a hand-written drawing (see below), turned a quarter turn at a time so its doorstep faces a street, and maybe mirrored (8 ways). It must stay off the streets, the other lots and the strip along the palisade, and never touch another building. Of the ways it fits, one of the snuggest is taken (most neighbours: palisade, lots, streets), so lots end up packed along the street edges |
+| Colours | Each house gets one of four colours, the four shuffled by the seed, so a village shows as many colours as it has houses |
+| Props (`VillageProps`) | Barrels and crates (`X`) on 15% of the leftover ground (Knob), but never at a gate and only where the walkable cells round a cell stay joined, so nothing gets walled off |
+| Rules (`VillageRules`) | Every gate, the square and every lot's doorstep can be walked to from the start, and the inn faces the square |
+
+**Fallbacks, so it never fails.** A seed whose lots don't fit is drawn again, 20 tries; then the plan shrinks, one house at a time
+down to 3, then the market goes; if that still doesn't fit the village grows by 2 cells on each axis until it does. The latest
+village's `fallbacks` and `attempts` are kept by the generator for tests and bug reports (`QuadrantGenerator.last_village`).
+
+**Village lots** (`VillageLots.DESIGNS`) are drawings in the map format of a building plus one row of ground in front, which holds
+the doorstep `D` and what always stands by it (a barrel `X`). Every drawing faces south, the door on the bottom row. `H` is a
+house wall and gets its colour digit (`1`-`4`) when the village is done; the inn keeps its `D`, which is the **inn's doorstep**
+the later Rest rule (#45) looks for (`DungeonMap.village.inn_doorstep`); every other lot's `D` is plain ground. Footprints follow
+the art at scale 6: small house 5x5, big house 5x6, smithy 8x7, church 6x7, inn 7x8, market 11x8. A new lot is a new entry (and
+a model in `VillageModels`).
+
+**Map letters** (`Village`, read by `DungeonMapParser`): `Y` palisade, `G` gate, `:` street or square (the terrain `PATH`), `U` well,
+`X` barrel or crate, `D` the inn's doorstep, `I` inn, `C` church, `S` smithy, `M` market, `1`-`4` a house by colour, and `@` the
+hero's start on a street (a `P` that keeps the earth under it). The palisade, buildings, well and props are `DungeonMap` blockers:
+all stop walking; the palisade and buildings stop sight, the well and props (low) don't. The map's `village` (`Village`) holds the
+palisade's area, the gates, the well, the inn's doorstep and every building (kind, colour, rect, which way its door faces).
+Nothing in the village spawns a monster (monsters may still chase the hero in).
+
+**The start and the naming.** The hero starts on the square in front of the inn's doorstep (`@`). `MapStage` starts a map with the
+village's cells already explored (`Exploration.restore`), so the minimap and the fog show it from the first step. `Place.at` names
+where the hero is: "the village" inside the palisade (gates included), the branch ("the plains") outside; the HUD and the arrival
+banner use it, and crossing a gate shows the banner again.
+
+**Village look.** Real art: KayKit **Medieval Hexagon** (CC0, `assets/kaykit_medieval_hexagon`, only the 17 pieces used; credited in
+`Credits`): houses A and B in blue, red, green and yellow, the inn (the red tavern), church (blue), smithy (green), market (yellow),
+well, wooden fence and fence gate as the palisade, barrel and two crates. The pieces are tiny next to a cell, so all are drawn
+**x6** (Knob `building_scale`, Tune → World, next world; the well and props are fitted smaller). They are models of their own
+(`VillageView3D`, built from `VillageModels`), not wall blocks. Houses vary in colour per seed; the inn, church, smithy and market
+keep fixed ones. A piece standing between the camera and the hero turns see-through (a dithered `transparency`, the way walls
+are cut down): the cells in front of the hero count as hiding, and a taller piece hides from farther off and wider
+(`CameraFraming.cells_hiding(hero_cell, height)`); props are too low to hide the hero. Streets and the square are drawn as beaten
+earth. Size: the pack adds about 1.3 MB of source (`.gltf`, `.bin`, one shared 15 KB te
 **Camps and campfires** (`SetPieces.camp`, `SetPieces.campfire`, `CampCrews`, `Camps`). The plains get **6 camps** (at
 least 18 cells apart) and **3 lone campfires** (at least 35 cells apart and 12 from any camp; the first within 12 cells
-of the clear ring), all outside the clear ring. A set piece can name a spacing group and the least distance to other
+beyond the village's clear radius, `QuadrantRecipe.village_radius`), all clear of the village and the 3 cells of grass
+round it (the village is placed first, and a piece keeps its own margin off every piece before it, so a camp's ground
+is at least 5 cells from the palisade). A set piece can name a spacing group and the least distance to other
 groups (`SetPiece.spaced`, measured between key cells; the larger of the two pieces' rules holds) and a farthest
 distance from the middle (`near_centre`); the placer enforces both. A camp is reserved as 7x7 open grass round a
 campfire (new map letter **`F`**, walkable scenery; the parser lists them in `DungeonMap.campfire_cells`), and
 `CampCrews.dress` then writes its band into the drawing, so what lives there depends on where the camp landed:
-*toughness* runs from 0 (30% of the way out, just past the ring) to 1 (the border); band size rounds from 2 to 4
+*toughness* runs from 0 (30% of the way out, just past the village) to 1 (the border); band size rounds from 2 to 4
 along it, each non-archer is a goblin with chance equal to the toughness (else a kobold), and at the edge up to half the
 band are goblin archers (never all). Near camps are two or three kobolds; far ones are four goblins and archers. All
 of these are recoloured Rogues like the dungeon's, so nothing new is modelled. Each camp starts **asleep or
@@ -443,9 +491,10 @@ build session (the packs are only offered on itch.io, which the sandbox blocks),
 pack goes in its own folder of `assets/` with a Credits entry (`Credits.Entry.folder`) and only its used pieces, and
 `test_shipped_assets` fails if a pack is uncredited or a file unused.
 
-**Tune → World** lists every knob of the recipe (size, walkable share, border thickness, groves, boulders, ponds, clear
-ring, how far out the crypt entrance lies, and the camps: how many, least apart, band sizes nearest and farthest,
-chance asleep; the lone campfires: how many, least apart, least from a camp), all defaults living in `QuadrantRecipe`. They shape the next world, not the one
+**Tune → World** lists every knob of the recipe (size, walkable share, border thickness, groves, boulders, ponds, the
+village's width, height, share of barrels and crates and art scale, how far out the crypt entrance lies, and the camps:
+how many, least apart, band sizes nearest and farthest, chance asleep; the lone campfires: how many, least apart, least
+from a camp), all defaults living in `QuadrantRecipe`. They shape the next world, not the one
 being played: the page shows the world's seed with **New world** (a new seed) and **Same seed again** (this seed, a fresh
 hero), both applying the tuning first (`Run.next_world`, `Run.same_world_again`).
 

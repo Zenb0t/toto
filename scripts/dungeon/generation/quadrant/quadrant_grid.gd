@@ -11,13 +11,18 @@ const BARRICADE := "="
 const WALL := "#"
 const DEEP_WATER := "~"
 const SHALLOW_WATER := ","
-const START := "P"
+## The hero's start: in front of the village inn, on beaten earth.
+const START := Village.START
 const CRYPT_ENTRANCE := ">"
 ## A campfire: walkable scenery (a camp's home, later a place to rest).
 const CAMPFIRE := "F"
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
-## Symbols nobody can walk on.
-const SOLID := [GROVE, BOULDER, BARRICADE, WALL, DEEP_WATER]
+## Symbols nobody can walk on (the village's palisade, well, props and buildings among them).
+const SOLID := [
+	GROVE, BOULDER, BARRICADE, WALL, DEEP_WATER, Village.PALISADE, Village.WELL, Village.PROP, Village.INN,
+	Village.CHURCH, Village.SMITHY, Village.MARKET, "1", "2", "3", "4", VillageLots.HOUSE_WALL,
+]
+const NO_CELL := Vector2i(-1, -1)
 
 var size: Vector2i
 var _symbols: PackedStringArray
@@ -53,9 +58,18 @@ func is_walkable(cell: Vector2i) -> bool:
 	return contains(cell) and at(cell) not in SOLID
 
 
-## The middle cell, where the hero starts.
+## The middle cell.
 func center() -> Vector2i:
 	return size / 2
+
+
+## The first cell holding a symbol (row by row), or NO_CELL.
+func find(symbol: String) -> Vector2i:
+	for y in size.y:
+		var x := "".join(_symbols.slice(y * size.x, (y + 1) * size.x)).find(symbol)
+		if x >= 0:
+			return Vector2i(x, y)
+	return NO_CELL
 
 
 ## Every cell that can be walked on and reached from `from` without leaving walkable cells (side by side).

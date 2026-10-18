@@ -30,10 +30,13 @@ func eye(focus: Vector3) -> Vector3:
 
 
 ## The cells between the camera and a hero standing on a cell: the few right in front of them, toward the
-## bottom of the screen, where a wall would hide them. Walls there are cut down (see MapView3D).
-static func cells_hiding(hero_cell: Vector2i) -> Array[Vector2i]:
+## bottom of the screen, where a wall would hide them. Walls there are cut down (see MapView3D). Something taller
+## than a wall (height in cells) hides the hero from farther off and wider, so it takes more cells.
+static func cells_hiding(hero_cell: Vector2i, height := 1.0) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
-	for dy in range(1, 3):
-		for dx in range(-1, 2):
+	var reach := 1 + ceili(height / tan(deg_to_rad(DEFAULT_PITCH_DEGREES)))
+	var spread := 1 + floori(height / 3.0)
+	for dy in range(1, reach + 1):
+		for dx in range(-spread, spread + 1):
 			cells.append(hero_cell + Vector2i(dx, dy))
 	return cells

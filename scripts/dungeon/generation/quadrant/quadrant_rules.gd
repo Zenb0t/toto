@@ -12,9 +12,12 @@ static func broken_rule(
 	var share := float(grid.walkable_in(area)) / (area.size.x * area.size.y)
 	if share < recipe.min_walkable_share:
 		return "only %d%% of the ground can be walked on" % roundi(share * 100.0)
-	var start := recipe.center()
-	if grid.at(start) != QuadrantGrid.START:
-		return "the hero's start is not in the middle"
+	var start := grid.find(QuadrantGrid.START)
+	var village := _village_of(placements)
+	if village == null:
+		return "there is no village"
+	if start == QuadrantGrid.NO_CELL or not village.rect().has_point(start):
+		return "the hero's start is not in the village"
 	var reached := grid.reachable_from(start)
 	for side in QuadrantExits.SIDES:
 		if not reached.has(QuadrantExits.front_cell(recipe, side)):
@@ -22,14 +25,16 @@ static func broken_rule(
 		for cell in QuadrantExits.barricade_cells(recipe, side):
 			if grid.at(cell) != QuadrantGrid.BARRICADE:
 				return "the exit on side %s is not barricaded" % side
+		if not reached.has(village.origin + VillagePalisade.outside_cell(village.piece.size(), side)):
+			return "the village gate on side %s doesn't open onto the plains" % side
 	for placement in placements:
 		if not reached.has(placement.anchor_cell()):
 			return "the %s can't be reached" % placement.piece.id
-	var ring_cells := 0
-	for y in range(area.position.y, area.end.y):
-		for x in range(area.position.x, area.end.x):
-			if Vector2(x - start.x, y - start.y).length() <= recipe.safe_ring and not grid.is_walkable(Vector2i(x, y)):
-				ring_cells += 1
-	if ring_cells > 0:
-		return "the ring around the start is not clear"
 	return ""
+
+
+static func _village_of(placements: Array[SetPiecePlacer.Placement]) -> SetPiecePlacer.Placement:
+	for placement in placements:
+		if placement.piece.at_center:
+			return placement
+	return null

@@ -14,6 +14,11 @@ const STAIRS_UP_COLOR := Color(0.85, 0.88, 0.95)
 const GROVE_COLOR := Color(0.2, 0.45, 0.22)
 const BOULDER_COLOR := Color(0.5, 0.5, 0.48)
 const BARRICADE_COLOR := Color(0.85, 0.5, 0.2)
+## The village: palisade, buildings (a house by its colour), the well and props, and its beaten-earth streets.
+const PALISADE_COLOR := Color(0.55, 0.38, 0.22)
+const BUILDING_COLOR := Color(0.8, 0.45, 0.35)
+const WELL_COLOR := Color(0.35, 0.6, 0.9)
+const STREET_COLOR := Color(0.78, 0.68, 0.5)
 const CAMPFIRE_COLOR := Color(1.0, 0.55, 0.15)
 const PLAYER_COLOR := Color(0.3, 1.0, 0.9)
 ## Cells seen before but out of view are drawn this much darker.
@@ -40,6 +45,12 @@ static func _color_of(map: DungeonMap, cell: Vector2i) -> Color:
 			return BOULDER_COLOR
 		DungeonMap.Blocker.BARRICADE:
 			return BARRICADE_COLOR
+		DungeonMap.Blocker.PALISADE, DungeonMap.Blocker.PROP:
+			return PALISADE_COLOR
+		DungeonMap.Blocker.WELL:
+			return WELL_COLOR
+		DungeonMap.Blocker.BUILDING:
+			return BUILDING_COLOR
 	if map.is_campfire(cell):
 		return CAMPFIRE_COLOR
 	if cell == map.exit_cell:
@@ -53,6 +64,8 @@ static func _color_of(map: DungeonMap, cell: Vector2i) -> Color:
 			return WATER_COLOR
 		DungeonMap.Terrain.LAVA:
 			return LAVA_COLOR
+		DungeonMap.Terrain.PATH:
+			return STREET_COLOR
 	return FLOOR_COLOR
 
 

@@ -52,4 +52,8 @@ func generator_version() -> int:
 
 ## What the map is (its name, greeting and look).
 func branch() -> Branch:
-	return Branch.plains() if recipe == Recipe.QUADRANT else Branch.for_floor(floor_number)
+	if recipe != Recipe.QUADRANT:
+		return Branch.for_floor(floor_number)
+	var plains := Branch.plains()
+	plains.look.building_scale = quadrant.building_scale
+	return plains
