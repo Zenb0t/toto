@@ -4,11 +4,16 @@ extends RefCounted
 ## one farthest from the stairs up, so never the start room, nor the campfire's, which CryptCampfire keeps off
 ## the farthest room; trap rooms keep clear of it too) and draws its floor plan: a hall with four 2x2 pillars
 ## that block shots, and the Lich's crypt, a recess in the middle of the hall's front (north) wall, where he stands.
+## The back row of the crypt reaches a nook further to each side, which no doorway of the hall can see into: it is
+## where he hides when hurt before the arena locks (see Hideout).
+## The crypt faces north unless a corridor reaches the room from the north, which would open a door into the back of
+## the crypt: then the whole plan is mirrored and it faces south (see faces_south). The functions below describe the
+## north-facing plan; room, lich_cell and mark_cell take `south` to mirror their answer.
 ## The arena is marked as a locking room (see LockingRoom): it locks when the hero walks in and opens when the Lich dies.
 ##
-##   ###########.......###########      crypt (8 x 3)
-##   ###########.......###########
-##   ###########.......###########
+##   #####............#####      back row of the crypt: a nook on each side (2 cells)
+##   #######........#######      crypt (8 x 3)
+##   #######........#######
 ##   ......................           hall (the room's full width)
 ##   ..##..................##..
 ##   ..##..................##..       pillars
@@ -19,6 +24,8 @@ extends RefCounted
 
 ## The Lich's crypt: a recess of this size at the middle of the front wall.
 const CRYPT_SIZE := Vector2i(8, 3)
+## The back row of the crypt is this many cells wider on each side: the nooks a doorway can't see.
+const NOOK_WIDTH := 2
 const PILLAR_COUNT := 4
 const PILLAR_SIZE := 2
 ## The smallest room bounds the arena fits in.
@@ -32,7 +39,7 @@ static func slot_for(graph: RoomGraph) -> Vector2i:
 
 
 ## The arena's floor plan inside the bounds a room may use: the hall below the Lich's crypt, minus the pillars.
-static func room(bounds: Rect2i) -> Dictionary:
+static func room(bounds: Rect2i, south := false) -> Dictionary:
 	assert(bounds.size.x >= MIN_BOUNDS.x and bounds.size.y >= MIN_BOUNDS.y, "the arena needs a bigger room")
 	var cells := {}
 	for y in range(hall(bounds).position.y, hall(bounds).end.y):
@@ -41,8 +48,25 @@ static func room(bounds: Rect2i) -> Dictionary:
 	for y in range(crypt(bounds).position.y, crypt(bounds).end.y):
 		for x in range(crypt(bounds).position.x, crypt(bounds).end.x):
 			cells[Vector2i(x, y)] = true
+	for cell in nook_cells(bounds):
+		cells[cell] = true
 	for cell in pillar_cells(bounds):
 		cells.erase(cell)
+	if not south:
+		return cells
+	var mirrored := {}
+	for cell: Vector2i in cells:
+		mirrored[oriented(cell, bounds, true)] = true
+	return mirrored
+
+
+## The two nooks at the ends of the crypt's back row.
+static func nook_cells(bounds: Rect2i) -> Array[Vector2i]:
+	var recess := crypt(bounds)
+	var cells: Array[Vector2i] = []
+	for step in NOOK_WIDTH:
+		cells.append(Vector2i(recess.position.x - 1 - step, recess.position.y))
+		cells.append(Vector2i(recess.end.x + step, recess.position.y))
 	return cells
 
 
@@ -75,12 +99,25 @@ static func pillar_cells(bounds: Rect2i) -> Array[Vector2i]:
 
 
 ## Where the Lich stands: inside his crypt, facing the hall.
-static func lich_cell(bounds: Rect2i) -> Vector2i:
+static func lich_cell(bounds: Rect2i, south := false) -> Vector2i:
 	var recess := crypt(bounds)
-	return recess.position + Vector2i(recess.size.x / 2, 1)
+	return oriented(recess.position + Vector2i(recess.size.x / 2, 1), bounds, south)
 
 
 ## The cell that carries the arena's locking mark: the middle of the hall, clear of the pillars.
-static func mark_cell(bounds: Rect2i) -> Vector2i:
+static func mark_cell(bounds: Rect2i, south := false) -> Vector2i:
 	var area := hall(bounds)
-	return area.position + area.size / 2
+	return oriented(area.position + area.size / 2, bounds, south)
+
+
+## Whether the arena in this slot is drawn with its crypt on the south side: when it is linked to the room above
+## it and not to the one below. (Linked on both sides, it stays north-facing and that corridor reaches the crypt.)
+static func faces_south(graph: RoomGraph, slot: Vector2i) -> bool:
+	return graph.is_linked(slot, slot + Vector2i.UP) and not graph.is_linked(slot, slot + Vector2i.DOWN)
+
+
+## A cell of the north-facing plan, where it lies when the plan is mirrored top to bottom (south) or not.
+static func oriented(cell: Vector2i, bounds: Rect2i, south: bool) -> Vector2i:
+	if not south:
+		return cell
+	return Vector2i(cell.x, bounds.position.y * 2 + bounds.size.y - 1 - cell.y)

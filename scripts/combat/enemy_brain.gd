@@ -20,12 +20,14 @@ extends RefCounted
 ## before going after it. IDLE: awake, but no target. HUNT: can't see the target, walks around walls to find
 ## it. POSITION: sees it, keeps to its weapon's distance at its flank spot. WINDUP: stands still and telegraphs
 ## the attack. RECOVER: steps aside for a moment before looking for its next turn.
+## RETREAT: hurt with no target (the Lich, hurt from a doorway before his arena locks), it withdraws to its
+## retreat spot (Senses.can_retreat) and stays there; once it has a target it fights.
 ## A hunter with a home (Senses.has_home) gives up once it hasn't seen the target for a while or the target is
 ## far from home. CHECK: walks to the spot it last saw the target. RETURN: walks home, then wanders again. Both
 ## are awake and out of the fight; they notice the target again within the wander sight radius, as long as the
 ## target is back within its territory (closer to home than it gives up at).
 
-enum State { IDLE, ASLEEP, WANDER, NOTICING, HUNT, POSITION, WINDUP, RECOVER, CHECK, RETURN }
+enum State { IDLE, ASLEEP, WANDER, NOTICING, HUNT, POSITION, WINDUP, RECOVER, CHECK, RETURN, RETREAT }
 
 ## How long an enemy steps aside after an attack before it may attack again.
 const DEFAULT_RECOVER_SECONDS := 0.35
@@ -56,6 +58,8 @@ class Senses:
 	var has_turn := false
 	## Its weapon is still winding up an attack.
 	var winding_up := false
+	## It has a retreat spot to withdraw to when hurt while it has no target.
+	var can_retreat := false
 
 
 var recover_seconds := DEFAULT_RECOVER_SECONDS
@@ -77,7 +81,9 @@ func _init(start := State.IDLE) -> void:
 func update(delta: float, senses: Senses) -> State:
 	match state:
 		State.ASLEEP, State.WANDER:
-			if awareness.notices(_cues(senses)):
+			if _retreats(senses):
+				state = State.RETREAT
+			elif awareness.notices(_cues(senses)):
 				_notice()
 		State.CHECK, State.RETURN:
 			if awareness.notices(_cues(senses)) and awareness.in_territory(senses.target_cells_from_home):
@@ -92,6 +98,9 @@ func update(delta: float, senses: Senses) -> State:
 			_noticing_left -= delta
 			if _noticing_left <= 0.0:
 				state = _seeking(senses) if senses.has_target else State.IDLE
+		State.RETREAT:
+			if senses.has_target:
+				state = _seeking(senses)
 		State.WINDUP:
 			if not senses.winding_up:
 				state = State.RECOVER
@@ -104,7 +113,9 @@ func update(delta: float, senses: Senses) -> State:
 				state = _seeking(senses)
 		_:
 			_seconds_unseen = 0.0 if senses.sees_target else _seconds_unseen + delta
-			if not senses.has_target:
+			if _retreats(senses):
+				state = State.RETREAT
+			elif not senses.has_target:
 				state = State.IDLE
 			elif senses.has_home and awareness.gives_up(_chase(senses)):
 				state = State.CHECK
@@ -140,15 +151,20 @@ func is_giving_up() -> bool:
 	return state == State.CHECK or state == State.RETURN
 
 
-## It is not in the fight: calm, or given up. A squad doesn't count it for turns or flank spots.
+## It is not in the fight: calm, retreating or given up. A squad doesn't count it for turns or flank spots.
 func is_out_of_the_fight() -> bool:
-	return is_calm() or is_giving_up()
+	return is_calm() or is_giving_up() or state == State.RETREAT
 
 
 ## How close its target must be for it to matter whether the enemy can see it: its sight while calm, any
 ## distance once it has noticed.
 func notice_range_cells() -> float:
 	return awareness.sight_cells(state == State.ASLEEP) if is_out_of_the_fight() else INF
+
+
+## Hurt with no target and somewhere to hide: it withdraws instead of standing there.
+static func _retreats(senses: Senses) -> bool:
+	return senses.can_retreat and senses.hurt and not senses.has_target
 
 
 func _notice() -> void:

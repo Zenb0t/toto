@@ -279,6 +279,9 @@ func _spawn_enemies() -> void:
 		# keeps to its room meanwhile: strolling out through a door, it would be shut out when the room locks.
 		if locking:
 			enemy.wander_cells = _cell_set(_stage.map.cells_of_room(_stage.map.room_at(cell)))
+			# Hurt before the lock, the Lich withdraws to where no doorway can see him: the hero has to walk in.
+			if _stage.map.locking_kind(_stage.map.room_at(cell)) == LockingRoom.Kind.ARENA:
+				enemy.retreat_to(DungeonView.cell_center(Hideout.cell_for(_stage.map, cell, _stage.pathfinder)))
 		else:
 			enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))

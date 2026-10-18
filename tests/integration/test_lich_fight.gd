@@ -201,3 +201,30 @@ func test_the_band_of_a_locking_room_wanders_only_inside_it_not_out_through_its_
 		left_the_room = left_the_room or not room_cells.has(DungeonView.world_to_cell(enemy.position))
 
 	assert_false(left_the_room, "he never strolls into the corridor, where the lock would shut him out")
+
+
+func test_a_lich_hurt_before_the_lock_withdraws_to_his_hideout_and_does_not_cast() -> void:
+	_hero_at(Vector2(6 * CELL, 0))
+	var lich := _lich()
+	lich.settle(Vector2.ZERO, Band.start_of(1, 0, 0.0, true))
+	lich.retreat_to(Vector2(-4 * CELL, -2 * CELL))
+	lich.take_damage(100)
+
+	await wait_seconds(3.0)
+
+	assert_lt(lich.position.distance_to(lich.retreat_spot), CELL, "he is in his hideout")
+	assert_eq(_fired, 0, "he does not cast at a hero he has no target for")
+
+
+func test_a_lich_in_his_hideout_fights_as_before_once_the_arena_locks() -> void:
+	var hero := _hero_at(Vector2(6 * CELL, 0))
+	var lich := _lich()
+	lich.settle(Vector2.ZERO, Band.start_of(1, 0, 0.0, true))
+	lich.retreat_to(Vector2(-4 * CELL, -2 * CELL))
+	lich.take_damage(100)
+	await wait_seconds(3.0)
+
+	lich.wake(hero)
+	await wait_seconds(2.0)
+
+	assert_gt(_fired, 0, "once the room has locked he casts")

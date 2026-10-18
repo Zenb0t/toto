@@ -330,7 +330,11 @@ two levels. **The third level has no stairs down**: its farthest room is the bos
 (`BossArena`, a pure generation step; farthest, so never the start room, never the campfire's room, which
 `CryptCampfire` keeps off the farthest room, and room for trap rooms to stay clear of it). It is a 24x16 hall
 with **four 2x2 pillars** (they block walking and shots, not the lobbed Cloud) and **the Lich's crypt** at the front:
-an 8x3 recess in the middle of the north wall where he stands. No other monster and no loot is generated in it.
+an 8x3 recess in the middle of the north wall where he stands, whose back row reaches a 2-cell **nook** on each side
+(`BossArena.NOOK_WIDTH`). No other monster and no loot is generated in it. The crypt **faces south instead (the plan is
+mirrored top to bottom, `BossArena.faces_south`) when the arena is linked to the room above it and not the one below**: a
+corridor from the north would otherwise open a door into the back of the crypt (28% of seeds), and the Lich could be
+shot from behind. Linked above and below (1 seed in 300) it stays north-facing and he has no hiding place (see below).
 Because every other room can be reached without passing through it, locking it never cuts the level in two.
 
 *Locking rooms.* A map marks a room that locks with one **mark letter** on a floor cell of it (`LockingRoom`: `A` the
@@ -344,6 +348,18 @@ shut out when the arena locks and the hero locked in with nobody to kill (found 
 wander radius keeps him in by luck of geometry, but at 8 cells, which Tune allows, he could leave on 92 of 300
 seeds). When the room locks, `main.gd` calls `Enemy.wake(hero)` on its band (target plus `alert()`), so it attacks at
 once (the #34 review note: `_on_room_locked` used to wake nobody). Its monsters never give up (`never_gives_up`).
+
+*Hurt before the lock: he hides in his crypt* (decided after #47: with no target, being hurt from a doorway only took
+him Noticing → Idle, standing still without casting, so he could be shot dead from outside and the arena never
+locked). A locking monster that has a **retreat spot** and is hurt while it has no target now walks there
+(`EnemyBrain.State.RETREAT`, `Senses.can_retreat`; out of the fight, no "!" and no shout) and stays until woken: the
+lock's `wake(hero)` gives it a target and it fights as before. Only the arena sets one: `Hideout.cell_for(map, near)` (pure,
+reads the map) picks the cell of the arena that **no doorway can see** (the doors' cells sampled middle and sides,
+a body's middle and four sides) **and the middle of the room cannot see either**, so it is a real alcove and not a
+corner of the hall, nearest to where he stands: one of the crypt's two nooks, whose side walls shade them from the hall.
+`main.gd` hands it to the Lich with `Enemy.retreat_to`. `test_hideout` checks on 40 generated crypts that no doorway sees it and that it is the
+back row of his crypt. To finish him the hero must walk in, which locks the arena. Trap rooms have no retreat spot
+(their band just stands), nothing else changes.
 
 *The Lich* (`Lich`, `Bestiary` entry `lich`, map letter `l`, a unique monster, not the Necromancer). A Skeleton Mage
 dressed in code (`LichDress`: 1.3x size, dark purple all over, a gold crown, glowing eyes, a long robe and a staff

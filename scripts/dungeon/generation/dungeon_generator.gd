@@ -65,7 +65,7 @@ func generate(seed_value: int, floor_number := 1, crypt := CryptRecipe.new(), br
 		var is_start: bool = slot == graph.start_slot()
 		var is_vault: bool = not is_start and slot != campfire_slot and slot != arena_slot and rng.randf() < VAULT_CHANCE
 		rooms[slot] = _shape_room(is_start, is_vault, room_bounds(slot), level_branch, rng) \
-				if slot != arena_slot else _as_floor(BossArena.room(room_bounds(slot)))
+				if slot != arena_slot else _as_floor(BossArena.room(room_bounds(slot), BossArena.faces_south(graph, slot)))
 	var corridors := _connect(graph, rooms, arena_slot, rng)
 	return _draw(graph, rooms, corridors, campfire_slot, arena_slot, floor_number, level_branch, rng)
 
@@ -218,7 +218,7 @@ func _draw(
 		exit_cell = _exit_cell(rooms[graph.deepest_slot()])
 		rows[exit_cell.y][exit_cell.x] = EXIT
 	else:
-		_place_arena(rows, room_bounds(arena_slot))
+		_place_arena(rows, room_bounds(arena_slot), BossArena.faces_south(graph, arena_slot))
 	for slot in graph.slots:
 		if slot == graph.start_slot() or slot == arena_slot:
 			continue
@@ -242,10 +242,10 @@ func _draw(
 
 
 ## The Lich in his crypt, and the mark that makes the arena a locking room.
-func _place_arena(rows: Array[Array], bounds: Rect2i) -> void:
-	var lich := BossArena.lich_cell(bounds)
+func _place_arena(rows: Array[Array], bounds: Rect2i, south: bool) -> void:
+	var lich := BossArena.lich_cell(bounds, south)
 	rows[lich.y][lich.x] = Lich.LETTER
-	var mark := BossArena.mark_cell(bounds)
+	var mark := BossArena.mark_cell(bounds, south)
 	rows[mark.y][mark.x] = LockingRoom.mark_of(LockingRoom.Kind.ARENA)
 
 

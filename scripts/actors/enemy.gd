@@ -96,6 +96,9 @@ var wander_speed_share := DEFAULT_WANDER_SPEED_SHARE
 ## Optional: the only cells it wanders over (Vector2i -> true). A locking room's band keeps to its room, so it is
 ## still inside when the room locks; empty lets it wander anywhere near home and in sight of it.
 var wander_cells := {}
+## Optional: where it withdraws to when hurt while it has no target (the Lich's nook, see Hideout), set by
+## retreat_to(); it stays there until woken.
+var retreat_spot := Vector2.ZERO
 ## Its home never gives up the chase (the Lich's arena, a sealed trap room): set by whoever builds the band.
 var never_gives_up := false
 ## Optional: a caster that casts one spell at a time with a pause between (the Lich). Without one, it attacks
@@ -122,6 +125,7 @@ var _wander_goal := Vector2.ZERO
 var _has_wander_goal := false
 var _rng := RandomNumberGenerator.new()
 var _has_home := false
+var _has_retreat := false
 ## Where it last saw its target (within its territory), the place it checks when it gives up.
 var _last_seen := Vector2.ZERO
 ## Checking or returning, and no way on to where it is going.
@@ -178,6 +182,12 @@ func settle(at_home: Vector2, start: Band.Start) -> void:
 	home = at_home
 	_has_home = true
 	_brain.state = EnemyBrain.State.ASLEEP if start == Band.Start.ASLEEP else EnemyBrain.State.WANDER
+
+
+## Where it withdraws to when hurt before it has a target (see EnemyBrain.State.RETREAT).
+func retreat_to(spot: Vector2) -> void:
+	retreat_spot = spot
+	_has_retreat = true
 
 
 ## It heard a noise or a shout (see Awareness): a calm enemy notices the target.
@@ -274,6 +284,7 @@ func _senses() -> EnemyBrain.Senses:
 	senses.hurt = _hurt
 	senses.alerted = _alerted
 	senses.has_home = _has_home
+	senses.can_retreat = _has_retreat
 	senses.never_gives_up = never_gives_up
 	senses.arrived = _blocked or global_position.distance_to(_goal_of_giving_up()) < WAYPOINT_REACHED
 	_hurt = false
@@ -318,7 +329,7 @@ func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
 		if squad != null:
 			squad.leave(get_instance_id())
 		_start_walk()
-	elif to == EnemyBrain.State.RETURN:
+	elif to == EnemyBrain.State.RETURN or to == EnemyBrain.State.RETREAT:
 		_start_walk()
 	elif to == EnemyBrain.State.WANDER:
 		_has_wander_goal = false
@@ -338,9 +349,14 @@ func _start_walk() -> void:
 	_blocked = false
 
 
-## Where it is walking to once it has given up: the spot it last saw its target, then home.
+## Where it is walking to once it has given up: the spot it last saw its target, then home; or its retreat spot.
 func _goal_of_giving_up() -> Vector2:
-	return _last_seen if _brain.state == EnemyBrain.State.CHECK else home
+	match _brain.state:
+		EnemyBrain.State.CHECK:
+			return _last_seen
+		EnemyBrain.State.RETREAT:
+			return retreat_spot
+	return home
 
 
 ## A caster picks its spell first (see SpellPicker); the Cloud is the weapon's own attack. The Lich's other spells
@@ -385,6 +401,10 @@ func _movement() -> Vector2:
 	match _brain.state:
 		EnemyBrain.State.WANDER:
 			return _wander_direction() * wander_speed_share
+		EnemyBrain.State.RETREAT:
+			var direction := _path_direction(retreat_spot)
+			_blocked = direction == Vector2.ZERO
+			return direction
 		EnemyBrain.State.CHECK, EnemyBrain.State.RETURN:
 			var direction := _path_direction(_goal_of_giving_up())
 			_blocked = direction == Vector2.ZERO

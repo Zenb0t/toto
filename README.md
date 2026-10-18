@@ -85,7 +85,7 @@ you took stay gone, items you dropped stay where they fell and the map stays exp
 heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. The third level's farthest room is the **boss arena**: a hall with four pillars that block shots and the **Lich**'s crypt at
 its far end. It locks when you walk in and opens when he dies. The Lich, a dark purple skeleton mage with a crown, a robe and a
 staff, starts awake, never gives up, keeps his distance (back off as you close in) and casts one telegraphed spell at a time with a
-short pause between: for now only the Mephitic Cloud (more spells follow). Killing him **wins the run**: a summary says
+short pause between: for now only the Mephitic Cloud (more spells follow). Hurt from a doorway before the arena locks, he withdraws into a nook of his crypt that no doorway can see, so you have to walk in. Killing him **wins the run**: a summary says
 "You killed the Lich", and **Keep exploring** carries on in the same world, with him still dead. Tune → Lich holds every number of his.
 If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash and a Potion of
 Healing.
@@ -130,7 +130,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item, and outdoors `T` tree grove, `B` boulder, `=` barricade, and the village's `Y` palisade, `G` gate, `:` street, `U` well, `X` prop, `D` inn doorstep, `I C S M` inn, church, smithy, market, `1`-`4` houses, `@` start), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
   lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
   torches and their light), moving liquids (`LiquidView`), room rules: enemies left per room, and the lock
-  of rooms marked as locking (`DungeonProgress`; `LockingRoom`: the arena and trap marks), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
+  of rooms marked as locking (`DungeonProgress`; `LockingRoom`: the arena and trap marks; `Hideout`: where the Lich hides in the arena), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/dungeon/generation/village` – the village, stamped in the plains' middle: `VillageGenerator` runs `VillagePalisade`,
   `VillageStreets`, `VillageLotPacker` (with the hand-written `VillageLots`), `VillageProps` and `VillageRules` (`Village`, in
   `scripts/dungeon`, holds its map letters and what a map knows of it)
@@ -148,7 +148,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects, `PoisonStatus` so poison clouds don't stack, `ChainFalloff` for the Lightning Bolt's weaker jumps, `Charge`: seconds held to strength), when a weapon fires
   (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead, where to wander), when a calm monster
   notices the hero and who hears a noise or shout (`Awareness`), what they are doing (`EnemyBrain`, a small state machine: asleep, wander,
-  noticing, idle, hunt, position, wind up, recover, check, return; `Awareness` also decides when a hunter gives up), which spell the Lich casts next (`SpellPicker`), how a band fights as a team (`Squad`: taking turns, flank
+  noticing, idle, hunt, position, wind up, recover, check, return, retreat; `Awareness` also decides when a hunter gives up), which spell the Lich casts next (`SpellPicker`), how a band fights as a team (`Squad`: taking turns, flank
   spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
 - `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), `Lich` (the boss: his tunable numbers and Bestiary entry), the
