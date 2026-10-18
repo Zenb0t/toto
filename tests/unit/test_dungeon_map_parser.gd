@@ -325,3 +325,13 @@ func test_a_start_marked_with_an_at_sign_is_a_spawn_on_beaten_earth() -> void:
 	assert_eq(map.player_spawn, Vector2i(4, 4))
 	assert_eq(map.terrain_at(Vector2i(4, 4)), DungeonMap.Terrain.PATH)
 	assert_true(map.is_walkable(Vector2i(4, 4)))
+
+
+func test_a_dirt_road_is_ground_as_walkable_and_as_clear_as_floor() -> void:
+	var map := _parser.parse("#####\n#Pr.#\n#####")
+
+	assert_eq(map.terrain_at(Vector2i(2, 1)), DungeonMap.Terrain.ROAD)
+	assert_true(map.is_walkable(Vector2i(2, 1)))
+	assert_true(map.is_see_through(Vector2i(2, 1)))
+	assert_eq(map.ground_speed(Vector2i(2, 1)), 1.0)
+	assert_false("r" in Bestiary.letters(), "the road's letter is also a monster")

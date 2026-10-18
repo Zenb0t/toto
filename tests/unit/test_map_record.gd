@@ -68,3 +68,17 @@ func test_the_lich_dead_is_remembered_and_round_trips_through_a_dictionary() -> 
 	assert_true(record.is_lich_dead())
 	assert_true(MapRecord.from_dict(record.to_dict()).is_lich_dead())
 	assert_false(MapRecord.from_dict(MapRecord.new(1).to_dict()).is_lich_dead())
+
+
+func test_a_campfire_comes_back_as_it_was_left_through_a_dictionary_too() -> void:
+	var profile := RestProfile.campfire()
+	var fire := Campfire.new(profile, Campfire.State.EMBERS, 42.0)
+	var record := MapRecord.new(DungeonGenerator.VERSION)
+	record.remember_campfire(Vector2i(20, 9), fire)
+
+	var back := MapRecord.from_dict(JSON.parse_string(JSON.stringify(record.to_dict())))
+	var again := back.campfire_at(Vector2i(20, 9), profile)
+
+	assert_eq(again.state, Campfire.State.EMBERS)
+	assert_eq(again.seconds_left(), 42.0)
+	assert_eq(back.campfire_at(Vector2i(1, 1), profile).state, Campfire.State.UNLIT, "never lit")

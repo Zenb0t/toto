@@ -19,6 +19,8 @@ const PALISADE_COLOR := Color(0.55, 0.38, 0.22)
 const BUILDING_COLOR := Color(0.8, 0.45, 0.35)
 const WELL_COLOR := Color(0.35, 0.6, 0.9)
 const STREET_COLOR := Color(0.78, 0.68, 0.5)
+## Dirt roads between the village and the exits: a little darker than the streets.
+const ROAD_COLOR := Color(0.74, 0.6, 0.38)
 const CAMPFIRE_COLOR := Color(1.0, 0.55, 0.15)
 const PLAYER_COLOR := Color(0.3, 1.0, 0.9)
 ## Cells seen before but out of view are drawn this much darker.
@@ -66,6 +68,8 @@ static func _color_of(map: DungeonMap, cell: Vector2i) -> Color:
 			return LAVA_COLOR
 		DungeonMap.Terrain.PATH:
 			return STREET_COLOR
+		DungeonMap.Terrain.ROAD:
+			return ROAD_COLOR
 	return FLOOR_COLOR
 
 

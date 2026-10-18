@@ -2,7 +2,7 @@ class_name MapRecord
 extends RefCounted
 ## What the hero changed on one map, so the map can be thrown away on leaving and made again from its seed on
 ## return, the way it was left: monsters killed, chests opened, floor items taken, items dropped, cells explored
-## and monsters left hurt, and whether the Lich is dead. Things are known by where the map puts them (an enemy by its spawn cell, a floor item
+## and monsters left hurt, the state of its campfires and whether the Lich is dead. Things are known by where the map puts them (an enemy by its spawn cell, a floor item
 ## by its loot cell, a chest by its room), which is what lets a record match its regenerated map.
 ## Pure; to_dict / from_dict give a plain dictionary for saving a run later.
 
@@ -29,6 +29,7 @@ var _explored: Array[Vector2i] = []
 var _dropped: Array[DroppedItem] = []
 var _hurt := {}  # Vector2i (spawn cell) -> {"health": int, "left_at": float}
 var _lich_dead := false
+var _campfires := {}  # Vector2i (campfire cell) -> {"state": Campfire.State, "seconds_left": float}
 
 
 func _init(made_by_version: int) -> void:
@@ -103,6 +104,20 @@ func health_on_return(enemy_id: Vector2i, max_health: int, now: float, health_pe
 	return Regeneration.healed(left.health, max_health, now - left.left_at, health_per_second)
 
 
+## A campfire as the hero left it: its state and the seconds it has left (its burn, or its embers' countdown).
+## Those only count down while the hero is on the map, so this is all a return needs.
+func remember_campfire(cell: Vector2i, campfire: Campfire) -> void:
+	_campfires[cell] = {"state": campfire.state, "seconds_left": campfire.seconds_left()}
+
+
+## The campfire at a cell as it was left (unlit if it was never lit), by the rest profile it follows.
+func campfire_at(cell: Vector2i, profile: RestProfile) -> Campfire:
+	if not _campfires.has(cell):
+		return Campfire.new(profile)
+	var left: Dictionary = _campfires[cell]
+	return Campfire.new(profile, left.state as Campfire.State, left.seconds_left)
+
+
 func to_dict() -> Dictionary:
 	var hurt := []
 	for enemy_id: Vector2i in _hurt:
@@ -112,6 +127,10 @@ func to_dict() -> Dictionary:
 	for item in _dropped:
 		dropped.append({"item": item.item_id, "potion": item.is_potion,
 			"position": [item.position.x, item.position.y]})
+	var campfires := []
+	for cell: Vector2i in _campfires:
+		campfires.append({"cell": _cell_to_data(cell), "state": _campfires[cell].state,
+			"seconds_left": _campfires[cell].seconds_left})
 	return {
 		"generator_version": generator_version,
 		"killed": _cells_to_data(_killed.keys()),
@@ -121,6 +140,7 @@ func to_dict() -> Dictionary:
 		"dropped": dropped,
 		"hurt": hurt,
 		"lich_dead": _lich_dead,
+		"campfires": campfires,
 	}
 
 
@@ -143,6 +163,9 @@ static func from_dict(data: Dictionary) -> MapRecord:
 		record.kill_lich()
 	for left: Dictionary in data.get("hurt", []):
 		record._hurt[_cell_from_data(left.enemy)] = {"health": int(left.health), "left_at": float(left.left_at)}
+	for fire: Dictionary in data.get("campfires", []):
+		record._campfires[_cell_from_data(fire.cell)] = {
+			"state": int(fire.state), "seconds_left": float(fire.seconds_left)}
 	return record
 
 

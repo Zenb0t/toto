@@ -5,8 +5,9 @@ extends RefCounted
 ## are part of it: deep water can't be walked on but can be seen and shot across; shallow water can be
 ## waded through, slowly; lava can be walked on, but it burns.
 
-## PATH is beaten earth, walkable like floor: the village's streets and square.
-enum Terrain { FLOOR, WATER, LAVA, SHALLOW, PATH }
+## PATH is beaten earth, walkable like floor: the village's streets and square. ROAD is the dirt road between the
+## village and the quadrant exits: also only a look, as walkable and as clear as grass.
+enum Terrain { FLOOR, WATER, LAVA, SHALLOW, PATH, ROAD }
 ## Solid things outdoors that aren't plain wall: tree groves (they block walking and sight), boulders (small
 ## cover: they block walking and shots, but sight passes over them), barricades (they shut a quadrant exit), and
 ## the village's palisade (blocks walking, sight and shots), well and props (barrels, crates: low, like boulders)

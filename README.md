@@ -23,6 +23,7 @@ and mouse, following whichever you used last.
 | Hold the weapon button (**Bow**) | Draws the bow: the longer you hold before letting go, the harder the arrow hits, up to a full charge at 1.5 s, which also pierces. You walk slower while drawing; the aim line fills up as it charges. A tap is a weak arrow |
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
+| Weapon button reads **REST** (by an unlit campfire, when nothing is hunting you) | Light it: it burns about 10 s and heals you up to half your health while you stand in its light. Stepping out pauses the healing; a hit or an attack stops it. Then it lies in embers (a countdown shows) for about 90 s, counted only while you are on that map. Refused while a monster hunts you or an awake one is in sight (sleeping ones don't count); a camp's fire is theirs until the last monster dies |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
 | **Map** (top left) | Show or hide the minimap; the choice is remembered |
 | Tap the minimap | Open the whole map, big on the screen (the game waits). Tap, click, Esc or M closes it |
@@ -38,7 +39,7 @@ and mouse, following whichever you used last.
 | Left click | Attack; hold to keep attacking (with the Bow: hold to draw, release to shoot) |
 | Right click or Space | Utility, toward the cursor |
 | 1, 2, 3 | Drink a potion |
-| E | Take the item you're standing on |
+| E | Take the item you're standing on; by a campfire, rest (or hear why not: monsters around, or still embers) |
 | M | Show or hide the minimap; closes the big map when it is open |
 | Q | Next weapon (testing aid) |
 | Esc | Pause menu; in the Tune screen, back one page |
@@ -47,7 +48,7 @@ and mouse, following whichever you used last.
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 **Tune gameplay** exposes the numbers that shape the feel, sorted into a menu: Player, Weapons, Utilities,
-Potions, Enemies, Loot, Controls (each button's aim dead zone), Camera (tilt, distance, field of view,
+Potions, Enemies, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light), Camera (tilt, distance, field of view,
 look-ahead, wall height) and World (the plains' size, groves, ponds and the rest; they shape the next world, with
 **New world** and **Same seed again** buttons). Weapons, Utilities and Potions list every item, so any of them can be tuned (the equipped
 one is marked). Entries you changed show in gold; Reset resets the page you're on. Changes apply live and are
@@ -59,7 +60,7 @@ boulders for cover, ponds and a thick forest border with a barricaded exit in th
 the grass, halfway to the border or farther, stands a small stone mausoleum: the crypt entrance, with no road to it. Step
 onto its stairs to go down into the **crypt**, 3 levels of tombs and undead (the HUD says "Crypt level 2"), all grown from one world seed (shown in the pause menu), inspired by
 Dungeon Crawl Stone Soup. The first level's silver stairs lead back out to the mausoleum. Six **camps** dot the plains, each a band of 2-4 goblins and kobolds round a campfire (asleep or wandering), bigger and tougher
-the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. Campfires
+the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. Two 3-wide dirt roads wind from the village gates to two of the four exits (picked by the seed) to follow across the map; they only change the colour of the ground. Campfires
 show on the minimap once seen, and monsters killed on the plains stay dead. No monster lives in the village, and no camp stands in it or the grass round it.
 Tune → World holds the knobs of the plains (the village among them) and of the crypt (how far its campfire lies from the stairs, how many bands wander) and starts a new world or the same seed again. The crypt's levels: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
@@ -129,7 +130,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `scripts/dungeon`, holds its map letters and what a map knows of it)
 - `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
   `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
-  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires; `CampCrews` fills each camp by how far out it lies)
+  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires; `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
   `BranchLook` (what each place is: the plains, Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
   (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces), `CryptRecipe` and `CryptCampfire` (the crypt's Knobs; which room holds the campfire),
@@ -173,6 +174,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   monsters heal while the hero is away); `MapStage` (one built map in the running game: the parsed map, its floor, fog, 3D view
   and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Place` ("The village", or the map's own name: "The plains", "Crypt level 2", for the HUD and banner); `Experience`: levels from
   kills, each adding maximum health
+- `scripts/rest` – resting at a campfire: `Campfire` (unlit, burning, embers), `RestProfile` (its numbers, Knobs),
+  `MonstersAround` (when resting is refused), `RestOffer` (when the button reads REST, and the refusal) and `RestSpot` (the node that carries a campfire out in the world)
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
   (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
   routes controls to the player and applies the room rules (a camp's monsters, or the monsters of a room, are a band: settled at its home, the campfire or the room's middle,

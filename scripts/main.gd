@@ -1,7 +1,7 @@
 extends Node2D
 ## Composition root: wires the controls, the HUD and the pause menu's screens together once, then builds the
 ## current map of the run (a MapStage) and spawns its actors and loot, routes touch intents to the player and
-## applies the room-lock, loot and stairs rules. The run (Run) lives for the whole run: taking the stairs, or
+## applies the room-lock, loot, stairs and rest rules. The run (Run) lives for the whole run: taking the stairs, or
 ## starting over, frees the map and builds the next one in the running game. Each map is made again from its
 ## seed on every visit; its MapRecord (what was killed, opened, taken, dropped, explored, left hurt) is applied
 ## on entering and written on leaving.
@@ -23,7 +23,11 @@ const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, V
 ## How often line of sight is worked out again.
 const SIGHT_UPDATE_SECONDS := 0.1
 const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Gold stairs lead down, silver ones back up.  II: menu."
-const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item.  Q: next weapon.  Esc: menu."
+## The attack button reads this, in this colour, while the hero can rest at a campfire.
+const REST_LABEL := "REST"
+const REST_COLOR := Color(1.0, 0.6, 0.25)
+const REST_REFUSED_COLOR := Color(1.0, 0.45, 0.4)
+const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item, or rest at a campfire.  Q: next weapon.  Esc: menu."
 
 var _rng := RandomNumberGenerator.new()
 var _settings := GameSettings.new()
@@ -57,6 +61,15 @@ var _floor_loot_cells := {}  # PickupArea -> its loot cell, for the floor items 
 ## The stairs the hero arrived on: they only lead on once the hero has stepped off them.
 var _arrival_cell := DungeonMap.NO_CELL
 var _lava := LavaBurn.new()
+var _rest_spots := {}  # Vector2i (its cell) -> RestSpot: the map's campfires as the record has them
+## The campfires a band still holds (they burn for it and can't be rested at), until its last monster dies.
+var _held_campfires := {}  # Vector2i -> true
+var _rest_profile := RestProfile.campfire()
+var _monsters_around := MonstersAround.new()
+## The campfire no band holds within the hero's reach (whatever its state), or DungeonMap.NO_CELL.
+var _fire_in_reach := DungeonMap.NO_CELL
+## The attack button reads REST (see RestOffer).
+var _rest_offer := false
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
@@ -104,6 +117,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_run.advance(delta)
+	_update_rest_offer()
 	_player.move(_move_input())
 	var mouse_held := _keyboard_mouse.is_attack_held() and _in_play
 	if mouse_held and _player.weapon.charge_seconds() > 0.0:
@@ -152,6 +166,7 @@ func _enter_map() -> void:
 	_arrival_cell = WorldLayout.arrival_cell(_stage.map, _run.arrival_spot)
 	_player = _spawn_player(hero, _arrival_cell)
 	_spawn_enemies()
+	_spawn_campfires()
 	_spawn_floor_loot()
 	_spawn_dropped_items()
 	_update_sight()
@@ -175,6 +190,10 @@ func _leave_map() -> void:
 	_squads_by_band.clear()
 	_spawn_cells.clear()
 	_floor_loot_cells.clear()
+	_rest_spots.clear()
+	_held_campfires.clear()
+	_fire_in_reach = DungeonMap.NO_CELL
+	_rest_offer = false
 	_lava = LavaBurn.new()
 	_sight_origin = DungeonMap.NO_CELL
 	_sight_update_left = 0.0
@@ -192,6 +211,8 @@ func _write_record() -> void:
 		if enemy.health.current < enemy.health.maximum:
 			hurt[_spawn_cells[enemy]] = enemy.health.current
 	_record.remember_hurt(hurt, _run.seconds_played)
+	for cell: Vector2i in _rest_spots:
+		_record.remember_campfire(cell, _rest_spots[cell].fire)
 
 
 ## Gear and potions on the floor, other than the floor items still where the map put them.
@@ -249,6 +270,24 @@ func _spawn_enemies() -> void:
 		_spawn_cells[enemy] = cell
 
 
+## The map's campfires as the record has them (unlit if never lit), and which a band still holds.
+func _spawn_campfires() -> void:
+	_rest_profile = GameTuning.rest_profile(_tuning)
+	for cell in _stage.map.campfire_cells:
+		var spot := RestSpot.new(_record.campfire_at(cell, _rest_profile), DungeonView.cell_center(cell))
+		spot.attend(_player)
+		_stage.add_child(spot)
+		_rest_spots[cell] = spot
+	_refresh_held_campfires()
+
+
+func _refresh_held_campfires() -> void:
+	_held_campfires.clear()
+	for cell in _rest_spots:
+		if Camps.is_held(_stage.map, cell, _record):
+			_held_campfires[cell] = true
+
+
 ## The share of camps that start wandering: the quadrant recipe's (a crypt level has no camps, only rooms).
 func _camp_wandering_share() -> float:
 	var quadrant := _stage.spec.quadrant
@@ -295,7 +334,8 @@ func _create_progress() -> DungeonProgress:
 func _connect_controls() -> void:
 	_attack_button.aim_changed.connect(
 		func(direction: Vector2, strength: float) -> void:
-			_player.preview_aim(direction, _player.weapon.aim_shape(), strength))
+			if not _rest_offer:
+				_player.preview_aim(direction, _player.weapon.aim_shape(), strength))
 	_attack_button.aim_released.connect(_on_attack_released)
 	_utility_button.aim_changed.connect(
 		func(direction: Vector2, _strength: float) -> void:
@@ -321,7 +361,7 @@ func _connect_keyboard_mouse() -> void:
 	_keyboard_mouse.attack_released.connect(_release_charged_attack)
 	_keyboard_mouse.utility_requested.connect(_use_utility_toward_cursor)
 	_keyboard_mouse.potion_requested.connect(func(slot: int) -> void: _drink(GameTuning.potion_ids()[slot]))
-	_keyboard_mouse.take_requested.connect(_on_take_pressed)
+	_keyboard_mouse.take_requested.connect(_on_interact_pressed)
 	_keyboard_mouse.weapon_switch_requested.connect(_on_weapon_switch_pressed)
 	_keyboard_mouse.minimap_toggle_requested.connect(_toggle_minimap)
 
@@ -392,8 +432,8 @@ func _update_charging() -> void:
 	if weapon.charge_seconds() <= 0.0:
 		_player.charging = false
 		return
-	_player.charging = _attack_button.is_held() or _mouse_held_seconds > 0.0
-	if _attack_button.is_held():
+	_player.charging = (_attack_button.is_held() and not _rest_offer) or _mouse_held_seconds > 0.0
+	if _attack_button.is_held() and not _rest_offer:
 		_player.preview_charge(Charge.ratio(_attack_button.held_seconds(), weapon.charge_seconds()))
 
 
@@ -409,6 +449,9 @@ func _cursor_on_plane() -> Vector2:
 func _on_attack_released(release: AimGesture.Release) -> void:
 	_player.preview_aim(Vector2.ZERO)
 	if release.is_cancelled:
+		return
+	if _rest_offer:
+		_rest()
 		return
 	if not release.is_auto:
 		_player.attack(release.direction, null, release.strength, release.held_seconds)
@@ -521,6 +564,7 @@ func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
 func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
 	var spawn_cell: Vector2i = _spawn_cells[enemy]
 	_record.kill(spawn_cell)
+	_refresh_held_campfires()
 	_spawn_cells.erase(enemy)
 	_enemies_by_band[band].erase(enemy)
 	_progress.record_defeat(_stage.map.room_at(spawn_cell))
@@ -613,6 +657,63 @@ func _burn(actor: Node2D, delta: float) -> void:
 	var damage := _lava.damage_due(actor.get_instance_id(), in_lava, delta)
 	if damage > 0:
 		actor.take_damage(damage, "lava")
+
+
+# --- Resting --------------------------------------------------------------------------------------
+
+## The campfires' models follow their state; the campfire within the hero's reach is noted, and the attack button
+## reads REST while it can be lit and no monster hunts the hero (see RestOffer). (Time moves on for the campfires
+## in their RestSpots, only while the hero is on the map.)
+func _update_rest_offer() -> void:
+	_fire_in_reach = DungeonMap.NO_CELL
+	for cell: Vector2i in _rest_spots:
+		var spot: RestSpot = _rest_spots[cell]
+		_stage.world.show_campfire(cell, spot.fire.state, spot.fire.seconds_left(), _held_campfires.has(cell))
+		if _in_play and _fire_in_reach == DungeonMap.NO_CELL and not _held_campfires.has(cell) \
+				and spot.fire.profile.is_within_reach(spot.hero_cells()):
+			_fire_in_reach = cell
+	var in_reach := _fire_in_reach != DungeonMap.NO_CELL
+	var usable: bool = in_reach and _rest_spots[_fire_in_reach].fire.can_light()
+	# The monsters are only looked over when it could matter.
+	var verdict: MonstersAround.Verdict = \
+			_monsters_around.check(_monsters_near_hero()) if usable else MonstersAround.Verdict.CALM
+	var offer := RestOffer.shows_rest(usable, in_reach, verdict)
+	if offer != _rest_offer:
+		_rest_offer = offer
+		_show_attack_button()
+
+
+## E: takes the item on offer, or else rests.
+func _on_interact_pressed() -> void:
+	if _offered_drop != null:
+		_on_take_pressed()
+	else:
+		_rest()
+
+
+## Lights the campfire within reach, unless monsters around forbid it or it is still in embers (then says so).
+func _rest() -> void:
+	if not _in_play or _fire_in_reach == DungeonMap.NO_CELL:
+		return
+	var spot: RestSpot = _rest_spots[_fire_in_reach]
+	var refusal := RestOffer.refusal(spot.fire, _monsters_around.check(_monsters_near_hero()))
+	if refusal != "":
+		_stage.world.float_text(_player.global_position, refusal, REST_REFUSED_COLOR)
+		return
+	spot.rest()
+
+
+## Every monster on the map as the rule for resting sees it (see MonstersAround). Line of sight is only worked
+## out for the awake ones close enough to matter.
+func _monsters_near_hero() -> Array[MonstersAround.Nearby]:
+	var nearby: Array[MonstersAround.Nearby] = []
+	for enemy in _all_enemies():
+		var awake := not enemy.is_asleep()
+		var cells := _player.global_position.distance_to(enemy.global_position) / DungeonView.TILE_SIZE
+		var in_sight := awake and cells <= _monsters_around.sight_cells \
+				and _stage.pathfinder.can_see(_player.global_position, enemy.global_position)
+		nearby.append(MonstersAround.Nearby.new(awake, enemy.is_hunting(), cells, in_sight))
+	return nearby
 
 
 # --- Loot ----------------------------------------------------------------------------------------
@@ -752,16 +853,26 @@ func _apply_tuning(tuning: Tuning) -> void:
 			enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
 			GameTuning.tune_awareness(enemy.awareness, tuning)
 	GameTuning.tune_awareness(_hearing, tuning)
+	_rest_profile = GameTuning.rest_profile(tuning)
+	_monsters_around = GameTuning.monsters_around(tuning)
+	for spot: RestSpot in _rest_spots.values():
+		spot.fire.profile = _rest_profile
 	for squad: Squad in _squads_by_band.values():
 		GameTuning.tune_squad(squad, tuning)
+
+
+## The attack button shows the weapon, or REST while the hero can rest at a campfire.
+func _show_attack_button() -> void:
+	_attack_button.label = REST_LABEL if _rest_offer else _player.weapon.button_label
+	_attack_button.color = REST_COLOR if _rest_offer else _player.weapon.color
+	_touch_controls.offer_rest(_rest_offer)
 
 
 ## The buttons always show what is equipped.
 func _equip(weapon: Weapon, utility: Utility) -> void:
 	_player.equip_weapon(weapon)
 	_player.equip_utility(utility)
-	_attack_button.label = weapon.button_label
-	_attack_button.color = weapon.color
+	_show_attack_button()
 	_weapon_switch.text = "Weapon: %s" % weapon.button_label
 	_utility_button.label = utility.button_label
 	_utility_button.color = utility.color

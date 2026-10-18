@@ -347,7 +347,7 @@ lead on once the hero has stepped off them. Dying, or restarting from the menu, 
 new world, with a new seed.
 
 Taking the stairs carries the hero (`HeroState`): the weapon and utility held, health as it is (no free
-healing between floors: potions are the only healing), the potion belt, experience and kills. The HUD shows the
+healing between floors: healing comes from potions and from resting at a campfire, see **Resting**), the potion belt, experience and kills. The HUD shows the
 floor; the pause menu shows the world seed and the floor.
 
 **The world remembers** (`MapRecord`). Maps are never kept in memory once left: each visit makes the map again from
@@ -359,6 +359,7 @@ The run keeps one record per visited map. It holds:
 - the cells explored (`Exploration.seen_cells` out, `Exploration.restore` in), so the fog and minimap keep the
   hero's progress;
 - monsters left hurt: their health and the run time they were left at;
+- campfires: each one's state (unlit, burning, embers) and the seconds it has left, by its cell (see **Resting**);
 - the version of the generator that made the map (`DungeonGenerator.VERSION`), so a saved record can tell when the
   same seed would no longer give the same map.
 
@@ -408,6 +409,7 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 | Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
 | Fill the camps (`CampCrews.dress`) | Draws a band of monsters into each reserved camp by how far out it lies (below) |
 | Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
+| Roads (`QuadrantRoads`) | Dirt roads (letter **`r`**, terrain `ROAD`) from the village gates to **2** of the 4 exits (Knob `road_count`, 0-4), the exits picked by a seeded shuffle; a road leaves by the gate on its exit's side. See below |
 | Validate (`QuadrantRules`) | At least `min_walkable_share` (70%) of the ground inside the border walkable, the start inside the village, every exit's front cell, every piece's key cell and the outside of every village gate reachable |
 
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
@@ -476,6 +478,23 @@ keep fixed ones. A piece standing between the camera and the hero turns see-thro
 are cut down): the cells in front of the hero count as hiding, and a taller piece hides from farther off and wider
 (`CameraFraming.cells_hiding(hero_cell, height)`); props are too low to hide the hero. Streets and the square are drawn as beaten
 earth. Size: the pack adds about 1.3 MB of source (`.gltf`, `.bin`, one shared 15 KB te
+
+**Dirt roads** (#41, `QuadrantRoads`) are landmarks to follow across a 160x90 map. Each is 3 cells wide, like the gate and the exit
+it joins, and bends gently. Decisions: the step runs *after* the set pieces are stamped, so the road is routed round them
+(nothing is moved for a road). Routing is `AStarGrid2D` over the cells where a 3x3 block is all open grass, with the cost of a cell
+`1 + road_bend * noise` (seeded simplex, features about 16 cells across; Knob `road_bend`, default 3, 0 = as straight as the
+obstacles allow), so the cheapest way wanders along the noise's valleys instead of running ruler-straight. Ends: the cell in
+front of the village gate's middle, and the cell in front of the exit's barricade. Roads never cross groves, boulders,
+ponds (shallows included: they would be fords, and this is about landmarks) or the village, and keep out of every other set piece's
+footprint (apron plus 1 cell), so no camp, campfire, monster or crypt entrance is on or touching a road. That
+rule is by construction, so a future set piece (the ruin) is avoided without the road knowing it. Both roads are routed before
+either is drawn; they may run along or cross each other. The seed shuffles the four exits and the roads go to the first ones
+that can be reached (boulders and ponds sometimes shut a 3-wide way to one); only if fewer than `road_count` can is the whole map
+made again (as for any broken rule). Why: remaking the map for one shut exit cost extra tries on 10 of 25 seeds and made the
+plains about 50% slower to build; with the fallback no seed of those needs one. Roads only recolour grass: walkable like it, same speed and sight, and nothing is placed on them. The crypt entrance
+is never a road's end. Map letter **`r`** (parser: `Terrain.ROAD`, walkable like floor); the minimap paints it a darker tan than
+the village streets (`MinimapPainter.ROAD_COLOR`), and the ground is drawn as dry earth (`BranchLook.road_color`). `QuadrantRecipe.VERSION` is 4.
+
 **Camps and campfires** (`SetPieces.camp`, `SetPieces.campfire`, `CampCrews`, `Camps`). The plains get **6 camps** (at
 least 18 cells apart) and **3 lone campfires** (at least 35 cells apart and 12 from any camp; the first within 12 cells
 beyond the village's clear radius, `QuadrantRecipe.village_radius`), all clear of the village and the 3 cells of grass
@@ -500,7 +519,44 @@ the room bands (`Camps.band_id`, clear of room numbers); progress counts still g
 while the hero is away).
 
 The campfire is built in code (`CampfireModel`: stones, logs, a flickering flame and an `OmniLight3D`); `MapView3D`
-shows it once its cell has been seen, burning only in sight. The minimap marks campfires orange.
+shows it once its cell has been seen. Its look follows its state (see **Resting**): cold stones when unlit, a flame
+and light when burning (and for a camp's fire while its band holds it), dim coals with an "Embers 74 s" label over
+them in embers; the flame, glow and label only in sight. The minimap marks campfires orange.
+
+**Resting** (`scripts/rest/`). Healing outside fights used to be potions only; a campfire now heals too, as a
+risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry them out:
+- `Campfire` is the state, **unlit -> burning -> embers -> unlit**. `light()` starts it; `tick(delta, hero_in_light,
+  health, max_health)` moves time on and returns the whole health points healed. It burns 10 s, then lies in
+  **embers for 90 s** before it can be lit again. While it burns, a hero in its light (2.5 cells) heals 50 health a
+  second **up to 50% of their maximum health** (never past it). Stepping out of the light pauses the healing (the
+  fire burns on); a hit or an attack (`interrupt()`) ends the healing for that lighting. A fire left burning when
+  the hero leaves the map burns on when they come back but heals no more: leaving ended that rest (so the record
+  needs no "interrupted" flag).
+- `RestProfile` holds the numbers a place of rest follows (heal share, rate, burn, embers, light radius, reach):
+  the campfire's are the class defaults, all Knobs in **Tune -> Rest**. The inn (#45) will be another profile
+  (3 s, full heal, no embers) and an ambush roll another field of it; `Campfire` and `MonstersAround` never name a
+  place. (Cancelling by moving, which the inn needs, is not built yet.)
+- `MonstersAround` is the shared "may the hero rest" rule: **refused while any monster on the map is hunting the
+  hero (`EnemyBrain.is_hunting`: noticing, hunting, in position, attacking), or any awake monster is within 16
+  cells and in line of sight** (Knob). Sleeping monsters don't block. The game describes each monster as a
+  `MonstersAround.Nearby`; a refusal shows a floating message ("Can't rest: something is hunting you").
+- `RestSpot` (a node per campfire) is the carrying out: it ticks its `Campfire` every physics frame, so the burn
+  and the cooldown **only run while the hero is on the map** (the map is gone, and the game paused, otherwise),
+  heals the hero and, once the hero rests at it (`RestSpot.rest()`), listens for their hits and attacks: a hit or an
+  attack ends the rest only at the fire the hero rests at, never at another fire burning on the map. `MapRecord` keeps each campfire's state and seconds left by
+  its cell (`remember_campfire`, `campfire_at`; also through the dictionary), written on leaving.
+- A camp's campfire is **held by its band** (`Camps.is_held`: any monster of the camp not killed in the record):
+  no Rest, and it burns for them. Once its last monster dies it goes out and is a campfire like the others; kills
+  stay in the record, so a cleared camp's fire is usable on return. Any map with `F` cells works the same (plains,
+  and the crypt's).
+- **The attack button becomes REST** while an unlit, un-held campfire is within reach (2 cells) **and no monster
+  hunts the hero** (`RestOffer.shows_rest`): in a fight the button stays the attack, so a campfire never takes the
+  weapon away mid-fight. With an awake monster merely in sight (watched) it still reads REST, and pressing it shows
+  the refusal ("Can't rest: something is watching"); nobody is attacking then. **E** on the keyboard (which takes a
+  floor item first when one is on offer) asks to rest at the un-held campfire in reach whatever the verdict, and
+  answers with `RestOffer.refusal`: the monsters-around message, or "The fire is still embers: 42 s". With the mouse,
+  left click still attacks. The monsters are only looked over while an unlit fire is in reach, and line of sight
+  only worked out for awake monsters within the 16 cells.
 
 **Look.** The plains have their own `Branch` (outdoors, so the HUD and the arrival banner say "the plains" and the run
 summary "on the plains") and `BranchLook`: grass ground, no torches, trees for small free-standing groves. Big groves

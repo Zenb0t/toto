@@ -46,6 +46,8 @@ const LICH_GROUP := "Lich"
 const LOOT_GROUP := "Loot"
 const CONTROLS_GROUP := "Controls"
 const CAMERA_GROUP := "Camera"
+## Resting at a campfire (see RestProfile) and when it is refused (see MonstersAround).
+const REST_GROUP := "Rest"
 ## The world's generation knobs (see QuadrantRecipe): they shape the next world, not the one being played.
 const WORLD_GROUP := "World"
 const EQUIPPED_MARK := "  (equipped)"
@@ -132,6 +134,8 @@ static func create() -> Tuning:
 	for each in potions():
 		params.append_array(_item_params(each, potion_group(each.id)))
 	params.append_array(_item_params(QuadrantRecipe.plains(), WORLD_GROUP, true))
+	params.append_array(_item_params(RestProfile.campfire(), REST_GROUP))
+	params.append_array(_item_params(MonstersAround.new(), REST_GROUP))
 	params.append_array(_item_params(CryptRecipe.new(), WORLD_GROUP, true))
 	params.append_array(_item_params(Lich.new(), LICH_GROUP))
 	params.append_array(_item_params(SpellPicker.new(), LICH_GROUP))
@@ -249,6 +253,7 @@ static func sections(equipped_weapon_id: String, equipped_utility_id: String) ->
 		TuningSection.new(LOOT_GROUP, [LOOT_GROUP]),
 		TuningSection.new(CONTROLS_GROUP, [CONTROLS_GROUP]),
 		TuningSection.new(CAMERA_GROUP, [CAMERA_GROUP]),
+		TuningSection.new(REST_GROUP, [REST_GROUP]),
 		TuningSection.new(WORLD_GROUP, [WORLD_GROUP]),
 	]
 
@@ -430,6 +435,20 @@ static func camera_framing(tuning: Tuning) -> CameraFraming:
 
 static func wall_height(tuning: Tuning) -> float:
 	return tuning.value(CAMERA_WALL_HEIGHT)
+
+
+## How a campfire heals, burns and cools (Tune → Rest).
+static func rest_profile(tuning: Tuning) -> RestProfile:
+	var profile := RestProfile.campfire()
+	_apply_knobs(profile, tuning)
+	return profile
+
+
+## When resting is refused because of monsters around (Tune → Rest).
+static func monsters_around(tuning: Tuning) -> MonstersAround:
+	var rule := MonstersAround.new()
+	_apply_knobs(rule, tuning)
+	return rule
 
 
 ## What the crypt of the next world is made of (Tune → World).

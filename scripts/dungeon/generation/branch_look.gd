@@ -30,6 +30,9 @@ var barricade_cap_color := Color(0.6, 0.42, 0.24)
 ## The village's streets and square: beaten earth.
 var street_color := Color(0.62, 0.52, 0.36)
 var street_alt_color := Color(0.56, 0.47, 0.33)
+## Dirt roads across the plains: dry earth, paler and greyer than the village's streets.
+var road_color := Color(0.55, 0.45, 0.3)
+var road_alt_color := Color(0.5, 0.41, 0.28)
 ## How much bigger than the models themselves the village's buildings, well and palisade are drawn.
 var building_scale := 6.0
 ## Specks of grit or seed on bare ground: fewer is cheaper to draw on a big map.

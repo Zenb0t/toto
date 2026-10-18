@@ -129,3 +129,17 @@ func test_groves_never_seen_stay_blank() -> void:
 	var image := MinimapPainter.paint(map, exploration, Vector2i(1, 1))
 
 	assert_eq(image.get_pixel(3, 1).a, 0.0)
+
+
+func test_a_dirt_road_is_drawn_in_its_own_colour_once_seen() -> void:
+	var map := DungeonMapParser.new().parse("""
+#####
+#Pr.#
+#####
+""")
+	var exploration := _explored_from(map, Vector2i(1, 1), _sees_everything)
+
+	var image := MinimapPainter.paint(map, exploration, Vector2i(1, 1))
+
+	_assert_colour(image.get_pixel(2, 1), MinimapPainter.ROAD_COLOR)
+	_assert_colour(image.get_pixel(3, 1), MinimapPainter.FLOOR_COLOR)
