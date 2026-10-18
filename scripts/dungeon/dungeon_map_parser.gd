@@ -7,6 +7,7 @@ extends RefCounted
 ##   *  an item lying on the floor
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
 ##   ,  shallow water (walkable, slowly)
+##   T  tree grove    B  boulder    =  barricade (outdoors: each blocks walking, see DungeonMap.Blocker)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
 ##   w apprentice  c crossbowman  f pyromancer  n necromancer  o orc  W orc wizard  d dwarf
 ##   e deep elf mage  O ogre  z skeleton  x skeleton archer  m skeletal mage  Z skeleton warrior
@@ -21,6 +22,9 @@ const LOOT := "*"
 const WATER := "~"
 const LAVA := "L"
 const SHALLOW := ","
+const GROVE := "T"
+const BOULDER := "B"
+const BARRICADE := "="
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 
 
@@ -58,7 +62,19 @@ func parse(ascii: String) -> DungeonMap:
 		_terrain_by_cell(rows),
 		_cells_matching(rows, [LOOT]),
 		stairs_up_cells[0] if not stairs_up_cells.is_empty() else DungeonMap.NO_CELL,
+		_blockers_by_cell(rows),
 	)
+
+
+func _blockers_by_cell(rows: PackedStringArray) -> Dictionary:
+	var blockers := {}
+	for cell in _cells_matching(rows, [GROVE]):
+		blockers[cell] = DungeonMap.Blocker.GROVE
+	for cell in _cells_matching(rows, [BOULDER]):
+		blockers[cell] = DungeonMap.Blocker.BOULDER
+	for cell in _cells_matching(rows, [BARRICADE]):
+		blockers[cell] = DungeonMap.Blocker.BARRICADE
+	return blockers
 
 
 func _terrain_by_cell(rows: PackedStringArray) -> Dictionary:
