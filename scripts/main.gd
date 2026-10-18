@@ -477,30 +477,43 @@ func _on_room_cleared(room: int) -> void:
 	_spawn_chest(room)
 
 
-## A monster that notices the hero shouts, waking whoever hears it, of its band or not. Each one woken notices in
-## turn and shouts too; a monster that is already awake is not woken again, so the chain ends.
+## A monster that notices the hero shouts, waking the rest of its band and whoever else hears it (see Awareness).
+## Each one woken notices in turn and shouts too; a monster that is already awake is not woken again, so the
+## chain ends.
 func _on_enemy_noticed(noticer: Enemy) -> void:
-	_wake_hearers(noticer.global_position, false, noticer)
+	var listeners: Array[Enemy] = []
+	var bands := PackedInt32Array()  # each listener's band: the room it lives in
+	for room: int in _enemies_by_room:
+		for enemy: Enemy in _enemies_by_room[room]:
+			listeners.append(enemy)
+			bands.append(room)
+	var shouter := listeners.find(noticer)
+	if shouter == -1:
+		return
+	for index in _hearing.shout_hearers(shouter, _cells_of(listeners), bands):
+		listeners[index].alert()
 
 
 ## The hero's attack or a blast makes noise at a point (world position), waking monsters that hear it.
 func _make_noise(at: Vector2) -> void:
-	_wake_hearers(at, true, null)
-
-
-## Alerts every enemy that hears a sound made at a world position (Awareness decides who), but the one making it.
-func _wake_hearers(at: Vector2, is_noise: bool, maker: Enemy) -> void:
-	var listeners: Array[Enemy] = []
-	var cells := PackedVector2Array()
-	for enemies: Array in _enemies_by_room.values():
-		for enemy: Enemy in enemies:
-			if enemy != maker:
-				listeners.append(enemy)
-				cells.append(enemy.global_position / DungeonView.TILE_SIZE)
-	var origin := at / DungeonView.TILE_SIZE
-	var heard := _hearing.noise_hearers(origin, cells) if is_noise else _hearing.shout_hearers(origin, cells)
-	for index in heard:
+	var listeners := _all_enemies()
+	for index in _hearing.noise_hearers(at / DungeonView.TILE_SIZE, _cells_of(listeners)):
 		listeners[index].alert()
+
+
+func _all_enemies() -> Array[Enemy]:
+	var all: Array[Enemy] = []
+	for enemies: Array in _enemies_by_room.values():
+		all.append_array(enemies)
+	return all
+
+
+## Where the enemies are, in cells.
+func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
+	var cells := PackedVector2Array()
+	for enemy in enemies:
+		cells.append(enemy.global_position / DungeonView.TILE_SIZE)
+	return cells
 
 
 func _on_enemy_defeated(enemy: Enemy, room: int) -> void:

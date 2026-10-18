@@ -205,13 +205,13 @@ after).
 **Noise and shouts** (`Awareness.noise_hearers`, `shout_hearers`). Fighting has consequences beyond the target.
 The hero's attacks, hit or miss, make **noise**, and so does every blast where it bursts; it wakes monsters
 within **8 cells, through walls** (only distance counts, so the rules are never told where walls are). A monster
-that notices the hero **shouts**, waking others within **8 cells**, of any band, and each of those shouts in
-turn: a careless fight can pull in a camp nearby. This replaces the band's call of the earlier step: a band is
-woken by the shout because it lives close, and a neighbouring band can be too. The chain ends because a calm
+that notices the hero **shouts**: the rest of its band hears it however far they are (a band joins its own),
+and so does any other monster within **8 cells**, and each of those shouts in turn: a careless fight can pull
+in a camp nearby. The chain ends because a calm
 monster notices once (`Enemy.noticed` fires on the way into Noticing) and an awake one ignores what it hears.
 The nodes only route events: `Player.attack_fired` and `Projectile.exploded` reach `main.gd` (`_make_noise`),
-and `Enemy.noticed` too (`_on_enemy_noticed`); main hands the positions in cells to `Awareness`, which says who
-hears, and calls `Enemy.alert()` on them. Enemy attacks make no noise: those enemies are awake already.
+and `Enemy.noticed` too (`_on_enemy_noticed`); main hands the positions in cells (and, for a shout, each monster's band) to
+`Awareness`, which says who hears, and calls `Enemy.alert()` on them. Enemy attacks make no noise: those enemies are awake already.
 Auto-aim picks the nearest enemy the hero can see, wherever it is.
 
 **Teamwork** (`Squad`, one per band). Once a band fights, its members take turns as a squad. Enemies no longer all fire at once: a band lets at most 2 enemies wind

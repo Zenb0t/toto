@@ -4,7 +4,8 @@ extends RefCounted
 ## hero (line of sight) close enough, when it is hurt, or when it hears a noise or a shout.
 ## Pure rules: the monster gathers the Cues, its EnemyBrain asks notices(). Who hears a sound is decided here too
 ## (noise_hearers, shout_hearers); the world only tells it where the sound was made and carries out the waking.
-## Sound goes through walls: only the distance counts.
+## Sound goes through walls: only the distance counts. A monster's band always hears it shout, however far.
+
 ## How far, in cells, the hero's attacks and blasts are heard.
 const DEFAULT_NOISE_CELLS := 8.0
 ## How far, in cells, a monster that notices the hero is heard.
@@ -52,9 +53,19 @@ func noise_hearers(origin: Vector2, listeners: PackedVector2Array) -> Array[int]
 	return _within(noise_cells, origin, listeners)
 
 
-## Which of the listeners hear a shout (a monster noticing the hero) made at origin: their indexes. All in cells.
-func shout_hearers(origin: Vector2, listeners: PackedVector2Array) -> Array[int]:
-	return _within(shout_cells, origin, listeners)
+## Which of the listeners hear the one at index shouter shout (it has noticed the hero): the rest of its band,
+## however far, and any other within shout_cells. Their indexes, never the shouter's. Positions in cells; bands
+## holds each listener's band.
+func shout_hearers(shouter: int, listeners: PackedVector2Array, bands: PackedInt32Array) -> Array[int]:
+	var heard: Array[int] = []
+	for index in _within(shout_cells, listeners[shouter], listeners):
+		if index != shouter:
+			heard.append(index)
+	for index in listeners.size():
+		if index != shouter and bands[index] == bands[shouter] and not heard.has(index):
+			heard.append(index)
+	heard.sort()
+	return heard
 
 
 func _within(radius: float, origin: Vector2, listeners: PackedVector2Array) -> Array[int]:

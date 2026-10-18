@@ -93,21 +93,37 @@ func test_the_noise_radius_can_be_tuned() -> void:
 	assert_eq(awareness.noise_hearers(Vector2.ZERO, PackedVector2Array([Vector2(2, 0), Vector2(5, 0)])), [0] as Array[int])
 
 
-func test_a_shout_is_heard_within_eight_cells_whatever_band_the_monster_belongs_to() -> void:
-	var listeners := PackedVector2Array([Vector2(8, 0), Vector2(8.5, 0)])
+## Each monster in a band of its own.
+func _lone_bands(count: int) -> PackedInt32Array:
+	var bands := PackedInt32Array()
+	for i in count:
+		bands.append(i)
+	return bands
 
-	assert_eq(Awareness.new().shout_hearers(Vector2.ZERO, listeners), [0] as Array[int])
+
+func test_a_shout_is_heard_within_eight_cells_whatever_band_the_monster_belongs_to() -> void:
+	var listeners := PackedVector2Array([Vector2.ZERO, Vector2(8, 0), Vector2(8.5, 0)])
+
+	assert_eq(Awareness.new().shout_hearers(0, listeners, _lone_bands(3)), [1] as Array[int])
+
+
+func test_the_rest_of_the_band_hears_a_shout_however_far_it_is() -> void:
+	var listeners := PackedVector2Array([Vector2.ZERO, Vector2(20, 0), Vector2(21, 0)])
+	var bands := PackedInt32Array([5, 5, 6])
+
+	assert_eq(Awareness.new().shout_hearers(0, listeners, bands), [1] as Array[int])
 
 
 func test_a_shout_chains_through_a_line_of_monsters_each_closer_than_eight_cells_to_the_next() -> void:
 	var awareness := Awareness.new()
 	var line := _line_of_monsters(6, 7.0)
+	var bands := _lone_bands(6)
 	var awake := {0: true}
 	var to_shout: Array[int] = [0]
 
 	while not to_shout.is_empty():
 		var shouter: int = to_shout.pop_front()
-		for heard in awareness.shout_hearers(line[shouter], line):
+		for heard in awareness.shout_hearers(shouter, line, bands):
 			if not awake.has(heard):
 				awake[heard] = true
 				to_shout.append(heard)
@@ -115,8 +131,15 @@ func test_a_shout_chains_through_a_line_of_monsters_each_closer_than_eight_cells
 	assert_eq(awake.size(), 6, "the last monster, 35 cells from the first, is woken")
 
 
-func test_a_shout_stops_where_the_monsters_are_eight_cells_or_more_apart_than_its_reach() -> void:
-	var awareness := Awareness.new()
+func test_a_shout_is_not_heard_by_a_monster_of_another_band_beyond_its_reach() -> void:
 	var line := PackedVector2Array([Vector2(0, 0), Vector2(7, 0), Vector2(16, 0)])
 
-	assert_eq(awareness.shout_hearers(line[1], line), [0, 1] as Array[int])
+	assert_eq(Awareness.new().shout_hearers(1, line, _lone_bands(3)), [0] as Array[int])
+
+
+func test_the_shout_radius_can_be_tuned() -> void:
+	var awareness := Awareness.new()
+	awareness.shout_cells = 3.0
+	var listeners := PackedVector2Array([Vector2.ZERO, Vector2(2, 0), Vector2(5, 0)])
+
+	assert_eq(awareness.shout_hearers(0, listeners, _lone_bands(3)), [1] as Array[int])

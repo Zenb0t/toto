@@ -60,7 +60,7 @@ areas stay dimmed on the map, and a minimap (top left) charts what you've seen: 
 lava, and you. Items sometimes lie on the floor (the same ones for the same world seed), and some rooms are tougher than they should be. The monsters of a room are a band that sleeps there (a "z" over
 their heads) or wanders slowly about it; one notices you only when it can see you close by (4 cells asleep, 9
 wandering) or when you hurt it, shows a "!", and comes for you. Your attacks and blasts make noise that wakes monsters
-within 8 cells, even through walls, and a monster that notices you shouts, waking those within 8 cells in turn,
+within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
 so a careless fight can pull in a nearby band. Rooms don't lock, so you
 can sneak past or pick your fight. Clearing a room leaves a
 chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
@@ -152,5 +152,5 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
   (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
   routes controls to the player and applies the room rules (each room's monsters are a band: settled at home,
-  and woken by the hero's noise and by each other's shouts)
+  and woken by the hero's noise and by each other's shouts, a band always hearing its own)
 - `tests/unit`, `tests/integration` – behaviour tests
