@@ -47,6 +47,10 @@ _Avoid_: Spawn, nest, lair (that's a branch)
 A small stone mausoleum on the plains with stairs down to the first level of the crypt.
 _Avoid_: Dungeon entrance, portal
 
+**Map record**:
+What the hero changed on one map (monsters killed, chests opened, floor items taken, items dropped, cells explored, monsters left hurt), kept by the run so the map, made again from its seed, comes back as it was left. Things in it are known by where the map puts them.
+_Avoid_: Save, map state, snapshot
+
 ### Monsters
 
 **Band**:

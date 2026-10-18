@@ -25,12 +25,45 @@ func test_a_floors_spec_is_its_depth_in_the_descent() -> void:
 		assert_eq(spec.seed_value, WorldLayout.map_seed(99, spec.id))
 
 
-func test_the_stairs_lead_one_floor_down_to_its_start() -> void:
+func test_the_stairs_down_lead_to_the_stairs_up_one_floor_down() -> void:
 	for floor_number in range(1, WorldLayout.FLOOR_COUNT):
 		var destination := WorldLayout.destination(WorldLayout.floor_id(floor_number), WorldLayout.Exit.STAIRS_DOWN)
 
 		assert_eq(destination.map_id, WorldLayout.floor_id(floor_number + 1))
-		assert_eq(destination.spot, WorldLayout.Spot.START)
+		assert_eq(destination.spot, WorldLayout.Spot.STAIRS_UP)
+
+
+func test_the_stairs_up_lead_to_the_stairs_down_one_floor_up() -> void:
+	for floor_number in range(2, WorldLayout.FLOOR_COUNT + 1):
+		var destination := WorldLayout.destination(WorldLayout.floor_id(floor_number), WorldLayout.Exit.STAIRS_UP)
+
+		assert_eq(destination.map_id, WorldLayout.floor_id(floor_number - 1))
+		assert_eq(destination.spot, WorldLayout.Spot.STAIRS_DOWN)
+
+
+func test_each_spot_is_a_cell_of_the_map() -> void:
+	var map := DungeonMapParser.new().parse("""
+######
+#P.<>#
+######
+""")
+
+	assert_eq(WorldLayout.arrival_cell(map, WorldLayout.Spot.START), Vector2i(1, 1))
+	assert_eq(WorldLayout.arrival_cell(map, WorldLayout.Spot.STAIRS_UP), Vector2i(3, 1))
+	assert_eq(WorldLayout.arrival_cell(map, WorldLayout.Spot.STAIRS_DOWN), Vector2i(4, 1))
+
+
+func test_only_stairs_are_exits() -> void:
+	var map := DungeonMapParser.new().parse("""
+######
+#P.<>#
+######
+""")
+
+	assert_eq(WorldLayout.exit_at(map, Vector2i(4, 1)), WorldLayout.Exit.STAIRS_DOWN)
+	assert_eq(WorldLayout.exit_at(map, Vector2i(3, 1)), WorldLayout.Exit.STAIRS_UP)
+	assert_eq(WorldLayout.exit_at(map, Vector2i(2, 1)), WorldLayout.NO_EXIT)
+	assert_eq(WorldLayout.exit_at(map, Vector2i(1, 1)), WorldLayout.NO_EXIT, "the start is not an exit")
 
 
 func test_only_the_bottom_floors_stairs_lead_out() -> void:

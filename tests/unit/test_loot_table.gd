@@ -41,6 +41,34 @@ func test_the_same_seed_finds_the_same_items() -> void:
 		assert_eq(LootTable.pick_item_id(ITEMS, HELD, first), LootTable.pick_item_id(ITEMS, HELD, second))
 
 
+func _floor_find(map_seed: int, cell: Vector2i) -> Array:
+	var find := LootTable.floor_find(map_seed, cell, ITEMS, {"healing": 3, "haste": 1})
+	return [find.item_id, find.is_potion]
+
+
+func test_floor_loot_is_the_same_for_the_same_map_seed() -> void:
+	for x in 30:
+		var cell := Vector2i(x, 7)
+		assert_eq(_floor_find(1234, cell), _floor_find(1234, cell), "cell %s" % cell)
+
+
+func test_floor_loot_differs_from_map_to_map() -> void:
+	var differs := false
+	for x in 30:
+		differs = differs or _floor_find(1, Vector2i(x, 7)) != _floor_find(2, Vector2i(x, 7))
+
+	assert_true(differs)
+
+
+func test_floor_loot_is_potions_and_gear() -> void:
+	var potions := 0
+	for x in 200:
+		if _floor_find(5, Vector2i(x, 3))[1]:
+			potions += 1
+
+	assert_between(potions, 60, 140, "about half are potions")
+
+
 func test_an_enemy_drops_the_weapon_it_fought_with() -> void:
 	assert_eq(LootTable.enemy_drop_id("crossbow", ITEMS, HELD, _seeded(5)), "crossbow")
 

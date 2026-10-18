@@ -51,6 +51,28 @@ func test_cells_seen_before_are_remembered_after_moving_away() -> void:
 	assert_true(exploration.is_seen(Vector2i(2, 2)))
 
 
+func test_cells_seen_on_an_earlier_visit_are_remembered_after_restoring() -> void:
+	var earlier := _explored_from(ORIGIN)
+
+	var again := Exploration.new()
+	again.restore(earlier.seen_cells())
+
+	assert_true(again.is_seen(Vector2i(3, 3)))
+	assert_false(again.is_visible(Vector2i(3, 3)), "remembered, not in view")
+	assert_false(again.is_seen(Vector2i(7, 1)), "never seen before")
+
+
+func test_restored_cells_stay_remembered_after_looking_again() -> void:
+	var earlier := _explored_from(ORIGIN)
+	var again := Exploration.new()
+	again.restore(earlier.seen_cells())
+
+	again.look_from(Vector2i(7, 1), _is_clear)
+
+	assert_true(again.is_seen(Vector2i(1, 1)))
+	assert_true(again.is_seen(Vector2i(7, 1)))
+
+
 func test_cells_never_in_view_are_unknown() -> void:
 	assert_false(_explored_from(ORIGIN).is_seen(Vector2i(6, 1)))
 

@@ -11,6 +11,7 @@ const ENEMY_COOLDOWN_MULTIPLIER := "enemy.cooldown_multiplier"
 const ENEMY_TELEGRAPH := "enemy.telegraph"
 const ENEMY_LEAD := "enemy.lead"
 const ENEMY_RECOVER := "enemy.recover"
+const ENEMY_REGENERATION := "enemy.regeneration"
 const SQUAD_MAX_ATTACKERS := "squad.max_attackers"
 const SQUAD_TURN_GAP := "squad.turn_gap"
 const SQUAD_FLANK_SPREAD := "squad.flank_spread"
@@ -129,6 +130,9 @@ static func create() -> Tuning:
 			ENEMY_LEAD, "Aim ahead (0-1)", ENEMIES_GROUP, 0, 1, 0.05, EnemyTactics.DEFAULT_LEAD_SHARE),
 		Tuning.Param.new(
 			ENEMY_RECOVER, "Step aside after attack (s)", ENEMIES_GROUP, 0, 2, 0.05, EnemyBrain.DEFAULT_RECOVER_SECONDS),
+		Tuning.Param.new(
+			ENEMY_REGENERATION, "Heal while away (HP/s)", ENEMIES_GROUP, 0, 100, 1,
+			Regeneration.DEFAULT_HEALTH_PER_SECOND),
 		Tuning.Param.new(
 			SQUAD_MAX_ATTACKERS, "Attackers at once", ENEMIES_GROUP, 1, 8, 1, Squad.DEFAULT_MAX_ATTACKERS),
 		Tuning.Param.new(
@@ -259,6 +263,11 @@ static func enemy_lead_share(tuning: Tuning) -> float:
 
 static func enemy_recover_seconds(tuning: Tuning) -> float:
 	return tuning.value(ENEMY_RECOVER)
+
+
+## How fast hurt monsters heal while the hero is away from their map (see Regeneration).
+static func enemy_regeneration(tuning: Tuning) -> float:
+	return tuning.value(ENEMY_REGENERATION)
 
 
 ## Applies the tuned teamwork rules (taking turns, flanking) to a room's squad.

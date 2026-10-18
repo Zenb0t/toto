@@ -2,7 +2,9 @@ extends Node2D
 ## Composition root: wires the controls, the HUD and the pause menu's screens together once, then builds the
 ## current map of the run (a MapStage) and spawns its actors and loot, routes touch intents to the player and
 ## applies the room-lock, loot and stairs rules. The run (Run) lives for the whole run: taking the stairs, or
-## starting over, frees the map and builds the next one in the running game.
+## starting over, frees the map and builds the next one in the running game. Each map is made again from its
+## seed on every visit; its MapRecord (what was killed, opened, taken, dropped, explored, left hurt) is applied
+## on entering and written on leaving.
 ## The 2D world under this node runs the game; WorldView3D shows it in 3D, with the 2D plane on its floor.
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
@@ -10,7 +12,7 @@ const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 ## How long the end of a run shows in the game before its summary.
 const SUMMARY_DELAY_SECONDS := 1.2
-## How long "down to floor N" shows before the next floor is built.
+## How long "down to (or up to) the next floor" shows before it is built.
 const DESCEND_DELAY_SECONDS := 0.8
 const LEVEL_UP_COLOR := Color(1.0, 0.85, 0.35)
 ## The branch's name and greeting show on arriving, then fade out.
@@ -20,7 +22,7 @@ const ARRIVAL_FADE_SECONDS := 1.0
 const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 ## How often line of sight is worked out again.
 const SIGHT_UPDATE_SECONDS := 0.1
-const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Cleared rooms leave a chest.  Gold stairs lead down.  II: menu."
+const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Cleared rooms leave a chest.  Gold stairs lead down, silver ones back up.  II: menu."
 const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item.  Q: next weapon.  Esc: menu."
 
 var _rng := RandomNumberGenerator.new()
@@ -42,10 +44,16 @@ var _experience: Experience
 
 # The current map: built by _enter_map, freed by _leave_map.
 var _stage: MapStage
+## What the hero has changed on this map (kept by the run).
+var _record: MapRecord
 var _player: Player
 var _progress: DungeonProgress
 var _enemies_by_room := {}  # int -> Array[Enemy]
 var _squads_by_room := {}  # int -> Squad: each room's enemies fight as a team
+var _spawn_cells := {}  # Enemy -> its spawn cell, which is how the record knows it
+var _floor_loot_cells := {}  # PickupArea -> its loot cell, for the floor items not taken yet
+## The stairs the hero arrived on: they only lead on once the hero has stepped off them.
+var _arrival_cell := DungeonMap.NO_CELL
 var _lava := LavaBurn.new()
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
@@ -91,6 +99,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_run.advance(delta)
 	_player.move(_move_input())
 	var mouse_held := _keyboard_mouse.is_attack_held() and _in_play
 	if mouse_held and _player.weapon.charge_seconds() > 0.0:
@@ -121,7 +130,8 @@ func _start_run(run: Run) -> void:
 	_enter_map()
 
 
-## Builds the run's current map and puts the hero on it, carrying what they hold (Run.hero).
+## Builds the run's current map, replays its record (so it is as the hero left it) and puts the hero on their
+## arrival spot, carrying what they hold (Run.hero).
 func _enter_map() -> void:
 	var hero := _run.hero
 	_weapon_id = hero.weapon_id
@@ -129,39 +139,74 @@ func _enter_map() -> void:
 	_experience = Experience.new(hero.experience)
 	_belt.load_dict(hero.potions)
 	_stage = MapStage.new(_run.current_map())
+	_record = _run.record_of(_stage.spec.id)
 	add_child(_stage)
 	move_child(_stage, 0)
 	_pause_menu.show_seed(_run.world_seed, _stage.spec)
-	_player = _spawn_player(hero)
+	_stage.exploration.restore(_record.explored_cells())
+	_arrival_cell = WorldLayout.arrival_cell(_stage.map, _run.arrival_spot)
+	_player = _spawn_player(hero, _arrival_cell)
 	_spawn_enemies()
 	_spawn_floor_loot()
+	_spawn_dropped_items()
 	_update_sight()
 	_progress = _create_progress()
+	_spawn_chests_of_cleared_rooms()
 	_apply_tuning(_tuning)
 	_in_play = true
 	_refresh_hud()
 	_greet()
 
 
-## Frees the map and everything on it (actors, loot, attacks in flight).
+## Writes down what changed on the map, then frees it and everything on it (actors, loot, attacks in flight).
 func _leave_map() -> void:
 	_close_offer()
+	_write_record()
 	remove_child(_stage)
 	_stage.queue_free()
 	_stage = null
+	_record = null
 	_player = null
 	_enemies_by_room.clear()
 	_squads_by_room.clear()
+	_spawn_cells.clear()
+	_floor_loot_cells.clear()
 	_lava = LavaBurn.new()
 	_sight_origin = DungeonMap.NO_CELL
 	_sight_update_left = 0.0
 	_mouse_held_seconds = 0.0
 
 
-func _spawn_player(hero: HeroState) -> Player:
+## What changed on this map, kept by the run for the next visit: what the hero has seen, what lies on the floor
+## that the map didn't start with, and the monsters left hurt (kills, opened chests and taken floor items are
+## written as they happen).
+func _write_record() -> void:
+	_record.remember_explored(_stage.exploration.seen_cells())
+	_record.remember_dropped(_dropped_items())
+	var hurt := {}
+	for enemy: Enemy in _spawn_cells:
+		if enemy.health.current < enemy.health.maximum:
+			hurt[_spawn_cells[enemy]] = enemy.health.current
+	_record.remember_hurt(hurt, _run.seconds_played)
+
+
+## Gear and potions on the floor, other than the floor items still where the map put them.
+func _dropped_items() -> Array[MapRecord.DroppedItem]:
+	var items: Array[MapRecord.DroppedItem] = []
+	for node in _stage.get_children():
+		if node.is_queued_for_deletion() or _floor_loot_cells.has(node):
+			continue
+		if node is ItemDrop:
+			items.append(MapRecord.DroppedItem.new(node.item.id, false, node.position))
+		elif node is PotionDrop:
+			items.append(MapRecord.DroppedItem.new(node.potion.id, true, node.position))
+	return items
+
+
+func _spawn_player(hero: HeroState, cell: Vector2i) -> Player:
 	var player: Player = PLAYER_SCENE.instantiate()
 	player.health = Health.restored(hero.max_health, hero.health)
-	player.position = DungeonView.cell_center(_stage.map.player_spawn)
+	player.position = DungeonView.cell_center(cell)
 	player.attack_fired.connect(_spawn_attacks.bind(player))
 	player.health_changed.connect(func(_current: int, _maximum: int) -> void: _refresh_hud())
 	player.died.connect(func() -> void: _end_run(RunSummary.Ending.DIED))
@@ -170,13 +215,19 @@ func _spawn_player(hero: HeroState) -> Player:
 	return player
 
 
+## The map's monsters, but for those killed on an earlier visit; the ones left hurt have healed for the time the
+## hero was away.
 func _spawn_enemies() -> void:
 	for cell in _stage.map.enemy_spawns:
+		if _record.is_killed(cell):
+			continue
 		var room := _stage.map.room_at(cell)
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
 		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
 		enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
+		enemy.set_current_health(_record.health_on_return(
+			cell, enemy.health.maximum, _run.seconds_played, GameTuning.enemy_regeneration(_tuning)))
 		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
 		enemy.navigation = _stage.pathfinder
 		enemy.squad = _squads_by_room.get_or_add(room, Squad.new())
@@ -185,16 +236,39 @@ func _spawn_enemies() -> void:
 		_stage.add_actor(enemy)
 		_stage.world.add_enemy(enemy)
 		_enemies_by_room.get_or_add(room, []).append(enemy)
+		_spawn_cells[enemy] = cell
 
 
-## Things lying around from the start (vault treasure, dead-end finds): potions, or gear picked like a chest's.
+## Things lying around from the start (vault treasure, dead-end finds), but for those taken on an earlier
+## visit: potions or gear, the same for the same map (see LootTable.floor_find).
 func _spawn_floor_loot() -> void:
 	for cell in _stage.map.loot_cells:
+		if _record.is_loot_taken(cell):
+			continue
 		var at := DungeonView.cell_center(cell)
-		if LootTable.rolls(LootTable.FLOOR_POTION_SHARE, _rng):
-			_spawn_potion(at, LootTable.pick_potion_id(GameTuning.potion_weights(), _rng))
+		var find := LootTable.floor_find(
+			_stage.spec.seed_value, cell, GameTuning.item_ids(), GameTuning.potion_weights())
+		var drop: PickupArea = _spawn_potion(at, find.item_id) if find.is_potion else _spawn_drop(at, find.item_id)
+		_floor_loot_cells[drop] = cell
+
+
+## What lay on the floor when the hero last left (swapped-out gear, unclaimed finds and drops).
+func _spawn_dropped_items() -> void:
+	for item in _record.dropped_items():
+		if item.is_potion:
+			_spawn_potion(item.position, item.item_id)
 		else:
-			_spawn_drop(at, LootTable.pick_item_id(GameTuning.item_ids(), _held_ids(), _rng))
+			_spawn_drop(item.position, item.item_id)
+
+
+## Rooms whose monsters were all killed on an earlier visit keep their chest, open if it was opened.
+func _spawn_chests_of_cleared_rooms() -> void:
+	var fought_in := {}
+	for cell in _stage.map.enemy_spawns:
+		fought_in[_stage.map.room_at(cell)] = true
+	for room: int in fought_in:
+		if _progress.is_cleared(room):
+			_spawn_chest(room)
 
 
 func _create_progress() -> DungeonProgress:
@@ -368,13 +442,19 @@ func _combat_room() -> int:
 # --- Rooms and combat ----------------------------------------------------------------------------
 
 ## Lock a room only once the player is a full tile past its doorway, so a closing door can't trap them in it.
-## Stepping on the stairs, once their room is clear, leads down (or out, from the last floor).
+## Stepping on the stairs down, once their room is clear, leads down (or out, from the last floor); the stairs
+## up always lead up. The stairs the hero arrived on only lead on once stepped off.
 func _track_player_room() -> void:
 	var cell := DungeonView.world_to_cell(_player.global_position)
 	if _stage.map.is_clear_of_doors(cell):
 		_progress.enter_room(_stage.map.room_at(cell))
-	if cell == _stage.map.exit_cell and _progress.is_cleared(_stage.map.room_at(cell)):
-		_take_stairs()
+	if cell == _arrival_cell:
+		return
+	_arrival_cell = DungeonMap.NO_CELL
+	var exit := WorldLayout.exit_at(_stage.map, cell)
+	if exit == WorldLayout.Exit.STAIRS_UP \
+			or (exit == WorldLayout.Exit.STAIRS_DOWN and _progress.is_cleared(_stage.map.room_at(cell))):
+		_take_stairs(exit)
 
 
 func _on_room_locked(room: int) -> void:
@@ -393,6 +473,8 @@ func _on_room_cleared(room: int) -> void:
 
 
 func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
+	_record.kill(_spawn_cells[enemy])
+	_spawn_cells.erase(enemy)
 	_enemies_by_room[room].erase(enemy)
 	_progress.record_defeat(room)
 	_run.hero.kills += 1
@@ -488,16 +570,17 @@ func _burn(actor: Node2D, delta: float) -> void:
 # --- Loot ----------------------------------------------------------------------------------------
 
 func _spawn_chest(room: int) -> void:
-	var chest := Chest.new()
+	var chest := Chest.new(_record.is_chest_opened(room))
 	chest.position = DungeonView.cell_center(_stage.map.room_center(room))
-	chest.opened.connect(_open_chest.bind(chest.position))
+	chest.opened.connect(_open_chest.bind(chest.position, room))
 	_stage.add_on_floor.call_deferred(chest)
 	_stage.world.add_chest(chest)
 
 
 ## A chest holds a random weapon or utility the player doesn't already have, picked when it opens, and
 ## sometimes a potion beside it.
-func _open_chest(at: Vector2) -> void:
+func _open_chest(at: Vector2, room: int) -> void:
+	_record.open_chest(room)
 	_spawn_drop(at, LootTable.pick_item_id(GameTuning.item_ids(), _held_ids(), _rng))
 	if LootTable.rolls(GameTuning.chest_potion_chance(_tuning), _rng):
 		_spawn_potion(_spot_beside(at), LootTable.pick_potion_id(GameTuning.potion_weights(), _rng))
@@ -516,27 +599,37 @@ func _held_ids() -> Array[String]:
 	return [_weapon_id, _utility_id]
 
 
-func _spawn_drop(at: Vector2, item_id: String) -> void:
+func _spawn_drop(at: Vector2, item_id: String) -> ItemDrop:
 	var drop := ItemDrop.new(GameTuning.item(_tuning, item_id))
 	drop.position = at
 	drop.player_entered.connect(_offer.bind(drop))
 	drop.player_exited.connect(_on_drop_left.bind(drop))
 	_stage.add_on_floor.call_deferred(drop)
 	_stage.world.add_drop(drop)
+	return drop
 
 
-func _spawn_potion(at: Vector2, potion_id: String) -> void:
+func _spawn_potion(at: Vector2, potion_id: String) -> PotionDrop:
 	var drop := PotionDrop.new(GameTuning.potion(_tuning, potion_id))
 	drop.position = at
 	drop.player_entered.connect(_collect_potion.bind(drop))
 	_stage.add_on_floor.call_deferred(drop)
 	_stage.world.add_potion(drop)
+	return drop
 
 
 ## Potions are picked up by walking over them, while the belt has room for that kind.
 func _collect_potion(drop: PotionDrop) -> void:
 	if _belt.add(drop.potion.id):
+		_mark_taken(drop)
 		drop.queue_free()
+
+
+## A floor item, once taken, stays gone on later visits; what is swapped into its place is an ordinary drop.
+func _mark_taken(drop: PickupArea) -> void:
+	if _floor_loot_cells.has(drop):
+		_record.take_loot(_floor_loot_cells[drop])
+		_floor_loot_cells.erase(drop)
 
 
 func _drink(potion_id: String) -> void:
@@ -573,6 +666,7 @@ func _on_take_pressed() -> void:
 	if _offered_drop == null:
 		return
 	var found := _offered_drop.item
+	_mark_taken(_offered_drop)
 	_offered_drop.item = _held_in_same_slot(found)
 	_close_offer()
 	if found is Weapon:
@@ -713,16 +807,17 @@ func _carried_hero() -> HeroState:
 		_weapon_id, _utility_id, _player.health, _belt.to_dict(), _experience.points, _run.hero.kills)
 
 
-## Down to the next floor with everything the player holds, or out of the dungeon from the last one.
-func _take_stairs() -> void:
+## Down (or up) to the next floor with everything the player holds, or out of the dungeon from the last one.
+func _take_stairs(exit: WorldLayout.Exit) -> void:
 	if not _in_play:
 		return
-	var destination := _run.travel(WorldLayout.Exit.STAIRS_DOWN, _carried_hero())
+	var destination := _run.travel(exit, _carried_hero())
 	if destination.leaves_world():
 		_end_run(RunSummary.Ending.ESCAPED)
 		return
 	_in_play = false
-	_hud.text = "Down to the %s..." % _run.current_map().branch().display_name
+	var way := "Down" if exit == WorldLayout.Exit.STAIRS_DOWN else "Up"
+	_hud.text = "%s to the %s..." % [way, _run.current_map().branch().display_name]
 	var run := _run
 	await get_tree().create_timer(DESCEND_DELAY_SECONDS).timeout
 	if run != _run:

@@ -120,6 +120,33 @@ func test_the_exit_is_walkable_floor() -> void:
 	assert_eq(map.room_at(map.exit_cell), map.room_at(map.player_spawn))
 
 
+func test_the_stairs_up_are_walkable_floor() -> void:
+	var map := _parser.parse("""
+#####
+#P.<#
+#####
+""")
+
+	assert_eq(map.stairs_up_cell, Vector2i(3, 1))
+	assert_true(map.is_walkable(map.stairs_up_cell))
+	assert_eq(map.room_at(map.stairs_up_cell), map.room_at(map.player_spawn))
+
+
+func test_a_map_without_a_player_spawn_starts_on_its_stairs_up() -> void:
+	var map := _parser.parse("""
+#####
+#.<>#
+#####
+""")
+
+	assert_eq(map.player_spawn, Vector2i(2, 1))
+	assert_eq(map.stairs_up_cell, Vector2i(2, 1))
+
+
+func test_a_map_may_have_no_stairs_up() -> void:
+	assert_eq(_parser.parse(TWO_ROOMS).stairs_up_cell, DungeonMap.NO_CELL)
+
+
 func test_a_map_may_have_no_exit() -> void:
 	assert_eq(_parser.parse(TWO_ROOMS).exit_cell, DungeonMap.NO_CELL)
 

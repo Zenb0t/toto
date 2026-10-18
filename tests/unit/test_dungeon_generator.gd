@@ -63,6 +63,26 @@ func test_there_is_one_exit_guarded_by_enemies_away_from_the_start() -> void:
 		assert_has(_enemy_rooms(map), exit_room, "seed %d" % seed_value)
 
 
+func test_the_first_floor_has_stairs_down_but_none_up() -> void:
+	for seed_value in SEEDS:
+		var map := _parser.parse(DungeonGenerator.new().generate(seed_value, 1))
+
+		assert_ne(map.exit_cell, DungeonMap.NO_CELL, "seed %d" % seed_value)
+		assert_eq(map.stairs_up_cell, DungeonMap.NO_CELL, "seed %d" % seed_value)
+
+
+func test_deeper_floors_start_on_their_stairs_up_and_have_stairs_down() -> void:
+	for seed_value in SEEDS:
+		for floor_number in range(2, WorldLayout.FLOOR_COUNT + 1):
+			var map := _parser.parse(DungeonGenerator.new().generate(seed_value, floor_number))
+			var at := "seed %d floor %d" % [seed_value, floor_number]
+
+			assert_ne(map.stairs_up_cell, DungeonMap.NO_CELL, at)
+			assert_eq(map.player_spawn, map.stairs_up_cell, at)
+			assert_ne(map.exit_cell, DungeonMap.NO_CELL, at)
+			assert_ne(map.room_at(map.exit_cell), map.room_at(map.stairs_up_cell), at)
+
+
 func test_the_chest_spot_of_the_exit_room_is_not_the_exit() -> void:
 	for seed_value in SEEDS:
 		var map := _map(seed_value)

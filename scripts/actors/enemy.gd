@@ -108,6 +108,12 @@ func body_radius() -> float:
 	return RADIUS * monster.size
 
 
+## Starts hurt, at current of its maximum health (back on a map it was left on hurt). Must be called after
+## become(), before the enemy is added to the tree.
+func set_current_health(current: int) -> void:
+	health = Health.restored(health.maximum, current)
+
+
 func arm(new_weapon: Weapon) -> void:
 	_wielder.equip(new_weapon)
 	queue_redraw()

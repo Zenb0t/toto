@@ -36,6 +36,19 @@ func is_seen(cell: Vector2i) -> bool:
 	return _seen.has(cell)
 
 
+## Every cell seen so far, to keep when the map is left (see restore).
+func seen_cells() -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	cells.assign(_seen.keys())
+	return cells
+
+
+## Remembers cells seen on an earlier visit, as if they had been seen again. What is in view is unchanged.
+func restore(cells: Array[Vector2i]) -> void:
+	for cell in cells:
+		_seen[cell] = true
+
+
 ## True when every cell strictly between from and to lets sight through (a straight grid line).
 static func _line_is_clear(from: Vector2i, to: Vector2i, is_clear: Callable) -> bool:
 	var steps := maxi(absi(to.x - from.x), absi(to.y - from.y))

@@ -1,6 +1,7 @@
 class_name Chest
 extends PickupArea
 ## Appears when a room is cleared. Walking onto it opens it (once); what comes out is up to whoever listens.
+## A chest opened on an earlier visit to its map comes back already open, and empty.
 ## An open chest stays on the floor, so the player can see which rooms they have already looted.
 ## On the 2D plane (the floor) it draws only its shadow; the 3D view draws the chest.
 
@@ -13,8 +14,9 @@ const SHADOW_GROWTH := 3.0
 var _open := false
 
 
-func _init() -> void:
+func _init(already_open := false) -> void:
 	super(SIZE.x / 2.0)
+	_open = already_open
 	player_entered.connect(_on_player_entered)
 
 

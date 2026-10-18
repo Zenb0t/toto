@@ -2,7 +2,9 @@ class_name DungeonMapParser
 extends RefCounted
 ## Turns an ASCII drawing into a DungeonMap.
 ##   #  wall      .  floor      +  door
-##   P  player spawn (on floor)     >  exit (on floor; optional)     *  an item lying on the floor
+##   P  player spawn (on floor; optional on a map with stairs up, which are then the start)
+##   >  stairs down, the exit (on floor; optional)     <  stairs up (on floor; optional)
+##   *  an item lying on the floor
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
 ##   ,  shallow water (walkable, slowly)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
@@ -14,6 +16,7 @@ const FLOOR := "."
 const DOOR := "+"
 const PLAYER := "P"
 const EXIT := ">"
+const STAIRS_UP := "<"
 const LOOT := "*"
 const WATER := "~"
 const LAVA := "L"
@@ -27,12 +30,16 @@ func parse(ascii: String) -> DungeonMap:
 	assert(Array(rows).all(func(row: String) -> bool: return row.length() == size.x), "every row must be the same width")
 
 	var enemy_symbols := Bestiary.letters()
-	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, LOOT, WATER, LAVA, SHALLOW] + enemy_symbols)
+	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, STAIRS_UP, LOOT, WATER, LAVA, SHALLOW] + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
-	var player_cells := _cells_matching(rows, [PLAYER])
-	assert(player_cells.size() == 1, "map needs exactly one player spawn")
 	var exit_cells := _cells_matching(rows, [EXIT])
 	assert(exit_cells.size() <= 1, "map has more than one exit")
+	var stairs_up_cells := _cells_matching(rows, [STAIRS_UP])
+	assert(stairs_up_cells.size() <= 1, "map has more than one stairs up")
+	var player_cells := _cells_matching(rows, [PLAYER])
+	if player_cells.is_empty():
+		player_cells = stairs_up_cells
+	assert(player_cells.size() == 1, "map needs exactly one player spawn (or stairs up to start on)")
 
 	var room_by_cell := _label_rooms(floor_cells)
 	var room_count := 0
@@ -50,6 +57,7 @@ func parse(ascii: String) -> DungeonMap:
 		exit_cells[0] if not exit_cells.is_empty() else DungeonMap.NO_CELL,
 		_terrain_by_cell(rows),
 		_cells_matching(rows, [LOOT]),
+		stairs_up_cells[0] if not stairs_up_cells.is_empty() else DungeonMap.NO_CELL,
 	)
 
 

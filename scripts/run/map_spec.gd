@@ -32,6 +32,14 @@ func ascii() -> String:
 	return ""
 
 
+## The version of the generator the recipe uses, kept in the map's record (see MapRecord).
+func generator_version() -> int:
+	match recipe:
+		Recipe.DUNGEON_FLOOR:
+			return DungeonGenerator.VERSION
+	return 0
+
+
 ## What the map is (its name, greeting and look).
 func branch() -> Branch:
 	return Branch.for_floor(floor_number)

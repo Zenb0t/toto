@@ -8,6 +8,7 @@ const WATER_COLOR := Color(0.25, 0.45, 0.85)
 const LAVA_COLOR := Color(0.95, 0.4, 0.12)
 const DOOR_COLOR := Color(0.65, 0.45, 0.25)
 const EXIT_COLOR := Color(1.0, 0.85, 0.2)
+const STAIRS_UP_COLOR := Color(0.85, 0.88, 0.95)
 const PLAYER_COLOR := Color(0.3, 1.0, 0.9)
 ## Cells seen before but out of view are drawn this much darker.
 const REMEMBERED_SHADE := 0.55
@@ -28,6 +29,8 @@ static func paint(map: DungeonMap, exploration: Exploration, player_cell: Vector
 static func _color_of(map: DungeonMap, cell: Vector2i) -> Color:
 	if cell == map.exit_cell:
 		return EXIT_COLOR
+	if cell == map.stairs_up_cell:
+		return STAIRS_UP_COLOR
 	if map.is_door(cell):
 		return DOOR_COLOR
 	match map.terrain_at(cell):
