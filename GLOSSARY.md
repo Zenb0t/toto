@@ -43,6 +43,10 @@ _Avoid_: Vault (for the ruin itself), fort, castle
 The spot on the plains, around a campfire, where one band of monsters lives, asleep or wandering. Camps farther from the village hold tougher bands. Once its band is dead, the campfire is the hero's to rest at.
 _Avoid_: Spawn, nest, lair (that's a branch)
 
+**Ambush**:
+What may happen each time a campfire is lit: a seeded roll that, on a hit, brings a few of the area's monsters to the edge of the light a few seconds later, already hunting the hero. The inn never has one.
+_Avoid_: Raid, spawn, wave
+
 **Crypt entrance**:
 A small stone mausoleum on the plains with stairs down to the first level of the crypt.
 _Avoid_: Dungeon entrance, portal

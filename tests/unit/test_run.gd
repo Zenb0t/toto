@@ -360,3 +360,21 @@ func test_the_crypt_recipe_of_a_world_is_kept_for_its_levels_and_for_the_next_wo
 	assert_eq(run.current_map().crypt, crypt)
 	assert_eq(run.same_world_again().crypt, crypt)
 	assert_eq(run.next_world(_seeded_rng(3)).crypt, crypt)
+
+
+func test_leaving_a_map_and_coming_back_does_not_roll_a_spent_lighting_again() -> void:
+	var run := Run.new(99)
+	var map := run.current_map()
+	var fire := DungeonMapParser.new().parse(map.ascii()).campfire_cells[0]
+	var rule := Ambush.new()
+	var first_lighting := run.record_of(run.current_map_id).spend_lighting(fire)
+	var first_roll := rule.hits(map.seed_value, fire, first_lighting, true)
+
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	run.travel(WorldLayout.Exit.STAIRS_UP, HeroState.new())
+
+	var record := run.record_of(WorldLayout.PLAINS_ID)
+	assert_eq(record.lightings_of(fire), 1, "the lighting stays spent")
+	var second_lighting := record.spend_lighting(fire)
+	assert_eq(second_lighting, 1, "the next lighting is a new roll, not the spent one again")
+	assert_eq(rule.hits(map.seed_value, fire, first_lighting, true), first_roll, "and the spent roll gives the same answer")

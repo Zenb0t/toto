@@ -418,7 +418,8 @@ The run keeps one record per visited map. It holds:
 - the cells explored (`Exploration.seen_cells` out, `Exploration.restore` in), so the fog and minimap keep the
   hero's progress;
 - monsters left hurt: their health and the run time they were left at;
-- campfires: each one's state (unlit, burning, embers) and the seconds it has left, by its cell (see **Resting**);
+- campfires: each one's state (unlit, burning, embers) and the seconds it has left, by its cell (see **Resting**),
+  and how many times each has been lit (`lightings_of`, `spend_lighting`): the ambush rolls spent;
 - the version of the generator that made the map (`DungeonGenerator.VERSION`), so a saved record can tell when the
   same seed would no longer give the same map.
 
@@ -617,8 +618,7 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   the campfire's are the class defaults, all Knobs in **Tune -> Rest**. The inn is the second profile,
   `RestProfile.inn()`: a **3 s** rest (`rest_seconds`), healing up to **100%** of max health, no embers, reach 1 cell
   from the doorstep, and `cancels_on_move`. Its Knobs (id `inn`) are only the rest time and the reach; the heal and
-  the rest are the same fields the campfire uses. An ambush roll (#44) will be another field; `Campfire`,
-  `InnRest` and `MonstersAround` never name a place.
+  the rest are the same fields the campfire uses. `Campfire`, `InnRest` and `MonstersAround` never name a place.
 - `MonstersAround` is the shared "may the hero rest" rule: **refused while any monster on the map is hunting the
   hero (`EnemyBrain.is_hunting`: noticing, hunting, in position, attacking), or any awake monster is within 16
   cells and in line of sight** (Knob). Sleeping monsters don't block. The game describes each monster as a
@@ -648,9 +648,33 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   ("Resting..." floats up) and after 3 s is healed to full ("Fully rested"). **Moving** (stick or keys held past
   a tenth of full push, `Player.is_moving`, so a thumb resting on the floating stick doesn't count; or being carried
   off the doorstep, by a dash or a blink) or **being hit** (`Health.damaged`) cancels it ("Rest interrupted", nothing healed, the time
-  already waited is lost). There is no ambush and no limit: after a finish or a cancel the hero can rest again at once.
+  already waited is lost). The inn never rolls an ambush and has no limit: after a finish or a cancel the hero can rest again at once.
   Pressing REST during a rest does nothing. Unlike the campfire, the monsters rule is asked only when the rest begins:
   a monster that starts hunting mid-rest ends it only by hitting the hero.
+- **Campfire ambushes** (#44): resting in the wild is a gamble. Lighting a campfire (`RestSpot.rest()` succeeding;
+  a refused rest rolls nothing, the inn never rolls) makes **one seeded roll**, `Ambush.hits(map_seed, campfire cell,
+  lighting, outdoors)`: **30% on the plains, 45% in the crypt**. The dice are seeded by the map's seed, the campfire's
+  cell and the **lighting number** (0 for the first time it is lit), so the same lighting always gives the same
+  answer: no re-roll by leaving and returning, reloading or retrying (a new run with the same seed replays the same
+  luck, like everything else the seed decides). `MapRecord.spend_lighting(cell)` returns the lighting's number and
+  counts it, written the moment the fire is lit (not on leaving) and kept through the dictionary; the next
+  lighting (after the embers) is a new roll.
+  On a hit a floating "Something is coming..." warns the hero, and after `delay_seconds` (**4 s**, only while the
+  hero is on the map: `AmbushParty.tick`) **3 monsters** arrive. **Who:** `Ambush.crew` draws from "the area's
+  monsters": the monsters the map itself spawns nearest the campfire (its 6 nearest spawn cells), so the plains
+  send goblins and kobolds by distance from the centre, the ruin's toughest group when it is the nearest, and a crypt
+  level its usual monsters; a map with none sends kobolds. **Where:** `AmbushPlacement.cells` picks cells just
+  outside the light (light radius + `margin_cells` 1.5, in a 1.5-cell band that widens up to 5 more cells if it holds
+  too few), on standable ground the fire can be walked to, not doors, at least 1.5 cells apart; seeded the same way.
+  **How:** `Enemy.ambush(hero, home)` starts them already **hunting** (no noticing pause, no shout), with the campfire
+  as home, so they are ordinary hunters: they take turns as a `Squad` of their own (`Ambush.band_id`, from 3,000,000: clear of rooms, camps and the ruin) and give up like
+  any monster (#36: out of sight for 5 s, or the hero 24 cells from the fire), walking back to the fire. They count as
+  hunters for `MonstersAround`, so the hero cannot rest again until they are dead or have given up.
+  **Never respawn:** ambushers belong to no spawn cell and are never put in the map record (no kill is recorded,
+  none is saved hurt, no room progress). Leaving the map drops them and any ambush still on its way; the spent roll
+  keeps that lighting from ambushing again, and coming back finds the map as the record has it. Kills still count
+  and drop loot as usual. Knobs in **Tune -> Rest** (id `ambush`): chance on the plains, chance in the crypt,
+  ambushers (1-6), arrival delay and distance outside the light.
 
 **Look.** The plains have their own `Branch` (outdoors, so the HUD and the arrival banner say "the plains" and the run
 summary "on the plains") and `BranchLook`: grass ground, no torches, trees for small free-standing groves. Big groves
