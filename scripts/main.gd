@@ -48,8 +48,8 @@ var _stage: MapStage
 var _record: MapRecord
 var _player: Player
 var _progress: DungeonProgress
-var _enemies_by_room := {}  # int -> Array[Enemy]: each room's band (its home is the room)
-var _squads_by_room := {}  # int -> Squad: each room's enemies fight as a team
+var _enemies_by_band := {}  # int -> Array[Enemy]: each band (a camp round its campfire, or a room's monsters)
+var _squads_by_band := {}  # int -> Squad: each band fights as a team
 var _spawn_cells := {}  # Enemy -> its spawn cell, which is how the record knows it
 ## Who hears the hero's noise and a monster's shout (see Awareness); tuned like each enemy's own.
 var _hearing := Awareness.new()
@@ -60,6 +60,8 @@ var _lava := LavaBurn.new()
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
+## The name of the place the banner last showed ("village", "plains"...), to notice crossing a gate.
+var _shown_place := ""
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
 ## How long the mouse button has been held on a weapon that charges.
 var _mouse_held_seconds := 0.0
@@ -113,7 +115,7 @@ func _physics_process(delta: float) -> void:
 		_mouse_held_seconds = 0.0
 	_update_charging()
 	_apply_terrain(delta)
-	for squad: Squad in _squads_by_room.values():
+	for squad: Squad in _squads_by_band.values():
 		squad.tick(delta)
 	_sight_update_left -= delta
 	if _sight_update_left <= 0.0:
@@ -122,6 +124,7 @@ func _physics_process(delta: float) -> void:
 	_attack_button.set_cooldown_ratio(_player.attack_cooldown_ratio())
 	_utility_button.set_cooldown_ratio(_player.utility_cooldown_ratio())
 	_track_player_room()
+	_track_place()
 
 
 # --- Building and leaving a map -----------------------------------------------------------------
@@ -168,8 +171,8 @@ func _leave_map() -> void:
 	_stage = null
 	_record = null
 	_player = null
-	_enemies_by_room.clear()
-	_squads_by_room.clear()
+	_enemies_by_band.clear()
+	_squads_by_band.clear()
 	_spawn_cells.clear()
 	_floor_loot_cells.clear()
 	_lava = LavaBurn.new()
@@ -218,14 +221,14 @@ func _spawn_player(hero: HeroState, cell: Vector2i) -> Player:
 
 
 ## The map's monsters, but for those killed on an earlier visit; the ones left hurt have healed for the time the
-## hero was away. Each room's monsters are a band living there, asleep or wandering (the same for the same map),
-## until one of them notices the hero.
+## hero was away. The monsters of a camp are a band whose home is its campfire; any others are a band per room,
+## living at its middle. Each band starts asleep or wandering (the same for the same map), until one of them
+## notices the hero.
 func _spawn_enemies() -> void:
 	for cell in _stage.map.enemy_spawns:
 		if _record.is_killed(cell):
 			continue
-		var room := _stage.map.room_at(cell)
-		var home := cell if room == DungeonMap.NO_ROOM else _stage.map.room_center(room)
+		var band := Band.home_of(_stage.map, cell, GameTuning.band_wandering_share(_tuning), _camp_wandering_share())
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
 		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
@@ -234,17 +237,22 @@ func _spawn_enemies() -> void:
 			cell, enemy.health.maximum, _run.seconds_played, GameTuning.enemy_regeneration(_tuning)))
 		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
 		enemy.navigation = _stage.pathfinder
-		enemy.squad = _squads_by_room.get_or_add(room, Squad.new())
-		enemy.settle(DungeonView.cell_center(home),
-			Band.start_of(_stage.spec.seed_value, room, GameTuning.band_wandering_share(_tuning)))
+		enemy.squad = _squads_by_band.get_or_add(band.id, Squad.new())
+		enemy.settle(DungeonView.cell_center(band.cell), Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share))
 		enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.noticed.connect(_on_enemy_noticed)
-		enemy.defeated.connect(_on_enemy_defeated.bind(room))
+		enemy.defeated.connect(_on_enemy_defeated.bind(band.id))
 		_stage.add_actor(enemy)
 		_stage.world.add_enemy(enemy)
-		_enemies_by_room.get_or_add(room, []).append(enemy)
+		_enemies_by_band.get_or_add(band.id, []).append(enemy)
 		_spawn_cells[enemy] = cell
+
+
+## The share of camps that start wandering: the quadrant recipe's, or the dungeon's bands' when there is none.
+func _camp_wandering_share() -> float:
+	var quadrant := _stage.spec.quadrant
+	return quadrant.camp_wandering_share() if quadrant != null else GameTuning.band_wandering_share(_tuning)
 
 
 ## Things lying around from the start (vault treasure, dead-end finds), but for those taken on an earlier
@@ -271,14 +279,14 @@ func _spawn_dropped_items() -> void:
 
 func _create_progress() -> DungeonProgress:
 	var counts := {}
-	for room: int in _enemies_by_room:
-		counts[room] = _enemies_by_room[room].size()
+	for cell: Vector2i in _spawn_cells.values():
+		var room := _stage.map.room_at(cell)
+		counts[room] = counts.get(room, 0) + 1
 	# No room is marked as locking yet (trap rooms and the boss arena will be): monsters come when they notice.
 	var progress := DungeonProgress.new(counts)
 	# A locking room's band never gives up the chase.
-	for room: int in _enemies_by_room:
-		for enemy: Enemy in _enemies_by_room[room]:
-			enemy.never_gives_up = progress.is_locking(room)
+	for enemy: Enemy in _spawn_cells:
+		enemy.never_gives_up = progress.is_locking(_stage.map.room_at(_spawn_cells[enemy]))
 	progress.room_locked.connect(_on_room_locked)
 	progress.room_cleared.connect(_on_room_cleared)
 	return progress
@@ -432,7 +440,7 @@ func _on_utility_released(release: AimGesture.Release) -> void:
 func _auto_aim_target() -> Enemy:
 	var enemies: Array[Enemy] = []
 	var positions: Array[Vector2] = []
-	for band: Array in _enemies_by_room.values():
+	for band: Array in _enemies_by_band.values():
 		for enemy: Enemy in band:
 			if _stage.exploration.is_visible(DungeonView.world_to_cell(enemy.global_position)):
 				enemies.append(enemy)
@@ -476,11 +484,11 @@ func _on_room_cleared(room: int) -> void:
 ## chain ends.
 func _on_enemy_noticed(noticer: Enemy) -> void:
 	var listeners: Array[Enemy] = []
-	var bands := PackedInt32Array()  # each listener's band: the room it lives in
-	for room: int in _enemies_by_room:
-		for enemy: Enemy in _enemies_by_room[room]:
+	var bands := PackedInt32Array()  # each listener's band
+	for band: int in _enemies_by_band:
+		for enemy: Enemy in _enemies_by_band[band]:
 			listeners.append(enemy)
-			bands.append(room)
+			bands.append(band)
 	var shouter := listeners.find(noticer)
 	if shouter == -1:
 		return
@@ -497,7 +505,7 @@ func _make_noise(at: Vector2) -> void:
 
 func _all_enemies() -> Array[Enemy]:
 	var all: Array[Enemy] = []
-	for enemies: Array in _enemies_by_room.values():
+	for enemies: Array in _enemies_by_band.values():
 		all.append_array(enemies)
 	return all
 
@@ -510,11 +518,12 @@ func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
 	return cells
 
 
-func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
-	_record.kill(_spawn_cells[enemy])
+func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
+	var spawn_cell: Vector2i = _spawn_cells[enemy]
+	_record.kill(spawn_cell)
 	_spawn_cells.erase(enemy)
-	_enemies_by_room[room].erase(enemy)
-	_progress.record_defeat(room)
+	_enemies_by_band[band].erase(enemy)
+	_progress.record_defeat(_stage.map.room_at(spawn_cell))
 	_run.hero.kills += 1
 	_grow_from(enemy.monster)
 	_refresh_hud()
@@ -567,7 +576,7 @@ func _update_sight() -> void:
 		_stage.fog.show_exploration(_stage.exploration)
 		_stage.world.show_exploration(_stage.exploration)
 		_minimap.show_map(_stage.map, _stage.exploration, origin)
-	for enemies: Array in _enemies_by_room.values():
+	for enemies: Array in _enemies_by_band.values():
 		for enemy: Enemy in enemies:
 			enemy.visible = _stage.exploration.is_visible(DungeonView.world_to_cell(enemy.global_position))
 	for pickup: PickupArea in get_tree().get_nodes_in_group(PickupArea.GROUP):
@@ -592,7 +601,7 @@ func _open_big_map() -> void:
 func _apply_terrain(delta: float) -> void:
 	_burn(_player, delta)
 	_player.ground_speed = _stage.map.ground_speed(DungeonView.world_to_cell(_player.global_position))
-	for enemies: Array in _enemies_by_room.values():
+	for enemies: Array in _enemies_by_band.values():
 		for enemy: Enemy in enemies:
 			_burn(enemy, delta)
 			enemy.ground_speed = _stage.map.ground_speed(DungeonView.world_to_cell(enemy.global_position))
@@ -732,7 +741,7 @@ func _apply_tuning(tuning: Tuning) -> void:
 	_utility_button.catch_scale = GameTuning.button_catch_scale(tuning)
 	_attack_button.drag_reach = GameTuning.drag_reach(tuning)
 	_utility_button.drag_reach = GameTuning.drag_reach(tuning)
-	for enemies: Array in _enemies_by_room.values():
+	for enemies: Array in _enemies_by_band.values():
 		for enemy: Enemy in enemies:
 			enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier
 			enemy.arm(GameTuning.enemy_weapon(tuning, enemy.weapon.id))
@@ -743,7 +752,7 @@ func _apply_tuning(tuning: Tuning) -> void:
 			enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
 			GameTuning.tune_awareness(enemy.awareness, tuning)
 	GameTuning.tune_awareness(_hearing, tuning)
-	for squad: Squad in _squads_by_room.values():
+	for squad: Squad in _squads_by_band.values():
 		GameTuning.tune_squad(squad, tuning)
 
 
@@ -822,13 +831,27 @@ func _grow_from(monster: Monster) -> void:
 
 ## Names the branch and greets the player, like Dungeon Crawl on arriving somewhere new.
 func _greet() -> void:
-	_arrival.text = "The %s\n%s" % [_branch().display_name, _branch().greeting]
+	var place := _place()
+	_shown_place = place.name
+	_arrival.text = "The %s\n%s" % [place.name, place.greeting]
 	_arrival.modulate.a = 1.0
 	if _arrival_fade != null:
 		_arrival_fade.kill()
 	_arrival_fade = create_tween()
 	_arrival_fade.tween_interval(ARRIVAL_SECONDS)
 	_arrival_fade.tween_property(_arrival, "modulate:a", 0.0, ARRIVAL_FADE_SECONDS)
+
+
+## Where the hero stands: the village inside the palisade, else the branch (see Place).
+func _place() -> Place:
+	return Place.at(_branch(), _stage.map, DungeonView.world_to_cell(_player.global_position))
+
+
+## Crossing a gate names the new place: on the banner, and in the HUD.
+func _track_place() -> void:
+	if _in_play and _place().name != _shown_place:
+		_greet()
+		_refresh_hud()
 
 
 ## The branch this map is in (see Branch).
@@ -841,7 +864,7 @@ func _refresh_hud() -> void:
 		return
 	var leads_out := _run.destination(WorldLayout.Exit.STAIRS_DOWN).leaves_world()
 	var goal := "Find the way out" if leads_out else "Find the stairs down"
-	var place := "The %s" % _branch().display_name
+	var place := "The %s" % _place().name
 	if _branch().outdoors:
 		goal = "Find the crypt entrance"
 	else:

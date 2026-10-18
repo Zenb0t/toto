@@ -3,7 +3,7 @@ extends Node3D
 ## What stands on the floor: the walls (with a lighter cap that overhangs a little, like Brawl Stars'
 ## blocks, in the branch's colours, see BranchLook), pillars (carved columns in built places, plain rock in
 ## caves), the doors of locked rooms, torches and banners on the walls where the branch has them, small
-## things lying along them (see DecorModel) and the arch over the stairs. Like the fog on
+## things lying along them (see DecorModel), campfires and the arch over the stairs. Like the fog on
 ## the floor, what the player has never seen isn't shown, and what is out of sight is dimmed.
 ## Owns no game rules: it is told the map, which doors are closed and what is seen.
 
@@ -48,6 +48,7 @@ var _closed_doors := {}  # Vector2i -> true
 var _torches := {}  # wall cell -> TorchModel
 var _banners := {}  # wall cell -> Node3D
 var _clutter := {}  # floor cell -> Node3D
+var _campfires := {}  # floor cell -> CampfireModel
 var _trees := {}  # pillar cell -> Node3D
 var _shown := {}  # Vector2i -> the brightness last shown, so a refresh only touches what changed
 var _exploration: Exploration
@@ -58,6 +59,7 @@ var _stairs_cell := DungeonMap.NO_CELL
 var _stairs := StairsModel.new()
 var _stairs_up_cell := DungeonMap.NO_CELL
 var _stairs_up := StairsModel.new(StairsModel.SILVER_COLOR)
+var _village := VillageView3D.new()
 var _blocks := _multimesh(ModelParts.box(Vector3.ONE))
 var _caps := _multimesh(ModelParts.box(Vector3.ONE))
 var _columns := _multimesh(_column_mesh())
@@ -70,6 +72,7 @@ func _init() -> void:
 		add_child(instance)
 	add_child(_stairs)
 	add_child(_stairs_up)
+	add_child(_village)
 
 
 ## wall_cells: the walls to stand up (those next to open cells).
@@ -90,7 +93,7 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 	_column_cells = pillars
 	_block_cells.clear()
 	for cell in wall_cells:
-		if cell not in pillars and cell not in trees:
+		if cell not in pillars and cell not in trees and not _is_village_piece(map, cell):
 			_block_cells.append(cell)
 	_block_cells.append_array(map.door_cells())
 	_has_block.clear()
@@ -103,12 +106,17 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 	_blocks.instance_count = _block_cells.size()
 	_caps.instance_count = _block_cells.size() + _column_cells.size()
 	_columns.instance_count = _column_cells.size()
-	for prop: Node in _torches.values() + _banners.values() + _clutter.values() + _trees.values():
+	for prop: Node in _torches.values() + _banners.values() + _clutter.values() + _trees.values() + _campfires.values():
 		prop.queue_free()
 	_torches.clear()
 	_banners.clear()
 	_clutter.clear()
 	_trees.clear()
+	_campfires.clear()
+	for cell in map.campfire_cells:
+		var fire := CampfireModel.new()
+		add_child(fire)
+		_campfires[cell] = fire
 	for cell in trees:
 		var tree := DecorModel.make("tree", DungeonDecor.noise(cell, 16))
 		tree.position = WorldSpace.to_3d(DungeonView.cell_center(cell))
@@ -130,6 +138,9 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 		thing.rotation.y = DungeonDecor.noise(cell, 11) * TAU
 		add_child(thing)
 		_clutter[cell] = thing
+	_village.show_village(map.village, look.building_scale)
+	var props: Array[Vector2i] = map.cells_with_blocker(DungeonMap.Blocker.PROP)
+	_village.show_props(props, look.building_scale)
 	_stairs_cell = map.exit_cell
 	_stairs_up_cell = map.stairs_up_cell
 	var torch_cells: Array[Vector2i] = []
@@ -158,6 +169,7 @@ func show_exploration(exploration: Exploration) -> void:
 
 ## Cuts down the walls between the camera and the hero standing on a cell.
 func show_hero_at(hero_cell: Vector2i) -> void:
+	_village.show_hero_at(hero_cell)
 	var cut := {}
 	for cell in CameraFraming.cells_hiding(hero_cell):
 		if _has_block.has(cell):
@@ -169,6 +181,17 @@ func show_hero_at(hero_cell: Vector2i) -> void:
 	for cell: Vector2i in changed:
 		_shown.erase(cell)
 	_refresh()
+
+
+## Whether the village building, palisade or well standing on a cell is see-through, because it stands between the
+## camera and the hero.
+func is_see_through(cell: Vector2i) -> bool:
+	return _village.is_see_through(cell)
+
+
+## Whether a cell holds a piece of the village (a building, the palisade, the well or a prop) drawn as a model.
+func has_village_piece(cell: Vector2i) -> bool:
+	return _village.has_piece_at(cell)
 
 
 ## Whether a wall stands cut down in front of the hero.
@@ -212,6 +235,11 @@ func _ground_brightness(cell: Vector2i) -> float:
 	return REMEMBERED_BRIGHTNESS if _exploration.is_seen(cell) else HIDDEN
 
 
+## The village's pieces are models of their own (see VillageView3D), not blocks.
+static func _is_village_piece(map: DungeonMap, cell: Vector2i) -> bool:
+	return map.blocker_at(cell) in DungeonMap.VILLAGE_BLOCKERS
+
+
 func torch_count() -> int:
 	return _torches.size()
 
@@ -241,6 +269,8 @@ func _refresh(everything := false) -> void:
 		_torches[cell].show_on_wall(cell, _height_at(cell), brightness(cell))
 	_stairs.show_at(_stairs_cell, _ground_brightness(_stairs_cell))
 	_stairs_up.show_at(_stairs_up_cell, _ground_brightness(_stairs_up_cell))
+	for cell: Vector2i in _campfires:
+		_campfires[cell].show_at(cell, _ground_brightness(cell))
 	for cell: Vector2i in _banners:
 		_banners[cell].visible = brightness(cell) > HIDDEN
 		_banners[cell].scale.y = PropModel.SCALE * PropModel.BANNER_SIZE * _height_at(cell)
@@ -248,6 +278,7 @@ func _refresh(everything := false) -> void:
 		_clutter[cell].visible = _ground_brightness(cell) > HIDDEN
 	for cell: Vector2i in _trees:
 		_trees[cell].visible = brightness(cell) > HIDDEN
+	_village.show_brightness(brightness)
 
 
 ## The wall's body, below its cap.

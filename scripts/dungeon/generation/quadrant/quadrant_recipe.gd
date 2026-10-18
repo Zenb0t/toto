@@ -1,12 +1,14 @@
 class_name QuadrantRecipe
 extends RefCounted
-## What a quadrant is made of, as plain data: its size, the mix of terrain, how thick the border is, how clear
-## the middle stays and which set pieces go in. QuadrantGenerator runs the generation steps by it; the same
+## What a quadrant is made of, as plain data: its size, the mix of terrain, how thick the border is, how big
+## the village in the middle is and which set pieces go in. QuadrantGenerator runs the generation steps by it; the same
 ## recipe and seed always make the same map. The plains is the first recipe; later quadrants are new ones.
 ## The numbers are tunable (Tune → World, see knobs), and the defaults live here.
 
 ## Bumped whenever the same recipe and seed would make a different map.
-const VERSION := 1
+const VERSION := 3
+## The first lone campfire lies at most this many cells beyond the village's clear radius (see village_radius).
+const NEAR_CAMPFIRE_BEYOND_VILLAGE := 12
 ## Each side's quadrant exit is this many cells wide, in the middle of the side.
 const EXIT_WIDTH := 3
 
@@ -27,10 +29,30 @@ var pond_count := 6
 ## A pond's deep water is about this many cells from its middle to its edge, plus a shallow shore around it.
 var pond_radius_min := 3
 var pond_radius_max := 6
-## The hero starts in the middle; this many cells around it stay clear (the village replaces that spot later).
-var safe_ring := 20
+## The village in the middle of the plains (see VillageGenerator): its size, and the share of its leftover ground
+## that gets barrels and crates.
+var village_width := 36
+var village_height := 28
+var village_prop_share := 0.15
+## How much bigger than the models themselves the village's buildings, well and palisade are drawn (KayKit's
+## Medieval Hexagon pieces are tiny next to a cell).
+var building_scale := 6.0
 ## The crypt entrance lies at least this far out from the middle (0 the middle, 1 the border; see outward).
 var crypt_min_outward := 0.5
+## Camps: each a band of monsters round a campfire, tougher the farther out (see CampCrews).
+var camp_count := 6
+## The least distance in cells between two camps' campfires.
+var camp_spacing := 18
+## How many monsters a camp holds: the nearest camps the least, the farthest the most.
+var camp_size_min := 2
+var camp_size_max := 4
+## The chance that a camp's band starts asleep rather than wandering about its fire.
+var camp_asleep_chance := 0.5
+## Lone campfires, scenery until they become places to rest; the first lies close to the village.
+var campfire_count := 3
+var campfire_spacing := 35
+## The least distance in cells between a lone campfire and any camp.
+var campfire_camp_gap := 12
 
 
 ## The plains: the centre quadrant, with every number as listed above.
@@ -49,8 +71,27 @@ func without_obstacles() -> QuadrantRecipe:
 	return plain
 
 
+## The same quadrant with no camps or campfires: the last resort for a size that has no room for them.
+func without_camps() -> QuadrantRecipe:
+	var empty := QuadrantRecipe.new()
+	for knob in knobs():
+		empty.set(knob.field, get(knob.field))
+	empty.camp_count = 0
+	empty.campfire_count = 0
+	return empty
+
+
 func size() -> Vector2i:
 	return Vector2i(width, height)
+
+
+func village_size() -> Vector2i:
+	return Vector2i(village_width, village_height)
+
+
+## Round the middle, this far out stays clear of ponds and groves (the village and the grass round it).
+func village_radius() -> float:
+	return Vector2(village_size()).length() / 2.0 + SetPieces.VILLAGE_APRON
 
 
 func center() -> Vector2i:
@@ -69,9 +110,20 @@ func outward(cell: Vector2i) -> float:
 	return maxf(offset.x / (width / 2.0), offset.y / (height / 2.0))
 
 
-## The pieces to stamp in, in order (see SetPiecePlacer).
+## The pieces to stamp in after the village, in order (see SetPiecePlacer).
 func set_pieces() -> Array[SetPiece]:
-	return [SetPieces.crypt_entrance(crypt_min_outward)]
+	var pieces: Array[SetPiece] = [SetPieces.crypt_entrance(crypt_min_outward)]
+	for i in campfire_count:
+		var fire := SetPieces.campfire(campfire_spacing, campfire_camp_gap)
+		pieces.append(fire.near_centre(village_radius() + NEAR_CAMPFIRE_BEYOND_VILLAGE) if i == 0 else fire)
+	for _i in camp_count:
+		pieces.append(SetPieces.camp(camp_spacing, campfire_camp_gap))
+	return pieces
+
+
+## The share of camp bands that start wandering (the rest sleep; see Band.start_of).
+func camp_wandering_share() -> float:
+	return 1.0 - camp_asleep_chance
 
 
 func knobs() -> Array[Knob]:
@@ -86,6 +138,17 @@ func knobs() -> Array[Knob]:
 		Knob.new("pond_count", "Ponds", 0, 20, 1),
 		Knob.new("pond_radius_min", "Pond radius, least", 2, 8, 1),
 		Knob.new("pond_radius_max", "Pond radius, most", 3, 12, 1),
-		Knob.new("safe_ring", "Clear ring around the start", 5, 40, 1),
+		Knob.new("village_width", "Village width (cells)", 24, 60, 2),
+		Knob.new("village_height", "Village height (cells)", 20, 44, 2),
+		Knob.new("village_prop_share", "Village barrels and crates (share)", 0.0, 0.4, 0.01),
+		Knob.new("building_scale", "Village art scale (x)", 2.0, 10.0, 0.5),
 		Knob.new("crypt_min_outward", "Crypt entrance, least out (0-1)", 0.2, 0.9, 0.05),
+		Knob.new("camp_count", "Camps", 0, 10, 1),
+		Knob.new("camp_spacing", "Camps, least apart (cells)", 8, 40, 1),
+		Knob.new("camp_size_min", "Camp band, nearest (monsters)", 1, 6, 1),
+		Knob.new("camp_size_max", "Camp band, farthest (monsters)", 1, 8, 1),
+		Knob.new("camp_asleep_chance", "Camps asleep (chance)", 0.0, 1.0, 0.05),
+		Knob.new("campfire_count", "Lone campfires", 0, 6, 1),
+		Knob.new("campfire_spacing", "Campfires, least apart (cells)", 10, 60, 1),
+		Knob.new("campfire_camp_gap", "Campfire from a camp, least (cells)", 4, 30, 1),
 	]
