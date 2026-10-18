@@ -118,3 +118,14 @@ func test_each_campfire_has_its_own_band_of_ambushers() -> void:
 
 	assert_ne(Ambush.band_id(map, Vector2i(3, 4)), Ambush.band_id(map, Vector2i(4, 3)))
 	assert_ne(Ambush.band_id(map, Vector2i(3, 4)), Camps.band_id(map, Vector2i(3, 4)))
+
+
+func test_ambushers_bands_are_clear_of_the_camps_and_the_ruins_band() -> void:
+	var map := _plains_map()
+	var last_camp := Camps.band_id(map, map.size - Vector2i.ONE)
+	var ruin_band := 2_000_000  # Ruins.NUMBER (#39)
+
+	for fire in map.campfire_cells:
+		var band := Ambush.band_id(map, fire)
+		assert_gt(band, last_camp, "after every camp band")
+		assert_gt(band, ruin_band, "after the ruin's band")

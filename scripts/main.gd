@@ -754,6 +754,8 @@ func _roll_ambush(fire: Vector2i) -> void:
 	var cells := AmbushPlacement.cells(
 		_stage.map, fire, _rest_profile.light_radius_cells, _ambush.margin_cells, _ambush.size,
 		Ambush.placement_rng(seed_value, fire, lighting))
+	if cells.is_empty():
+		return  # no ground outside the light for anyone to come from: no warning for nobody
 	var crew := _ambush.crew(_stage.map, fire, seed_value, lighting)
 	crew.resize(cells.size())
 	_ambush_parties.append(AmbushParty.new(crew, cells, _ambush.delay_seconds, fire))

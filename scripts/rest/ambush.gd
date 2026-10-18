@@ -13,8 +13,9 @@ extends RefCounted
 const AREA_SPAWNS := 6
 ## Who comes when the map has no monster at all to take after.
 const FALLBACK_MONSTER := "kobold"
-## Band ids of ambushers start here, clear of room numbers and of the camps' (see Camps.FIRST_BAND_ID).
-const FIRST_BAND_ID := 2_000_000
+## Band ids of ambushers start here, clear of room numbers (from 0), of the camps' (from Camps.FIRST_BAND_ID,
+## 1,000,000) and of the ruin's band (2,000,000, #39).
+const FIRST_BAND_ID := 3_000_000
 
 ## Tune keys are "<id>.<field>".
 var id := "ambush"

@@ -586,7 +586,7 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   outside the light (light radius + `margin_cells` 1.5, in a 1.5-cell band that widens up to 5 more cells if it holds
   too few), on standable ground the fire can be walked to, not doors, at least 1.5 cells apart; seeded the same way.
   **How:** `Enemy.ambush(hero, home)` starts them already **hunting** (no noticing pause, no shout), with the campfire
-  as home, so they are ordinary hunters: they take turns as a `Squad` of their own (`Ambush.band_id`) and give up like
+  as home, so they are ordinary hunters: they take turns as a `Squad` of their own (`Ambush.band_id`, from 3,000,000: clear of rooms, camps and the ruin) and give up like
   any monster (#36: out of sight for 5 s, or the hero 24 cells from the fire), walking back to the fire. They count as
   hunters for `MonstersAround`, so the hero cannot rest again until they are dead or have given up.
   **Never respawn:** ambushers belong to no spawn cell and are never put in the map record (no kill is recorded,
