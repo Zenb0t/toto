@@ -564,8 +564,9 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   (`RestProfile.is_within_reach`) the attack button reads **REST** (E too) by the same `RestOffer.shows_rest`: calm or
   watched shows it, a **hunting** monster leaves the button the attack. Pressing it asks `MonstersAround` first: hunted or
   watched is refused with the same floating message (`RestOffer.inn_refusal`), E included. Otherwise the hero sits
-  ("Resting..." floats up) and after 3 s is healed to full ("Fully rested"). **Moving** (stick or keys held,
-  `Player.is_moving`) or **being hit** (`Health.damaged`) cancels it ("Rest interrupted", nothing healed, the time
+  ("Resting..." floats up) and after 3 s is healed to full ("Fully rested"). **Moving** (stick or keys held past
+  a tenth of full push, `Player.is_moving`, so a thumb resting on the floating stick doesn't count; or being carried
+  off the doorstep, by a dash or a blink) or **being hit** (`Health.damaged`) cancels it ("Rest interrupted", nothing healed, the time
   already waited is lost). There is no ambush and no limit: after a finish or a cancel the hero can rest again at once.
   Pressing REST during a rest does nothing. Unlike the campfire, the monsters rule is asked only when the rest begins:
   a monster that starts hunting mid-rest ends it only by hitting the hero.

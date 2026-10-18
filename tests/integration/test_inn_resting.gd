@@ -63,6 +63,19 @@ func test_moving_cancels_the_rest_and_heals_nothing() -> void:
 	assert_eq(player.health.current, 100)
 
 
+func test_leaving_the_doorstep_without_steering_cancels_the_rest() -> void:
+	var player := _hero_with(100)
+	var inn := _inn_for(player)
+	inn.rest.begin()
+	await wait_seconds(1.0)
+
+	player.position = Vector2(CELL * 4, 0)  # carried off, as by a blink, with no stick held
+	await wait_seconds(3.0)
+
+	assert_eq(_ended, [false])
+	assert_eq(player.health.current, 100)
+
+
 func test_a_hit_cancels_the_rest() -> void:
 	var player := _hero_with(500)
 	var inn := _inn_for(player)

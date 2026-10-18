@@ -1,8 +1,9 @@
 class_name InnSpot
 extends Node2D
 ## Carries out the inn's rest in the world: stands on the inn's doorstep, ticks an InnRest every physics frame, heals
-## the hero when it completes, and ends it when the hero is hit. (Moving is read from the hero every frame.) The
-## rules are InnRest's; this only feeds it the hero and says how a rest ended.
+## the hero when it completes, and ends it when the hero is hit. Moving is read from the hero every frame: steering
+## (the stick or keys), or being carried off the doorstep some other way (a dash, a blink), counts. The rules are
+## InnRest's; this only feeds it the hero and says how a rest ended.
 
 ## A rest ended: completed (the hero was healed) or cancelled (moved, or hit).
 signal rest_ended(completed: bool)
@@ -36,7 +37,7 @@ func is_within_reach() -> bool:
 func _physics_process(delta: float) -> void:
 	if _hero == null or _hero.health.is_dead():
 		return
-	var step := rest.tick(delta, _hero.is_moving())
+	var step := rest.tick(delta, _hero.is_moving() or not is_within_reach())
 	if step == InnRest.Step.COMPLETED:
 		_hero.health.heal(rest.heal_for(_hero.health.current, _hero.health.maximum))
 		rest_ended.emit(true)
