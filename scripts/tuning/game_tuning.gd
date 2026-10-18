@@ -140,7 +140,7 @@ static func create() -> Tuning:
 		Tuning.Param.new(
 			SQUAD_FLANK_SPREAD, "Flank spread (deg)", ENEMIES_GROUP, 0, 180, 5, Squad.DEFAULT_FLANK_SPREAD_DEGREES),
 		Tuning.Param.new(
-			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
+			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.01, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
 		Tuning.Param.new(
 			LOOT_POTION_DROP_CHANCE, "Enemy potion chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_POTION_DROP_CHANCE),
 		Tuning.Param.new(
