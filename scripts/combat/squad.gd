@@ -48,7 +48,8 @@ func report_bearing(member_id: int, bearing: float) -> void:
 	_bearings[member_id] = bearing
 
 
-## A defeated member frees its turn and its spot.
+## A defeated member, or one that gave up the chase, frees its turn and its spot (it reports its bearing again
+## once it is back in the fight).
 func leave(member_id: int) -> void:
 	_attacking.erase(member_id)
 	_bearings.erase(member_id)

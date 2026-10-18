@@ -188,9 +188,11 @@ Within their comfortable range they circle the player instead of standing still.
 | Asleep | Sleeps at home, a "z" over its head | It notices the hero (see Bands): Noticing |
 | Wander | Strolls slowly (half speed) to random spots within 6 cells of home, in sight of home and off lava | It notices the hero: Noticing |
 | Noticing | Shows a "!" and stands still for 0.4 s, then goes after the hero | The pause is over: Hunt or Position |
+| Check | Gave up the chase: walks (at full pace) to the spot where it last saw the hero | It gets there (or can't): Return. It notices the hero: Noticing |
+| Return | Walks home at wander pace, out of the fight | It gets home: Wander. It notices the hero: Noticing |
 | Idle | Waits (an awake enemy with no target) | It gets a target |
-| Hunt | Can't see the player: walks around walls (`Pathfinder`) | It sees the player, or gets its turn (lobbing weapons attack over walls) |
-| Position | Keeps to its weapon's distance, at its flank spot | It loses sight, or gets its turn |
+| Hunt | Can't see the player: walks around walls (`Pathfinder`) | It sees the player, or gets its turn (lobbing weapons attack over walls). It gives up: Check |
+| Position | Keeps to its weapon's distance, at its flank spot | It loses sight, or gets its turn. It gives up: Check |
 | Wind-up | Stands still and telegraphs the attack, aim locked | The attack is released (or a Beckoning yanks it) |
 | Recover | Steps aside (alternating sides) for 0.35 s | Recovered: back to Hunt or Position |
 
@@ -204,6 +206,28 @@ cells wandering**; there are no dice. Taking damage wakes it at once, and so doe
 within its radius. All of it is in Tune → Enemies: notice when asleep, notice when wandering, hero's noise
 carries, monster's shout carries, noticing pause, wander speed, wander radius, bands wandering (for maps built
 after).
+
+**Giving up and going home** (`Awareness.gives_up`, `EnemyBrain`). The hero can escape a chase. A hunting
+(Hunt or Position) monster settled at a home **gives up** after **5 s without seeing the hero**, or as soon as the
+hero is **24 cells from its home**, even in plain sight (the hero is leaving its territory). The brain counts the
+unseen time itself (reset whenever it sees the hero, and when it notices); the Enemy node hands it the hero's
+distance from home in `Senses`, and `Awareness.gives_up(Awareness.Chase)` decides, so the rule is pure. A monster
+with no home (never settled) never gives up. On giving up it enters **Check**: it walks to the spot it last saw the
+hero inside its territory (the node remembers it; a hero seen 24+ cells from home is not walked to), then **Return**: it strolls home, then goes back to Wander. Reaching a spot is told
+to the brain as `Senses.arrived` (close enough, or no path on, so a walled-off spot never strands it). A monster
+that is checking or returning is awake and can **notice the hero again**, with the same rule and radius as a
+wandering monster (**9 cells**, in sight; a deliberate choice: it is awake and strolling, and a separate radius
+would be one more number nobody tunes), but only once the hero is back **within 24 cells of its home**
+(`Awareness.in_territory`): a hero it gave up on at the edge would otherwise be noticed and given up on again
+every few frames, with a "!" and a shout each time; it then pauses on a "!" and hunts, and **shouts again** (`noticed` fires on
+the way into Noticing), which is fine: a band that settled down can be woken again. The shout chain still ends,
+because only calm monsters hear a shout and a checking or returning one is busy. While it checks or returns a
+monster is out of the fight for its **Squad**: it frees its attack turn and flank spot when it gives up (`Squad.leave`) and
+reports no bearing until it hunts again, as a calm monster doesn't (`EnemyBrain.is_out_of_the_fight`). A home can be
+marked **never gives up** (`Enemy.never_gives_up`, `Senses.never_gives_up`): its hunters hunt on however long and
+far. `main.gd` sets it from `DungeonProgress.is_locking(room)`, so the Lich's arena and sealed trap rooms, once
+they are marked as locking, get it without further wiring. Tune → Enemies: give up after unseen (s), give up
+beyond home (cells).
 
 **Noise and shouts** (`Awareness.noise_hearers`, `shout_hearers`). Fighting has consequences beyond the target.
 The hero's attacks, hit or miss, make **noise**, and so does every blast where it bursts; it wakes monsters
