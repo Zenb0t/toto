@@ -1,6 +1,7 @@
 class_name SetPiece
 extends RefCounted
-## A hand-made piece to stamp into a quadrant (the crypt entrance, camps and campfires; the ruin and the village later), written in the map format. The placer (SetPiecePlacer) finds it a spot by these rules and stamps it.
+## A hand-made piece to stamp into a quadrant (the village, the crypt entrance, camps and campfires; the ruin later),
+## written in the map format. The placer (SetPiecePlacer) finds it a spot by these rules and stamps it.
 ## Plain data.
 
 var id: String
@@ -14,6 +15,8 @@ var anchor_symbol: String
 var min_outward := 0.0
 ## Cells around the piece cleared to plain ground, so it is never walled in by a grove.
 var apron := 2
+## The piece goes in the middle of the quadrant instead of a spot found for it (the village).
+var at_center := false
 ## Which spacing group the piece belongs to (its id unless set; see spaced()).
 var kind: String
 ## Least distance in cells between this piece's anchor and the anchor of any piece of a kind (kind -> cells).
@@ -23,12 +26,15 @@ var spacing := {}
 var max_from_centre := 0.0
 
 
-func _init(piece_id: String, drawing: PackedStringArray, anchor: String, outward := 0.0, clear_margin := 2) -> void:
+func _init(
+		piece_id: String, drawing: PackedStringArray, anchor: String, outward := 0.0, clear_margin := 2,
+		in_the_middle := false) -> void:
 	id = piece_id
 	rows = drawing
 	anchor_symbol = anchor
 	min_outward = outward
 	apron = clear_margin
+	at_center = in_the_middle
 	kind = piece_id
 
 
@@ -48,7 +54,7 @@ func near_centre(cells: float) -> SetPiece:
 
 ## A copy with another drawing of the same size (a camp with its monsters drawn in).
 func with_rows(drawing: PackedStringArray) -> SetPiece:
-	var copy := SetPiece.new(id, drawing, anchor_symbol, min_outward, apron)
+	var copy := SetPiece.new(id, drawing, anchor_symbol, min_outward, apron, at_center)
 	copy.kind = kind
 	copy.spacing = spacing
 	copy.max_from_centre = max_from_centre

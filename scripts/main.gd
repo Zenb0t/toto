@@ -60,6 +60,8 @@ var _lava := LavaBurn.new()
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
+## The name of the place the banner last showed ("The village", "The plains"...), to notice crossing a gate.
+var _shown_place := ""
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
 ## How long the mouse button has been held on a weapon that charges.
 var _mouse_held_seconds := 0.0
@@ -122,6 +124,7 @@ func _physics_process(delta: float) -> void:
 	_attack_button.set_cooldown_ratio(_player.attack_cooldown_ratio())
 	_utility_button.set_cooldown_ratio(_player.utility_cooldown_ratio())
 	_track_player_room()
+	_track_place()
 
 
 # --- Building and leaving a map -----------------------------------------------------------------
@@ -826,15 +829,29 @@ func _grow_from(monster: Monster) -> void:
 		_stage.world.float_text(_player.global_position, "LEVEL %d!" % _experience.level(), LEVEL_UP_COLOR)
 
 
-## Names the branch and greets the player, like Dungeon Crawl on arriving somewhere new.
+## Names the place and greets the player, like Dungeon Crawl on arriving somewhere new.
 func _greet() -> void:
-	_arrival.text = "%s\n%s" % [_stage.spec.place_name(), _branch().greeting]
+	var place := _place()
+	_shown_place = place.name
+	_arrival.text = "%s\n%s" % [place.name, place.greeting]
 	_arrival.modulate.a = 1.0
 	if _arrival_fade != null:
 		_arrival_fade.kill()
 	_arrival_fade = create_tween()
 	_arrival_fade.tween_interval(ARRIVAL_SECONDS)
 	_arrival_fade.tween_property(_arrival, "modulate:a", 0.0, ARRIVAL_FADE_SECONDS)
+
+
+## Where the hero stands: the village inside the palisade, else the map (see Place).
+func _place() -> Place:
+	return Place.at(_stage.spec, _stage.map, DungeonView.world_to_cell(_player.global_position))
+
+
+## Crossing a gate names the new place: on the banner, and in the HUD.
+func _track_place() -> void:
+	if _in_play and _place().name != _shown_place:
+		_greet()
+		_refresh_hud()
 
 
 ## The branch this map is in (see Branch).
@@ -849,7 +866,7 @@ func _refresh_hud() -> void:
 	var goal := "Find the way out" if leads_out else "Find the stairs down"
 	if _branch().outdoors:
 		goal = "Find the crypt entrance"
-	var place := _stage.spec.place_name()
+	var place := _place().name
 	_hud.text = "%s    Level %d (%d%%)    HP %d/%d    %s" % [
 		place, _experience.level(), roundi(_experience.progress() * 100), _player.health.current,
 		_player.health.maximum, goal]

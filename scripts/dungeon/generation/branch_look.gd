@@ -27,6 +27,11 @@ var boulder_color := Color(0.46, 0.45, 0.42)
 var boulder_cap_color := Color(0.62, 0.6, 0.55)
 var barricade_color := Color(0.42, 0.27, 0.15)
 var barricade_cap_color := Color(0.6, 0.42, 0.24)
+## The village's streets and square: beaten earth.
+var street_color := Color(0.62, 0.52, 0.36)
+var street_alt_color := Color(0.56, 0.47, 0.33)
+## How much bigger than the models themselves the village's buildings, well and palisade are drawn.
+var building_scale := 6.0
 ## Specks of grit or seed on bare ground: fewer is cheaper to draw on a big map.
 var ground_specks := 3
 ## What free-standing pillars are: carved columns, plain rock, or trees (they block like walls all the same).

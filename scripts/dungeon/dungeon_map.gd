@@ -5,10 +5,13 @@ extends RefCounted
 ## are part of it: deep water can't be walked on but can be seen and shot across; shallow water can be
 ## waded through, slowly; lava can be walked on, but it burns.
 
-enum Terrain { FLOOR, WATER, LAVA, SHALLOW }
+## PATH is beaten earth, walkable like floor: the village's streets and square.
+enum Terrain { FLOOR, WATER, LAVA, SHALLOW, PATH }
 ## Solid things outdoors that aren't plain wall: tree groves (they block walking and sight), boulders (small
-## cover: they block walking and shots, but sight passes over them) and barricades (they shut a quadrant exit).
-enum Blocker { GROVE, BOULDER, BARRICADE }
+## cover: they block walking and shots, but sight passes over them), barricades (they shut a quadrant exit), and
+## the village's palisade (blocks walking, sight and shots), well and props (barrels, crates: low, like boulders)
+## and buildings (solid; see Village.Building).
+enum Blocker { GROVE, BOULDER, BARRICADE, PALISADE, WELL, PROP, BUILDING }
 
 ## Wading through shallow water, everyone moves at this share of their speed.
 const WADING_SPEED := 0.6
@@ -16,6 +19,10 @@ const NO_ROOM := -1
 const NO_CELL := Vector2i(-1, -1)
 ## blocker_at's answer for a cell that holds none.
 const NO_BLOCKER := -1
+## The blockers sight passes over.
+const LOW_BLOCKERS := [Blocker.BOULDER, Blocker.WELL, Blocker.PROP]
+## The blockers the village is built of: each is drawn as a model standing on the ground, not as a wall.
+const VILLAGE_BLOCKERS := [Blocker.PALISADE, Blocker.WELL, Blocker.PROP, Blocker.BUILDING]
 
 var size: Vector2i
 var player_spawn: Vector2i
@@ -27,6 +34,8 @@ var exit_cell: Vector2i
 var stairs_up_cell: Vector2i
 ## Where an item lies on the floor from the start.
 var loot_cells: Array[Vector2i] = []
+## The village on this map, or null (only the plains have one).
+var village: Village
 ## Where campfires burn (walkable scenery; see Camps for the ones that are a band's home).
 var campfire_cells: Array[Vector2i] = []
 
@@ -51,6 +60,7 @@ func _init(
 	loot: Array[Vector2i] = [],
 	stairs_up: Vector2i = NO_CELL,
 	blocker_by_cell: Dictionary = {},
+	village_on_map: Village = null,
 	campfires: Array[Vector2i] = [],
 ) -> void:
 	size = grid_size
@@ -66,6 +76,7 @@ func _init(
 	loot_cells = loot
 	stairs_up_cell = stairs_up
 	_blocker_by_cell = blocker_by_cell
+	village = village_on_map
 	campfire_cells = campfires
 
 
@@ -84,9 +95,9 @@ func is_walkable(cell: Vector2i) -> bool:
 
 
 ## Sight and shots cross water and lava; only walls (and closed doors, handled by the doors) stop them.
-## Boulders are low enough to see over (shots still stop at them).
+## Boulders, the well and props are low enough to see over (shots still stop at them).
 func is_see_through(cell: Vector2i) -> bool:
-	return is_open(cell) or blocker_at(cell) == Blocker.BOULDER
+	return is_open(cell) or blocker_at(cell) in LOW_BLOCKERS
 
 
 ## Which Blocker stands on a cell, or NO_BLOCKER.
@@ -102,6 +113,9 @@ func cells_with_blocker(blocker: Blocker) -> Array[Vector2i]:
 	return cells
 
 
+## Whether a cell lies inside the village's palisade (or on it).
+func is_in_village(cell: Vector2i) -> bool:
+	return village != null and village.contains(cell)
 func is_campfire(cell: Vector2i) -> bool:
 	return cell in campfire_cells
 

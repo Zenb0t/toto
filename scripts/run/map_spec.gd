@@ -57,7 +57,11 @@ func generator_version() -> int:
 
 ## What the map is (its name, greeting and look).
 func branch() -> Branch:
-	return Branch.plains() if recipe == Recipe.QUADRANT else Branch.crypt()
+	if recipe != Recipe.QUADRANT:
+		return Branch.crypt()
+	var plains := Branch.plains()
+	plains.look.building_scale = quadrant.building_scale
+	return plains
 
 
 ## The share of the map's bands that start wandering, those living in rooms (a camp's are the quadrant recipe's;

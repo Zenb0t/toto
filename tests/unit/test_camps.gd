@@ -74,23 +74,23 @@ func test_lone_campfires_keep_thirty_five_cells_apart_and_twelve_from_any_camp()
 				assert_gte(Vector2(lone[i]).distance_to(Vector2(camp)), 12.0, "from camps, seed %d" % seed_value)
 
 
-func test_one_lone_campfire_lies_near_the_clear_ring() -> void:
+func test_one_lone_campfire_lies_just_beyond_the_village() -> void:
 	for seed_value in SEEDS:
 		var map: DungeonMap = _map_by_seed[seed_value]
 		var nearest := INF
 		for fire in Camps.lone_campfires(map):
 			nearest = minf(nearest, Vector2(fire).distance_to(Vector2(_recipe.center())))
-		assert_lte(nearest, float(_recipe.safe_ring + QuadrantRecipe.NEAR_CAMPFIRE_BEYOND_RING), "seed %d" % seed_value)
+		assert_lte(nearest, _recipe.village_radius() + QuadrantRecipe.NEAR_CAMPFIRE_BEYOND_VILLAGE, "seed %d" % seed_value)
 
 
-func test_nothing_stands_inside_the_clear_ring() -> void:
+func test_no_campfire_or_camp_monster_stands_in_the_village_or_the_grass_round_it() -> void:
 	for seed_value in SEEDS:
 		var map: DungeonMap = _map_by_seed[seed_value]
-		var middle := Vector2(_recipe.center())
+		var village_and_margin := map.village.area.grow(SetPieces.VILLAGE_APRON)
 		for fire in map.campfire_cells:
-			assert_gt(Vector2(fire).distance_to(middle), float(_recipe.safe_ring), "campfire, seed %d" % seed_value)
+			assert_false(village_and_margin.has_point(fire), "campfire %s, seed %d" % [fire, seed_value])
 		for cell in map.enemy_spawns:
-			assert_gt(Vector2(cell).distance_to(middle), float(_recipe.safe_ring), "monster, seed %d" % seed_value)
+			assert_false(village_and_margin.has_point(cell), "monster %s, seed %d" % [cell, seed_value])
 
 
 func test_a_camp_is_two_to_four_goblins_kobolds_and_archers_round_its_fire() -> void:
