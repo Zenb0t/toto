@@ -531,7 +531,8 @@ deterministic), so it costs nothing to store and never changes how the game play
   never where monsters, loot or the stairs are. Walking over it is fine: it is only looks.
 - **Chests** are KayKit's, and their lid swings open.
 - **Weapons on the floor** show the weapon itself (the model characters hold), floating and turning;
-  utilities are glowing cubes, potions flasks. **Items on the floor** stay hidden until their cell has been seen, then stay shown (like the fog's map
+  utilities are glowing cubes, potions flasks. A weapon with no model (the knuckles) is a glowing cube in its
+  colour, like a utility. **Items on the floor** stay hidden until their cell has been seen, then stay shown (like the fog's map
   memory).
 - **Water and lava** move: slow waves with highlights (`shaders/liquid.gdshader`), lava slower and hotter.
 - **Stairs** stand under a stone arch trimmed in gold (down) or silver (up).
