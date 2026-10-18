@@ -8,6 +8,7 @@ extends RefCounted
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
 ##   ,  shallow water (walkable, slowly)
 ##   F  campfire (on floor: scenery you can walk over; a camp's monsters stand round it)
+##   r  dirt road (outdoors: grass that looks like beaten earth, see DungeonMap.Terrain.ROAD)
 ##   T  tree grove    B  boulder    =  barricade (outdoors: each blocks walking, see DungeonMap.Blocker)
 ##   The village (see Village): Y palisade   G gate (floor)   :  street or square (walkable beaten earth)
 ##   U  well   X  barrel or crate   D  the inn's doorstep (floor)   I inn   C church   S smithy   M market
@@ -27,6 +28,7 @@ const WATER := "~"
 const LAVA := "L"
 const SHALLOW := ","
 const CAMPFIRE := "F"
+const ROAD := "r"
 const GROVE := "T"
 const BOULDER := "B"
 const BARRICADE := "="
@@ -40,7 +42,7 @@ func parse(ascii: String) -> DungeonMap:
 
 	var enemy_symbols := Bestiary.letters()
 	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, STAIRS_UP, LOOT, WATER, LAVA, SHALLOW, CAMPFIRE,
-		Village.GATE, Village.STREET, Village.DOORSTEP, Village.START] + enemy_symbols)
+		Village.GATE, Village.STREET, Village.DOORSTEP, Village.START, ROAD] + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
 	var exit_cells := _cells_matching(rows, [EXIT])
 	assert(exit_cells.size() <= 1, "map has more than one exit")
@@ -198,6 +200,8 @@ func _terrain_by_cell(rows: PackedStringArray) -> Dictionary:
 		terrain[cell] = DungeonMap.Terrain.SHALLOW
 	for cell in _cells_matching(rows, [Village.STREET, Village.START]):
 		terrain[cell] = DungeonMap.Terrain.PATH
+	for cell in _cells_matching(rows, [ROAD]):
+		terrain[cell] = DungeonMap.Terrain.ROAD
 	return terrain
 
 

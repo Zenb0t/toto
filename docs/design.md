@@ -390,6 +390,7 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 | Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
 | Fill the camps (`CampCrews.dress`) | Draws a band of monsters into each reserved camp by how far out it lies (below) |
 | Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
+| Roads (`QuadrantRoads`) | Dirt roads (letter **`r`**, terrain `ROAD`) from the village gates to **2** of the 4 exits (Knob `road_count`, 0-4), the exits picked by a seeded shuffle; a road leaves by the gate on its exit's side. See below |
 | Validate (`QuadrantRules`) | At least `min_walkable_share` (70%) of the ground inside the border walkable, the start inside the village, every exit's front cell, every piece's key cell and the outside of every village gate reachable |
 
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
@@ -457,6 +458,20 @@ keep fixed ones. A piece standing between the camera and the hero turns see-thro
 are cut down): the cells in front of the hero count as hiding, and a taller piece hides from farther off and wider
 (`CameraFraming.cells_hiding(hero_cell, height)`); props are too low to hide the hero. Streets and the square are drawn as beaten
 earth. Size: the pack adds about 1.3 MB of source (`.gltf`, `.bin`, one shared 15 KB te
+**Dirt roads** (#41, `QuadrantRoads`) are landmarks to follow across a 160x90 map. Each is 3 cells wide, like the gate and the exit
+it joins, and bends gently. Decisions: the step runs *after* the set pieces are stamped, so the road is routed round them
+(nothing is moved for a road). Routing is `AStarGrid2D` over the cells where a 3x3 block is all open grass, with the cost of a cell
+`1 + road_bend * noise` (seeded simplex, features about 16 cells across; Knob `road_bend`, default 3, 0 = as straight as the
+obstacles allow), so the cheapest way wanders along the noise's valleys instead of running ruler-straight. Ends: the cell in
+front of the village gate's middle, and the cell in front of the exit's barricade. Roads never cross groves, boulders,
+ponds (shallows included: they would be fords, and this is about landmarks) or the village, and keep out of every other set piece's
+footprint (apron plus 1 cell), so no camp, campfire, monster or crypt entrance is on or touching a road. That
+rule is by construction, so a future set piece (the ruin) is avoided without the road knowing it. Both roads are routed before
+either is drawn; they may run along or cross each other. If one has no way through, the whole map is made again (as for any
+broken rule). Roads only recolour grass: walkable like it, same speed and sight, and nothing is placed on them. The crypt entrance
+is never a road's end. Map letter **`r`** (parser: `Terrain.ROAD`, walkable like floor); the minimap paints it a darker tan than
+the village streets (`MinimapPainter.ROAD_COLOR`), and the ground is drawn as dry earth (`BranchLook.road_color`). `QuadrantRecipe.VERSION` is 4.
+
 **Camps and campfires** (`SetPieces.camp`, `SetPieces.campfire`, `CampCrews`, `Camps`). The plains get **6 camps** (at
 least 18 cells apart) and **3 lone campfires** (at least 35 cells apart and 12 from any camp; the first within 12 cells
 beyond the village's clear radius, `QuadrantRecipe.village_radius`), all clear of the village and the 3 cells of grass
