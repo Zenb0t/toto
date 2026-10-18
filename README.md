@@ -59,7 +59,9 @@ closet). Deep water stops feet but not shots; lava burns. You only see what's in
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
 lava, and you. Items sometimes lie on the floor (the same ones for the same world seed), and some rooms are tougher than they should be. The monsters of a room are a band that sleeps there (a "z" over
 their heads) or wanders slowly about it; one notices you only when it can see you close by (4 cells asleep, 9
-wandering) or when you hurt it, shows a "!", and comes for you with the rest of its band. Rooms don't lock, so you
+wandering) or when you hurt it, shows a "!", and comes for you. Your attacks and blasts make noise that wakes monsters
+within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
+so a careless fight can pull in a nearby band. Rooms don't lock, so you
 can sneak past or pick your fight. Loot is earned, not handed out:
 clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
 hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
@@ -115,7 +117,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `Fireball`, `Crossbow`, `Bow`, or an `ArcWeapon` archetype: `Dagger`, `Sword`, `Battleaxe`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects, `PoisonStatus` so poison clouds don't stack, `ChainFalloff` for the Lightning Bolt's weaker jumps, `Charge`: seconds held to strength), when a weapon fires
   (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead, where to wander), when a calm monster
-  notices the hero (`Awareness`), what they are doing (`EnemyBrain`, a small state machine: asleep, wander,
+  notices the hero and who hears a noise or shout (`Awareness`), what they are doing (`EnemyBrain`, a small state machine: asleep, wander,
   noticing, idle, hunt, position, wind up, recover), how a band fights as a team (`Squad`: taking turns, flank
   spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
@@ -151,5 +153,5 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
   (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
   routes controls to the player and applies the room rules (each room's monsters are a band: settled at home,
-  and alerted when one of them notices the hero)
+  and woken by the hero's noise and by each other's shouts, a band always hearing its own)
 - `tests/unit`, `tests/integration` – behaviour tests

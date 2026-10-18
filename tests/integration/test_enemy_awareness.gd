@@ -74,7 +74,7 @@ func test_a_sleeping_monster_notices_a_hero_who_comes_close() -> void:
 	assert_signal_emitted(enemy, "noticed")
 
 
-func test_a_sleeping_monster_alerted_by_its_band_notices_the_hero() -> void:
+func test_a_sleeping_monster_that_hears_a_noise_or_shout_notices_the_hero() -> void:
 	var player := _spawn_player_at(Vector2(20 * CELL, 0))
 	var enemy := _settled_enemy(Band.Start.ASLEEP, player)
 	await wait_physics_frames(2)
@@ -83,6 +83,19 @@ func test_a_sleeping_monster_alerted_by_its_band_notices_the_hero() -> void:
 	await wait_physics_frames(2)
 
 	assert_eq(enemy.mark(), Enemy.NOTICING_MARK)
+
+
+func test_a_monster_already_noticing_the_hero_does_not_shout_again_when_it_hears_a_shout() -> void:
+	var player := _spawn_player_at(Vector2(20 * CELL, 0))
+	var enemy := _settled_enemy(Band.Start.ASLEEP, player)
+	watch_signals(enemy)
+	enemy.alert()
+	await wait_physics_frames(2)
+
+	enemy.alert()
+	await wait_physics_frames(2)
+
+	assert_signal_emit_count(enemy, "noticed", 1)
 
 
 func test_a_wandering_monster_strolls_about_its_home_without_a_mark() -> void:

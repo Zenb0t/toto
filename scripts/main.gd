@@ -51,6 +51,8 @@ var _progress: DungeonProgress
 var _enemies_by_room := {}  # int -> Array[Enemy]: each room's band (its home is the room)
 var _squads_by_room := {}  # int -> Squad: each room's enemies fight as a team
 var _spawn_cells := {}  # Enemy -> its spawn cell, which is how the record knows it
+## Who hears the hero's noise and a monster's shout (see Awareness); tuned like each enemy's own.
+var _hearing := Awareness.new()
 var _floor_loot_cells := {}  # PickupArea -> its loot cell, for the floor items not taken yet
 ## The stairs the hero arrived on: they only lead on once the hero has stepped off them.
 var _arrival_cell := DungeonMap.NO_CELL
@@ -207,6 +209,7 @@ func _spawn_player(hero: HeroState, cell: Vector2i) -> Player:
 	player.health = Health.restored(hero.max_health, hero.health)
 	player.position = DungeonView.cell_center(cell)
 	player.attack_fired.connect(_spawn_attacks.bind(player))
+	player.attack_fired.connect(func(_attacks: Array) -> void: _make_noise(player.global_position))
 	player.health_changed.connect(func(_current: int, _maximum: int) -> void: _refresh_hud())
 	player.died.connect(func() -> void: _end_run(RunSummary.Ending.DIED))
 	_stage.add_actor(player)
@@ -236,7 +239,7 @@ func _spawn_enemies() -> void:
 			Band.start_of(_stage.spec.seed_value, room, GameTuning.band_wandering_share(_tuning)))
 		enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
-		enemy.noticed.connect(_on_enemy_noticed.bind(room))
+		enemy.noticed.connect(_on_enemy_noticed)
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
 		_stage.add_actor(enemy)
 		_stage.world.add_enemy(enemy)
@@ -462,11 +465,43 @@ func _on_room_cleared(room: int) -> void:
 	_sight_origin = DungeonMap.NO_CELL
 
 
-## The rest of the band living in that room joins the one that noticed the hero.
-func _on_enemy_noticed(noticer: Enemy, room: int) -> void:
-	for enemy: Enemy in _enemies_by_room[room]:
-		if enemy != noticer:
-			enemy.alert()
+## A monster that notices the hero shouts, waking the rest of its band and whoever else hears it (see Awareness).
+## Each one woken notices in turn and shouts too; a monster that is already awake is not woken again, so the
+## chain ends.
+func _on_enemy_noticed(noticer: Enemy) -> void:
+	var listeners: Array[Enemy] = []
+	var bands := PackedInt32Array()  # each listener's band: the room it lives in
+	for room: int in _enemies_by_room:
+		for enemy: Enemy in _enemies_by_room[room]:
+			listeners.append(enemy)
+			bands.append(room)
+	var shouter := listeners.find(noticer)
+	if shouter == -1:
+		return
+	for index in _hearing.shout_hearers(shouter, _cells_of(listeners), bands):
+		listeners[index].alert()
+
+
+## The hero's attack or a blast makes noise at a point (world position), waking monsters that hear it.
+func _make_noise(at: Vector2) -> void:
+	var listeners := _all_enemies()
+	for index in _hearing.noise_hearers(at / DungeonView.TILE_SIZE, _cells_of(listeners)):
+		listeners[index].alert()
+
+
+func _all_enemies() -> Array[Enemy]:
+	var all: Array[Enemy] = []
+	for enemies: Array in _enemies_by_room.values():
+		all.append_array(enemies)
+	return all
+
+
+## Where the enemies are, in cells.
+func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
+	var cells := PackedVector2Array()
+	for enemy in enemies:
+		cells.append(enemy.global_position / DungeonView.TILE_SIZE)
+	return cells
 
 
 func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
@@ -501,6 +536,7 @@ func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 func _launch(shot: Shot) -> void:
 	var projectile: Projectile = PROJECTILE_SCENE.instantiate()
 	projectile.launch(shot)
+	projectile.exploded.connect(_make_noise)
 	_stage.add_effect(projectile)
 	_stage.world.add_projectile(projectile)
 
@@ -700,6 +736,7 @@ func _apply_tuning(tuning: Tuning) -> void:
 			enemy.wander_speed_share = GameTuning.enemy_wander_speed_share(tuning)
 			enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
 			GameTuning.tune_awareness(enemy.awareness, tuning)
+	GameTuning.tune_awareness(_hearing, tuning)
 	for squad: Squad in _squads_by_room.values():
 		GameTuning.tune_squad(squad, tuning)
 
