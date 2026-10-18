@@ -21,6 +21,8 @@ const NO_CELL := Vector2i(-1, -1)
 const NO_BLOCKER := -1
 ## The blockers sight passes over.
 const LOW_BLOCKERS := [Blocker.BOULDER, Blocker.WELL, Blocker.PROP]
+## The blockers the village is built of: each is drawn as a model standing on the ground, not as a wall.
+const VILLAGE_BLOCKERS := [Blocker.PALISADE, Blocker.WELL, Blocker.PROP, Blocker.BUILDING]
 
 var size: Vector2i
 var player_spawn: Vector2i

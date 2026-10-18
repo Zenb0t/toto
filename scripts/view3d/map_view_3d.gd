@@ -231,8 +231,7 @@ func _ground_brightness(cell: Vector2i) -> float:
 
 ## The village's pieces are models of their own (see VillageView3D), not blocks.
 static func _is_village_piece(map: DungeonMap, cell: Vector2i) -> bool:
-	return map.blocker_at(cell) in [DungeonMap.Blocker.PALISADE, DungeonMap.Blocker.WELL,
-		DungeonMap.Blocker.PROP, DungeonMap.Blocker.BUILDING]
+	return map.blocker_at(cell) in DungeonMap.VILLAGE_BLOCKERS
 
 
 func torch_count() -> int:

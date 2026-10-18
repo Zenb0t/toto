@@ -110,8 +110,7 @@ func _draw() -> void:
 
 ## The village's buildings, palisade, well and props are models standing on ground, not walls.
 func _is_village_piece(cell: Vector2i) -> bool:
-	return _map.blocker_at(cell) in [DungeonMap.Blocker.PALISADE, DungeonMap.Blocker.WELL,
-		DungeonMap.Blocker.PROP, DungeonMap.Blocker.BUILDING]
+	return _map.blocker_at(cell) in DungeonMap.VILLAGE_BLOCKERS
 
 
 func _draw_ground(cell: Vector2i) -> void:
