@@ -23,8 +23,8 @@ and mouse, following whichever you used last.
 | Hold the weapon button (**Bow**) | Draws the bow: the longer you hold before letting go, the harder the arrow hits, up to a full charge at 1.5 s, which also pierces. You walk slower while drawing; the aim line fills up as it charges. A tap is a weak arrow |
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
-| Weapon button reads **REST** (by an unlit campfire, when nothing is hunting you) | Light it: it burns about 10 s and heals you up to half your health while you stand in its light. Stepping out pauses the healing; a hit or an attack stops it. Then it lies in embers (a countdown shows) for about 90 s, counted only while you are on that map. Refused while a monster hunts you or an awake one is in sight (sleeping ones don't count); a camp's fire is theirs until the last monster dies |
-| Weapon button reads **REST** (on the village inn's doorstep, when nothing is hunting you) | Sit for 3 s: you are fully healed. Moving or a hit cancels it; there is no ambush and no limit, so you can rest again at once. Refused while a monster hunts you or an awake one is in sight |
+| Weapon button reads **REST** (by an unlit campfire, when nothing is hunting you) | Light it: it burns about 10 s and heals you up to half your health while you stand in its light. Stepping out pauses the healing; a hit or an attack stops it. Then it lies in embers (a countdown shows) for about 90 s, counted only while you are on that map. Refused while a monster hunts you or an awake one is in sight (sleeping ones don't count); a camp's fire is theirs until the last monster dies. **Resting in the wild is a gamble:** each time you light a campfire there is a seeded chance (30% on the plains, 45% in the crypt) that 3 of the area's monsters arrive at the edge of the light a few seconds later, already hunting you. Leaving and coming back can't re-roll it |
+| Weapon button reads **REST** (on the village inn's doorstep, when nothing is hunting you) | Sit for 3 s: you are fully healed. Moving or a hit cancels it; the inn never has an ambush and no limit, so you can rest again at once. Refused while a monster hunts you or an awake one is in sight |
 | Walk onto a chest or a dropped item | Shows what it is; **Take** swaps it for yours, **Leave** keeps yours |
 | **Map** (top left) | Show or hide the minimap; the choice is remembered |
 | Tap the minimap | Open the whole map, big on the screen (the game waits). Tap, click, Esc or M closes it |
@@ -49,7 +49,7 @@ and mouse, following whichever you used last.
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 **Tune gameplay** exposes the numbers that shape the feel, sorted into a menu: Player, Weapons, Utilities,
-Potions, Enemies, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light; the inn's rest time and reach), Camera (tilt, distance, field of view,
+Potions, Enemies, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light; ambush chances, size and delay; the inn's rest time and reach), Camera (tilt, distance, field of view,
 look-ahead, wall height) and World (the plains' size, groves, ponds and the rest; they shape the next world, with
 **New world** and **Same seed again** buttons). Weapons, Utilities and Potions list every item, so any of them can be tuned (the equipped
 one is marked). Entries you changed show in gold; Reset resets the page you're on. Changes apply live and are
@@ -176,7 +176,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Place` ("The village", or the map's own name: "The plains", "Crypt level 2", for the HUD and banner); `Experience`: levels from
   kills, each adding maximum health
 - `scripts/rest` – resting at a campfire: `Campfire` (unlit, burning, embers), `RestProfile` (its numbers, Knobs),
-  `MonstersAround` (when resting is refused), `RestOffer` (when the button reads REST, and the refusal), `RestSpot` (the node that carries a campfire out in the world), and the inn's `InnRest` (a 3 s rest, cancelled by moving or a hit) with `InnSpot` (its node on the doorstep)
+  `MonstersAround` (when resting is refused), `Ambush` (the seeded roll of each campfire lighting and who comes), `AmbushPlacement` (where they appear) and `AmbushParty` (the countdown), `RestOffer` (when the button reads REST, and the refusal), `RestSpot` (the node that carries a campfire out in the world), and the inn's `InnRest` (a 3 s rest, cancelled by moving or a hit) with `InnSpot` (its node on the doorstep)
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
   (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
   routes controls to the player and applies the room rules (a camp's monsters, or the monsters of a room, are a band: settled at its home, the campfire or the room's middle,
