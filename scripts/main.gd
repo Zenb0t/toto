@@ -48,7 +48,7 @@ var _stage: MapStage
 var _record: MapRecord
 var _player: Player
 var _progress: DungeonProgress
-var _enemies_by_room := {}  # int -> Array[Enemy]
+var _enemies_by_room := {}  # int -> Array[Enemy]: each room's band (its home is the room)
 var _squads_by_room := {}  # int -> Squad: each room's enemies fight as a team
 var _spawn_cells := {}  # Enemy -> its spawn cell, which is how the record knows it
 var _floor_loot_cells := {}  # PickupArea -> its loot cell, for the floor items not taken yet
@@ -216,12 +216,14 @@ func _spawn_player(hero: HeroState, cell: Vector2i) -> Player:
 
 
 ## The map's monsters, but for those killed on an earlier visit; the ones left hurt have healed for the time the
-## hero was away.
+## hero was away. Each room's monsters are a band living there, asleep or wandering (the same for the same map),
+## until one of them notices the hero.
 func _spawn_enemies() -> void:
 	for cell in _stage.map.enemy_spawns:
 		if _record.is_killed(cell):
 			continue
 		var room := _stage.map.room_at(cell)
+		var home := cell if room == DungeonMap.NO_ROOM else _stage.map.room_center(room)
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
 		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
@@ -231,7 +233,11 @@ func _spawn_enemies() -> void:
 		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
 		enemy.navigation = _stage.pathfinder
 		enemy.squad = _squads_by_room.get_or_add(room, Squad.new())
+		enemy.settle(DungeonView.cell_center(home),
+			Band.start_of(_stage.spec.seed_value, room, GameTuning.band_wandering_share(_tuning)))
+		enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
+		enemy.noticed.connect(_on_enemy_noticed.bind(room))
 		enemy.defeated.connect(_on_enemy_defeated.bind(room))
 		_stage.add_actor(enemy)
 		_stage.world.add_enemy(enemy)
@@ -275,6 +281,7 @@ func _create_progress() -> DungeonProgress:
 	var counts := {}
 	for room: int in _enemies_by_room:
 		counts[room] = _enemies_by_room[room].size()
+	# No room is marked as locking yet (trap rooms and the boss arena will be): monsters come when they notice.
 	var progress := DungeonProgress.new(counts)
 	progress.room_locked.connect(_on_room_locked)
 	progress.room_cleared.connect(_on_room_cleared)
@@ -423,25 +430,22 @@ func _on_utility_released(release: AimGesture.Release) -> void:
 	_player.use_utility(release.direction if not release.is_auto else _player.facing)
 
 
-## Closest enemy in the room the player is fighting in (or standing in), at any distance. Null if none.
+## Closest enemy the hero can see, at any distance. Null if none.
 func _auto_aim_target() -> Enemy:
-	var enemies: Array = _enemies_by_room.get(_combat_room(), [])
+	var enemies: Array[Enemy] = []
 	var positions: Array[Vector2] = []
-	for enemy: Enemy in enemies:
-		positions.append(enemy.global_position)
+	for band: Array in _enemies_by_room.values():
+		for enemy: Enemy in band:
+			if _stage.exploration.is_visible(DungeonView.world_to_cell(enemy.global_position)):
+				enemies.append(enemy)
+				positions.append(enemy.global_position)
 	var nearest := AutoAim.nearest_index(_player.global_position, positions, INF)
 	return null if nearest == AutoAim.NO_TARGET else enemies[nearest]
 
 
-func _combat_room() -> int:
-	if _progress.locked_room != DungeonProgress.NO_ROOM:
-		return _progress.locked_room
-	return _stage.map.room_at(DungeonView.world_to_cell(_player.global_position))
-
-
 # --- Rooms and combat ----------------------------------------------------------------------------
 
-## Lock a room only once the player is a full tile past its doorway, so a closing door can't trap them in it.
+## Lock a (locking) room only once the player is a full tile past its doorway, so a closing door can't trap them in it.
 ## Stepping on the stairs down, once their room is clear, leads down (or out, from the last floor); the stairs
 ## up always lead up. The stairs the hero arrived on only lead on once stepped off.
 func _track_player_room() -> void:
@@ -461,8 +465,6 @@ func _on_room_locked(room: int) -> void:
 	_stage.view.set_room_closed(room, true)
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), true)
 	_sight_origin = DungeonMap.NO_CELL
-	for enemy: Enemy in _enemies_by_room[room]:
-		enemy.chase(_player)
 
 
 func _on_room_cleared(room: int) -> void:
@@ -470,6 +472,13 @@ func _on_room_cleared(room: int) -> void:
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), false)
 	_sight_origin = DungeonMap.NO_CELL
 	_spawn_chest(room)
+
+
+## The rest of the band living in that room joins the one that noticed the hero.
+func _on_enemy_noticed(noticer: Enemy, room: int) -> void:
+	for enemy: Enemy in _enemies_by_room[room]:
+		if enemy != noticer:
+			enemy.alert()
 
 
 func _on_enemy_defeated(enemy: Enemy, room: int) -> void:
@@ -697,6 +706,10 @@ func _apply_tuning(tuning: Tuning) -> void:
 			enemy.arm(GameTuning.enemy_weapon(tuning, enemy.weapon.id))
 			enemy.lead_share = GameTuning.enemy_lead_share(tuning)
 			enemy.recover_seconds = GameTuning.enemy_recover_seconds(tuning)
+			enemy.noticing_seconds = GameTuning.enemy_noticing_seconds(tuning)
+			enemy.wander_speed_share = GameTuning.enemy_wander_speed_share(tuning)
+			enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
+			GameTuning.tune_awareness(enemy.awareness, tuning)
 	for squad: Squad in _squads_by_room.values():
 		GameTuning.tune_squad(squad, tuning)
 

@@ -108,3 +108,94 @@ func test_only_hunting_or_positioned_enemies_look_for_a_turn() -> void:
 
 	assert_false(idle)
 	assert_true(brain.is_looking_for_a_turn())
+
+
+## What a calm enemy senses of a hero that far away (in cells), in its line of sight or not.
+func _hero_at(cells: float, in_sight := true) -> EnemyBrain.Senses:
+	var senses := _senses(true, in_sight)
+	senses.target_cells = cells
+	return senses
+
+
+func test_a_sleeping_enemy_sleeps_on_while_the_hero_is_far() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.ASLEEP)
+
+	assert_eq(brain.update(STEP, _hero_at(6.0)), EnemyBrain.State.ASLEEP)
+	assert_false(brain.is_looking_for_a_turn())
+
+
+func test_a_sleeping_enemy_notices_a_hero_close_by_then_hunts() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.ASLEEP)
+	brain.noticing_seconds = 0.4
+
+	var noticing := brain.update(STEP, _hero_at(3.0))
+	var still_noticing := brain.update(0.3, _hero_at(3.0, false))
+	var hunting := brain.update(0.15, _hero_at(3.0, false))
+
+	assert_eq(noticing, EnemyBrain.State.NOTICING)
+	assert_eq(still_noticing, EnemyBrain.State.NOTICING)
+	assert_eq(hunting, EnemyBrain.State.HUNT)
+
+
+func test_a_wandering_enemy_notices_a_hero_from_farther_then_takes_up_position() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.WANDER)
+	brain.noticing_seconds = 0.2
+
+	var noticing := brain.update(STEP, _hero_at(8.0))
+	var positioned := brain.update(0.25, _hero_at(8.0))
+
+	assert_eq(noticing, EnemyBrain.State.NOTICING)
+	assert_eq(positioned, EnemyBrain.State.POSITION)
+
+
+func test_a_wandering_enemy_does_not_notice_a_hero_behind_a_wall() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.WANDER)
+
+	assert_eq(brain.update(STEP, _hero_at(2.0, false)), EnemyBrain.State.WANDER)
+
+
+func test_the_noticing_pause_lasts_as_long_as_it_is_tuned() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.ASLEEP)
+	brain.noticing_seconds = 1.0
+	brain.update(STEP, _hero_at(1.0))
+
+	var early := brain.update(0.9, _hero_at(1.0))
+	var late := brain.update(0.15, _hero_at(1.0))
+
+	assert_eq(early, EnemyBrain.State.NOTICING)
+	assert_eq(late, EnemyBrain.State.POSITION)
+
+
+func test_a_noticing_enemy_does_not_attack_yet() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.ASLEEP)
+	brain.update(STEP, _hero_at(1.0))
+	var senses := _hero_at(1.0)
+	senses.has_turn = true
+
+	assert_eq(brain.update(STEP, senses), EnemyBrain.State.NOTICING)
+	assert_false(brain.is_looking_for_a_turn())
+
+
+func test_a_hurt_sleeper_wakes_and_notices_even_with_the_hero_out_of_sight() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.ASLEEP)
+	var senses := _hero_at(20.0, false)
+	senses.hurt = true
+
+	assert_eq(brain.update(STEP, senses), EnemyBrain.State.NOTICING)
+
+
+func test_a_sleeper_whose_band_noticed_the_hero_notices_too() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.ASLEEP)
+	var senses := _hero_at(20.0, false)
+	senses.alerted = true
+
+	assert_eq(brain.update(STEP, senses), EnemyBrain.State.NOTICING)
+
+
+func test_the_noticing_radii_follow_its_awareness() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.ASLEEP)
+	brain.awareness.asleep_sight_cells = 8.0
+
+	assert_eq(brain.notice_range_cells(), 8.0)
+	assert_eq(brain.update(STEP, _hero_at(7.0)), EnemyBrain.State.NOTICING)
+	assert_eq(brain.notice_range_cells(), INF)
