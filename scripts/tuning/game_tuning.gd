@@ -138,6 +138,7 @@ static func create() -> Tuning:
 	params.append_array(_item_params(RestProfile.campfire(), REST_GROUP))
 	params.append_array(_item_params(RestProfile.inn(), REST_GROUP))
 	params.append_array(_item_params(MonstersAround.new(), REST_GROUP))
+	params.append_array(_item_params(Ambush.new(), REST_GROUP))
 	params.append_array(_item_params(CryptRecipe.new(), WORLD_GROUP, true))
 	params.append(Tuning.Param.new(WORLD_WARP, "Warp (0 = off)", WORLD_GROUP, 0, 1, 1, 0))
 	params.append_array(_item_params(Lich.new(), LICH_GROUP))
@@ -462,6 +463,13 @@ static func inn_profile(tuning: Tuning) -> RestProfile:
 ## When resting is refused because of monsters around (Tune → Rest).
 static func monsters_around(tuning: Tuning) -> MonstersAround:
 	var rule := MonstersAround.new()
+	_apply_knobs(rule, tuning)
+	return rule
+
+
+## How likely resting at a campfire is to bring an ambush, how big and how soon (Tune → Rest).
+static func ambush(tuning: Tuning) -> Ambush:
+	var rule := Ambush.new()
 	_apply_knobs(rule, tuning)
 	return rule
 
