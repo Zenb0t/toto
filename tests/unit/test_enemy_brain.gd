@@ -199,3 +199,121 @@ func test_the_noticing_radii_follow_its_awareness() -> void:
 	assert_eq(brain.notice_range_cells(), 8.0)
 	assert_eq(brain.update(STEP, _hero_at(7.0)), EnemyBrain.State.NOTICING)
 	assert_eq(brain.notice_range_cells(), INF)
+
+
+## A hunter with a home, whose hero is in sight or not, and this far from home (cells).
+func _hunter_senses(sees_target: bool, hero_cells_from_home := 0.0) -> EnemyBrain.Senses:
+	var senses := _hero_at(5.0, sees_target)
+	senses.has_home = true
+	senses.target_cells_from_home = hero_cells_from_home
+	return senses
+
+
+## A brain hunting a hero it cannot see, which has just lost it.
+func _hunting_at_home() -> EnemyBrain:
+	var brain := EnemyBrain.new()
+	brain.update(STEP, _hunter_senses(true))
+	return brain
+
+
+## Time passes with the hero out of sight.
+func _lose_sight_for(brain: EnemyBrain, seconds: float, never_gives_up := false) -> EnemyBrain.State:
+	var senses := _hunter_senses(false)
+	senses.target_cells = 30.0
+	senses.never_gives_up = never_gives_up
+	return brain.update(seconds, senses)
+
+
+func test_a_hunter_that_loses_the_hero_for_five_seconds_gives_up_and_checks_where_it_saw_them() -> void:
+	var brain := _hunting_at_home()
+
+	assert_eq(_lose_sight_for(brain, 4.9), EnemyBrain.State.HUNT)
+	assert_eq(_lose_sight_for(brain, 0.2), EnemyBrain.State.CHECK)
+	assert_true(brain.is_giving_up())
+	assert_false(brain.is_looking_for_a_turn())
+
+
+func test_seeing_the_hero_again_starts_the_unseen_time_over() -> void:
+	var brain := _hunting_at_home()
+	_lose_sight_for(brain, 4.0)
+	brain.update(STEP, _hunter_senses(true))
+
+	assert_eq(_lose_sight_for(brain, 4.0), EnemyBrain.State.HUNT)
+
+
+func test_a_hunter_gives_up_even_in_sight_once_the_hero_is_twenty_four_cells_from_home() -> void:
+	var brain := _hunting_at_home()
+
+	assert_eq(brain.update(STEP, _hunter_senses(true, 24.0)), EnemyBrain.State.CHECK)
+
+
+func test_a_hunter_without_a_home_never_gives_up() -> void:
+	var brain := EnemyBrain.new()
+	var senses := _hero_at(40.0, false)
+	senses.target_cells_from_home = 40.0
+	brain.update(STEP, senses)
+
+	assert_eq(brain.update(30.0, senses), EnemyBrain.State.HUNT)
+
+
+func test_a_hunter_whose_home_never_gives_up_keeps_hunting() -> void:
+	var brain := _hunting_at_home()
+	var senses := _hunter_senses(false, 80.0)
+	senses.never_gives_up = true
+
+	assert_eq(brain.update(30.0, senses), EnemyBrain.State.HUNT)
+
+
+func _giving_up() -> EnemyBrain:
+	var brain := _hunting_at_home()
+	_lose_sight_for(brain, 5.0)
+	return brain
+
+
+func _arrived_far_from_the_hero() -> EnemyBrain.Senses:
+	var senses := _hunter_senses(false)
+	senses.target_cells = 30.0
+	senses.arrived = true
+	return senses
+
+
+func test_a_monster_that_reached_the_last_seen_spot_walks_home_then_wanders_again() -> void:
+	var brain := _giving_up()
+	var walking := _hunter_senses(false)
+	walking.target_cells = 30.0
+
+	assert_eq(brain.update(STEP, walking), EnemyBrain.State.CHECK, "still on its way")
+	assert_eq(brain.update(STEP, _arrived_far_from_the_hero()), EnemyBrain.State.RETURN)
+	assert_eq(brain.update(STEP, walking), EnemyBrain.State.RETURN)
+	assert_eq(brain.update(STEP, _arrived_far_from_the_hero()), EnemyBrain.State.WANDER)
+	assert_true(brain.is_calm())
+
+
+func test_a_returning_monster_that_sees_the_hero_close_by_notices_again() -> void:
+	var brain := _giving_up()
+	brain.update(STEP, _arrived_far_from_the_hero())
+
+	assert_eq(brain.update(STEP, _hunter_senses(true)), EnemyBrain.State.NOTICING)
+	assert_eq(brain.update(1.0, _hunter_senses(true)), EnemyBrain.State.POSITION)
+
+
+func test_a_checking_monster_that_sees_the_hero_close_by_notices_again() -> void:
+	var brain := _giving_up()
+
+	assert_eq(brain.update(STEP, _hunter_senses(true)), EnemyBrain.State.NOTICING)
+
+
+func test_a_returning_monster_does_not_notice_a_hero_beyond_the_wander_sight() -> void:
+	var brain := _giving_up()
+	var far := _hunter_senses(true)
+	far.target_cells = 12.0
+
+	assert_eq(brain.update(STEP, far), EnemyBrain.State.CHECK)
+
+
+func test_a_monster_that_noticed_again_does_not_give_up_at_once() -> void:
+	var brain := _giving_up()
+	brain.update(STEP, _hunter_senses(true))
+	brain.update(1.0, _hunter_senses(true))
+
+	assert_eq(_lose_sight_for(brain, 4.0), EnemyBrain.State.HUNT)

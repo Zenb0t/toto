@@ -198,3 +198,16 @@ func test_a_magic_missile_is_worth_between_two_and_three_punches() -> void:
 func test_the_bow_is_among_the_weapons_the_player_can_find() -> void:
 	assert_has(GameTuning.weapon_ids(), "bow")
 	assert_eq(GameTuning.weapon(GameTuning.create(), "bow").id, "bow")
+
+
+func test_the_give_up_time_and_distance_are_enemy_knobs_that_default_to_the_awareness_rules() -> void:
+	var tuning := GameTuning.create()
+	var awareness := Awareness.new()
+	awareness.give_up_seconds = 99.0
+	awareness.give_up_cells = 99.0
+
+	GameTuning.tune_awareness(awareness, tuning)
+
+	assert_eq(tuning.param(GameTuning.AWARENESS_GIVE_UP_SECONDS).group, GameTuning.ENEMIES_GROUP)
+	assert_eq(awareness.give_up_seconds, Awareness.DEFAULT_GIVE_UP_SECONDS)
+	assert_eq(awareness.give_up_cells, Awareness.DEFAULT_GIVE_UP_CELLS)

@@ -19,6 +19,8 @@ const AWARENESS_ASLEEP_SIGHT := "awareness.asleep_sight"
 const AWARENESS_WANDER_SIGHT := "awareness.wander_sight"
 const AWARENESS_NOISE := "awareness.noise"
 const AWARENESS_SHOUT := "awareness.shout"
+const AWARENESS_GIVE_UP_SECONDS := "awareness.give_up_seconds"
+const AWARENESS_GIVE_UP_CELLS := "awareness.give_up_cells"
 const ENEMY_NOTICING := "enemy.noticing"
 const ENEMY_WANDER_SPEED := "enemy.wander_speed"
 const BAND_WANDER_RADIUS := "band.wander_radius"
@@ -159,6 +161,12 @@ static func create() -> Tuning:
 		Tuning.Param.new(
 			AWARENESS_SHOUT, "Monster's shout carries (cells)", ENEMIES_GROUP, 0, 20, 0.5,
 			Awareness.DEFAULT_SHOUT_CELLS),
+		Tuning.Param.new(
+			AWARENESS_GIVE_UP_SECONDS, "Give up after unseen (s)", ENEMIES_GROUP, 1, 30, 0.5,
+			Awareness.DEFAULT_GIVE_UP_SECONDS),
+		Tuning.Param.new(
+			AWARENESS_GIVE_UP_CELLS, "Give up beyond home (cells)", ENEMIES_GROUP, 5, 60, 1,
+			Awareness.DEFAULT_GIVE_UP_CELLS),
 		Tuning.Param.new(
 			ENEMY_NOTICING, "Noticing pause (s)", ENEMIES_GROUP, 0, 2, 0.05, EnemyBrain.DEFAULT_NOTICING_SECONDS),
 		Tuning.Param.new(
@@ -314,6 +322,8 @@ static func tune_awareness(target: Awareness, tuning: Tuning) -> void:
 	target.wander_sight_cells = tuning.value(AWARENESS_WANDER_SIGHT)
 	target.noise_cells = tuning.value(AWARENESS_NOISE)
 	target.shout_cells = tuning.value(AWARENESS_SHOUT)
+	target.give_up_seconds = tuning.value(AWARENESS_GIVE_UP_SECONDS)
+	target.give_up_cells = tuning.value(AWARENESS_GIVE_UP_CELLS)
 
 
 ## How long a monster stands still, showing "!", once it notices the hero.

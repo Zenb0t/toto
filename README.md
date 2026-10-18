@@ -61,7 +61,8 @@ lava, and you. Items sometimes lie on the floor (the same ones for the same worl
 their heads) or wanders slowly about it; one notices you only when it can see you close by (4 cells asleep, 9
 wandering) or when you hurt it, shows a "!", and comes for you. Your attacks and blasts make noise that wakes monsters
 within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
-so a careless fight can pull in a nearby band. Rooms don't lock, so you
+so a careless fight can pull in a nearby band. You can escape a chase: a monster gives up after 5 seconds without
+seeing you, or when you are 24 cells from its home, checks where it last saw you and walks home, noticing you again if it sees you on the way. Rooms don't lock, so you
 can sneak past or pick your fight. Clearing a room leaves a
 chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
 weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
@@ -117,7 +118,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects, `PoisonStatus` so poison clouds don't stack, `ChainFalloff` for the Lightning Bolt's weaker jumps, `Charge`: seconds held to strength), when a weapon fires
   (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead, where to wander), when a calm monster
   notices the hero and who hears a noise or shout (`Awareness`), what they are doing (`EnemyBrain`, a small state machine: asleep, wander,
-  noticing, idle, hunt, position, wind up, recover), how a band fights as a team (`Squad`: taking turns, flank
+  noticing, idle, hunt, position, wind up, recover, check, return; `Awareness` also decides when a hunter gives up), how a band fights as a team (`Squad`: taking turns, flank
   spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
 - `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), the

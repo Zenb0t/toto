@@ -14,6 +14,10 @@ const DEFAULT_SHOUT_CELLS := 8.0
 const DEFAULT_ASLEEP_SIGHT_CELLS := 4.0
 ## How close the hero must be, in cells, for a wandering monster to notice them.
 const DEFAULT_WANDER_SIGHT_CELLS := 9.0
+## How long, in seconds, a hunting monster can go without seeing the hero before it gives up.
+const DEFAULT_GIVE_UP_SECONDS := 5.0
+## How far from its home, in cells, the hero can get before a hunting monster gives up.
+const DEFAULT_GIVE_UP_CELLS := 24.0
 
 
 ## What a calm monster has to go on this step.
@@ -30,8 +34,20 @@ class Cues:
 	var alerted := false
 
 
+## What a hunting monster has to go on this step.
+class Chase:
+	## How long it has gone without seeing the hero, in seconds.
+	var seconds_unseen := 0.0
+	## How far the hero is from the monster's home, in cells.
+	var hero_cells_from_home := 0.0
+	## Its home is marked as never giving up (the Lich's arena, a sealed trap room).
+	var never_gives_up := false
+
+
 var asleep_sight_cells := DEFAULT_ASLEEP_SIGHT_CELLS
 var wander_sight_cells := DEFAULT_WANDER_SIGHT_CELLS
+var give_up_seconds := DEFAULT_GIVE_UP_SECONDS
+var give_up_cells := DEFAULT_GIVE_UP_CELLS
 var noise_cells := DEFAULT_NOISE_CELLS
 var shout_cells := DEFAULT_SHOUT_CELLS
 
@@ -46,6 +62,14 @@ func notices(cues: Cues) -> bool:
 	if cues.hurt or cues.alerted:
 		return true
 	return cues.hero_in_line_of_sight and cues.hero_cells <= sight_cells(cues.asleep)
+
+
+## Whether a hunting monster gives up now: it hasn't seen the hero for give_up_seconds, or the hero is
+## give_up_cells or more from its home. Never when its home is marked never_gives_up.
+func gives_up(chase: Chase) -> bool:
+	if chase.never_gives_up:
+		return false
+	return chase.seconds_unseen >= give_up_seconds or chase.hero_cells_from_home >= give_up_cells
 
 
 ## Which of the listeners hear a noise (the hero's attack, a blast) made at origin: their indexes. All in cells.
