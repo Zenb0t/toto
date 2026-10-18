@@ -73,6 +73,13 @@ static func has_stairs_down(map_id: String) -> bool:
 	return _floor_number(map_id) < FLOOR_COUNT
 
 
+## Whether the stairs down let the hero through. In the crypt they wait for their room to be clear; the crypt
+## entrance on the plains is always open (the plains have no rooms: all their monsters share one, so waiting for it
+## would mean clearing every camp first).
+static func stairs_down_open(map_id: String, room_cleared: bool) -> bool:
+	return map_id == PLAINS_ID or room_cleared
+
+
 ## The transition rule: where taking an exit from a map leads. Stairs lead to the matching stairs on the
 ## other floor, so going down and back up puts the hero where they were.
 static func destination(from_map_id: String, exit: Exit) -> Destination:
