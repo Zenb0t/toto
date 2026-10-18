@@ -133,8 +133,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
 - `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), the
-  `Bestiary` that lists them with their map letters, and `Band` (how the monsters of one home start: asleep or
-  wandering, from the map's seed) and `Camps` (which campfire a monster lives at)
+  `Bestiary` that lists them with their map letters, and `Band` (which home a monster lives at, a campfire or its
+  room, and how the monsters of one home start: asleep or wandering, from the map's seed) and `Camps` (which campfire a monster lives at)
 - `scripts/potions` – consumables: `Potion` (`HealingPotion`, `HastePotion`, `MightPotion`) and the `PotionBelt`
   that carries them
 - `scripts/loot` – `LootTable`: what drops (pure rules, given a random generator)

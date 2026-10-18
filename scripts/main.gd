@@ -225,7 +225,7 @@ func _spawn_enemies() -> void:
 	for cell in _stage.map.enemy_spawns:
 		if _record.is_killed(cell):
 			continue
-		var band := _band_at(cell)
+		var band := Band.home_of(_stage.map, cell, GameTuning.band_wandering_share(_tuning), _camp_wandering_share())
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
 		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
@@ -235,7 +235,7 @@ func _spawn_enemies() -> void:
 		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
 		enemy.navigation = _stage.pathfinder
 		enemy.squad = _squads_by_band.get_or_add(band.id, Squad.new())
-		enemy.settle(DungeonView.cell_center(band.home), Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share))
+		enemy.settle(DungeonView.cell_center(band.cell), Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share))
 		enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.noticed.connect(_on_enemy_noticed)
@@ -246,30 +246,10 @@ func _spawn_enemies() -> void:
 		_spawn_cells[enemy] = cell
 
 
-## The band a monster spawning at this cell belongs to: its id (the number Band.start_of rolls by), its home cell
-## and the share of its kind of band that wanders.
-func _band_at(spawn_cell: Vector2i) -> BandHome:
-	var campfire := Camps.campfire_of(_stage.map, spawn_cell)
-	if campfire != DungeonMap.NO_CELL:
-		var camp_share := _stage.spec.quadrant.camp_wandering_share() if _stage.spec.quadrant != null \
-			else GameTuning.band_wandering_share(_tuning)
-		return BandHome.new(Camps.band_id(_stage.map, campfire), campfire, camp_share)
-	var room := _stage.map.room_at(spawn_cell)
-	var home := spawn_cell if room == DungeonMap.NO_ROOM else _stage.map.room_center(room)
-	return BandHome.new(room, home, GameTuning.band_wandering_share(_tuning))
-
-
-## Where a band lives and how its kind starts (see _band_at).
-class BandHome:
-	extends RefCounted
-	var id: int
-	var home: Vector2i
-	var wandering_share: float
-
-	func _init(band_id: int, home_cell: Vector2i, share: float) -> void:
-		id = band_id
-		home = home_cell
-		wandering_share = share
+## The share of camps that start wandering: the quadrant recipe's, or the dungeon's bands' when there is none.
+func _camp_wandering_share() -> float:
+	var quadrant := _stage.spec.quadrant
+	return quadrant.camp_wandering_share() if quadrant != null else GameTuning.band_wandering_share(_tuning)
 
 
 ## Things lying around from the start (vault treasure, dead-end finds), but for those taken on an earlier

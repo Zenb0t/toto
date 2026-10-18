@@ -98,7 +98,7 @@ func test_a_camp_is_two_to_four_goblins_kobolds_and_archers_round_its_fire() -> 
 		var map: DungeonMap = _map_by_seed[seed_value]
 		for fire in Camps.camp_campfires(map):
 			var letters := _letters_of_camp(map, fire)
-			assert_between(letters.size(), 2.0, 4.0, "size, seed %d" % seed_value)
+			assert_between(letters.size(), 2, 4, "size, seed %d" % seed_value)
 			for letter in letters:
 				assert_true(letter in ["k", "g", "a"], "%s, seed %d" % [letter, seed_value])
 
@@ -142,7 +142,7 @@ func test_the_placement_rule_makes_bands_no_smaller_and_no_weaker_the_farther_ou
 		near_total += CampCrews.threat(CampCrews.band_letters(_recipe, 0.3, rng))
 		rng.seed = seed_value
 		far_total += CampCrews.threat(CampCrews.band_letters(_recipe, 1.0, rng))
-	assert_gt(far_total, near_total * 1.5)
+	assert_gt(float(far_total), near_total * 1.5)
 
 
 func test_goblin_archers_only_stand_toward_the_edge() -> void:
@@ -160,10 +160,14 @@ func test_the_same_seed_gives_the_same_camps_and_the_same_roll_to_sleep_or_wande
 
 	assert_eq(again.campfire_cells, map.campfire_cells)
 	assert_eq(again.enemy_spawns, map.enemy_spawns)
+	assert_eq(Camps.camp_campfires(again), Camps.camp_campfires(map))
 	for fire in Camps.camp_campfires(map):
 		assert_eq(_letters_of_camp(again, fire), _letters_of_camp(map, fire))
-		var id := Camps.band_id(map, fire)
-		assert_eq(Band.start_of(7, id, _recipe.camp_wandering_share()), Band.start_of(7, id, _recipe.camp_wandering_share()))
+	for cell in map.enemy_spawns:
+		var first := Band.home_of(map, cell, 0.25, _recipe.camp_wandering_share())
+		var second := Band.home_of(again, cell, 0.25, _recipe.camp_wandering_share())
+		assert_eq(first.cell, second.cell)
+		assert_eq(Band.start_of(3, second.id, second.wandering_share), Band.start_of(3, first.id, first.wandering_share))
 
 
 func test_about_half_the_camps_start_asleep_and_the_rest_wander() -> void:

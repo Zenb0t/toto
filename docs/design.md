@@ -225,8 +225,9 @@ because only calm monsters hear a shout and a checking or returning one is busy.
 monster is out of the fight for its **Squad**: it frees its attack turn and flank spot when it gives up (`Squad.leave`) and
 reports no bearing until it hunts again, as a calm monster doesn't (`EnemyBrain.is_out_of_the_fight`). A home can be
 marked **never gives up** (`Enemy.never_gives_up`, `Senses.never_gives_up`): its hunters hunt on however long and
-far. `main.gd` sets it from `DungeonProgress.is_locking(room)`, so the Lich's arena and sealed trap rooms, once
-they are marked as locking, get it without further wiring. Tune → Enemies: give up after unseen (s), give up
+far. `main.gd` sets it from `DungeonProgress.is_locking` of the room each monster spawned in, so the Lich's arena and
+sealed trap rooms, once they are marked as locking, get it without further wiring. A camp's monsters give up like any
+other and walk back to their campfire. Tune → Enemies: give up after unseen (s), give up
 beyond home (cells).
 
 **Noise and shouts** (`Awareness.noise_hearers`, `shout_hearers`). Fighting has consequences beyond the target.
@@ -426,9 +427,9 @@ wandering** by a 50/50 seeded roll (`Band.start_of` with the camp's band id, so 
 The map only knows its campfires and its monsters, so `Camps.campfire_of` says that a monster belongs to the campfire
 within 3 cells of it; a campfire with monsters round it is a camp's (`Camps.camp_campfires`), the others are lone
 (`Camps.lone_campfires`). That is the camp-to-campfire mapping the later rest spots build on (a camp's campfire is held
-by its band until its last member dies). `main.gd` makes each camp a band whose home is its campfire, with its own
-Squad and shout group, apart from the room bands (`Camps.band_id`, clear of room numbers); progress counts still go
-by room. Monsters killed on the plains stay dead through the map record (they never respawn; only hurt ones heal
+by its band until its last member dies). `Band.home_of` makes each camp a band whose home is its campfire (any other
+monster lives at its room's middle), and `main.gd` gives each band its own Squad and shout group, the camps apart from
+the room bands (`Camps.band_id`, clear of room numbers); progress counts still go by room. Monsters killed on the plains stay dead through the map record (they never respawn; only hurt ones heal
 while the hero is away).
 
 The campfire is built in code (`CampfireModel`: stones, logs, a flickering flame and an `OmniLight3D`); `MapView3D`
