@@ -10,13 +10,18 @@ func before_each() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2
 	_map = DungeonMapParser.new().parse(VillageGenerator.new().generate(Vector2i(36, 28), 0.15, rng).ascii())
-	_view = autofree(MapView3D.new())
+	_view = _village_view()
+
+
+func _village_view() -> MapView3D:
+	var view: MapView3D = autofree(MapView3D.new())
 	var walls: Array[Vector2i] = []
 	for y in _map.size.y:
 		for x in _map.size.x:
 			if not _map.is_open(Vector2i(x, y)) and _has_open_neighbour(Vector2i(x, y)):
 				walls.append(Vector2i(x, y))
-	_view.show_map(_map, walls, BranchLook.plains())
+	view.show_map(_map, walls, BranchLook.plains())
+	return view
 
 
 func _has_open_neighbour(cell: Vector2i) -> bool:
@@ -90,3 +95,22 @@ func test_barrels_and_crates_are_too_low_to_hide_the_hero() -> void:
 	_view.show_hero_at(prop + Vector2i(0, -1))
 
 	assert_false(_view.is_see_through(prop))
+
+
+func test_walking_through_the_village_shades_every_piece_as_showing_it_whole_would() -> void:
+	var exploration := Exploration.new()
+	var sees := func(cell: Vector2i) -> bool: return _map.is_see_through(cell)
+	exploration.look_from(_map.player_spawn, sees)
+	_view.show_exploration(exploration)
+
+	for cell in [Vector2i(5, 5), Vector2i(18, 14), Vector2i(30, 22), _map.player_spawn]:
+		if _map.is_open(cell):
+			exploration.look_from(cell, sees)
+			_view.show_changes(exploration)
+	var whole := _village_view()
+	whole.show_exploration(exploration)
+
+	for y in _map.size.y:
+		for x in _map.size.x:
+			var cell := Vector2i(x, y)
+			assert_eq(_view.shown_brightness(cell), whole.shown_brightness(cell), str(cell))

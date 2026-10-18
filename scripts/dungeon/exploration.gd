@@ -9,6 +9,7 @@ const SIGHT_RADIUS := 16
 
 var _visible := {}  # Vector2i -> true
 var _seen := {}  # Vector2i -> true
+var _changed: Array[Vector2i] = []
 
 
 ## Recomputes what is in view from origin. is_clear(cell) says whether sight passes through a cell; a cell
@@ -19,6 +20,7 @@ func look_from(origin: Vector2i, is_clear: Callable) -> void:
 		if not clear_by_cell.has(cell):
 			clear_by_cell[cell] = is_clear.call(cell)
 		return clear_by_cell[cell]
+	var before := _visible
 	_visible = {origin: true}
 	for y in range(-SIGHT_RADIUS, SIGHT_RADIUS + 1):
 		for x in range(-SIGHT_RADIUS, SIGHT_RADIUS + 1):
@@ -26,6 +28,14 @@ func look_from(origin: Vector2i, is_clear: Callable) -> void:
 			if Vector2(x, y).length() <= SIGHT_RADIUS and _line_is_clear(origin, target, remembered_is_clear):
 				_visible[target] = true
 	_seen.merge(_visible)
+	_changed = _difference(before, _visible)
+	_changed.append_array(_difference(_visible, before))
+
+
+## The cells the last look_from changed: those that came into view (a cell seen for the first time is one) and
+## those that left it. Everything else looks as it did, so a view only needs to redraw these.
+func changed_cells() -> Array[Vector2i]:
+	return _changed.duplicate()
 
 
 func is_visible(cell: Vector2i) -> bool:
@@ -44,9 +54,19 @@ func seen_cells() -> Array[Vector2i]:
 
 
 ## Remembers cells seen on an earlier visit, as if they had been seen again. What is in view is unchanged.
+## They are not counted in changed_cells(): a view shows the whole exploration again after a restore.
 func restore(cells: Array[Vector2i]) -> void:
 	for cell in cells:
 		_seen[cell] = true
+
+
+## The cells of one set that are not in the other.
+static func _difference(cells: Dictionary, without: Dictionary) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for cell: Vector2i in cells:
+		if not without.has(cell):
+			result.append(cell)
+	return result
 
 
 ## True when every cell strictly between from and to lets sight through (a straight grid line).

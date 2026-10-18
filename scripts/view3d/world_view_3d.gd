@@ -67,6 +67,11 @@ func show_exploration(exploration: Exploration) -> void:
 	_map.show_exploration(exploration)
 
 
+## Shows only what the exploration's last look changed (see Exploration.changed_cells).
+func show_changes(exploration: Exploration) -> void:
+	_map.show_changes(exploration)
+
+
 ## The camera follows the player, whose health and ammo show over their head (HeroBars).
 func add_player(player: Player) -> void:
 	_hero = player
