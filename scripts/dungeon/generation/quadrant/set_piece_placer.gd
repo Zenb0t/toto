@@ -2,7 +2,8 @@ class_name SetPiecePlacer
 extends RefCounted
 ## The one place that puts hand-made set pieces into a quadrant (see SetPiece): first it reserves a spot for each
 ## piece by its rules (inside the border, out of the way of the clear ring round the start and of the exits, as far
-## out as the piece wants, clear of the other pieces), then it stamps each piece on its spot and clears the ground
+## out as the piece wants, no farther from the middle than it allows, clear of the other pieces and as far from
+## them as their spacing rules say), then it stamps each piece on its spot and clears the ground
 ## around it. Camps, campfires, the ruin and the village will use the same two calls. Pure.
 
 
@@ -73,6 +74,10 @@ static func _is_allowed(
 ) -> bool:
 	if recipe.outward(candidate.anchor_cell()) < candidate.piece.min_outward:
 		return false
+	var centre := Vector2(recipe.center())
+	var limit := candidate.piece.max_from_centre
+	if limit > 0.0 and centre.distance_to(Vector2(candidate.anchor_cell())) > limit:
+		return false
 	var footprint := candidate.rect().grow(candidate.piece.apron)
 	if _distance_to_rect(Vector2(recipe.center()), footprint) <= recipe.safe_ring + 1:
 		return false
@@ -81,6 +86,9 @@ static func _is_allowed(
 			return false
 	for other in placed:
 		if other.rect().grow(other.piece.apron).intersects(footprint):
+			return false
+		var apart := candidate.piece.least_distance_to(other.piece)
+		if Vector2(candidate.anchor_cell()).distance_to(Vector2(other.anchor_cell())) < apart:
 			return false
 	return true
 

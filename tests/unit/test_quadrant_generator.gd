@@ -143,9 +143,12 @@ func test_the_crypt_entrance_stands_in_a_stone_mausoleum() -> void:
 		assert_true(map.is_walkable(map.exit_cell + Vector2i(0, 2)), "its door faces south, seed %d" % seed_value)
 
 
-func test_there_is_nothing_to_fight_yet() -> void:
+func test_the_only_monsters_are_the_ones_living_in_camps() -> void:
 	for seed_value in SEEDS:
-		assert_eq(_map_by_seed[seed_value].enemy_spawns.size(), 0)
+		var map: DungeonMap = _map_by_seed[seed_value]
+		assert_gt(map.enemy_spawns.size(), 0, "seed %d" % seed_value)
+		for cell in map.enemy_spawns:
+			assert_ne(Camps.campfire_of(map, cell), DungeonMap.NO_CELL, "seed %d" % seed_value)
 
 
 func test_the_whole_plains_is_one_open_room_so_no_door_ever_locks() -> void:
@@ -158,11 +161,11 @@ func test_the_whole_plains_is_one_open_room_so_no_door_ever_locks() -> void:
 func test_a_recipe_that_breaks_a_rule_is_made_again_with_the_next_random_numbers() -> void:
 	var generator := QuadrantGenerator.new()
 	var demanding := QuadrantRecipe.new()
-	demanding.min_walkable_share = 0.835
+	demanding.min_walkable_share = 0.9
 
 	var map := _parser.parse(generator.generate(demanding, 0))
 
-	assert_gt(generator.attempts, 1, "the first try for seed 0 makes 82.6% walkable")
+	assert_gt(generator.attempts, 1, "the first try for seed 0 makes less than 90% walkable")
 	assert_ne(generator.last_broken_rule, "")
 	assert_eq(_reachable(map).size(), map.walkable_cells().size())
 
@@ -200,6 +203,8 @@ func test_the_size_the_forest_and_the_clear_ring_follow_the_recipe() -> void:
 	recipe.height = 60
 	recipe.safe_ring = 10
 	recipe.crypt_min_outward = 0.7
+	recipe.camp_count = 2
+	recipe.campfire_count = 1
 	for seed_value in 6:
 		var map := _parser.parse(QuadrantGenerator.new().generate(recipe, seed_value))
 

@@ -27,6 +27,8 @@ var exit_cell: Vector2i
 var stairs_up_cell: Vector2i
 ## Where an item lies on the floor from the start.
 var loot_cells: Array[Vector2i] = []
+## Where campfires burn (walkable scenery; see Camps for the ones that are a band's home).
+var campfire_cells: Array[Vector2i] = []
 
 var _room_by_cell: Dictionary  # Vector2i -> int
 var _doors_by_room: Dictionary  # int -> Array[Vector2i]
@@ -49,6 +51,7 @@ func _init(
 	loot: Array[Vector2i] = [],
 	stairs_up: Vector2i = NO_CELL,
 	blocker_by_cell: Dictionary = {},
+	campfires: Array[Vector2i] = [],
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -63,6 +66,7 @@ func _init(
 	loot_cells = loot
 	stairs_up_cell = stairs_up
 	_blocker_by_cell = blocker_by_cell
+	campfire_cells = campfires
 
 
 ## The id of the monster (see Bestiary) spawning at cell, or "" if none does.
@@ -96,6 +100,10 @@ func cells_with_blocker(blocker: Blocker) -> Array[Vector2i]:
 		if _blocker_by_cell[cell] == blocker:
 			cells.append(cell)
 	return cells
+
+
+func is_campfire(cell: Vector2i) -> bool:
+	return cell in campfire_cells
 
 
 func terrain_at(cell: Vector2i) -> Terrain:
