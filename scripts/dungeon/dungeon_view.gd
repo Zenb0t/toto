@@ -88,7 +88,10 @@ func _draw() -> void:
 	for cell in _map.open_cells():
 		_draw_ground(cell)
 	for cell in wall_cells():
-		draw_rect(_tile_rect(cell), WALL_COLOR)
+		if _is_village_piece(cell):
+			_draw_ground(cell)  # Its model stands on the ground.
+		else:
+			draw_rect(_tile_rect(cell), WALL_COLOR)
 	if _look.pillar_style != BranchLook.PillarStyle.ROCK:
 		for cell in DungeonDecor.pillar_cells(_map, wall_cells()):
 			_draw_ground(cell)
@@ -103,6 +106,12 @@ func _draw() -> void:
 		_draw_stairs(_tile_rect(_map.exit_cell), STAIRS_COLOR, true)
 	if _map.stairs_up_cell != DungeonMap.NO_CELL:
 		_draw_stairs(_tile_rect(_map.stairs_up_cell), STAIRS_UP_COLOR, false)
+
+
+## The village's buildings, palisade, well and props are models standing on ground, not walls.
+func _is_village_piece(cell: Vector2i) -> bool:
+	return _map.blocker_at(cell) in [DungeonMap.Blocker.PALISADE, DungeonMap.Blocker.WELL,
+		DungeonMap.Blocker.PROP, DungeonMap.Blocker.BUILDING]
 
 
 func _draw_ground(cell: Vector2i) -> void:

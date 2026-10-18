@@ -33,11 +33,14 @@ class Building:
 	var kind: Kind
 	var variant: int
 	var rect: Rect2i
+	## The way its door faces (toward the street), as a step: Vector2i.DOWN is south, toward the camera.
+	var facing: Vector2i
 
-	func _init(building_kind: Kind, building_variant: int, area: Rect2i) -> void:
+	func _init(building_kind: Kind, building_variant: int, area: Rect2i, door_faces := Vector2i.DOWN) -> void:
 		kind = building_kind
 		variant = building_variant
 		rect = area
+		facing = door_faces
 
 
 ## Everything inside the palisade, the palisade included.

@@ -141,9 +141,44 @@ func _buildings(rows: PackedStringArray) -> Array[Village.Building]:
 						and next.x < rows[next.y].length() and rows[next.y][next.x] == letter:
 					seen[next] = true
 					frontier.append(next)
+		var rect := Rect2i(low, high - low + Vector2i.ONE)
 		buildings.append(Village.Building.new(
-			Village.kind_of_letter(letter), Village.variant_of_letter(letter), Rect2i(low, high - low + Vector2i.ONE)))
+			Village.kind_of_letter(letter), Village.variant_of_letter(letter), rect, _door_side(rows, rect)))
 	return buildings
+
+
+## The side of a building whose door is on it: the one with the most doorstep cells, which are plain ground with a
+## street right behind them.
+func _door_side(rows: PackedStringArray, rect: Rect2i) -> Vector2i:
+	var best := Vector2i.DOWN
+	var best_count := 0
+	for side in [Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP, Vector2i.RIGHT]:
+		var count := 0
+		for cell in _side_cells(rect, side):
+			if _symbol(rows, cell) in [FLOOR, Village.DOORSTEP] and _symbol(rows, cell + side) in [Village.STREET, Village.START]:
+				count += 1
+		if count > best_count:
+			best_count = count
+			best = side
+	return best
+
+
+## The cells just outside one side of a rectangle.
+func _side_cells(rect: Rect2i, side: Vector2i) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if side.y != 0:
+		for x in range(rect.position.x, rect.end.x):
+			cells.append(Vector2i(x, rect.end.y if side.y > 0 else rect.position.y - 1))
+	else:
+		for y in range(rect.position.y, rect.end.y):
+			cells.append(Vector2i(rect.end.x if side.x > 0 else rect.position.x - 1, y))
+	return cells
+
+
+func _symbol(rows: PackedStringArray, cell: Vector2i) -> String:
+	if cell.y < 0 or cell.y >= rows.size() or cell.x < 0 or cell.x >= rows[cell.y].length():
+		return ""
+	return rows[cell.y][cell.x]
 
 
 func _middle_of(cells: Array[Vector2i]) -> Vector2i:

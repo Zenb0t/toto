@@ -33,6 +33,7 @@ static func entries() -> Array[Entry]:
 		Entry.new("KayKit Adventurers", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-adventurers", "Hero models, their animations and the weapons", "kaykit_adventurers"),
 		Entry.new("KayKit Skeletons", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-skeletons", "Enemy models and animations", "kaykit_skeletons"),
 		Entry.new("KayKit Dungeon Remastered", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-dungeon-remastered", "Chests, torches, banners, candles, bottles and coins", "kaykit_dungeon"),
+		Entry.new("KayKit Medieval Hexagon Pack", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-medieval-hexagon", "The village: houses, inn, church, smithy, market, well, palisade, barrels and crates", "kaykit_medieval_hexagon"),
 		Entry.new("Godot Engine", "Juan Linietsky, Ariel Manzur and Godot Engine contributors", "MIT", "https://godotengine.org", "The engine the game runs on"),
 		Entry.new("Noto Sans", "Google", "SIL Open Font License 1.1", "https://fonts.google.com/noto/specimen/Noto+Sans", "Godot's default font, used for all the text"),
 	]
