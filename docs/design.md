@@ -774,6 +774,12 @@ phases, each played on a phone before the next:
   lava and water, the fog. The main screen doesn't draw the 2D world itself (it is on its own canvas layer,
   culled there). The texture covers a window around the camera, not the whole map, so it stays small
   enough for a phone, and it moves in whole texels so the floor doesn't shimmer.
+  That texture is drawn again every frame, and the renderer can only skip whole canvas items, so the floor and
+  each liquid are split into 16x16-cell pieces (`FloorChunk`): only the few near the camera are drawn. Each piece
+  paints in layers, one kind of shape at a time (`FloorPainter`: rectangles, with the stones' bevels as thin
+  rectangles rather than lines, then cracks, pillar shadows, torch light, stairs), because each switch between
+  kinds starts a new draw call. Nothing a cell paints reaches outside it, so it looks the same. A crypt level went
+  from about 4,600 draw calls a frame to under 200, and the plains from about 300 to 165 (#71).
 - **What stands up is 3D.** Walls and closed doors are blocks (hidden until seen, dimmed when out of sight,
   like the fog); heroes, enemies, chests, floor items and shots are 3D models that copy their 2D actor every
   frame (`Puppets`). So in 2D, actors now draw only their marks on the ground: a team ring under heroes (blue)
