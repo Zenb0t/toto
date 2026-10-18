@@ -16,8 +16,10 @@ var size: Vector2i
 var player_spawn: Vector2i
 var enemy_spawns: Array[Vector2i]
 var room_count: int
-## Where the stairs out are, or NO_CELL for a map without an exit.
+## Where the stairs down (the way out) are, or NO_CELL for a map without an exit.
 var exit_cell: Vector2i
+## Where the stairs up are, or NO_CELL for a map without them (the top of the descent).
+var stairs_up_cell: Vector2i
 ## Where an item lies on the floor from the start.
 var loot_cells: Array[Vector2i] = []
 
@@ -39,6 +41,7 @@ func _init(
 	exit: Vector2i = NO_CELL,
 	terrain_by_cell: Dictionary = {},
 	loot: Array[Vector2i] = [],
+	stairs_up: Vector2i = NO_CELL,
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -51,6 +54,7 @@ func _init(
 	exit_cell = exit
 	_terrain_by_cell = terrain_by_cell
 	loot_cells = loot
+	stairs_up_cell = stairs_up
 
 
 ## The id of the monster (see Bestiary) spawning at cell, or "" if none does.

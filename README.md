@@ -57,12 +57,15 @@ Dungeon Crawl Stone Soup: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
-lava, and you. Items sometimes lie on the floor, and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
+lava, and you. Items sometimes lie on the floor (the same ones for the same world seed), and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
 chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
 weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
 their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
-fifth floor's stairs lead out. Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 of a new world (a new seed) with the Dagger, the Dash and a Potion of
+fifth floor's stairs lead out. Below the first floor you arrive on silver stairs that lead back up, onto the gold
+stairs of the floor above. The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
+you took stay gone, items you dropped stay where they fell and the map stays explored. Monsters you left hurt
+heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 of a new world (a new seed) with the Dagger, the Dash and a Potion of
 Healing.
 
 ## Play on a phone
@@ -93,8 +96,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 ## Layout
 
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`, `Ammo`)
-- `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` exit,
-  `~` water, `L` lava, `*` floor item), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
+- `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` stairs down
+  (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
   lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
   torches and their light), moving liquids (`LiquidView`), room-lock rules
   (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
@@ -130,12 +133,16 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
   the floor texture shows). `models/` holds the models: `CharacterModel` (KayKit characters, animated), `HeroBars` (health and ammo over the hero) and
   `CharacterLook` (who wears what), and the simple ones (chests, loot, shots, torches, the stairs' arch, the bow in hand: `BowModel`, picked with the others by `WeaponModel`)
-- `scripts/run` – the run-level owner `Run` (world seed, the hero's carried state, which map is current) and its
-  pure parts: `HeroState` (what the hero carries between maps: gear, health, potions, experience, kills), `MapSpec`
-  (a map's id, generator recipe and seed) and `WorldLayout` (the world's maps, their seeds from the world seed, and
-  where each exit leads); `MapStage` (one built map in the running game: the parsed map, its floor, fog, 3D view
+- `scripts/run` – the run-level owner `Run` (world seed, the hero's carried state, which map is current and where
+  the hero arrives on it, the run's clock, one record per visited map) and its pure parts: `HeroState` (what the
+  hero carries between maps: gear, health, potions, experience, kills), `MapSpec` (a map's id, generator recipe and
+  seed), `WorldLayout` (the world's maps, their seeds from the world seed, where each exit leads and which spot the
+  hero arrives on), `MapRecord` (what the hero changed on a map: kills, opened chests, taken floor items, dropped
+  items, explored cells, monsters left hurt; it round-trips through a dictionary) and `Regeneration` (how hurt
+  monsters heal while the hero is away); `MapStage` (one built map in the running game: the parsed map, its floor, fog, 3D view
   and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Experience`: levels from
   kills, each adding maximum health
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
-  (rebuilt in place on the stairs and on starting over), routes controls to the player and applies the room rules
+  (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
+  routes controls to the player and applies the room rules
 - `tests/unit`, `tests/integration` – behaviour tests

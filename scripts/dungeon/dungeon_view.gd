@@ -34,6 +34,7 @@ const SHALLOW_COLOR := Color(0.2, 0.42, 0.62, 0.55)
 const SHALLOW_SHINE_COLOR := Color(0.55, 0.78, 0.95, 0.7)
 const SHALLOW_SPEED := 0.8
 const STAIRS_COLOR := Color(0.95, 0.75, 0.3)
+const STAIRS_UP_COLOR := Color(0.8, 0.84, 0.9)
 const STAIRS_STEPS := 4
 
 var _map: DungeonMap
@@ -96,7 +97,9 @@ func _draw() -> void:
 	for cell: Vector2i in light:
 		draw_rect(_tile_rect(cell), Color(TORCH_LIGHT_COLOR, TORCH_LIGHT_COLOR.a * light[cell]))
 	if _map.exit_cell != DungeonMap.NO_CELL:
-		_draw_stairs(_tile_rect(_map.exit_cell))
+		_draw_stairs(_tile_rect(_map.exit_cell), STAIRS_COLOR, true)
+	if _map.stairs_up_cell != DungeonMap.NO_CELL:
+		_draw_stairs(_tile_rect(_map.stairs_up_cell), STAIRS_UP_COLOR, false)
 
 
 func _draw_ground(cell: Vector2i) -> void:
@@ -138,14 +141,15 @@ func _draw_earth(cell: Vector2i) -> void:
 		draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
 
 
-## Steps shrinking toward the bottom, so the exit reads as a way down.
-func _draw_stairs(tile: Rect2) -> void:
+## Steps shrinking toward the bottom (going down) or toward the top (going up), fading as they go.
+func _draw_stairs(tile: Rect2, color: Color, going_down: bool) -> void:
 	var step_height := tile.size.y / STAIRS_STEPS
 	for i in STAIRS_STEPS:
+		var row := i if going_down else STAIRS_STEPS - 1 - i
 		var inset := tile.size.x * 0.1 * i
-		var step := Rect2(tile.position.x + inset, tile.position.y + i * step_height,
+		var step := Rect2(tile.position.x + inset, tile.position.y + row * step_height,
 			tile.size.x - inset * 2.0, step_height - 2.0)
-		draw_rect(step, Color(STAIRS_COLOR, 1.0 - i * 0.2))
+		draw_rect(step, Color(color, 1.0 - i * 0.2))
 
 
 func _build_colliders(cells: Array[Vector2i], layer: int) -> void:

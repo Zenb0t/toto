@@ -70,6 +70,20 @@ func test_water_doors_and_stairs_are_told_apart_from_floor() -> void:
 	_assert_colour(image.get_pixel(8, 1), MinimapPainter.EXIT_COLOR)
 
 
+func test_the_stairs_up_have_a_colour_of_their_own() -> void:
+	var map := DungeonMapParser.new().parse("""
+######
+#P.<>#
+######
+""")
+	var exploration := _explored_from(map, Vector2i(1, 1), _sees_everything)
+
+	var image := MinimapPainter.paint(map, exploration, Vector2i(1, 1))
+
+	_assert_colour(image.get_pixel(3, 1), MinimapPainter.STAIRS_UP_COLOR)
+	assert_ne(MinimapPainter.STAIRS_UP_COLOR, MinimapPainter.EXIT_COLOR)
+
+
 func test_the_player_is_marked() -> void:
 	var map := _map()
 	var exploration := _explored_from(map, Vector2i(1, 1), _sees_everything)

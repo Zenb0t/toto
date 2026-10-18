@@ -96,6 +96,13 @@ func test_every_weapon_has_its_own_page_under_weapons_with_the_equipped_one_mark
 	assert_eq(weapons.label_of(GameTuning.weapon_group("sword")), "Sword")
 
 
+func test_hurt_monsters_heal_while_away_at_the_rate_regeneration_sets() -> void:
+	var tuning := GameTuning.create()
+
+	assert_eq(tuning.param(GameTuning.ENEMY_REGENERATION).group, GameTuning.ENEMIES_GROUP)
+	assert_eq(GameTuning.enemy_regeneration(tuning), Regeneration.DEFAULT_HEALTH_PER_SECOND)
+
+
 func test_enemies_open_straight_onto_their_knobs() -> void:
 	var enemies := _section("Enemies", GameTuning.sections("wand", "dash"))
 

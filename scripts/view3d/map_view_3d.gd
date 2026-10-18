@@ -49,6 +49,8 @@ var _cut_cells := {}  # Vector2i -> true, walls cut down in front of the hero
 var _look := BranchLook.dungeon()
 var _stairs_cell := DungeonMap.NO_CELL
 var _stairs := StairsModel.new()
+var _stairs_up_cell := DungeonMap.NO_CELL
+var _stairs_up := StairsModel.new(StairsModel.SILVER_COLOR)
 var _blocks := _multimesh(ModelParts.box(Vector3.ONE))
 var _caps := _multimesh(ModelParts.box(Vector3.ONE))
 var _columns := _multimesh(_column_mesh())
@@ -60,6 +62,7 @@ func _init() -> void:
 		instance.multimesh = multimesh
 		add_child(instance)
 	add_child(_stairs)
+	add_child(_stairs_up)
 
 
 ## wall_cells: the walls to stand up (those next to open cells).
@@ -117,6 +120,7 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 		add_child(thing)
 		_clutter[cell] = thing
 	_stairs_cell = map.exit_cell
+	_stairs_up_cell = map.stairs_up_cell
 	var torch_cells: Array[Vector2i] = []
 	if look.torches:
 		torch_cells = DungeonDecor.torch_cells(map, wall_cells)
@@ -225,6 +229,7 @@ func _refresh(everything := false) -> void:
 	for cell: Vector2i in _torches:
 		_torches[cell].show_on_wall(cell, _height_at(cell), brightness(cell))
 	_stairs.show_at(_stairs_cell, _ground_brightness(_stairs_cell))
+	_stairs_up.show_at(_stairs_up_cell, _ground_brightness(_stairs_up_cell))
 	for cell: Vector2i in _banners:
 		_banners[cell].visible = brightness(cell) > HIDDEN
 		_banners[cell].scale.y = PropModel.SCALE * PropModel.BANNER_SIZE * _height_at(cell)

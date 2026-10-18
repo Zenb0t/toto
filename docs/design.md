@@ -24,7 +24,7 @@ Anything that doesn't help answer that is deferred.
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
 | Loot sources | Guaranteed chest per cleared room, plus rare enemy drops | Predictable pacing, with occasional surprises |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
-| Goal | Go down 5 floors and out. Each floor's stairs sit in the room farthest from the start and only work once that room is clear. Other rooms are optional | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent |
+| Goal | Go down 5 floors and out. Each floor's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back. Other rooms are optional | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent |
 | Rooms | Entering a room with enemies locks its doors until they're all defeated | Forces fights and gives clear pacing |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
@@ -263,13 +263,38 @@ the dark."). The Dungeon itself has the odd cave (15% of its rooms).
 
 Like Dungeon Crawl, a run is a descent: **5 floors**, each a new branch (see Branches), each more dangerous
 than the last.
-The stairs (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
-fifth floor they lead out, and the run is won. Dying, or restarting from the menu, starts over from floor 1 in a
+The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
+fifth floor they lead out, and the run is won. Every floor but the first also has **stairs up** (silver, `<` in
+the map format, where the floor's start would be). Each set leads onto the matching stairs on the other floor:
+down arrives on the stairs up below, up arrives on the stairs down above (`WorldLayout.destination` names the map
+and the spot; `WorldLayout.arrival_cell` finds the spot on the parsed map). The stairs the hero arrives on only
+lead on once the hero has stepped off them. Dying, or restarting from the menu, starts over from floor 1 in a
 new world, with a new seed.
 
-Taking the stairs carries the hero down (`HeroState`): the weapon and utility held, health as it is (no free
-healing between floors: potions are the only healing), the potion belt, experience and kills. Everything else (the map,
-the monsters, chests) is new. The HUD shows the floor; the pause menu shows the world seed and the floor.
+Taking the stairs carries the hero (`HeroState`): the weapon and utility held, health as it is (no free
+healing between floors: potions are the only healing), the potion belt, experience and kills. The HUD shows the
+floor; the pause menu shows the world seed and the floor.
+
+**The world remembers** (`MapRecord`). Maps are never kept in memory once left: each visit makes the map again from
+its seed, parses it and builds it, then applies the map's record before the first frame; leaving writes the record.
+The run keeps one record per visited map. It holds:
+- monsters killed, chests opened and floor items taken (written as they happen);
+- items dropped (as data: item id, potion or gear, position): everything on the floor the map didn't start with,
+  like gear swapped out, a chest's unclaimed find or an enemy's drop;
+- the cells explored (`Exploration.seen_cells` out, `Exploration.restore` in), so the fog and minimap keep the
+  hero's progress;
+- monsters left hurt: their health and the run time they were left at;
+- the version of the generator that made the map (`DungeonGenerator.VERSION`), so a saved record can tell when the
+  same seed would no longer give the same map.
+
+What makes a record match its regenerated map is **stable ids from map position**: an enemy is its spawn cell, a
+floor item its loot cell, a chest its room. A room whose monsters were all killed gets its chest back (open if it
+was opened). **Floor loot is seeded**: what lies on a loot cell is rolled from the map's seed and the cell alone
+(`LootTable.floor_find`), not from what the hero holds, so a floor item seen, left and come back to is the same
+(it may be something the hero already holds). **Regeneration** (`Regeneration`): hurt monsters heal while the hero
+is away, 10 health a second by default (Tune → Enemies → "Heal while away"), in one-second steps counted from the run
+time that passed (`Run.seconds_played`, the game's clock, which stops while paused). A record round-trips through a
+plain dictionary (and JSON) unchanged, ready for save games later; today runs still last one session.
 
 **The run and its maps.** One run-level owner, `Run` (pure), lives for the whole run: the world seed, the hero's
 carried state and which map is current. Each map has an id and a spec (`MapSpec`: which generator recipe, which
@@ -316,9 +341,10 @@ wrong.
 4. **Difficulty** (`DungeonDifficulty`): by depth (rooms from the start). Near the start, two or so kobolds
    and goblins; deeper, more monsters (up to six), and tougher ones (see Monsters). 15% of rooms are **out of depth**:
    their enemies are picked as if two rooms deeper. Rooms are optional, so walking away is a real choice.
-5. **Floor loot** (`*`): vault treasure, and half of the dead ends (rooms with one way in) hide an item, picked
-   like a chest's. Exploring pays.
-6. **Exit**: in the deepest room, in its corner farthest from the middle (where the chest appears).
+5. **Floor loot** (`*`): vault treasure, and half of the dead ends (rooms with one way in) hide an item: a potion or
+   gear, rolled from the map's seed and the cell (see Floors). Exploring pays.
+6. **Exit** (the stairs down, `>`): in the deepest room, in its corner farthest from the middle (where the chest
+   appears). Below the first floor, the start is the **stairs up** (`<`) instead of `P`.
 
 **Terrain.** Deep water (`~`) blocks walking but not sight or shots: a shooter across a pool can hit you, and
 you can hit back, but nobody walks over. Shallow water (`,`, like Dungeon Crawl's) can be waded through, but
@@ -401,7 +427,7 @@ deterministic), so it costs nothing to store and never changes how the game play
   utilities are glowing cubes, potions flasks. **Items on the floor** stay hidden until their cell has been seen, then stay shown (like the fog's map
   memory).
 - **Water and lava** move: slow waves with highlights (`shaders/liquid.gdshader`), lava slower and hotter.
-- **Stairs** stand under a stone arch trimmed in gold.
+- **Stairs** stand under a stone arch trimmed in gold (down) or silver (up).
 - **Cutaway**: walls right in front of the hero (the two cells toward the camera, three wide) drop to a low
   stub while the hero stands behind them, so a wall never hides you.
 - **Fog** is a one-pixel-per-cell picture stretched smoothly over the map, so its edges fade across a cell.

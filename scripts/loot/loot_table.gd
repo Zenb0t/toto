@@ -11,6 +11,30 @@ const DEFAULT_CHEST_POTION_CHANCE := 0.3
 const FLOOR_POTION_SHARE := 0.5
 
 
+## Something found: a potion, or gear (a weapon or a utility).
+class Find:
+	extends RefCounted
+	var item_id: String
+	var is_potion: bool
+
+	func _init(found_id: String, potion: bool) -> void:
+		item_id = found_id
+		is_potion = potion
+
+
+## What lies on a map's loot cell from the start: a potion or a piece of gear, rolled from the map's seed and
+## the cell alone, so the same map always holds the same finds, whatever the hero carries when they come.
+static func floor_find(
+		map_seed: int, loot_cell: Vector2i, item_ids: Array[String], potion_weights: Dictionary
+) -> Find:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = ("%d/loot/%d,%d" % [map_seed, loot_cell.x, loot_cell.y]).hash()
+	if rolls(FLOOR_POTION_SHARE, rng):
+		return Find.new(pick_potion_id(potion_weights, rng), true)
+	var nothing_held: Array[String] = []
+	return Find.new(pick_item_id(item_ids, nothing_held, rng), false)
+
+
 ## A random item id from the candidates, never one the player already holds (a duplicate offers no
 ## choice). Falls back to any candidate only when the player holds them all.
 static func pick_item_id(candidates: Array[String], held_ids: Array[String], rng: RandomNumberGenerator) -> String:

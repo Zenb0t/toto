@@ -78,3 +78,155 @@ func test_the_next_world_has_a_different_seed_and_a_fresh_hero_on_the_first_floo
 		assert_eq(next.hero.weapon_id, GameTuning.DEFAULT_WEAPON_ID)
 		assert_eq(next.hero.kills, 0)
 		run = next
+
+
+func test_the_stairs_up_lead_back_to_the_stairs_down_of_the_floor_above() -> void:
+	var run := Run.new(7)
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_UP)
+
+	var destination := run.travel(WorldLayout.Exit.STAIRS_UP, _hero_holding("sword", 4))
+
+	assert_false(destination.leaves_world())
+	assert_eq(run.current_map_id, WorldLayout.floor_id(1))
+	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_DOWN)
+	assert_eq(run.hero.weapon_id, "sword")
+
+
+func test_on_every_generated_floor_each_set_of_stairs_leads_onto_the_matching_stairs() -> void:
+	var parser := DungeonMapParser.new()
+	for world_seed in 5:
+		var run := Run.new(world_seed)
+		for _floor in WorldLayout.FLOOR_COUNT - 1:
+			var above := parser.parse(run.current_map().ascii())
+			run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+			var below := parser.parse(run.current_map().ascii())
+			var arrived_below := WorldLayout.arrival_cell(below, run.arrival_spot)
+			assert_eq(WorldLayout.exit_at(below, arrived_below), WorldLayout.Exit.STAIRS_UP, run.current_map_id)
+
+			run.travel(WorldLayout.Exit.STAIRS_UP, HeroState.new())
+			var arrived_above := WorldLayout.arrival_cell(above, run.arrival_spot)
+			assert_eq(WorldLayout.exit_at(above, arrived_above), WorldLayout.Exit.STAIRS_DOWN, run.current_map_id)
+			run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+
+
+## Goes down the stairs from the first floor and back up again.
+func _down_and_back(run: Run) -> void:
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	run.travel(WorldLayout.Exit.STAIRS_UP, HeroState.new())
+
+
+func test_a_monster_killed_before_leaving_is_still_dead_on_return() -> void:
+	var run := Run.new(3)
+	run.record_of(run.current_map_id).kill(Vector2i(10, 4))
+
+	_down_and_back(run)
+
+	assert_true(run.record_of(run.current_map_id).is_killed(Vector2i(10, 4)))
+	assert_false(run.record_of(run.current_map_id).is_killed(Vector2i(11, 4)), "only that one")
+
+
+func test_a_chest_opened_before_leaving_is_still_open_on_return() -> void:
+	var run := Run.new(3)
+	run.record_of(run.current_map_id).open_chest(2)
+
+	_down_and_back(run)
+
+	assert_true(run.record_of(run.current_map_id).is_chest_opened(2))
+	assert_false(run.record_of(run.current_map_id).is_chest_opened(3))
+
+
+func test_a_floor_item_taken_before_leaving_is_still_gone_on_return() -> void:
+	var run := Run.new(3)
+	run.record_of(run.current_map_id).take_loot(Vector2i(30, 12))
+
+	_down_and_back(run)
+
+	assert_true(run.record_of(run.current_map_id).is_loot_taken(Vector2i(30, 12)))
+	assert_false(run.record_of(run.current_map_id).is_loot_taken(Vector2i(31, 12)))
+
+
+func test_items_dropped_before_leaving_lie_where_they_were_on_return() -> void:
+	var run := Run.new(3)
+	var dropped: Array[MapRecord.DroppedItem] = [
+		MapRecord.DroppedItem.new("sword", false, Vector2(100, 60)),
+		MapRecord.DroppedItem.new("haste", true, Vector2(130.5, 64)),
+	]
+	run.record_of(run.current_map_id).remember_dropped(dropped)
+
+	_down_and_back(run)
+
+	var found := run.record_of(run.current_map_id).dropped_items()
+	assert_eq(found.size(), 2)
+	assert_eq([found[0].item_id, found[0].is_potion, found[0].position], ["sword", false, Vector2(100, 60)])
+	assert_eq([found[1].item_id, found[1].is_potion, found[1].position], ["haste", true, Vector2(130.5, 64)])
+
+
+func test_cells_explored_before_leaving_are_still_explored_on_return() -> void:
+	var run := Run.new(3)
+	var explored: Array[Vector2i] = [Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1)]
+	run.record_of(run.current_map_id).remember_explored(explored)
+
+	_down_and_back(run)
+
+	assert_eq(run.record_of(run.current_map_id).explored_cells(), explored)
+
+
+func test_each_map_keeps_its_own_record() -> void:
+	var run := Run.new(3)
+	run.record_of(run.current_map_id).kill(Vector2i(10, 4))
+
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+
+	assert_false(run.record_of(run.current_map_id).is_killed(Vector2i(10, 4)))
+
+
+func test_a_hurt_monster_left_long_enough_is_back_to_full_health_on_return() -> void:
+	var run := Run.new(3)
+	run.advance(20.0)
+	run.record_of(run.current_map_id).remember_hurt({Vector2i(10, 4): 100}, run.seconds_played)
+
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	run.advance(600.0)
+	run.travel(WorldLayout.Exit.STAIRS_UP, HeroState.new())
+
+	var health := run.record_of(run.current_map_id).health_on_return(Vector2i(10, 4), 900, run.seconds_played, 10.0)
+	assert_eq(health, 900)
+
+
+func test_a_hurt_monster_left_briefly_has_healed_only_part_of_the_way() -> void:
+	var run := Run.new(3)
+	run.record_of(run.current_map_id).remember_hurt({Vector2i(10, 4): 100}, run.seconds_played)
+
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	run.advance(30.0)
+	run.travel(WorldLayout.Exit.STAIRS_UP, HeroState.new())
+
+	var health := run.record_of(run.current_map_id).health_on_return(Vector2i(10, 4), 900, run.seconds_played, 10.0)
+	assert_eq(health, 400, "100 plus 30 seconds at 10 a second")
+
+
+func test_a_monster_never_hurt_comes_back_at_full_health() -> void:
+	var run := Run.new(3)
+	var record := run.record_of(run.current_map_id)
+	record.remember_hurt({Vector2i(10, 4): 100}, 0.0)
+
+	assert_eq(record.health_on_return(Vector2i(20, 8), 900, 1.0, 10.0), 900)
+
+
+func test_a_record_knows_which_generator_made_its_map() -> void:
+	var run := Run.new(3)
+
+	assert_eq(run.record_of(run.current_map_id).generator_version, DungeonGenerator.VERSION)
+
+
+func test_the_next_world_remembers_nothing_of_this_one() -> void:
+	var rng := _seeded_rng(9)
+	var run := Run.random(rng)
+	run.record_of(run.current_map_id).kill(Vector2i(10, 4))
+	run.advance(50.0)
+
+	var next := run.next_world(rng)
+
+	assert_false(next.record_of(next.current_map_id).is_killed(Vector2i(10, 4)))
+	assert_eq(next.seconds_played, 0.0)

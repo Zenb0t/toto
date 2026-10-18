@@ -121,10 +121,10 @@ static func banner_cells(map: DungeonMap, wall_cells: Array[Vector2i]) -> Array[
 
 
 ## Floor cells along a wall (the wall above them) with something small lying on them, and which thing (an
-## index into the caller's list of kinds). Never on doorways, the stairs or where loot or monsters start.
+## index into the caller's list of kinds). Never on doorways, either stairs or where loot or monsters start.
 static func clutter_cells(map: DungeonMap, kinds: int) -> Dictionary:
 	var clutter := {}
-	var busy := {map.exit_cell: true, map.player_spawn: true}
+	var busy := {map.exit_cell: true, map.stairs_up_cell: true, map.player_spawn: true}
 	for cell in map.loot_cells + map.enemy_spawns:
 		busy[cell] = true
 	for cell in map.open_cells():
