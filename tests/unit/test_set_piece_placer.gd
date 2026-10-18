@@ -62,8 +62,8 @@ func test_stamping_draws_the_piece_and_clears_the_ground_around_it() -> void:
 func _village_piece(columns: int, rows: int) -> SetPiece:
 	var drawing := PackedStringArray()
 	for _y in rows:
-		drawing.append("F".repeat(columns))
-	return SetPiece.new("village", drawing, "F", 0.0, 3, true)
+		drawing.append(Village.PALISADE.repeat(columns))
+	return SetPiece.new("village", drawing, Village.PALISADE, 0.0, 3, true)
 
 
 func test_the_village_goes_in_the_middle_and_the_pieces_after_it_keep_clear_of_it() -> void:

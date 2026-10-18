@@ -416,7 +416,7 @@ each a class of its own, from the quadrant's random numbers:
 
 | Step | What it does |
 | --- | --- |
-| Palisade (`VillagePalisade`) | A wall of `F` all round with a 3-cell gate (`G`) in the middle of each side, in line with the plains' own exits |
+| Palisade (`VillagePalisade`) | A wall of `Y` all round with a 3-cell gate (`G`) in the middle of each side, in line with the plains' own exits |
 | Streets (`VillageStreets`) | A plus of 3-wide streets (`:`, walkable beaten earth) from the four gates to a 9x9 square with a 3x3 well (`U`) in the middle. The seed moves the square up to 2 cells off the middle on each axis, so the streets don't always cross at the same place |
 | Lots (`VillageLotPacker`, `VillageLots`) | In this order: the **inn**, whose door must face the square; one or two of the **smithy, market, church**; three to five **houses** (a small or a big one). A lot is a hand-written drawing (see below), turned a quarter turn at a time so its doorstep faces a street, and maybe mirrored (8 ways). It must stay off the streets, the other lots and the strip along the palisade, and never touch another building. Of the ways it fits, one of the snuggest is taken (most neighbours: palisade, lots, streets), so lots end up packed along the street edges |
 | Colours | Each house gets one of four colours, the four shuffled by the seed, so a village shows as many colours as it has houses |
@@ -434,7 +434,7 @@ the later Rest rule (#45) looks for (`DungeonMap.village.inn_doorstep`); every o
 the art at scale 6: small house 5x5, big house 5x6, smithy 8x7, church 6x7, inn 7x8, market 11x8. A new lot is a new entry (and
 a model in `VillageModels`).
 
-**Map letters** (`Village`, read by `DungeonMapParser`): `F` palisade, `G` gate, `:` street or square (the terrain `PATH`), `U` well,
+**Map letters** (`Village`, read by `DungeonMapParser`): `Y` palisade, `G` gate, `:` street or square (the terrain `PATH`), `U` well,
 `X` barrel or crate, `D` the inn's doorstep, `I` inn, `C` church, `S` smithy, `M` market, `1`-`4` a house by colour, and `@` the
 hero's start on a street (a `P` that keeps the earth under it). The palisade, buildings, well and props are `DungeonMap` blockers:
 all stop walking; the palisade and buildings stop sight, the well and props (low) don't. The map's `village` (`Village`) holds the

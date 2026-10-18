@@ -251,14 +251,14 @@ func test_the_ground_between_groves_is_one_room() -> void:
 ## A tiny village: a palisade with a gate on the left, a street, a well, a barrel, an inn with its doorstep,
 ## the hero's start and a house of the second colour.
 const VILLAGE := """
-FFFFFFFFFFF
-F....:....F
-F.III.222.F
-F.III.222.F
-F..DP.....F
-G::::::U:.F
-F.....X...F
-FFFFFFFFFFF
+YYYYYYYYYYY
+Y....:....Y
+Y.III.222.Y
+Y.III.222.Y
+Y..DP.....Y
+G::::::U:.Y
+Y.....X...Y
+YYYYYYYYYYY
 """
 
 
@@ -320,7 +320,7 @@ func test_no_village_letter_is_also_a_monster() -> void:
 
 
 func test_a_start_marked_with_an_at_sign_is_a_spawn_on_beaten_earth() -> void:
-	var map := _parser.parse(VILLAGE.replace("F..DP", "F..D@"))
+	var map := _parser.parse(VILLAGE.replace("Y..DP", "Y..D@"))
 
 	assert_eq(map.player_spawn, Vector2i(4, 4))
 	assert_eq(map.terrain_at(Vector2i(4, 4)), DungeonMap.Terrain.PATH)

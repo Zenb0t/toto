@@ -14,7 +14,7 @@ const MARKET := "M"
 const HOUSE_LETTERS := "1234"
 const HOUSE_COLORS := 4
 ## The palisade around the village, and the gap through it on each side.
-const PALISADE := "F"
+const PALISADE := "Y"
 const GATE := "G"
 const WELL := "U"
 ## A barrel or crate: solid, but low enough to see over.

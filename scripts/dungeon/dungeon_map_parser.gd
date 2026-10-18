@@ -8,7 +8,7 @@ extends RefCounted
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
 ##   ,  shallow water (walkable, slowly)
 ##   T  tree grove    B  boulder    =  barricade (outdoors: each blocks walking, see DungeonMap.Blocker)
-##   The village (see Village): F palisade   G gate (floor)   :  street or square (walkable beaten earth)
+##   The village (see Village): Y palisade   G gate (floor)   :  street or square (walkable beaten earth)
 ##   U  well   X  barrel or crate   D  the inn's doorstep (floor)   I inn   C church   S smithy   M market
 ##   1 2 3 4  a house, by colour   @  the hero's start on a street (like P)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
