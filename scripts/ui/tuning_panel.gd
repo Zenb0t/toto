@@ -12,6 +12,9 @@ signal finished(tuning: Tuning)
 ## so the tuning just edited is the one the new world is made with.
 signal new_world_requested
 signal same_seed_requested
+## From the World page, when Warp is on: go to this place (a Warp target id). Comes after finished, like the two
+## above.
+signal warp_requested(target_id: String)
 
 const FONT_SIZE := 20
 const MENU_FONT_SIZE := 26
@@ -96,7 +99,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _change(key: String, new_value: float) -> void:
 	_tuning.set_value(key, new_value)
-	if _rows.has(key):
+	if key == GameTuning.WORLD_WARP:
+		_show_page(_section, _group)  # the warp places show or hide
+	elif _rows.has(key):
 		_refresh_row(key)
 	tuning_changed.emit(_tuning)
 
@@ -175,6 +180,8 @@ func _build_rows(group: String) -> void:
 	for each in _tuning.params():
 		if each.group == group:
 			rows.append(_row(each))
+	if group == GameTuning.WORLD_GROUP and GameTuning.warp_enabled(_tuning):
+		rows.append_array(_warp_actions())
 	_fill_columns(rows)
 	for key: String in _rows:
 		_refresh_row(key)
@@ -190,6 +197,22 @@ func _world_actions() -> Array[Control]:
 		_action_button("NewWorld", "New world", func() -> void: _start_world(new_world_requested)),
 		_action_button("SameSeedAgain", "Same seed again", func() -> void: _start_world(same_seed_requested)),
 	]
+
+
+## One button per place to warp to (only while Warp is on).
+func _warp_actions() -> Array[Control]:
+	var buttons: Array[Control] = []
+	for each in Warp.targets():
+		var target_id := each.id
+		buttons.append(_action_button(
+			"Warp_" + target_id, "Warp: " + each.label, func() -> void: _warp_to(target_id)))
+	return buttons
+
+
+## Applies the tuning and closes the screen, then asks to go there.
+func _warp_to(target_id: String) -> void:
+	_on_done_pressed()
+	warp_requested.emit(target_id)
 
 
 ## Applies the tuning and closes the screen, then asks for the world.
