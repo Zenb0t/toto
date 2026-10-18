@@ -103,6 +103,13 @@ func test_hurt_monsters_heal_while_away_at_the_rate_regeneration_sets() -> void:
 	assert_eq(GameTuning.enemy_regeneration(tuning), Regeneration.DEFAULT_HEALTH_PER_SECOND)
 
 
+func test_the_enemy_drop_chance_is_tuned_under_loot_and_starts_rare() -> void:
+	var tuning := GameTuning.create()
+
+	assert_eq(tuning.param(GameTuning.LOOT_ENEMY_DROP_CHANCE).group, GameTuning.LOOT_GROUP)
+	assert_almost_eq(GameTuning.enemy_drop_chance(tuning), 0.02, 0.005)
+
+
 func test_enemies_open_straight_onto_their_knobs() -> void:
 	var enemies := _section("Enemies", GameTuning.sections("wand", "dash"))
 
@@ -198,6 +205,19 @@ func test_a_magic_missile_is_worth_between_two_and_three_punches() -> void:
 func test_the_bow_is_among_the_weapons_the_player_can_find() -> void:
 	assert_has(GameTuning.weapon_ids(), "bow")
 	assert_eq(GameTuning.weapon(GameTuning.create(), "bow").id, "bow")
+
+
+func test_the_give_up_time_and_distance_are_enemy_knobs_that_default_to_the_awareness_rules() -> void:
+	var tuning := GameTuning.create()
+	var awareness := Awareness.new()
+	awareness.give_up_seconds = 99.0
+	awareness.give_up_cells = 99.0
+
+	GameTuning.tune_awareness(awareness, tuning)
+
+	assert_eq(tuning.param(GameTuning.AWARENESS_GIVE_UP_SECONDS).group, GameTuning.ENEMIES_GROUP)
+	assert_eq(awareness.give_up_seconds, Awareness.DEFAULT_GIVE_UP_SECONDS)
+	assert_eq(awareness.give_up_cells, Awareness.DEFAULT_GIVE_UP_CELLS)
 
 
 func test_the_world_section_holds_every_generation_knob_of_the_plains() -> void:

@@ -46,3 +46,9 @@ static func can_attack(distance: float, target_radius: float, attack_range: floa
 ## plus the shot's flight), if it keeps going. to_target points from the enemy to the target.
 static func lead(to_target: Vector2, target_velocity: Vector2, seconds: float, lead_share: float) -> Vector2:
 	return to_target + target_velocity * seconds * lead_share
+
+
+## Where a wandering enemy strolls to next: a random spot no farther than radius from its home.
+static func wander_goal(home: Vector2, radius: float, rng: RandomNumberGenerator) -> Vector2:
+	# The square root spreads the spots evenly over the disc instead of bunching them at the middle.
+	return home + Vector2.from_angle(rng.randf() * TAU) * radius * sqrt(rng.randf())

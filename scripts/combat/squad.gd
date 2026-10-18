@@ -1,6 +1,6 @@
 class_name Squad
 extends RefCounted
-## The enemies of one room fighting as a team: they take turns to attack instead of firing all at once, and
+## The monsters of one band fighting as a team: they take turns to attack instead of firing all at once, and
 ## spread out around their target instead of bunching up.
 ## Members are named by an id (any int that is unique in the squad, like the enemy's instance id).
 
@@ -48,7 +48,8 @@ func report_bearing(member_id: int, bearing: float) -> void:
 	_bearings[member_id] = bearing
 
 
-## A defeated member frees its turn and its spot.
+## A defeated member, or one that gave up the chase, frees its turn and its spot (it reports its bearing again
+## once it is back in the fight).
 func leave(member_id: int) -> void:
 	_attacking.erase(member_id)
 	_bearings.erase(member_id)

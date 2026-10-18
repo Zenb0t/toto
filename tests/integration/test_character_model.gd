@@ -74,3 +74,11 @@ func test_a_fallen_character_stays_down() -> void:
 	await wait_process_frames(3)
 
 	assert_eq(model.current_animation(), CharacterModel.DEATH)
+
+
+func test_a_monster_shows_the_mark_it_is_given_over_its_head() -> void:
+	var model := _model()
+
+	model.show_mark(Enemy.ASLEEP_MARK)
+
+	assert_eq(model.shown_mark(), Enemy.ASLEEP_MARK)

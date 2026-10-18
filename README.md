@@ -16,7 +16,7 @@ and mouse, following whichever you used last.
 | Input | Action |
 | --- | --- |
 | Touch the left half of the screen (below the Map button) and drag | Move (floating stick). The top left stays free for the Map button |
-| Tap the **weapon** button | Auto-aim at the nearest enemy and attack. Each weapon holds 3 shots of ammo (orange bar over your head) that reload one at a time |
+| Tap the **weapon** button | Auto-aim at the nearest enemy you can see and attack. Each weapon holds 3 shots of ammo (orange bar over your head) that reload one at a time |
 | Drag from the weapon button, then release | Aim manually and fire. The button floats like the stick: touch anywhere in the faint circle around it and it jumps under your finger; the aim is measured from where you touched. Dragging back to the middle buzzes (phones that support it); letting go there cancels, as in Brawl Stars |
 | Hold the weapon button (**Bow**) | Draws the bow: the longer you hold before letting go, the harder the arrow hits, up to a full charge at 1.5 s, which also pierces. You walk slower while drawing; the aim line fills up as it charges. A tap is a weak arrow |
 | **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
@@ -62,10 +62,17 @@ Tune → World holds the knobs of the plains and starts a new world or the same 
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
-lava, and you. Items sometimes lie on the floor (the same ones for the same world seed), and some rooms are tougher than they should be. Entering a room with enemies locks its doors until you defeat them all, and clearing it leaves a
-chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
-weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
-their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
+lava, and you. Items sometimes lie on the floor (the same ones for the same world seed), and some rooms are tougher than they should be. The monsters of a room are a band that sleeps there (a "z" over
+their heads) or wanders slowly about it; one notices you only when it can see you close by (4 cells asleep, 9
+wandering) or when you hurt it, shows a "!", and comes for you. Your attacks and blasts make noise that wakes monsters
+within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
+so a careless fight can pull in a nearby band. You can escape a chase: a monster gives up after 5 seconds without
+seeing you, or when you are 24 cells from its home, checks where it last saw you and walks home, noticing you again if it sees you on the way. Rooms don't lock, so you
+can sneak past or pick your fight. Loot is earned, not handed out:
+clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
+hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
+weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. About one in fifty drops
+its weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
 fifth floor's stairs lead out. On every floor you arrive on silver stairs that lead back up, onto the gold
 stairs of the floor above (the first floor's onto the mausoleum). The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
@@ -104,8 +111,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` stairs down
   (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item, and outdoors `T` tree grove, `B` boulder, `=` barricade), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
   lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
-  torches and their light), moving liquids (`LiquidView`), room-lock rules
-  (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
+  torches and their light), moving liquids (`LiquidView`), room rules: enemies left per room, and the lock
+  of rooms marked as locking (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
   `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
   `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance)
@@ -118,12 +125,14 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Knuckles`, `LightningBolt`, `MephiticCloud`,
   `Fireball`, `Crossbow`, `Bow`, or an `ArcWeapon` archetype: `Dagger`, `Sword`, `Battleaxe`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
 - `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects, `PoisonStatus` so poison clouds don't stack, `ChainFalloff` for the Lightning Bolt's weaker jumps, `Charge`: seconds held to strength), when a weapon fires
-  (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead), what they are doing (`EnemyBrain`, a
-  small state machine: idle, hunt, position, wind up, recover), how a room's enemies fight as a team (`Squad`:
-  taking turns, flank spots),
+  (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead, where to wander), when a calm monster
+  notices the hero and who hears a noise or shout (`Awareness`), what they are doing (`EnemyBrain`, a small state machine: asleep, wander,
+  noticing, idle, hunt, position, wind up, recover, check, return; `Awareness` also decides when a hunter gives up), how a band fights as a team (`Squad`: taking turns, flank
+  spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
-- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength) and the
-  `Bestiary` that lists them with their map letters
+- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), the
+  `Bestiary` that lists them with their map letters, and `Band` (how the monsters of one home start: asleep or
+  wandering, from the map's seed)
 - `scripts/potions` – consumables: `Potion` (`HealingPotion`, `HastePotion`, `MightPotion`) and the `PotionBelt`
   that carries them
 - `scripts/loot` – `LootTable`: what drops (pure rules, given a random generator)
@@ -152,5 +161,6 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   kills, each adding maximum health
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
   (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
-  routes controls to the player and applies the room rules
+  routes controls to the player and applies the room rules (each room's monsters are a band: settled at home,
+  and woken by the hero's noise and by each other's shouts, a band always hearing its own)
 - `tests/unit`, `tests/integration` – behaviour tests
