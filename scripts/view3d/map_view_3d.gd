@@ -162,6 +162,12 @@ func set_doors_closed(door_cells: Array[Vector2i], closed: bool) -> void:
 	_refresh()
 
 
+## The look of the campfire on a cell: its state and the seconds until it changes (see CampfireModel.show_rest).
+func show_campfire(cell: Vector2i, state: Campfire.State, seconds_left: float, held := false) -> void:
+	if _campfires.has(cell):
+		_campfires[cell].show_rest(state, seconds_left, held)
+
+
 func show_exploration(exploration: Exploration) -> void:
 	_exploration = exploration
 	_refresh()
