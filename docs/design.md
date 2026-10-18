@@ -347,10 +347,11 @@ once (the #34 review note: `_on_room_locked` used to wake nobody). Its monsters 
 
 **Trap rooms** (#46). Greed is tested: crypt levels 1 and 2 each get **one trap room** (`TrapRoom`, a pure generation step;
 none on level 3). It looks like any room with a chest: an ordinary room (never the start room, the stairs-down room, the
-campfire's room, a vault or the arena, so the stairs never lock) with the chest in its middle where chests go
-(`DungeonMap.room_center`) and no loose item. It is marked `R` there (a locking room), so entering it seals it like the
-arena. Its band is picked **as if the room lay `trap_band_extra_depth` levels deeper** (a Knob on `CryptRecipe`, default 2,
-Tune -> World; deeper means tougher monsters and more of them, and no out-of-depth roll on top), wanders inside the room
+campfire's room, a vault or the arena, so the stairs never lock) with the chest in its middle and no loose item. It is
+marked `R` there (a locking room), so entering it seals it like the arena; the chest stands on the mark
+(`DungeonMap.locking_mark_cell`), a cell the generator keeps free of monsters, not on `room_center`, which on the parsed
+room can land a cell off the generator's middle. Its band is picked **as if the room lay `trap_band_extra_depth` levels
+deeper** (a Knob on `CryptRecipe`, default 2, Tune -> World; deeper means tougher monsters and more of them, and no out-of-depth roll on top), wanders inside the room
 until the seal, then wakes and never gives up (the locking-room rules above). The chest stays shut and **ignores the
 hero** (`Chest.unlock`, called from `main.gd` on `room_cleared`) until the last of the band dies; walking onto it then
 opens it like any chest: one gear piece the hero doesn't hold (`LootTable.pick_item_id`) and sometimes a potion. Its

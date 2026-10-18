@@ -49,6 +49,18 @@ func test_a_trap_room_holds_a_band_and_no_item_lying_about() -> void:
 			assert_ne(map.room_at(cell), trap, "seed %d" % seed_value)
 
 
+func test_a_trap_rooms_chest_stands_on_its_mark_on_free_floor_where_no_monster_spawns() -> void:
+	for seed_value in SEEDS:
+		for level in [1, 2]:
+			var map := _level(seed_value, level)
+			var trap := _trap_rooms(map)[0]
+			var chest := map.locking_mark_cell(trap)
+			var label := "level %d, seed %d" % [level, seed_value]
+			assert_eq(map.room_at(chest), trap, label)
+			assert_true(map.is_standable(chest), label)
+			assert_does_not_have(map.enemy_spawns, chest, label)
+
+
 func test_a_trap_band_is_bigger_the_deeper_the_knob_sets_it() -> void:
 	var usual := CryptRecipe.new()
 	usual.trap_band_extra_depth = 0

@@ -27,7 +27,7 @@ func before_each() -> void:
 
 func _chest_and_hero(locked: bool) -> Chest:
 	var chest := Chest.new(false, locked)
-	chest.position = DungeonView.cell_center(_map.room_center(_room))
+	chest.position = DungeonView.cell_center(_map.locking_mark_cell(_room))
 	chest.opened.connect(func() -> void: _opened += 1)
 	add_child_autofree(chest)
 	var hero: Player = PLAYER_SCENE.instantiate()

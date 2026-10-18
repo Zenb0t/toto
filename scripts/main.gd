@@ -899,12 +899,13 @@ func _spawn_chest(chest_id: int, cell: Vector2i, locked := false) -> Chest:
 	return chest
 
 
-## The chest in the middle of each trap room, known by its room's id. It stays shut and ignores the hero until the
-## room is clear (see _on_room_cleared); a room cleared on an earlier visit has its chest ready at once.
+## The chest in the middle of each trap room, on its mark (a cell no monster spawns on), known by its room's id. It
+## stays shut and ignores the hero until the room is clear (see _on_room_cleared); a room cleared on an earlier visit
+## has its chest ready at once.
 func _spawn_trap_chests() -> void:
 	for room: int in _stage.map.locking_room_ids():
 		if _stage.map.locking_kind(room) == LockingRoom.Kind.TRAP:
-			_trap_chests[room] = _spawn_chest(room, _stage.map.room_center(room), not _progress.is_cleared(room))
+			_trap_chests[room] = _spawn_chest(room, _stage.map.locking_mark_cell(room), not _progress.is_cleared(room))
 
 
 ## A chest holds a random weapon or utility the player doesn't already have, picked when it opens, and
