@@ -15,6 +15,12 @@ const ENEMY_REGENERATION := "enemy.regeneration"
 const SQUAD_MAX_ATTACKERS := "squad.max_attackers"
 const SQUAD_TURN_GAP := "squad.turn_gap"
 const SQUAD_FLANK_SPREAD := "squad.flank_spread"
+const AWARENESS_ASLEEP_SIGHT := "awareness.asleep_sight"
+const AWARENESS_WANDER_SIGHT := "awareness.wander_sight"
+const ENEMY_NOTICING := "enemy.noticing"
+const ENEMY_WANDER_SPEED := "enemy.wander_speed"
+const BAND_WANDER_RADIUS := "band.wander_radius"
+const BAND_WANDERING_SHARE := "band.wandering_share"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
 const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
 const CONTROLS_BUTTON_CATCH := "controls.button_catch"
@@ -139,6 +145,22 @@ static func create() -> Tuning:
 			SQUAD_TURN_GAP, "Gap between attacks (s)", ENEMIES_GROUP, 0, 2, 0.05, Squad.DEFAULT_TURN_GAP_SECONDS),
 		Tuning.Param.new(
 			SQUAD_FLANK_SPREAD, "Flank spread (deg)", ENEMIES_GROUP, 0, 180, 5, Squad.DEFAULT_FLANK_SPREAD_DEGREES),
+		Tuning.Param.new(
+			AWARENESS_ASLEEP_SIGHT, "Notice when asleep (cells)", ENEMIES_GROUP, 0, 20, 0.5,
+			Awareness.DEFAULT_ASLEEP_SIGHT_CELLS),
+		Tuning.Param.new(
+			AWARENESS_WANDER_SIGHT, "Notice when wandering (cells)", ENEMIES_GROUP, 0, 20, 0.5,
+			Awareness.DEFAULT_WANDER_SIGHT_CELLS),
+		Tuning.Param.new(
+			ENEMY_NOTICING, "Noticing pause (s)", ENEMIES_GROUP, 0, 2, 0.05, EnemyBrain.DEFAULT_NOTICING_SECONDS),
+		Tuning.Param.new(
+			ENEMY_WANDER_SPEED, "Wander speed (x move speed)", ENEMIES_GROUP, 0.1, 1, 0.05,
+			Enemy.DEFAULT_WANDER_SPEED_SHARE),
+		Tuning.Param.new(
+			BAND_WANDER_RADIUS, "Wander radius (cells)", ENEMIES_GROUP, 1, 15, 0.5, Band.DEFAULT_WANDER_RADIUS_CELLS),
+		Tuning.Param.new(
+			BAND_WANDERING_SHARE, "Bands wandering (share, next map)", ENEMIES_GROUP, 0, 1, 0.05,
+			Band.DEFAULT_WANDERING_SHARE),
 		Tuning.Param.new(
 			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.01, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
 		Tuning.Param.new(
@@ -275,6 +297,32 @@ static func tune_squad(target: Squad, tuning: Tuning) -> void:
 	target.max_attackers = roundi(tuning.value(SQUAD_MAX_ATTACKERS))
 	target.turn_gap_seconds = tuning.value(SQUAD_TURN_GAP)
 	target.flank_spread_degrees = tuning.value(SQUAD_FLANK_SPREAD)
+
+
+## Applies the tuned noticing rules (how far a calm monster notices the hero from, asleep or wandering).
+static func tune_awareness(target: Awareness, tuning: Tuning) -> void:
+	target.asleep_sight_cells = tuning.value(AWARENESS_ASLEEP_SIGHT)
+	target.wander_sight_cells = tuning.value(AWARENESS_WANDER_SIGHT)
+
+
+## How long a monster stands still, showing "!", once it notices the hero.
+static func enemy_noticing_seconds(tuning: Tuning) -> float:
+	return tuning.value(ENEMY_NOTICING)
+
+
+## A wandering monster's pace, as a share of its speed.
+static func enemy_wander_speed_share(tuning: Tuning) -> float:
+	return tuning.value(ENEMY_WANDER_SPEED)
+
+
+## How far from home a wandering monster strolls, in cells.
+static func band_wander_radius_cells(tuning: Tuning) -> float:
+	return tuning.value(BAND_WANDER_RADIUS)
+
+
+## The share of bands that start wandering (the rest sleep), for maps built from now on.
+static func band_wandering_share(tuning: Tuning) -> float:
+	return tuning.value(BAND_WANDERING_SHARE)
 
 
 ## How much tougher than their kind's health enemies are (1 = as listed in the Bestiary).

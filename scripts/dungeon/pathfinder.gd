@@ -52,5 +52,11 @@ func can_see(from: Vector2, to: Vector2) -> bool:
 	return true
 
 
+## True on ground one can walk onto and stand on without harm (not a wall, deep water or lava).
+func is_safe_footing(point: Vector2) -> bool:
+	var cell := DungeonView.world_to_cell(point)
+	return _is_open(cell) and _map.terrain_at(cell) != DungeonMap.Terrain.LAVA
+
+
 func _is_open(cell: Vector2i) -> bool:
 	return _grid.is_in_boundsv(cell) and not _grid.is_point_solid(cell)

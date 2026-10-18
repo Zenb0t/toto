@@ -96,3 +96,16 @@ func test_with_no_lead_enemies_aim_at_where_the_target_is() -> void:
 func test_shots_take_time_to_fly_but_blows_land_at_once() -> void:
 	assert_gt(MagicMissile.new().travel_seconds(300.0), 0.0)
 	assert_eq(Sword.new().travel_seconds(300.0), 0.0)
+
+
+func test_a_wanderer_never_strolls_farther_from_home_than_its_radius() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var home := Vector2(100, 50)
+
+	var farthest := 0.0
+	for _try in 200:
+		farthest = maxf(farthest, home.distance_to(EnemyTactics.wander_goal(home, 64.0, rng)))
+
+	assert_lte(farthest, 64.0)
+	assert_gt(farthest, 32.0, "it uses the room it has")

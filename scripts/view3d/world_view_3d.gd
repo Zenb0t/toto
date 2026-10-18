@@ -86,7 +86,7 @@ func add_player(player: Player) -> void:
 		bars.show_state(player.health.current, player.health.maximum, player.ammo_fills()))
 
 
-## The model shows the enemy's race (see CharacterLook), at its size.
+## The model shows the enemy's race (see CharacterLook), at its size, and its mark (asleep, noticed).
 func add_enemy(enemy: Enemy) -> void:
 	var monster := enemy.monster
 	var stand_in := CharacterModel.new(CharacterLook.of_monster(monster), true)
@@ -100,7 +100,8 @@ func add_enemy(enemy: Enemy) -> void:
 		model.face(enemy.facing)
 		model.hold(enemy.weapon.id)
 		model.show_moving(enemy.velocity.length() > MOVING_SPEED)
-		model.show_health(float(enemy.health.current) / enemy.health.maximum))
+		model.show_health(float(enemy.health.current) / enemy.health.maximum)
+		model.show_mark(enemy.mark()))
 
 
 func add_projectile(projectile: Projectile) -> void:

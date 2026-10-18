@@ -2,7 +2,7 @@ class_name CharacterModel
 extends Node3D
 ## A hero or monster in 3D: a KayKit Adventurers model (see CharacterLook) with its weapon in hand,
 ## animated by what it does (standing, running, attacking, getting hurt), flashing white when hit, and,
-## for enemies, a health bar above its head.
+## for enemies, a health bar above its head and, over it, a mark for what it is up to ("z" asleep, "!" noticed).
 
 ## How tall a character stands, in cells, before its monster's size.
 const HEIGHT := 1.35
@@ -32,6 +32,10 @@ const HEALTH_BAR_HEIGHT := HEIGHT + 0.3
 const HEALTH_BAR_SIZE := Vector2(0.8, 0.1)
 const HEALTH_COLOR := Color(0.95, 0.3, 0.25)
 const HEALTH_BACK_COLOR := Color(0.1, 0.08, 0.1, 0.8)
+const MARK_HEIGHT := HEALTH_BAR_HEIGHT + 0.35
+const MARK_SIZE := 64
+const MARK_PIXEL_SIZE := 0.008
+const MARK_COLOR := Color(1.0, 0.92, 0.45)
 
 static var _shared_animations: AnimationLibrary
 
@@ -42,6 +46,7 @@ var _weapon_slot := BoneAttachment3D.new()
 var _weapon_id := ""
 var _meshes: Array[MeshInstance3D] = []
 var _health_fill: MeshInstance3D
+var _mark := Label3D.new()
 var _moving := false
 var _action_left := 0.0
 var _flash_left := 0.0
@@ -66,6 +71,15 @@ func _init(look: CharacterLook, with_health_bar := false) -> void:
 		add_child(ModelParts.bar(HEALTH_BAR_SIZE, HEALTH_BACK_COLOR, 0, at))
 		_health_fill = ModelParts.bar(HEALTH_BAR_SIZE, HEALTH_COLOR, 1, at)
 		add_child(_health_fill)
+	_mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_mark.no_depth_test = true
+	_mark.render_priority = 2
+	_mark.font_size = MARK_SIZE
+	_mark.pixel_size = MARK_PIXEL_SIZE
+	_mark.outline_size = 10
+	_mark.modulate = MARK_COLOR
+	_mark.position = Vector3(0, MARK_HEIGHT, 0)
+	add_child(_mark)
 
 
 ## Turns the model to face a direction on the 2D plane.
@@ -132,6 +146,7 @@ func play_hit() -> void:
 func play_death(linger_seconds := -1.0) -> void:
 	_animations.play(DEATH, BLEND_SECONDS)
 	_action_left = INF
+	_mark.hide()
 	if _health_fill != null:
 		for child in get_children():
 			if child is MeshInstance3D:
@@ -148,6 +163,16 @@ func current_animation() -> String:
 func show_health(ratio: float) -> void:
 	if _health_fill != null:
 		_health_fill.scale.x = maxf(clampf(ratio, 0.0, 1.0), 0.001)
+
+
+## A short text over its head (see Enemy.mark), or nothing when empty.
+func show_mark(text: String) -> void:
+	if _mark.text != text:
+		_mark.text = text
+
+
+func shown_mark() -> String:
+	return _mark.text
 
 
 ## Glows white for a moment, to show a hit landed.

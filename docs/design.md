@@ -25,7 +25,7 @@ Anything that doesn't help answer that is deferred.
 | Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
 | Goal | Go down 5 floors and out. Each floor's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back. Other rooms are optional | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent |
-| Rooms | Entering a room with enemies locks its doors until they're all defeated | Forces fights and gives clear pacing |
+| Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`; trap rooms and the boss arena, none yet) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
 | Look | 3D shown over a 2D game: a fixed, tilted Brawl Stars-style camera; fantasy characters (humans, goblins, dwarfs) later | Brawl Stars' readability, with the game rules untouched |
@@ -185,13 +185,27 @@ Within their comfortable range they circle the player instead of standing still.
 
 | State | What the enemy does | Leaves when |
 | --- | --- | --- |
-| Idle | Waits | Its room locks and it gets a target |
+| Asleep | Sleeps at home, a "z" over its head | It notices the hero (see Bands): Noticing |
+| Wander | Strolls slowly (half speed) to random spots within 6 cells of home, in sight of home and off lava | It notices the hero: Noticing |
+| Noticing | Shows a "!" and stands still for 0.4 s, then goes after the hero | The pause is over: Hunt or Position |
+| Idle | Waits (an awake enemy with no target) | It gets a target |
 | Hunt | Can't see the player: walks around walls (`Pathfinder`) | It sees the player, or gets its turn (lobbing weapons attack over walls) |
 | Position | Keeps to its weapon's distance, at its flank spot | It loses sight, or gets its turn |
 | Wind-up | Stands still and telegraphs the attack, aim locked | The attack is released (or a Beckoning yanks it) |
 | Recover | Steps aside (alternating sides) for 0.35 s | Recovered: back to Hunt or Position |
 
-**Teamwork** (`Squad`, one per room). Enemies no longer all fire at once: a room lets at most 2 enemies wind
+**Bands** (`Band`, `Awareness`). The monsters of one **home** are a band; in the dungeon a home is a room
+(camps and the ruin come later). A band starts **asleep** at home or **wandering** about it; which is decided
+per home from the map's seed (`Band.start_of`: a quarter of bands wander), so the same map starts the same way.
+A monster **notices** the hero only when it can see them (line of sight) within **4 cells asleep** or **9
+cells wandering**; there are no dice. Taking damage wakes it at once. When one notices, the rest of its band
+joins it (`Enemy.noticed` → `Enemy.alert`). `Awareness` holds the rule (the radii are its fields; damage and
+the band's call count as noticing); `EnemyBrain` asks it while the enemy is calm, and a calm enemy only checks
+its line of sight once the hero is within its radius. All of it is in Tune → Enemies: notice when asleep,
+notice when wandering, noticing pause, wander speed, wander radius, bands wandering (for maps built after).
+Auto-aim picks the nearest enemy the hero can see, wherever it is.
+
+**Teamwork** (`Squad`, one per band). Once a band fights, its members take turns as a squad. Enemies no longer all fire at once: a band lets at most 2 enemies wind
 up at the same time, and starts their attacks at least 0.35 s apart, so attacks come in a rhythm the player
 can read and dodge one by one. They also spread out: seen from the player, neighbours take spots 70° apart,
 centred on where the group already stands and in the order they stand (nobody crosses over), so a group
@@ -466,6 +480,8 @@ Mage, Rogue and hooded Rogue, and four skeletons, all on one rig, with weapons a
 - Characters stand idle, run while moving, play their attack when it is released, and flinch when hit.
   When they die they fall where they stand: a monster's body lingers a moment (with the burst of chunks),
   the hero's stays down until the summary. Animations only run while the character is in sight.
+- A monster shows a mark over its health bar: a "z" while it sleeps, a "!" while it notices the hero
+  (`Enemy.mark`, shown by `CharacterModel.show_mark`).
 - Size: the animations are imported once (with the Knight) and shared, so the five models add about 2 MB
   to the phone download.
 
