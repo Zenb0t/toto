@@ -57,7 +57,9 @@ boulders for cover, ponds and a thick forest border with a barricaded exit in th
 the grass, halfway to the border or farther, stands a small stone mausoleum: the crypt entrance, with no road to it. Step
 onto its stairs to go down into a descent through 5 floors, each a different branch (the Dungeon, the Lair's caves, the Orcish
 Mines, the Crypt, the Depths) and a new dungeon, all grown from one world seed (shown in the pause menu), inspired by
-Dungeon Crawl Stone Soup. The first floor's silver stairs lead back out to the mausoleum. The plains hold no monsters yet.
+Dungeon Crawl Stone Soup. The first floor's silver stairs lead back out to the mausoleum. Six **camps** dot the plains, each a band of 2-4 goblins and kobolds round a campfire (asleep or wandering), bigger and tougher
+the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. Campfires
+show on the minimap once seen, and monsters killed on the plains stay dead.
 Tune → World holds the knobs of the plains and starts a new world or the same seed again. The dungeon floors: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
@@ -115,7 +117,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   of rooms marked as locking (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
   `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
-  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance)
+  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires; `CampCrews` fills each camp by how far out it lies)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
   `BranchLook` (what each place is: the plains, Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
   (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces),
@@ -131,8 +133,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
 - `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), the
-  `Bestiary` that lists them with their map letters, and `Band` (how the monsters of one home start: asleep or
-  wandering, from the map's seed)
+  `Bestiary` that lists them with their map letters, and `Band` (which home a monster lives at, a campfire or its
+  room, and how the monsters of one home start: asleep or wandering, from the map's seed) and `Camps` (which campfire a monster lives at)
 - `scripts/potions` – consumables: `Potion` (`HealingPotion`, `HastePotion`, `MightPotion`) and the `PotionBelt`
   that carries them
 - `scripts/loot` – `LootTable`: what drops (pure rules, given a random generator)
@@ -161,6 +163,6 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   kills, each adding maximum health
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
   (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
-  routes controls to the player and applies the room rules (each room's monsters are a band: settled at home,
+  routes controls to the player and applies the room rules (a camp's monsters, or the monsters of a room, are a band: settled at its home, the campfire or the room's middle,
   and woken by the hero's noise and by each other's shouts, a band always hearing its own)
 - `tests/unit`, `tests/integration` – behaviour tests

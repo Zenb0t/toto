@@ -7,6 +7,7 @@ extends RefCounted
 ##   *  an item lying on the floor
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
 ##   ,  shallow water (walkable, slowly)
+##   F  campfire (on floor: scenery you can walk over; a camp's monsters stand round it)
 ##   T  tree grove    B  boulder    =  barricade (outdoors: each blocks walking, see DungeonMap.Blocker)
 ##   Enemy spawns (on floor), by monster (see Bestiary):  k kobold  g goblin  a goblin archer  s bandit
 ##   w apprentice  c crossbowman  f pyromancer  n necromancer  o orc  W orc wizard  d dwarf
@@ -22,6 +23,7 @@ const LOOT := "*"
 const WATER := "~"
 const LAVA := "L"
 const SHALLOW := ","
+const CAMPFIRE := "F"
 const GROVE := "T"
 const BOULDER := "B"
 const BARRICADE := "="
@@ -34,7 +36,7 @@ func parse(ascii: String) -> DungeonMap:
 	assert(Array(rows).all(func(row: String) -> bool: return row.length() == size.x), "every row must be the same width")
 
 	var enemy_symbols := Bestiary.letters()
-	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, STAIRS_UP, LOOT, WATER, LAVA, SHALLOW] + enemy_symbols)
+	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, STAIRS_UP, LOOT, WATER, LAVA, SHALLOW, CAMPFIRE] + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
 	var exit_cells := _cells_matching(rows, [EXIT])
 	assert(exit_cells.size() <= 1, "map has more than one exit")
@@ -63,6 +65,7 @@ func parse(ascii: String) -> DungeonMap:
 		_cells_matching(rows, [LOOT]),
 		stairs_up_cells[0] if not stairs_up_cells.is_empty() else DungeonMap.NO_CELL,
 		_blockers_by_cell(rows),
+		_cells_matching(rows, [CAMPFIRE]),
 	)
 
 

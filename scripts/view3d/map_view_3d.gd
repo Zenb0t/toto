@@ -3,7 +3,7 @@ extends Node3D
 ## What stands on the floor: the walls (with a lighter cap that overhangs a little, like Brawl Stars'
 ## blocks, in the branch's colours, see BranchLook), pillars (carved columns in built places, plain rock in
 ## caves), the doors of locked rooms, torches and banners on the walls where the branch has them, small
-## things lying along them (see DecorModel) and the arch over the stairs. Like the fog on
+## things lying along them (see DecorModel), campfires and the arch over the stairs. Like the fog on
 ## the floor, what the player has never seen isn't shown, and what is out of sight is dimmed.
 ## Owns no game rules: it is told the map, which doors are closed and what is seen.
 
@@ -48,6 +48,7 @@ var _closed_doors := {}  # Vector2i -> true
 var _torches := {}  # wall cell -> TorchModel
 var _banners := {}  # wall cell -> Node3D
 var _clutter := {}  # floor cell -> Node3D
+var _campfires := {}  # floor cell -> CampfireModel
 var _trees := {}  # pillar cell -> Node3D
 var _shown := {}  # Vector2i -> the brightness last shown, so a refresh only touches what changed
 var _exploration: Exploration
@@ -103,12 +104,17 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 	_blocks.instance_count = _block_cells.size()
 	_caps.instance_count = _block_cells.size() + _column_cells.size()
 	_columns.instance_count = _column_cells.size()
-	for prop: Node in _torches.values() + _banners.values() + _clutter.values() + _trees.values():
+	for prop: Node in _torches.values() + _banners.values() + _clutter.values() + _trees.values() + _campfires.values():
 		prop.queue_free()
 	_torches.clear()
 	_banners.clear()
 	_clutter.clear()
 	_trees.clear()
+	_campfires.clear()
+	for cell in map.campfire_cells:
+		var fire := CampfireModel.new()
+		add_child(fire)
+		_campfires[cell] = fire
 	for cell in trees:
 		var tree := DecorModel.make("tree", DungeonDecor.noise(cell, 16))
 		tree.position = WorldSpace.to_3d(DungeonView.cell_center(cell))
@@ -241,6 +247,8 @@ func _refresh(everything := false) -> void:
 		_torches[cell].show_on_wall(cell, _height_at(cell), brightness(cell))
 	_stairs.show_at(_stairs_cell, _ground_brightness(_stairs_cell))
 	_stairs_up.show_at(_stairs_up_cell, _ground_brightness(_stairs_up_cell))
+	for cell: Vector2i in _campfires:
+		_campfires[cell].show_at(cell, _ground_brightness(cell))
 	for cell: Vector2i in _banners:
 		_banners[cell].visible = brightness(cell) > HIDDEN
 		_banners[cell].scale.y = PropModel.SCALE * PropModel.BANNER_SIZE * _height_at(cell)
