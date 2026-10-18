@@ -1,9 +1,10 @@
 class_name RestProfile
 extends RefCounted
 ## How a place of rest heals: how long the rest lasts, how far its light reaches, how much it heals and how fast,
-## and how long it is spent afterwards. A campfire is the first profile (campfire()); the inn's will be another set
-## of the same numbers (a short rest, a full heal, no wait after) and an ambush roll another field, so the rules
-## that carry a rest out (Campfire, MonstersAround) never name a particular place. Pure; every number is a Knob.
+## and how long it is spent afterwards. A campfire is the first profile (campfire()), the inn the second (inn(): a
+## short rest, a full heal, no wait after, cancelled by moving) and an ambush roll will be another field, so the
+## rules that carry a rest out (Campfire, InnRest, MonstersAround) never name a particular place. Pure; every
+## number is a Knob.
 
 ## Tune keys are "<id>.<field>".
 var id := "campfire"
@@ -19,6 +20,10 @@ var embers_seconds := 90.0
 var light_radius_cells := 2.5
 ## How close the hero must stand to light it, in cells.
 var reach_cells := 2.0
+## How long a rest that is simply waited out takes, in seconds (the inn's; a campfire burns for burn_seconds).
+var rest_seconds := 3.0
+## Moving cancels the rest (the inn's: the hero sits still; a campfire only pauses when the hero steps out).
+var cancels_on_move := false
 
 
 ## The campfire's numbers (the defaults of this class).
@@ -26,8 +31,25 @@ static func campfire() -> RestProfile:
 	return RestProfile.new()
 
 
-## The fields the Tune screen may change.
+## The inn's numbers: a 3 s rest that heals to full, with no embers to wait out, that moving cancels. The hero
+## must stand on its doorstep (within reach_cells of it).
+static func inn() -> RestProfile:
+	var profile := RestProfile.new()
+	profile.id = "inn"
+	profile.heal_share = 1.0
+	profile.embers_seconds = 0.0
+	profile.reach_cells = 1.0
+	profile.cancels_on_move = true
+	return profile
+
+
+## The fields the Tune screen may change: the ones this kind of place uses.
 func knobs() -> Array[Knob]:
+	if cancels_on_move:
+		return [
+			Knob.new("rest_seconds", "Rest takes (s)", 1, 15, 0.5),
+			Knob.new("reach_cells", "Rest from the doorstep (cells)", 0.5, 3, 0.25),
+		]
 	return [
 		Knob.new("heal_share", "Heals up to (share of max health)", 0.1, 1.0, 0.05),
 		Knob.new("heal_per_second", "Heal rate (HP/s)", 5, 300, 5),
