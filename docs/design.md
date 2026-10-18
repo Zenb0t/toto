@@ -267,7 +267,7 @@ stairs) leads down to the first floor's stairs up, and those lead back out onto 
 plains are map `plains`, the floors `floor_1` to `floor_5`). Every floor, the first included, now starts on its
 stairs up (`DungeonGenerator.VERSION` 2).
 The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
-fifth floor they lead out, and the run is won. Every floor but the first also has **stairs up** (silver, `<` in
+fifth floor they lead out, and the run is won. Every floor also has **stairs up** (silver, `<` in
 the map format, where the floor's start would be). Each set leads onto the matching stairs on the other floor:
 down arrives on the stairs up below, up arrives on the stairs down above (`WorldLayout.destination` names the map
 and the spot; `WorldLayout.arrival_cell` finds the spot on the parsed map). The stairs the hero arrives on only
@@ -339,7 +339,9 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
 generator reports how many tries it took). If every try fails (a recipe asking for the impossible), the last resort is
-the same quadrant without groves, boulders and ponds, which cannot break the rules. The same recipe and seed always
+the same quadrant without groves, boulders and ponds; if a set piece still finds no spot (Tune → World can make the
+plains too small or the clear ring too wide for it), the default recipe without them, so no tuning leaves the world
+without a map. The same recipe and seed always
 give the same map (`QuadrantRecipe.VERSION` goes in the map's record).
 
 **Set pieces** (`SetPiece`: a drawing in the map format, its key cell, how far out it must lie, its margin) are stamped by

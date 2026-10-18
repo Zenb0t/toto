@@ -5,7 +5,8 @@ extends RefCounted
 ## A step that breaks a rule (no spot for a piece, a cut-off exit, too little open ground) doesn't fail the map:
 ## the whole thing is made again with the next random numbers. The same recipe and seed always give the same map.
 ## If every try fails (a recipe asking for the impossible), the last resort is the same quadrant without groves,
-## boulders and ponds, which cannot break the rules.
+## boulders and ponds. If even that breaks a rule (a set piece that fits nowhere at the tuned size, say), it is
+## the default recipe without them, so a tuning never leaves the world without a map.
 
 ## How many times the steps run before the last resort.
 const MAX_ATTEMPTS := 40
@@ -28,6 +29,10 @@ func generate(recipe: QuadrantRecipe, seed_value: int) -> String:
 			return grid.ascii()
 	attempts += 1
 	var fallback := _try(recipe.without_obstacles(), rng)
+	if fallback == null:
+		push_warning("Quadrant '%s' breaks a rule even without obstacles (%s): made by the default recipe instead"
+			% [recipe.id, last_broken_rule])
+		fallback = _try(QuadrantRecipe.new().without_obstacles(), rng)
 	if fallback == null:
 		push_error("Quadrant '%s' breaks a rule even without obstacles: %s" % [recipe.id, last_broken_rule])
 		return ""

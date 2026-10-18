@@ -180,6 +180,20 @@ func test_a_recipe_asking_for_the_impossible_still_gives_a_playable_plains() -> 
 	assert_eq(_reachable(map).size(), map.walkable_cells().size())
 
 
+func test_a_set_piece_that_fits_nowhere_on_the_tuned_plains_still_gives_a_playable_plains() -> void:
+	var cramped := QuadrantRecipe.new()
+	cramped.width = 100
+	cramped.height = 60
+	cramped.safe_ring = 40
+
+	var ascii := QuadrantGenerator.new().generate(cramped, 1)
+
+	assert_ne(ascii, "")
+	var map := _parser.parse(ascii)
+	assert_ne(map.exit_cell, DungeonMap.NO_CELL)
+	assert_true(_reachable(map).has(map.exit_cell))
+
+
 func test_the_size_the_forest_and_the_clear_ring_follow_the_recipe() -> void:
 	var recipe := QuadrantRecipe.new()
 	recipe.width = 100
