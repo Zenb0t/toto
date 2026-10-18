@@ -143,3 +143,43 @@ func test_the_shout_radius_can_be_tuned() -> void:
 	var listeners := PackedVector2Array([Vector2.ZERO, Vector2(2, 0), Vector2(5, 0)])
 
 	assert_eq(awareness.shout_hearers(0, listeners, _lone_bands(3)), [1] as Array[int])
+
+
+func _chase(seconds_unseen: float, hero_cells_from_home := 0.0, never_gives_up := false) -> Awareness.Chase:
+	var chase := Awareness.Chase.new()
+	chase.seconds_unseen = seconds_unseen
+	chase.hero_cells_from_home = hero_cells_from_home
+	chase.never_gives_up = never_gives_up
+	return chase
+
+
+func test_a_hunter_keeps_hunting_while_it_has_seen_the_hero_lately_and_the_hero_is_near_home() -> void:
+	assert_false(Awareness.new().gives_up(_chase(4.9, 23.9)))
+
+
+func test_a_hunter_gives_up_after_five_seconds_without_seeing_the_hero() -> void:
+	assert_true(Awareness.new().gives_up(_chase(5.0)))
+
+
+func test_a_hunter_gives_up_once_the_hero_is_twenty_four_cells_from_its_home() -> void:
+	assert_true(Awareness.new().gives_up(_chase(0.0, 24.0)))
+
+
+func test_a_hunter_whose_home_never_gives_up_hunts_on_however_long_and_far() -> void:
+	assert_false(Awareness.new().gives_up(_chase(60.0, 100.0, true)))
+
+
+func test_the_give_up_time_and_distance_follow_the_awareness_fields() -> void:
+	var awareness := Awareness.new()
+	awareness.give_up_seconds = 2.0
+	awareness.give_up_cells = 10.0
+
+	assert_true(awareness.gives_up(_chase(2.0)))
+	assert_true(awareness.gives_up(_chase(0.0, 10.0)))
+
+
+func test_the_hunting_territory_ends_where_a_hunter_gives_up() -> void:
+	var awareness := Awareness.new()
+
+	assert_true(awareness.in_territory(23.9))
+	assert_false(awareness.in_territory(24.0))

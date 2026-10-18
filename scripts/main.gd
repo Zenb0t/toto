@@ -301,6 +301,9 @@ func _create_progress() -> DungeonProgress:
 		counts[room] = counts.get(room, 0) + 1
 	# No room is marked as locking yet (trap rooms and the boss arena will be): monsters come when they notice.
 	var progress := DungeonProgress.new(counts)
+	# A locking room's band never gives up the chase.
+	for enemy: Enemy in _spawn_cells:
+		enemy.never_gives_up = progress.is_locking(_stage.map.room_at(_spawn_cells[enemy]))
 	progress.room_locked.connect(_on_room_locked)
 	progress.room_cleared.connect(_on_room_cleared)
 	return progress

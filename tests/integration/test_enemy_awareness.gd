@@ -119,3 +119,21 @@ func test_a_wandering_monster_strolls_slower_than_it_hunts() -> void:
 	await wait_physics_frames(5)
 
 	assert_almost_eq(enemy.velocity.length(), enemy.move_speed * enemy.wander_speed_share, 1.0)
+
+
+func test_a_hunter_that_loses_the_hero_walks_back_home_and_wanders_again() -> void:
+	var player := _spawn_player_at(Vector2(4 * CELL, 0))
+	var enemy := _settled_enemy(Band.Start.WANDERING, player)
+	enemy.wander_radius = 0.5 * CELL
+	enemy.noticing_seconds = 0.05
+	enemy.position = Vector2(3 * CELL, 0)
+	await wait_physics_frames(3)
+	assert_eq(enemy.mark(), Enemy.NOTICING_MARK)
+	# The hero escapes far from its home: the monster gives up, checks where it saw them and walks home.
+	player.position = Vector2(60 * CELL, 0)
+	await wait_seconds(0.5)
+
+	await wait_seconds(12.0)
+
+	assert_lt(enemy.position.length(), 1.5 * CELL, "back near home")
+	assert_eq(enemy.mark(), "")
