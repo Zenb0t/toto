@@ -13,6 +13,8 @@ signal utility_used(utility_id: String)
 ## The player is in this group, so area attacks (like the fireball's blast) can find them.
 const GROUP := &"players"
 const DEFAULT_MOVE_SPEED := 140.0
+## How far the stick or keys must be pushed (0..1) to count as moving.
+const MOVING_THRESHOLD := 0.1
 const MAX_HEALTH := 1000
 const RADIUS := 12.0
 const BODY_COLOR := Color(0.35, 0.75, 1.0)
@@ -80,6 +82,11 @@ func equip_utility(new_utility: Utility) -> void:
 ## strength: 0..1 vector from a stick or keys.
 func move(strength: Vector2) -> void:
 	_move_input = strength.limit_length(1.0)
+
+
+## Whether the hero is being steered somewhere (a stick or keys held), not just carried by a dash.
+func is_moving() -> bool:
+	return _move_input.length() > MOVING_THRESHOLD
 
 
 ## Starts an attack. It happens after the weapon's wind-up; taps during the cooldown are ignored.
@@ -187,7 +194,7 @@ func _physics_process(delta: float) -> void:
 		velocity = _move_input * move_speed * ground_speed * (_haste_multiplier if is_hasted() else 1.0)
 		if charging:
 			velocity *= weapon.charging_move_share()
-		if _move_input.length() > 0.1:
+		if is_moving():
 			facing = _move_input.normalized()
 	move_and_slide()
 	queue_redraw()

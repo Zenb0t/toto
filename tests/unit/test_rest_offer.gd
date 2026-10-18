@@ -42,3 +42,9 @@ func test_a_burning_fire_has_nothing_to_refuse() -> void:
 	fire.light()
 
 	assert_eq(RestOffer.refusal(fire, HUNTED), "")
+
+
+func test_the_inn_refuses_only_while_monsters_hunt_or_watch() -> void:
+	assert_eq(RestOffer.inn_refusal(CALM), "")
+	assert_eq(RestOffer.inn_refusal(HUNTED), MonstersAround.message(HUNTED))
+	assert_eq(RestOffer.inn_refusal(WATCHED), MonstersAround.message(WATCHED))

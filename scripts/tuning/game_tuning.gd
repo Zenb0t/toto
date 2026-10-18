@@ -134,6 +134,7 @@ static func create() -> Tuning:
 		params.append_array(_item_params(each, potion_group(each.id)))
 	params.append_array(_item_params(QuadrantRecipe.plains(), WORLD_GROUP, true))
 	params.append_array(_item_params(RestProfile.campfire(), REST_GROUP))
+	params.append_array(_item_params(RestProfile.inn(), REST_GROUP))
 	params.append_array(_item_params(MonstersAround.new(), REST_GROUP))
 	params.append_array(_item_params(CryptRecipe.new(), WORLD_GROUP, true))
 	params.append_array([
@@ -408,6 +409,13 @@ static func wall_height(tuning: Tuning) -> float:
 ## How a campfire heals, burns and cools (Tune → Rest).
 static func rest_profile(tuning: Tuning) -> RestProfile:
 	var profile := RestProfile.campfire()
+	_apply_knobs(profile, tuning)
+	return profile
+
+
+## How long the inn's rest takes and how close to its doorstep the hero must stand (Tune → Rest).
+static func inn_profile(tuning: Tuning) -> RestProfile:
+	var profile := RestProfile.inn()
 	_apply_knobs(profile, tuning)
 	return profile
 
