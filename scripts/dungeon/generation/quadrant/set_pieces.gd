@@ -5,6 +5,14 @@ extends RefCounted
 
 ## Open grass kept round the village, outside its palisade.
 const VILLAGE_APRON := 3
+const RUIN_ID := Ruins.ID
+
+
+## The ruin, drawn by Ruins.draw: in a corner of the quadrant, never the crypt entrance's, with the chest in the middle
+## as its anchor (so the placer makes sure it can be reached).
+static func ruin(drawing: PackedStringArray) -> SetPiece:
+	return SetPiece.new(RUIN_ID, drawing, Ruins.CHEST).in_corner(Ruins.CORNER_SHARE) \
+		.in_other_corner_than([CRYPT_ENTRANCE_ID])
 
 
 ## A small stone mausoleum, 5x5, with its door on the side facing the camera and stairs down inside: the way
@@ -16,7 +24,7 @@ static func crypt_entrance(min_outward: float) -> SetPiece:
 		"#.>.#",
 		"#...#",
 		"##.##",
-	]), QuadrantGrid.CRYPT_ENTRANCE, min_outward)
+	]), QuadrantGrid.CRYPT_ENTRANCE, min_outward).in_other_corner_than([RUIN_ID])
 
 
 ## The village: a palisaded settlement in the middle of the plains, with the hero's start in front of the inn. The
@@ -30,6 +38,7 @@ const CAMP_SLOTS: Array[Vector2i] = [
 ]
 const CAMP_RADIUS := 3
 const CAMP_ID := "camp"
+const CRYPT_ENTRANCE_ID := "crypt_entrance"
 const CAMPFIRE_ID := "campfire"
 
 

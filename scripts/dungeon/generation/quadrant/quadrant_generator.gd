@@ -51,7 +51,7 @@ func _try(recipe: QuadrantRecipe, rng: RandomNumberGenerator) -> QuadrantGrid:
 	QuadrantBorder.raise(grid, recipe)
 	QuadrantExits.cut(grid, recipe)
 	last_village = VillageGenerator.new().generate(recipe.village_size(), recipe.village_prop_share, rng)
-	var pieces: Array[SetPiece] = [SetPieces.village(last_village)]
+	var pieces: Array[SetPiece] = [SetPieces.village(last_village), SetPieces.ruin(Ruins.draw(recipe, rng))]
 	pieces.append_array(recipe.set_pieces())
 	var placements := SetPiecePlacer.reserve(recipe, pieces, QuadrantExits.cleared_areas(recipe), rng)
 	if placements.size() < pieces.size():

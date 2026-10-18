@@ -136,7 +136,8 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
 
 - **Earned loot.** Clearing a room leaves nothing: gear is scarce, so a new piece is a moment. It comes from
   the floor (dead ends and vaults hide finds, see Floors), from rare enemy drops and from chests.
-- **Chests.** Set pieces hold them (none on today's maps; the ruin's and trap rooms' come with the first zone).
+- **Chests.** Set pieces hold them: the ruin's is guaranteed (below, "The ruin"); trap rooms' come with the first zone. A chest is known in
+  the map record by the id of what holds it (a room number, or `Ruins.NUMBER`), so an opened one stays open on return.
   Walking onto one opens it and drops a find. The open chest stays, so you can see what you have looted.
 - **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot → "Enemy drop chance", default 2%) to drop
   its weapon. (Room chests used to set the pacing and drops were 5%.)
@@ -197,7 +198,7 @@ Within their comfortable range they circle the player instead of standing still.
 | Recover | Steps aside (alternating sides) for 0.35 s | Recovered: back to Hunt or Position |
 
 **Bands** (`Band`, `Awareness`). The monsters of one **home** are a band; in the dungeon a home is a room,
-on the plains a **camp's campfire** (the ruin comes later). A band starts **asleep** at home or **wandering** about it; which is decided
+on the plains a **camp's campfire**, or the middle of the **ruin**. A band starts **asleep** at home or **wandering** about it; which is decided
 per home from the map's seed (`Band.start_of`; in the crypt 15% of bands wander, on the plains each camp by its
 chance asleep), so the same map starts the same way. None starts awake.
 A monster **notices** the hero only when it can see them (line of sight) within **4 cells asleep** or **9
@@ -405,7 +406,7 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 | Border (`QuadrantBorder`) | A forest of groves, 5 cells thick, all round |
 | Exits (`QuadrantExits`) | A 3-wide lane through the border in the middle of each side, with a barricade across its outer end (the way is shut until that quadrant exists) and a cleared approach inside the border |
 | Village (`VillageGenerator`) | Draws the village (next section) from the recipe's size and the quadrant's random numbers |
-| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
+| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the ruin second (in a corner, below), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
 | Fill the camps (`CampCrews.dress`) | Draws a band of monsters into each reserved camp by how far out it lies (below) |
 | Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
 | Roads (`QuadrantRoads`) | Dirt roads (letter **`r`**, terrain `ROAD`) from the village gates to **2** of the 4 exits (Knob `road_count`, 0-4), the exits picked by a seeded shuffle; a road leaves by the gate on its exit's side. See below |
@@ -419,7 +420,7 @@ without a map. The same recipe and seed always
 give the same map (`QuadrantRecipe.VERSION` goes in the map's record).
 
 **Set pieces** (`SetPiece`: a drawing in the map format, its key cell, how far out it must lie, its margin) are stamped by
-**one shared placer**; the camps, campfires, the ruin and the village of later tickets are new pieces for the same two
+**one shared placer**; the camps, campfires, the ruin and the village are pieces for the same two
 calls. The first is the **crypt entrance** (`SetPieces.crypt_entrance`): a 5x5 stone mausoleum with its door facing the
 camera and the stairs down inside, at least halfway out from the middle (0 in the middle, 1 at the border, measured to
 the nearest side in the same proportion on both axes: `QuadrantRecipe.outward`), with no road to it. Stepping onto its
@@ -428,8 +429,27 @@ stairs goes down, through the same transition rule as any stairs, to the first f
 **Rules to know.** The "walkable at least 70%" share is counted over the ground *inside* the border (a thick border would
 otherwise eat it). Groves and barricades stop walking, sight and shots; boulders are small cover: they stop walking and
 shots but sight passes over them (`DungeonMap.is_see_through`). Deep water stops feet but not shots, as in the dungeon.
-For now the plains hold monsters only in camps and no loot (the ruin and the rest come in later tickets), and the hero
+The plains hold monsters in camps and in the ruin, and loot only in the ruin's chest; the hero
 starts in the village, in front of the inn.
+
+**The ruin** (#39, `Ruins`, `SetPieces.ruin`) is a 25x19 walled courtyard hand-written in the vault format with a broken shrine
+in the middle, where the chest stands. Walls are ordinary `#` (the crypt entrance's too) and rubble is boulders `B`; no new look.
+The drawing has four possible 3-wide **gaps** (the `o` cells: north, south, west, east); each map opens a seeded 2 or 3 of them (Knobs
+`ruin_gaps_min` / `ruin_gaps_max`, default 2 and 3), and the drawing is mirrored randomly, so one design reads as many ruins.
+*Where.* In a **corner**: the chest (the piece's anchor, so the validator checks it can be reached) lies at least 40% of the way
+out along both axes (`SetPiece.corner_share`), and never in the same corner (which of the four quarters round the middle,
+`QuadrantRecipe.corner_of`) as the crypt entrance. The ruin is reserved right after the village, the crypt entrance after it, and the rule
+holds both ways (`SetPiece.other_corner_than`), so the crypt entrance keeps its "at least halfway out" rule and just takes another quarter.
+*Who.* The map's toughest band, made like a camp at the very edge (goblins and goblin archers, no kobolds) but always one monster
+bigger than the biggest camp can be (Knob `ruin_band_size`, default 7, raised to that if the camp Knobs are tuned up), so its threat
+(`CampCrews.threat`) is above every camp's whatever the seeds roll. It always starts wandering (`Ruins.WANDERING_SHARE` 1.0) and its
+home is the chest cell, the ruin's middle: `Band.home_of` takes monsters within 6 cells of the chest for the ruin's band, id
+`Ruins.NUMBER` (2,000,000: clear of room numbers from 0 and camp ids from 1,000,000).
+*What.* The chest (map letter **`$`**, at most one per map, parsed to `DungeonMap.ruin_cell`) is guaranteed: `main.gd` places it with
+`_spawn_chest(Ruins.NUMBER, cell)`, and opening it records `Ruins.NUMBER` in the `MapRecord`, so it stays open after the hero leaves and
+returns. It holds one gear piece the hero doesn't hold (`LootTable.pick_item_id`), and sometimes a potion. Size is not a Knob: the
+drawing is fixed. *Planned lever:* a melee start has no ranged answer to a kiting Lich (#8); if playtests show it hurting, the first fix is
+a ranged weapon in this chest (not built).
 
 **The village** (#40) is the first piece the placer stamps, in the very middle (`SetPiece.at_center`), and the safe place
 the run starts in. It is 36x28 cells by default (Tune → World) and made by pure steps (`scripts/dungeon/generation/village`),
