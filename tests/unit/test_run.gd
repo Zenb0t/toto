@@ -12,11 +12,12 @@ func _seeded_rng(seed_value: int) -> RandomNumberGenerator:
 	return rng
 
 
-func test_a_run_starts_on_the_first_floor_with_the_starting_kit() -> void:
+func test_a_run_starts_on_the_plains_with_the_starting_kit() -> void:
 	var run := Run.new(42)
 
-	assert_eq(run.current_map_id, WorldLayout.start_map_id())
-	assert_eq(run.current_map().floor_number, 1)
+	assert_eq(run.current_map_id, WorldLayout.PLAINS_ID)
+	assert_eq(run.current_map().recipe, MapSpec.Recipe.QUADRANT)
+	assert_eq(run.arrival_spot, WorldLayout.Spot.START)
 	assert_eq(run.hero.weapon_id, GameTuning.DEFAULT_WEAPON_ID)
 	assert_eq(run.hero.utility_id, GameTuning.DEFAULT_UTILITY_ID)
 	assert_eq(run.hero.health, run.hero.max_health)
@@ -24,11 +25,11 @@ func test_a_run_starts_on_the_first_floor_with_the_starting_kit() -> void:
 	assert_eq(run.hero.kills, 0)
 
 
-func test_the_same_world_seed_gives_the_same_floors() -> void:
+func test_the_same_world_seed_gives_the_same_maps() -> void:
 	var first := Run.new(1234)
 	var again := Run.new(1234)
 
-	for _floor in WorldLayout.FLOOR_COUNT:
+	for _map in WorldLayout.map_ids().size():
 		assert_eq(first.current_map().ascii(), again.current_map().ascii(), first.current_map_id)
 		first.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
 		again.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
@@ -38,13 +39,14 @@ func test_another_world_seed_gives_other_floors() -> void:
 	assert_ne(Run.new(1).current_map().ascii(), Run.new(2).current_map().ascii())
 
 
-func test_the_stairs_lead_to_the_next_floor_with_everything_the_hero_carries() -> void:
+func test_the_crypt_entrance_leads_down_to_the_first_floor_with_everything_the_hero_carries() -> void:
 	var run := Run.new(7)
 
 	var destination := run.travel(WorldLayout.Exit.STAIRS_DOWN, _hero_holding("sword", 9))
 
 	assert_false(destination.leaves_world())
-	assert_eq(run.current_map().floor_number, 2)
+	assert_eq(run.current_map().floor_number, 1)
+	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_UP)
 	assert_eq(run.hero.weapon_id, "sword")
 	assert_eq(run.hero.utility_id, "blink")
 	assert_eq(run.hero.health, 400)
@@ -56,7 +58,7 @@ func test_the_stairs_lead_to_the_next_floor_with_everything_the_hero_carries() -
 
 func test_the_last_floors_stairs_lead_out_of_the_world() -> void:
 	var run := Run.new(7)
-	for _floor in WorldLayout.FLOOR_COUNT - 1:
+	for _floor in WorldLayout.FLOOR_COUNT:
 		assert_false(run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new()).leaves_world())
 
 	var destination := run.travel(WorldLayout.Exit.STAIRS_DOWN, _hero_holding("bow", 30))
@@ -66,7 +68,7 @@ func test_the_last_floors_stairs_lead_out_of_the_world() -> void:
 	assert_eq(run.hero.kills, 30, "the summary counts every kill")
 
 
-func test_the_next_world_has_a_different_seed_and_a_fresh_hero_on_the_first_floor() -> void:
+func test_the_next_world_has_a_different_seed_and_a_fresh_hero_on_the_plains() -> void:
 	var rng := _seeded_rng(5)
 	var run := Run.random(rng)
 	run.travel(WorldLayout.Exit.STAIRS_DOWN, _hero_holding("sword", 9))
@@ -74,13 +76,13 @@ func test_the_next_world_has_a_different_seed_and_a_fresh_hero_on_the_first_floo
 	for _death in 50:
 		var next := run.next_world(rng)
 		assert_ne(next.world_seed, run.world_seed)
-		assert_eq(next.current_map().floor_number, 1)
+		assert_eq(next.current_map_id, WorldLayout.PLAINS_ID)
 		assert_eq(next.hero.weapon_id, GameTuning.DEFAULT_WEAPON_ID)
 		assert_eq(next.hero.kills, 0)
 		run = next
 
 
-func test_the_stairs_up_lead_back_to_the_stairs_down_of_the_floor_above() -> void:
+func test_the_first_floors_stairs_up_lead_back_out_to_the_crypt_entrance() -> void:
 	var run := Run.new(7)
 	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
 	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_UP)
@@ -88,16 +90,27 @@ func test_the_stairs_up_lead_back_to_the_stairs_down_of_the_floor_above() -> voi
 	var destination := run.travel(WorldLayout.Exit.STAIRS_UP, _hero_holding("sword", 4))
 
 	assert_false(destination.leaves_world())
-	assert_eq(run.current_map_id, WorldLayout.floor_id(1))
+	assert_eq(run.current_map_id, WorldLayout.PLAINS_ID)
 	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_DOWN)
 	assert_eq(run.hero.weapon_id, "sword")
 
 
-func test_on_every_generated_floor_each_set_of_stairs_leads_onto_the_matching_stairs() -> void:
+func test_the_stairs_up_of_a_deeper_floor_lead_back_to_the_stairs_down_of_the_floor_above() -> void:
+	var run := Run.new(7)
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+
+	run.travel(WorldLayout.Exit.STAIRS_UP, _hero_holding("sword", 4))
+
+	assert_eq(run.current_map_id, WorldLayout.floor_id(1))
+	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_DOWN)
+
+
+func test_on_every_generated_map_each_set_of_stairs_leads_onto_the_matching_stairs() -> void:
 	var parser := DungeonMapParser.new()
 	for world_seed in 5:
 		var run := Run.new(world_seed)
-		for _floor in WorldLayout.FLOOR_COUNT - 1:
+		for _floor in WorldLayout.FLOOR_COUNT:
 			var above := parser.parse(run.current_map().ascii())
 			run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
 			var below := parser.parse(run.current_map().ascii())
@@ -217,7 +230,8 @@ func test_a_monster_never_hurt_comes_back_at_full_health() -> void:
 func test_a_record_knows_which_generator_made_its_map() -> void:
 	var run := Run.new(3)
 
-	assert_eq(run.record_of(run.current_map_id).generator_version, DungeonGenerator.VERSION)
+	assert_eq(run.record_of(run.current_map_id).generator_version, QuadrantRecipe.VERSION)
+	assert_eq(run.record_of(WorldLayout.floor_id(1)).generator_version, DungeonGenerator.VERSION)
 
 
 func test_the_next_world_remembers_nothing_of_this_one() -> void:
@@ -230,3 +244,30 @@ func test_the_next_world_remembers_nothing_of_this_one() -> void:
 
 	assert_false(next.record_of(next.current_map_id).is_killed(Vector2i(10, 4)))
 	assert_eq(next.seconds_played, 0.0)
+
+
+func test_same_seed_again_makes_the_same_world_from_the_start() -> void:
+	var run := Run.new(77)
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, _hero_holding("sword", 9))
+	run.record_of(WorldLayout.PLAINS_ID).kill(Vector2i(10, 4))
+
+	var again := run.same_world_again()
+
+	assert_eq(again.world_seed, 77)
+	assert_eq(again.current_map_id, WorldLayout.PLAINS_ID)
+	assert_eq(again.current_map().ascii(), Run.new(77).current_map().ascii())
+	assert_eq(again.hero.weapon_id, GameTuning.DEFAULT_WEAPON_ID, "a fresh hero")
+	assert_false(again.record_of(WorldLayout.PLAINS_ID).is_killed(Vector2i(10, 4)), "a fresh world")
+
+
+func test_a_new_world_is_made_with_the_recipe_it_is_given() -> void:
+	var run := Run.new(5)
+	var small := QuadrantRecipe.new()
+	small.width = 100
+	small.height = 60
+
+	var next := run.next_world(_seeded_rng(1), small)
+	var map := DungeonMapParser.new().parse(next.current_map().ascii())
+
+	assert_eq(map.size, Vector2i(100, 60))
+	assert_eq(DungeonMapParser.new().parse(run.same_world_again(small).current_map().ascii()).size, Vector2i(100, 60))

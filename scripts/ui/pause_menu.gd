@@ -27,7 +27,9 @@ func _ready() -> void:
 
 ## The world's seed, so a world worth keeping (or a broken one) can be reported, and the map the hero is on.
 func show_seed(world_seed: int, map: MapSpec) -> void:
-	_seed_label.text = "World seed %d · %s (floor %d)" % [world_seed, map.branch().display_name, map.floor_number]
+	var place := "the %s" % map.branch().display_name if map.branch().outdoors \
+		else "%s (floor %d)" % [map.branch().display_name, map.floor_number]
+	_seed_label.text = "World seed %d · %s" % [world_seed, place]
 
 
 ## True from open() until close(), including while a sub-screen is showing.

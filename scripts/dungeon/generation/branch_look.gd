@@ -19,6 +19,16 @@ var torches := true
 var clutter: Array[String] = ["candle_lit", "candle_triple", "bottle_A_brown", "coin_stack_small"]
 ## Banners on the walls (see PropModel.BANNERS), or none.
 var banners := true
+## Outdoors: what tree groves, boulders and barricades are made of (see DungeonMap.Blocker). The groves stand
+## taller than walls, the boulders are low cover.
+var grove_color := Color(0.17, 0.36, 0.16)
+var grove_cap_color := Color(0.3, 0.52, 0.22)
+var boulder_color := Color(0.46, 0.45, 0.42)
+var boulder_cap_color := Color(0.62, 0.6, 0.55)
+var barricade_color := Color(0.42, 0.27, 0.15)
+var barricade_cap_color := Color(0.6, 0.42, 0.24)
+## Specks of grit or seed on bare ground: fewer is cheaper to draw on a big map.
+var ground_specks := 3
 ## What free-standing pillars are: carved columns, plain rock, or trees (they block like walls all the same).
 enum PillarStyle { COLUMN, ROCK, TREE }
 var pillar_style := PillarStyle.COLUMN
@@ -81,4 +91,21 @@ static func depths() -> BranchLook:
 	look.cap_color = Color(0.86, 0.78, 0.6)
 	look.ambient_color = Color(0.72, 0.64, 0.6)
 	look.clutter = ["brazier", "coin_stack_small", "candle_triple"]
+	return look
+
+
+## The open plains: grass, no torches. Trees, boulders and the barricades use the colours above.
+static func plains() -> BranchLook:
+	var look := BranchLook.new()
+	look.floor_color = Color(0.3, 0.5, 0.2)
+	look.floor_alt_color = Color(0.36, 0.55, 0.24)
+	look.flagstones = false
+	look.wall_color = Color(0.55, 0.53, 0.5)
+	look.cap_color = Color(0.72, 0.7, 0.65)
+	look.ambient_color = Color(0.78, 0.8, 0.72)
+	look.torches = false
+	look.clutter = ["grass", "grass", "grass", "mushrooms"]
+	look.banners = false
+	look.pillar_style = PillarStyle.TREE
+	look.ground_specks = 1
 	return look

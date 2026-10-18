@@ -32,3 +32,9 @@ func test_an_escape_is_celebrated() -> void:
 func test_monsters_are_named_with_the_right_article() -> void:
 	assert_eq(Monster.with_article("Orc wizard"), "an orc wizard")
 	assert_eq(Monster.with_article("Kobold"), "a kobold")
+
+
+func test_a_death_on_the_plains_names_the_killer_and_the_place() -> void:
+	var lines := RunSummary.lines(Run.new(1), 1, RunSummary.Ending.DIED, "a goblin")
+
+	assert_eq(lines[0], "Killed by a goblin on the plains.")
