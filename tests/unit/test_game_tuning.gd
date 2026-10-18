@@ -281,3 +281,20 @@ func test_a_tuned_village_size_makes_a_bigger_village_in_the_next_plains() -> vo
 	var map := DungeonMapParser.new().parse(QuadrantGenerator.new().generate(GameTuning.plains_recipe(tuning), 2))
 
 	assert_eq(map.village.area.size, Vector2i(44, 34))
+
+
+func test_the_rest_section_holds_the_campfire_and_monsters_around_knobs_with_their_class_defaults() -> void:
+	var tuning := GameTuning.create()
+	var keys: Array[String] = []
+	for each in tuning.params():
+		if each.group == GameTuning.REST_GROUP:
+			keys.append(each.key)
+	for knob in RestProfile.campfire().knobs():
+		assert_has(keys, GameTuning.key("campfire", knob.field))
+	for knob in MonstersAround.new().knobs():
+		assert_has(keys, GameTuning.key("monsters_around", knob.field))
+
+	var profile := GameTuning.rest_profile(tuning)
+	assert_eq(profile.heal_share, RestProfile.campfire().heal_share)
+	assert_eq(profile.embers_seconds, RestProfile.campfire().embers_seconds)
+	assert_eq(GameTuning.monsters_around(tuning).sight_cells, MonstersAround.DEFAULT_SIGHT_CELLS)

@@ -46,6 +46,8 @@ const ENEMIES_GROUP := "Enemies"
 const LOOT_GROUP := "Loot"
 const CONTROLS_GROUP := "Controls"
 const CAMERA_GROUP := "Camera"
+## Resting at a campfire (see RestProfile) and when it is refused (see MonstersAround).
+const REST_GROUP := "Rest"
 ## The world's generation knobs (see QuadrantRecipe): they shape the next world, not the one being played.
 const WORLD_GROUP := "World"
 const EQUIPPED_MARK := "  (equipped)"
@@ -132,6 +134,8 @@ static func create() -> Tuning:
 	for each in potions():
 		params.append_array(_item_params(each, potion_group(each.id)))
 	params.append_array(_item_params(QuadrantRecipe.plains(), WORLD_GROUP, true))
+	params.append_array(_item_params(RestProfile.campfire(), REST_GROUP))
+	params.append_array(_item_params(MonstersAround.new(), REST_GROUP))
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", ENEMIES_GROUP, 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, Enemy.DEFAULT_HEALTH_MULTIPLIER, true),
@@ -248,6 +252,7 @@ static func sections(equipped_weapon_id: String, equipped_utility_id: String) ->
 		TuningSection.new(LOOT_GROUP, [LOOT_GROUP]),
 		TuningSection.new(CONTROLS_GROUP, [CONTROLS_GROUP]),
 		TuningSection.new(CAMERA_GROUP, [CAMERA_GROUP]),
+		TuningSection.new(REST_GROUP, [REST_GROUP]),
 		TuningSection.new(WORLD_GROUP, [WORLD_GROUP]),
 	]
 
@@ -406,6 +411,20 @@ static func camera_framing(tuning: Tuning) -> CameraFraming:
 
 static func wall_height(tuning: Tuning) -> float:
 	return tuning.value(CAMERA_WALL_HEIGHT)
+
+
+## How a campfire heals, burns and cools (Tune → Rest).
+static func rest_profile(tuning: Tuning) -> RestProfile:
+	var profile := RestProfile.campfire()
+	_apply_knobs(profile, tuning)
+	return profile
+
+
+## When resting is refused because of monsters around (Tune → Rest).
+static func monsters_around(tuning: Tuning) -> MonstersAround:
+	var rule := MonstersAround.new()
+	_apply_knobs(rule, tuning)
+	return rule
 
 
 ## What the plains of the next world are made of (Tune → World).

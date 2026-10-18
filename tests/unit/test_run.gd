@@ -271,3 +271,18 @@ func test_a_new_world_is_made_with_the_recipe_it_is_given() -> void:
 
 	assert_eq(map.size, Vector2i(100, 60))
 	assert_eq(DungeonMapParser.new().parse(run.same_world_again(small).current_map().ascii()).size, Vector2i(100, 60))
+
+
+func test_a_campfires_cooldown_does_not_run_while_the_hero_is_on_another_map() -> void:
+	var run := Run.new(3)
+	var profile := RestProfile.campfire()
+	var plains := run.record_of(run.current_map_id)
+	plains.remember_campfire(Vector2i(30, 30), Campfire.new(profile, Campfire.State.EMBERS, 60.0))
+
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+	run.advance(10_000.0)
+	run.travel(WorldLayout.Exit.STAIRS_UP, HeroState.new())
+
+	var fire := run.record_of(run.current_map_id).campfire_at(Vector2i(30, 30), profile)
+	assert_eq(fire.state, Campfire.State.EMBERS)
+	assert_eq(fire.seconds_left(), 60.0)

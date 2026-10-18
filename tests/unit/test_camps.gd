@@ -220,3 +220,27 @@ func test_campfires_show_on_the_minimap_once_in_sight() -> void:
 	var image := MinimapPainter.paint(map, exploration, map.player_spawn)
 
 	assert_eq(image.get_pixelv(fire).to_html(), MinimapPainter.CAMPFIRE_COLOR.to_html())
+
+
+func test_a_camps_campfire_is_held_until_its_last_monster_is_dead() -> void:
+	var map: DungeonMap = _map_by_seed[0]
+	var fire: Vector2i = Camps.camp_campfires(map)[0]
+	var record := MapRecord.new(DungeonGenerator.VERSION)
+	var members: Array[Vector2i] = []
+	for cell in map.enemy_spawns:
+		if Camps.campfire_of(map, cell) == fire:
+			members.append(cell)
+
+	for index in members.size():
+		assert_true(Camps.is_held(map, fire, record), "%d dead of %d" % [index, members.size()])
+		record.kill(members[index])
+
+	assert_false(Camps.is_held(map, fire, record), "all dead")
+
+
+func test_a_lone_campfire_is_never_held() -> void:
+	var map: DungeonMap = _map_by_seed[0]
+	var record := MapRecord.new(DungeonGenerator.VERSION)
+
+	for fire in Camps.lone_campfires(map):
+		assert_false(Camps.is_held(map, fire, record))

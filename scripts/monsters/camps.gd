@@ -39,6 +39,15 @@ static func lone_campfires(map: DungeonMap) -> Array[Vector2i]:
 	return lone
 
 
+## Whether a camp's band still holds its campfire: any monster of the camp is alive (not killed in the record).
+## A campfire nobody lives at is never held.
+static func is_held(map: DungeonMap, campfire: Vector2i, record: MapRecord) -> bool:
+	for cell in map.enemy_spawns:
+		if campfire_of(map, cell) == campfire and not record.is_killed(cell):
+			return true
+	return false
+
+
 ## The id of the band living at a campfire (see Band.start_of): different for each campfire of a map.
 static func band_id(map: DungeonMap, campfire: Vector2i) -> int:
 	return FIRST_BAND_ID + campfire.y * map.size.x + campfire.x
