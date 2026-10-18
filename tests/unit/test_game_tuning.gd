@@ -220,7 +220,7 @@ func test_the_give_up_time_and_distance_are_enemy_knobs_that_default_to_the_awar
 	assert_eq(awareness.give_up_cells, Awareness.DEFAULT_GIVE_UP_CELLS)
 
 
-func test_the_world_section_holds_every_generation_knob_of_the_plains() -> void:
+func test_the_world_section_holds_every_generation_knob_of_the_plains_and_the_warp_switch() -> void:
 	var world: TuningSection
 	for section in GameTuning.sections("dagger", "dash"):
 		if section.title == GameTuning.WORLD_GROUP:
@@ -230,9 +230,14 @@ func test_the_world_section_holds_every_generation_knob_of_the_plains() -> void:
 	var tuning := GameTuning.create()
 	var keys: Array[String] = []
 	for each in tuning.params():
-		if each.group == GameTuning.WORLD_GROUP:
-			keys.append(each.key)
-			assert_true(each.next_run_only, "%s shapes the next world" % each.key)
+		if each.group != GameTuning.WORLD_GROUP:
+			continue
+		if each.key == GameTuning.WORLD_WARP:
+			assert_false(each.next_run_only, "Warp acts at once, not on the next world")
+			continue
+		keys.append(each.key)
+		assert_true(each.next_run_only, "%s shapes the next world" % each.key)
+	assert_eq(tuning.param(GameTuning.WORLD_WARP).group, GameTuning.WORLD_GROUP, "Warp is on the World page")
 	for knob in QuadrantRecipe.plains().knobs():
 		assert_has(keys, GameTuning.key("plains", knob.field))
 	for knob in CryptRecipe.new().knobs():

@@ -428,6 +428,7 @@ func _connect_menu() -> void:
 	_tuning_panel.finished.connect(_on_tuning_finished)
 	_tuning_panel.new_world_requested.connect(_restart)
 	_tuning_panel.same_seed_requested.connect(_restart_with_same_seed)
+	_tuning_panel.warp_requested.connect(_warp_to)
 	_pause_menu.credits_requested.connect(_on_credits_requested)
 	_credits_panel.finished.connect(_on_credits_finished)
 	_run_summary.play_again_pressed.connect(_restart)
@@ -1156,9 +1157,25 @@ func _take_stairs(exit: WorldLayout.Exit) -> void:
 	if not _in_play:
 		return
 	_run.travel(exit, _carried_hero())
-	_in_play = false
 	var way := "Down" if exit == WorldLayout.Exit.STAIRS_DOWN else "Up"
-	_hud.text = "%s to the %s..." % [way, _run.current_map().branch().display_name]
+	await _move_to_run_map("%s to the %s..." % [way, _run.current_map().branch().display_name])
+
+
+## Warp (Tune → World, a playtest aid): to a place of the slice with everything the player holds, through the same
+## leave-and-enter as the stairs, so the map left is written down and the one entered is replayed.
+func _warp_to(target_id: String) -> void:
+	var target := Warp.target(target_id)
+	if not _in_play or target == null:
+		return
+	_run.warp(target, _carried_hero())
+	_resume_game()
+	await _move_to_run_map("Warping to %s..." % target.label.to_lower())
+
+
+## Leaves the map for the run's current one (which the run has just been told to go to).
+func _move_to_run_map(message: String) -> void:
+	_in_play = false
+	_hud.text = message
 	var run := _run
 	await get_tree().create_timer(DESCEND_DELAY_SECONDS).timeout
 	if run != _run:
@@ -1217,10 +1234,15 @@ func _restart_with_same_seed() -> void:
 
 
 func _begin_world(run: Run) -> void:
+	_resume_game()
+	_leave_map()
+	_start_run(run)
+
+
+## Closes the summary and the pause menu and lets the game run.
+func _resume_game() -> void:
 	_run_summary.hide()
 	_hud_layer.show()
 	if _pause_menu.is_open():
 		_pause_menu.close()
 	get_tree().paused = false
-	_leave_map()
-	_start_run(run)
