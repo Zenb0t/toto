@@ -116,6 +116,8 @@ func _is_village_piece(cell: Vector2i) -> bool:
 func _draw_ground(cell: Vector2i) -> void:
 	if _map.terrain_at(cell) == DungeonMap.Terrain.PATH:
 		_draw_street(cell)
+	elif _map.terrain_at(cell) == DungeonMap.Terrain.ROAD:
+		_draw_road(cell)
 	elif _look.flagstones:
 		_draw_flagstone(cell)
 	else:
@@ -146,6 +148,15 @@ func _draw_street(cell: Vector2i) -> void:
 	var tile := _tile_rect(cell)
 	var blotch := DungeonDecor.noise(cell, 12)
 	draw_rect(tile, _look.street_color.lerp(_look.street_alt_color, blotch))
+	var speck := Vector2(DungeonDecor.noise(cell, 13), DungeonDecor.noise(cell, 23)) * (TILE_SIZE - 3)
+	draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
+
+
+## A dirt road across the plains: dry earth, a shade between the grass and the village streets, with a few pebbles.
+func _draw_road(cell: Vector2i) -> void:
+	var tile := _tile_rect(cell)
+	var blotch := DungeonDecor.noise(cell, 12)
+	draw_rect(tile, _look.road_color.lerp(_look.road_alt_color, blotch))
 	var speck := Vector2(DungeonDecor.noise(cell, 13), DungeonDecor.noise(cell, 23)) * (TILE_SIZE - 3)
 	draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
 

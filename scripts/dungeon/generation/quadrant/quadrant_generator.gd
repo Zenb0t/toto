@@ -1,7 +1,7 @@
 class_name QuadrantGenerator
 extends RefCounted
 ## Builds a quadrant as an ASCII map (the format DungeonMapParser reads) from a recipe and a seed, in small steps:
-##   ground → border → exits → the village → reserve set-piece spots → fill the camps → place set pieces → validate
+##   ground → border → exits → the village → reserve set-piece spots → fill the camps → place set pieces → roads → validate
 ## A step that breaks a rule (no spot for a piece, a cut-off exit, too little open ground) doesn't fail the map:
 ## the whole thing is made again with the next random numbers. The same recipe and seed always give the same map.
 ## If every try fails (a recipe asking for the impossible), the last resort is the same quadrant without groves,
@@ -61,6 +61,9 @@ func _try(recipe: QuadrantRecipe, rng: RandomNumberGenerator) -> QuadrantGrid:
 	for placement in placements:
 		SetPiecePlacer.stamp(grid, placement)
 	QuadrantGround.seal_pockets(grid, grid.find(QuadrantGrid.START))
+	if not QuadrantRoads.lay(grid, recipe, placements, rng):
+		last_broken_rule = "no road to an exit"
+		return null
 	var broken := QuadrantRules.broken_rule(grid, recipe, placements)
 	if broken != "":
 		last_broken_rule = broken
