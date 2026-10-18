@@ -23,3 +23,37 @@ static func crypt_entrance(min_outward: float) -> SetPiece:
 ## drawing is made by VillageGenerator; the placer puts it in the very middle, with a margin of open grass round it.
 static func village(drawing: VillageGenerator.Result) -> SetPiece:
 	return SetPiece.new("village", drawing.rows, QuadrantGrid.START, 0.0, VILLAGE_APRON, true)
+## Where a camp's monsters stand round its campfire (offsets from the fire), in the order the band fills them.
+const CAMP_SLOTS: Array[Vector2i] = [
+	Vector2i(-1, -1), Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1),
+	Vector2i(0, -2), Vector2i(0, 2), Vector2i(-2, 0), Vector2i(2, 0),
+]
+const CAMP_RADIUS := 3
+const CAMP_ID := "camp"
+const CAMPFIRE_ID := "campfire"
+
+
+## The ground of a camp: open grass, 7x7, with the campfire in the middle. Its monsters are drawn in later, by how
+## far out the camp lies (see CampCrews). Camps keep camp_apart cells from each other and campfire_gap from the
+## lone campfires.
+static func camp(camp_apart: float, campfire_gap: float) -> SetPiece:
+	return SetPiece.new(CAMP_ID, _open_ground(CAMP_RADIUS), QuadrantGrid.CAMPFIRE) \
+		.spaced(CAMP_ID, {CAMP_ID: camp_apart, CAMPFIRE_ID: campfire_gap})
+
+
+## A lone campfire on open grass: scenery until it becomes a place to rest. They keep campfire_apart cells from
+## each other and campfire_gap from the camps.
+static func campfire(campfire_apart: float, campfire_gap: float) -> SetPiece:
+	return SetPiece.new(CAMPFIRE_ID, _open_ground(1), QuadrantGrid.CAMPFIRE) \
+		.spaced(CAMPFIRE_ID, {CAMPFIRE_ID: campfire_apart, CAMP_ID: campfire_gap})
+
+
+## A square of grass, `radius` cells out from a campfire in its middle.
+static func _open_ground(radius: int) -> PackedStringArray:
+	var rows := PackedStringArray()
+	for y in radius * 2 + 1:
+		var row := ".".repeat(radius * 2 + 1)
+		if y == radius:
+			row = row.substr(0, radius) + QuadrantGrid.CAMPFIRE + row.substr(radius + 1)
+		rows.append(row)
+	return rows

@@ -1,7 +1,7 @@
 class_name MinimapPainter
 extends RefCounted
 ## Paints the minimap as a tiny picture with one pixel per cell: only what the player has seen, the cells
-## in view brighter than the ones remembered, with the stairs and the player marked. Outdoors it also shows the
+## in view brighter than the ones remembered, with the stairs, campfires and the player marked. Outdoors it also shows the
 ## tree groves, boulders and exits. Knows no nodes.
 
 const FLOOR_COLOR := Color(0.62, 0.6, 0.68)
@@ -19,6 +19,7 @@ const PALISADE_COLOR := Color(0.55, 0.38, 0.22)
 const BUILDING_COLOR := Color(0.8, 0.45, 0.35)
 const WELL_COLOR := Color(0.35, 0.6, 0.9)
 const STREET_COLOR := Color(0.78, 0.68, 0.5)
+const CAMPFIRE_COLOR := Color(1.0, 0.55, 0.15)
 const PLAYER_COLOR := Color(0.3, 1.0, 0.9)
 ## Cells seen before but out of view are drawn this much darker.
 const REMEMBERED_SHADE := 0.55
@@ -50,6 +51,8 @@ static func _color_of(map: DungeonMap, cell: Vector2i) -> Color:
 			return WELL_COLOR
 		DungeonMap.Blocker.BUILDING:
 			return BUILDING_COLOR
+	if map.is_campfire(cell):
+		return CAMPFIRE_COLOR
 	if cell == map.exit_cell:
 		return EXIT_COLOR
 	if cell == map.stairs_up_cell:

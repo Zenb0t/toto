@@ -36,6 +36,8 @@ var stairs_up_cell: Vector2i
 var loot_cells: Array[Vector2i] = []
 ## The village on this map, or null (only the plains have one).
 var village: Village
+## Where campfires burn (walkable scenery; see Camps for the ones that are a band's home).
+var campfire_cells: Array[Vector2i] = []
 
 var _room_by_cell: Dictionary  # Vector2i -> int
 var _doors_by_room: Dictionary  # int -> Array[Vector2i]
@@ -59,6 +61,7 @@ func _init(
 	stairs_up: Vector2i = NO_CELL,
 	blocker_by_cell: Dictionary = {},
 	village_on_map: Village = null,
+	campfires: Array[Vector2i] = [],
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -74,6 +77,7 @@ func _init(
 	stairs_up_cell = stairs_up
 	_blocker_by_cell = blocker_by_cell
 	village = village_on_map
+	campfire_cells = campfires
 
 
 ## The id of the monster (see Bestiary) spawning at cell, or "" if none does.
@@ -112,6 +116,8 @@ func cells_with_blocker(blocker: Blocker) -> Array[Vector2i]:
 ## Whether a cell lies inside the village's palisade (or on it).
 func is_in_village(cell: Vector2i) -> bool:
 	return village != null and village.contains(cell)
+func is_campfire(cell: Vector2i) -> bool:
+	return cell in campfire_cells
 
 
 func terrain_at(cell: Vector2i) -> Terrain:

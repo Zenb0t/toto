@@ -1,9 +1,10 @@
 class_name SetPiecePlacer
 extends RefCounted
 ## The one place that puts hand-made set pieces into a quadrant (see SetPiece): first it reserves a spot for each
-## piece by its rules (inside the border, out of the way of the exits, as far out as the piece wants, clear of the
-## pieces before it; the village goes in the middle, and comes first), then it stamps each piece on its spot and clears
-## the ground around it. Camps, campfires and the ruin will use the same two calls. Pure.
+## piece by its rules (inside the border, out of the way of the exits, as far out as the piece wants, no farther from
+## the middle than it allows, clear of the pieces before it and as far from them as their spacing rules say; the
+## village goes in the middle, and comes first, so every other piece keeps off it and its margin), then it stamps each
+## piece on its spot and clears the ground around it. The ruin will use the same two calls. Pure.
 
 
 ## A piece and the spot reserved for it.
@@ -77,12 +78,19 @@ static func _is_allowed(
 ) -> bool:
 	if not candidate.piece.at_center and recipe.outward(candidate.anchor_cell()) < candidate.piece.min_outward:
 		return false
+	var centre := Vector2(recipe.center())
+	var limit := candidate.piece.max_from_centre
+	if limit > 0.0 and centre.distance_to(Vector2(candidate.anchor_cell())) > limit:
+		return false
 	var footprint := candidate.rect().grow(candidate.piece.apron)
 	for area in keep_clear:
 		if area.intersects(footprint):
 			return false
 	for other in placed:
 		if other.rect().grow(other.piece.apron).intersects(footprint):
+			return false
+		var apart := candidate.piece.least_distance_to(other.piece)
+		if Vector2(candidate.anchor_cell()).distance_to(Vector2(other.anchor_cell())) < apart:
 			return false
 	return true
 

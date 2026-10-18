@@ -1,7 +1,8 @@
 class_name LootModel
 extends Node3D
 ## Something on the floor, floating and turning, with its name above it: a weapon shows itself (the model
-## characters hold), a utility a glowing cube and a potion a flask, in their colours.
+## characters hold), a utility a glowing cube and a potion a flask, in their colours. A weapon with no model
+## (the knuckles) gets the utilities' glowing cube in its colour.
 
 enum Look { WEAPON, CUBE, FLASK }
 
@@ -38,7 +39,8 @@ func show_item(item: Item) -> void:
 	if item != _shown:
 		_shown = item
 		_weapon_id = item.id
-		_show(item.color, item.button_label, Look.WEAPON if item is Weapon else Look.CUBE)
+		var modelled := item is Weapon and WeaponModel.has_model(item.id)
+		_show(item.color, item.button_label, Look.WEAPON if modelled else Look.CUBE)
 
 
 func show_potion(potion: Potion) -> void:

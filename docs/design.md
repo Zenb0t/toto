@@ -196,8 +196,8 @@ Within their comfortable range they circle the player instead of standing still.
 | Wind-up | Stands still and telegraphs the attack, aim locked | The attack is released (or a Beckoning yanks it) |
 | Recover | Steps aside (alternating sides) for 0.35 s | Recovered: back to Hunt or Position |
 
-**Bands** (`Band`, `Awareness`). The monsters of one **home** are a band; in the dungeon a home is a room
-(camps and the ruin come later). A band starts **asleep** at home or **wandering** about it; which is decided
+**Bands** (`Band`, `Awareness`). The monsters of one **home** are a band; in the dungeon a home is a room,
+on the plains a **camp's campfire** (the ruin comes later). A band starts **asleep** at home or **wandering** about it; which is decided
 per home from the map's seed (`Band.start_of`: a quarter of bands wander), so the same map starts the same way.
 A monster **notices** the hero only when it can see them (line of sight) within **4 cells asleep** or **9
 cells wandering**; there are no dice. Taking damage wakes it at once, and so does hearing a noise or a shout
@@ -225,8 +225,9 @@ because only calm monsters hear a shout and a checking or returning one is busy.
 monster is out of the fight for its **Squad**: it frees its attack turn and flank spot when it gives up (`Squad.leave`) and
 reports no bearing until it hunts again, as a calm monster doesn't (`EnemyBrain.is_out_of_the_fight`). A home can be
 marked **never gives up** (`Enemy.never_gives_up`, `Senses.never_gives_up`): its hunters hunt on however long and
-far. `main.gd` sets it from `DungeonProgress.is_locking(room)`, so the Lich's arena and sealed trap rooms, once
-they are marked as locking, get it without further wiring. Tune → Enemies: give up after unseen (s), give up
+far. `main.gd` sets it from `DungeonProgress.is_locking` of the room each monster spawned in, so the Lich's arena and
+sealed trap rooms, once they are marked as locking, get it without further wiring. A camp's monsters give up like any
+other and walk back to their campfire. Tune → Enemies: give up after unseen (s), give up
 beyond home (cells).
 
 **Noise and shouts** (`Awareness.noise_hearers`, `shout_hearers`). Fighting has consequences beyond the target.
@@ -386,14 +387,15 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 | Border (`QuadrantBorder`) | A forest of groves, 5 cells thick, all round |
 | Exits (`QuadrantExits`) | A 3-wide lane through the border in the middle of each side, with a barricade across its outer end (the way is shut until that quadrant exists) and a cleared approach inside the border |
 | Village (`VillageGenerator`) | Draws the village (next section) from the recipe's size and the quadrant's random numbers |
-| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the others inside the border, as far out as the piece asks, clear of the exits and the pieces before them |
+| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
+| Fill the camps (`CampCrews.dress`) | Draws a band of monsters into each reserved camp by how far out it lies (below) |
 | Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
 | Validate (`QuadrantRules`) | At least `min_walkable_share` (70%) of the ground inside the border walkable, the start inside the village, every exit's front cell, every piece's key cell and the outside of every village gate reachable |
 
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
 generator reports how many tries it took). If every try fails (a recipe asking for the impossible), the last resort is
 the same quadrant without groves, boulders and ponds; if a set piece still finds no spot (Tune → World can make the
-plains too small or the clear ring too wide for it), the default recipe without them, so no tuning leaves the world
+plains too small or the village too big for it), the same without camps and campfires (a plains too small for them); if even that fails, the default recipe without obstacles, so no tuning leaves the world
 without a map. The same recipe and seed always
 give the same map (`QuadrantRecipe.VERSION` goes in the map's record).
 
@@ -407,8 +409,8 @@ stairs goes down, through the same transition rule as any stairs, to the first f
 **Rules to know.** The "walkable at least 70%" share is counted over the ground *inside* the border (a thick border would
 otherwise eat it). Groves and barricades stop walking, sight and shots; boulders are small cover: they stop walking and
 shots but sight passes over them (`DungeonMap.is_see_through`). Deep water stops feet but not shots, as in the dungeon.
-For now the plains hold no monsters and no loot (camps and the rest come in later tickets), and the hero starts in the
-village, in front of the inn.
+For now the plains hold monsters only in camps and no loot (the ruin and the rest come in later tickets), and the hero
+starts in the village, in front of the inn.
 
 **The village** (#40) is the first piece the placer stamps, in the very middle (`SetPiece.at_center`), and the safe place
 the run starts in. It is 36x28 cells by default (Tune → World) and made by pure steps (`scripts/dungeon/generation/village`),
@@ -454,7 +456,32 @@ well, wooden fence and fence gate as the palisade, barrel and two crates. The pi
 keep fixed ones. A piece standing between the camera and the hero turns see-through (a dithered `transparency`, the way walls
 are cut down): the cells in front of the hero count as hiding, and a taller piece hides from farther off and wider
 (`CameraFraming.cells_hiding(hero_cell, height)`); props are too low to hide the hero. Streets and the square are drawn as beaten
-earth. Size: the pack adds about 1.3 MB of source (`.gltf`, `.bin`, one shared 15 KB texture).
+earth. Size: the pack adds about 1.3 MB of source (`.gltf`, `.bin`, one shared 15 KB te
+**Camps and campfires** (`SetPieces.camp`, `SetPieces.campfire`, `CampCrews`, `Camps`). The plains get **6 camps** (at
+least 18 cells apart) and **3 lone campfires** (at least 35 cells apart and 12 from any camp; the first within 12 cells
+beyond the village's clear radius, `QuadrantRecipe.village_radius`), all clear of the village and the 3 cells of grass
+round it (the village is placed first, and a piece keeps its own margin off every piece before it, so a camp's ground
+is at least 5 cells from the palisade). A set piece can name a spacing group and the least distance to other
+groups (`SetPiece.spaced`, measured between key cells; the larger of the two pieces' rules holds) and a farthest
+distance from the middle (`near_centre`); the placer enforces both. A camp is reserved as 7x7 open grass round a
+campfire (new map letter **`F`**, walkable scenery; the parser lists them in `DungeonMap.campfire_cells`), and
+`CampCrews.dress` then writes its band into the drawing, so what lives there depends on where the camp landed:
+*toughness* runs from 0 (30% of the way out, just past the village) to 1 (the border); band size rounds from 2 to 4
+along it, each non-archer is a goblin with chance equal to the toughness (else a kobold), and at the edge up to half the
+band are goblin archers (never all). Near camps are two or three kobolds; far ones are four goblins and archers. All
+of these are recoloured Rogues like the dungeon's, so nothing new is modelled. Each camp starts **asleep or
+wandering** by a 50/50 seeded roll (`Band.start_of` with the camp's band id, so the same seed rolls the same).
+
+The map only knows its campfires and its monsters, so `Camps.campfire_of` says that a monster belongs to the campfire
+within 3 cells of it; a campfire with monsters round it is a camp's (`Camps.camp_campfires`), the others are lone
+(`Camps.lone_campfires`). That is the camp-to-campfire mapping the later rest spots build on (a camp's campfire is held
+by its band until its last member dies). `Band.home_of` makes each camp a band whose home is its campfire (any other
+monster lives at its room's middle), and `main.gd` gives each band its own Squad and shout group, the camps apart from
+the room bands (`Camps.band_id`, clear of room numbers); progress counts still go by room. Monsters killed on the plains stay dead through the map record (they never respawn; only hurt ones heal
+while the hero is away).
+
+The campfire is built in code (`CampfireModel`: stones, logs, a flickering flame and an `OmniLight3D`); `MapView3D`
+shows it once its cell has been seen, burning only in sight. The minimap marks campfires orange.
 
 **Look.** The plains have their own `Branch` (outdoors, so the HUD and the arrival banner say "the plains" and the run
 summary "on the plains") and `BranchLook`: grass ground, no torches, trees for small free-standing groves. Big groves
@@ -465,7 +492,9 @@ pack goes in its own folder of `assets/` with a Credits entry (`Credits.Entry.fo
 `test_shipped_assets` fails if a pack is uncredited or a file unused.
 
 **Tune → World** lists every knob of the recipe (size, walkable share, border thickness, groves, boulders, ponds, the
-village's width, height, share of barrels and crates and art scale, how far out the crypt entrance lies), all defaults living in `QuadrantRecipe`. They shape the next world, not the one
+village's width, height, share of barrels and crates and art scale, how far out the crypt entrance lies, and the camps:
+how many, least apart, band sizes nearest and farthest, chance asleep; the lone campfires: how many, least apart, least
+from a camp), all defaults living in `QuadrantRecipe`. They shape the next world, not the one
 being played: the page shows the world's seed with **New world** (a new seed) and **Same seed again** (this seed, a fresh
 hero), both applying the tuning first (`Run.next_world`, `Run.same_world_again`).
 
@@ -578,7 +607,8 @@ deterministic), so it costs nothing to store and never changes how the game play
   never where monsters, loot or the stairs are. Walking over it is fine: it is only looks.
 - **Chests** are KayKit's, and their lid swings open.
 - **Weapons on the floor** show the weapon itself (the model characters hold), floating and turning;
-  utilities are glowing cubes, potions flasks. **Items on the floor** stay hidden until their cell has been seen, then stay shown (like the fog's map
+  utilities are glowing cubes, potions flasks. A weapon with no model (the knuckles) is a glowing cube in its
+  colour, like a utility. **Items on the floor** stay hidden until their cell has been seen, then stay shown (like the fog's map
   memory).
 - **Water and lava** move: slow waves with highlights (`shaders/liquid.gdshader`), lava slower and hotter.
 - **Stairs** stand under a stone arch trimmed in gold (down) or silver (up).

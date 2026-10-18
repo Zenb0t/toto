@@ -7,6 +7,7 @@ extends RefCounted
 ##   *  an item lying on the floor
 ##   ~  deep water (blocks walking, not sight or shots)     L  lava (walkable, burns)
 ##   ,  shallow water (walkable, slowly)
+##   F  campfire (on floor: scenery you can walk over; a camp's monsters stand round it)
 ##   T  tree grove    B  boulder    =  barricade (outdoors: each blocks walking, see DungeonMap.Blocker)
 ##   The village (see Village): Y palisade   G gate (floor)   :  street or square (walkable beaten earth)
 ##   U  well   X  barrel or crate   D  the inn's doorstep (floor)   I inn   C church   S smithy   M market
@@ -25,6 +26,7 @@ const LOOT := "*"
 const WATER := "~"
 const LAVA := "L"
 const SHALLOW := ","
+const CAMPFIRE := "F"
 const GROVE := "T"
 const BOULDER := "B"
 const BARRICADE := "="
@@ -37,7 +39,7 @@ func parse(ascii: String) -> DungeonMap:
 	assert(Array(rows).all(func(row: String) -> bool: return row.length() == size.x), "every row must be the same width")
 
 	var enemy_symbols := Bestiary.letters()
-	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, STAIRS_UP, LOOT, WATER, LAVA, SHALLOW,
+	var floor_cells := _cells_matching(rows, [FLOOR, PLAYER, EXIT, STAIRS_UP, LOOT, WATER, LAVA, SHALLOW, CAMPFIRE,
 		Village.GATE, Village.STREET, Village.DOORSTEP, Village.START] + enemy_symbols)
 	var door_cells := _cells_matching(rows, [DOOR])
 	var exit_cells := _cells_matching(rows, [EXIT])
@@ -68,6 +70,7 @@ func parse(ascii: String) -> DungeonMap:
 		stairs_up_cells[0] if not stairs_up_cells.is_empty() else DungeonMap.NO_CELL,
 		_blockers_by_cell(rows),
 		_village(rows),
+		_cells_matching(rows, [CAMPFIRE]),
 	)
 
 
