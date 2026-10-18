@@ -4,6 +4,9 @@ extends RefCounted
 ## DungeonGenerator makes each level by it (the campfire; see CryptCampfire); the same recipe and seed always make
 ## the same level. The numbers are tunable (Tune → World, see knobs), and the defaults live here.
 
+## How many levels the crypt has. The last one holds the boss arena (see BossArena) and has no stairs down.
+const LEVELS := 3
+
 ## Stable identifier; also the prefix of its tuning keys.
 var id := "crypt"
 ## The campfire lies in an ordinary room this many rooms from the stairs up (the nearest such room when the level

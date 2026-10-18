@@ -57,3 +57,14 @@ func test_a_killed_monster_is_no_longer_hurt() -> void:
 	record.kill(Vector2i(10, 4))
 
 	assert_eq(record.to_dict().hurt, [])
+
+
+func test_the_lich_dead_is_remembered_and_round_trips_through_a_dictionary() -> void:
+	var record := MapRecord.new(1)
+	assert_false(record.is_lich_dead())
+
+	record.kill_lich()
+
+	assert_true(record.is_lich_dead())
+	assert_true(MapRecord.from_dict(record.to_dict()).is_lich_dead())
+	assert_false(MapRecord.from_dict(MapRecord.new(1).to_dict()).is_lich_dead())

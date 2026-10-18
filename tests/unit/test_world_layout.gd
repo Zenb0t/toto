@@ -88,8 +88,9 @@ func test_only_stairs_are_exits() -> void:
 	assert_eq(WorldLayout.exit_at(map, Vector2i(1, 1)), WorldLayout.NO_EXIT, "the start is not an exit")
 
 
-func test_only_the_bottom_floors_stairs_lead_out() -> void:
-	var bottom := WorldLayout.floor_id(WorldLayout.FLOOR_COUNT)
-
-	assert_true(WorldLayout.destination(bottom, WorldLayout.Exit.STAIRS_DOWN).leaves_world())
+func test_every_level_has_stairs_down_but_the_last_where_the_lich_waits() -> void:
+	assert_true(WorldLayout.has_stairs_down(WorldLayout.PLAINS_ID))
+	for floor_number in range(1, WorldLayout.FLOOR_COUNT):
+		assert_true(WorldLayout.has_stairs_down(WorldLayout.floor_id(floor_number)))
+	assert_false(WorldLayout.has_stairs_down(WorldLayout.floor_id(WorldLayout.FLOOR_COUNT)))
 

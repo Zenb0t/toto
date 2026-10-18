@@ -74,9 +74,9 @@ func test_the_crypt_has_three_levels_behind_the_crypt_entrance() -> void:
 		assert_eq(WorldLayout.spec(5, WorldLayout.floor_id(level)).place_name(), "Crypt level %d" % level)
 
 
-func test_every_level_has_stairs_up_and_down_in_different_rooms() -> void:
+func test_every_level_but_the_last_has_stairs_up_and_down_in_different_rooms() -> void:
 	for seed_value in SEEDS:
-		for level in range(1, WorldLayout.FLOOR_COUNT + 1):
+		for level in range(1, WorldLayout.FLOOR_COUNT):
 			var map := _level(seed_value, level)
 			var at := "seed %d level %d" % [seed_value, level]
 

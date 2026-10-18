@@ -8,10 +8,12 @@ extends RefCounted
 ## Dungeon Crawl Stone Soup mixes vaults into its random levels. The player arrives in a quiet room (on the
 ## stairs up, which lead back out to the mausoleum from the first level); the exit (the stairs down) is in the room
 ## farthest from it; rooms get tougher the farther they are from the start (see DungeonDifficulty). Each level has a
-## campfire in an ordinary room a few rooms from the stairs (see CryptCampfire).
+## campfire in an ordinary room a few rooms from the stairs (see CryptCampfire). The crypt's last level has no
+## stairs down: the room farthest from the stairs up is the boss arena instead (see BossArena), marked as a locking
+## room, with the Lich in it and nothing else.
 
 ## Bumped whenever the same seed would make a different map, so a saved MapRecord can tell it no longer fits.
-const VERSION := 3
+const VERSION := 4
 
 const GRID := Vector2i(4, 3)
 ## Every slot holds one room plus the gap around it, where corridors run.
@@ -42,6 +44,9 @@ const EXIT := ">"
 const STAIRS_UP := "<"
 const LOOT := "*"
 const CAMPFIRE := "F"
+## The slot of a level without a boss arena.
+const NO_SLOT := Vector2i(-1, -1)
+const NO_CELL := Vector2i(-1, -1)
 
 
 ## floor_number: 1 for the top level; deeper levels hold tougher monsters (see DungeonDifficulty.danger).
@@ -54,13 +59,15 @@ func generate(seed_value: int, floor_number := 1, crypt := CryptRecipe.new(), br
 	var level_branch := branch if branch != null else Branch.crypt()
 	var graph := RoomGraph.grow(GRID, rng.randi_range(MIN_ROOMS, MAX_ROOMS), rng.randi_range(0, MAX_EXTRA_LINKS), rng)
 	var campfire_slot := CryptCampfire.slot_for(graph, crypt.campfire_rooms_from_stairs, rng)
+	var arena_slot := BossArena.slot_for(graph) if floor_number >= CryptRecipe.LEVELS else NO_SLOT
 	var rooms := {}  # slot -> {cell: map symbol}
 	for slot in graph.slots:
 		var is_start: bool = slot == graph.start_slot()
-		var is_vault: bool = not is_start and slot != campfire_slot and rng.randf() < VAULT_CHANCE
-		rooms[slot] = _shape_room(is_start, is_vault, room_bounds(slot), level_branch, rng)
-	var corridors := _connect(graph, rooms, rng)
-	return _draw(graph, rooms, corridors, campfire_slot, floor_number, level_branch, rng)
+		var is_vault: bool = not is_start and slot != campfire_slot and slot != arena_slot and rng.randf() < VAULT_CHANCE
+		rooms[slot] = _shape_room(is_start, is_vault, room_bounds(slot), level_branch, rng) \
+				if slot != arena_slot else _as_floor(BossArena.room(room_bounds(slot)))
+	var corridors := _connect(graph, rooms, arena_slot, rng)
+	return _draw(graph, rooms, corridors, campfire_slot, arena_slot, floor_number, level_branch, rng)
 
 
 static func map_size() -> Vector2i:
@@ -114,8 +121,8 @@ func _as_floor(cells: Dictionary) -> Dictionary:
 
 
 ## Corridors for every link, as {cell: FLOOR or DOOR}. A link that finds no straight, sealed spot between
-## two odd shapes makes them plain rectangles, and the corridors are laid again.
-func _connect(graph: RoomGraph, rooms: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
+## two odd shapes makes them plain rectangles (the boss arena keeps its shape), and the corridors are laid again.
+func _connect(graph: RoomGraph, rooms: Dictionary, arena_slot: Vector2i, rng: RandomNumberGenerator) -> Dictionary:
 	while true:
 		var corridors := {}
 		var failed: Array = []
@@ -128,7 +135,8 @@ func _connect(graph: RoomGraph, rooms: Dictionary, rng: RandomNumberGenerator) -
 		if failed.is_empty():
 			return corridors
 		for slot: Vector2i in failed:
-			rooms[slot] = _as_floor(RoomShapes.build(RoomShapes.Kind.RECT, room_bounds(slot), rng))
+			if slot != arena_slot:
+				rooms[slot] = _as_floor(RoomShapes.build(RoomShapes.Kind.RECT, room_bounds(slot), rng))
 	return {}
 
 
@@ -188,8 +196,8 @@ func _corridor_at(across: int, first: Dictionary, second: Dictionary, horizontal
 
 
 func _draw(
-		graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, campfire_slot: Vector2i, floor_number: int,
-		branch: Branch, rng: RandomNumberGenerator
+		graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, campfire_slot: Vector2i, arena_slot: Vector2i,
+		floor_number: int, branch: Branch, rng: RandomNumberGenerator
 ) -> String:
 	var size := map_size()
 	var rows: Array[Array] = []
@@ -205,12 +213,18 @@ func _draw(
 		rows[cell.y][cell.x] = corridors[cell]
 	var start_center := _center_cell(rooms[graph.start_slot()])
 	rows[start_center.y][start_center.x] = STAIRS_UP
-	var exit_cell := _exit_cell(rooms[graph.deepest_slot()])
-	rows[exit_cell.y][exit_cell.x] = EXIT
+	var exit_cell := NO_CELL
+	if arena_slot == NO_SLOT:
+		exit_cell = _exit_cell(rooms[graph.deepest_slot()])
+		rows[exit_cell.y][exit_cell.x] = EXIT
+	else:
+		_place_arena(rows, room_bounds(arena_slot))
 	for slot in graph.slots:
-		if slot == graph.start_slot():
+		if slot == graph.start_slot() or slot == arena_slot:
 			continue
-		var taken: Array[Vector2i] = [exit_cell]
+		var taken: Array[Vector2i] = []
+		if exit_cell != NO_CELL:
+			taken.append(exit_cell)
 		var fires: Array[Vector2i] = []
 		if slot == campfire_slot:
 			fires = _spawn_cells(rooms[slot], 1, taken, [], rng)
@@ -225,6 +239,14 @@ func _draw(
 		for cell in _spawn_cells(rooms[slot], letters.size(), taken, fires, rng):
 			rows[cell.y][cell.x] = letters.pop_back()
 	return "\n".join(rows.map(func(row: Array) -> String: return "".join(PackedStringArray(row))))
+
+
+## The Lich in his crypt, and the mark that makes the arena a locking room.
+func _place_arena(rows: Array[Array], bounds: Rect2i) -> void:
+	var lich := BossArena.lich_cell(bounds)
+	rows[lich.y][lich.x] = Lich.LETTER
+	var mark := BossArena.mark_cell(bounds)
+	rows[mark.y][mark.x] = LockingRoom.mark_of(LockingRoom.Kind.ARENA)
 
 
 ## Dead ends (other than the exit's room) sometimes hide an item, unless they are vaults with treasure of their own.

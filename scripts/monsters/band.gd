@@ -12,8 +12,12 @@ const DEFAULT_WANDERING_SHARE := 0.25
 const DEFAULT_WANDER_RADIUS_CELLS := 6.0
 
 
-## How the band living at a home starts, on the map with this seed.
-static func start_of(map_seed: int, home: int, wandering_share := DEFAULT_WANDERING_SHARE) -> Start:
+## How the band living at a home starts, on the map with this seed. The band of a locking room (the boss arena, a
+## trap room) is always awake: it wanders until the room locks.
+static func start_of(
+		map_seed: int, home: int, wandering_share := DEFAULT_WANDERING_SHARE, locking := false) -> Start:
+	if locking:
+		return Start.WANDERING
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([map_seed, home])
 	return Start.WANDERING if rng.randf() < wandering_share else Start.ASLEEP

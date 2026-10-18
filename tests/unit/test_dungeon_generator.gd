@@ -6,9 +6,9 @@ const SEEDS := 25
 var _parser := DungeonMapParser.new()
 
 
-## Seeds go through every floor (every branch: built halls, caves, the branch's vaults).
+## Seeds go through every floor that has stairs down (the last one is the boss arena's: see test_boss_arena).
 func _map(seed_value: int) -> DungeonMap:
-	return _parser.parse(DungeonGenerator.new().generate(seed_value, seed_value % WorldLayout.FLOOR_COUNT + 1))
+	return _parser.parse(DungeonGenerator.new().generate(seed_value, seed_value % (WorldLayout.FLOOR_COUNT - 1) + 1))
 
 
 func _enemy_rooms(map: DungeonMap) -> Dictionary:
@@ -63,7 +63,7 @@ func test_there_is_one_exit_guarded_by_enemies_away_from_the_start() -> void:
 		assert_has(_enemy_rooms(map), exit_room, "seed %d" % seed_value)
 
 
-func test_every_floor_starts_on_its_stairs_up_and_has_stairs_down() -> void:
+func test_every_floor_starts_on_its_stairs_up_and_has_stairs_down_but_the_last() -> void:
 	for seed_value in SEEDS:
 		for floor_number in range(1, WorldLayout.FLOOR_COUNT + 1):
 			var map := _parser.parse(DungeonGenerator.new().generate(seed_value, floor_number))
@@ -71,6 +71,9 @@ func test_every_floor_starts_on_its_stairs_up_and_has_stairs_down() -> void:
 
 			assert_ne(map.stairs_up_cell, DungeonMap.NO_CELL, at)
 			assert_eq(map.player_spawn, map.stairs_up_cell, at)
+			if floor_number == WorldLayout.FLOOR_COUNT:
+				assert_eq(map.exit_cell, DungeonMap.NO_CELL, at)
+				continue
 			assert_ne(map.exit_cell, DungeonMap.NO_CELL, at)
 			assert_ne(map.room_at(map.exit_cell), map.room_at(map.stairs_up_cell), at)
 

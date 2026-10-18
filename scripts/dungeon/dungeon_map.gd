@@ -38,6 +38,8 @@ var loot_cells: Array[Vector2i] = []
 var village: Village
 ## Where campfires burn (walkable scenery; see Camps for the ones that are a band's home).
 var campfire_cells: Array[Vector2i] = []
+## The rooms that lock when the hero walks in (room -> LockingRoom.Kind): the boss arena and trap rooms.
+var locking_rooms := {}
 
 var _room_by_cell: Dictionary  # Vector2i -> int
 var _doors_by_room: Dictionary  # int -> Array[Vector2i]
@@ -62,6 +64,7 @@ func _init(
 	blocker_by_cell: Dictionary = {},
 	village_on_map: Village = null,
 	campfires: Array[Vector2i] = [],
+	locking: Dictionary = {},
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -78,6 +81,7 @@ func _init(
 	_blocker_by_cell = blocker_by_cell
 	village = village_on_map
 	campfire_cells = campfires
+	locking_rooms = locking
 
 
 ## The id of the monster (see Bestiary) spawning at cell, or "" if none does.
@@ -116,8 +120,29 @@ func cells_with_blocker(blocker: Blocker) -> Array[Vector2i]:
 ## Whether a cell lies inside the village's palisade (or on it).
 func is_in_village(cell: Vector2i) -> bool:
 	return village != null and village.contains(cell)
+
 func is_campfire(cell: Vector2i) -> bool:
 	return cell in campfire_cells
+
+
+## Which kind of locking room a room is (a LockingRoom.Kind), or LockingRoom.NONE for one that never locks.
+func locking_kind(room: int) -> int:
+	return locking_rooms.get(room, LockingRoom.NONE)
+
+
+## The rooms that lock when the hero walks in, for DungeonProgress.
+func locking_room_ids() -> Array[int]:
+	var ids: Array[int] = []
+	ids.assign(locking_rooms.keys())
+	return ids
+
+
+## The room of the given kind, or NO_ROOM (the boss arena, say).
+func locking_room_of_kind(kind: LockingRoom.Kind) -> int:
+	for room: int in locking_rooms:
+		if locking_rooms[room] == kind:
+			return room
+	return NO_ROOM
 
 
 func terrain_at(cell: Vector2i) -> Terrain:
