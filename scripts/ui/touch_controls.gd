@@ -6,12 +6,16 @@ extends CanvasLayer
 
 const ATTACK_KEY_HINT := "click"
 const UTILITY_KEY_HINT := "right click / space"
+## The key that rests while the attack button reads REST.
+const REST_KEY_HINT := "E"
 
 @onready var move_stick: TouchStick = $MoveStick
 @onready var attack_button: AimButton = $AttackButton
 @onready var utility_button: AimButton = $UtilityButton
 
 var _layout := ControlLayout.new()
+var _touch := true
+var _rest_offered := false
 
 
 func _ready() -> void:
@@ -36,8 +40,19 @@ func use_touch(enabled: bool) -> void:
 	move_stick.accepts_touch = enabled
 	attack_button.accepts_touch = enabled
 	utility_button.accepts_touch = enabled
-	attack_button.hint = "" if enabled else ATTACK_KEY_HINT
+	_touch = enabled
+	_show_attack_hint()
 	utility_button.hint = "" if enabled else UTILITY_KEY_HINT
+
+
+## While the attack button reads REST, the key hint names the key that rests.
+func offer_rest(offered: bool) -> void:
+	_rest_offered = offered
+	_show_attack_hint()
+
+
+func _show_attack_hint() -> void:
+	attack_button.hint = "" if _touch else (REST_KEY_HINT if _rest_offered else ATTACK_KEY_HINT)
 
 
 func _arrange() -> void:
