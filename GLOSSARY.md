@@ -83,6 +83,10 @@ _Avoid_: Lich
 The crypt room where the Lich waits. Its doors lock when the hero enters and open when the Lich dies.
 _Avoid_: Boss room, boss chamber
 
+**Trap room**:
+A crypt room (levels 1 and 2) that looks like any room with a chest. Entering it seals it and a band tougher than usual appears; the chest stays shut until they are all dead. Never the campfire's room.
+_Avoid_: Ambush room, treasure room
+
 **Bone Spray**:
 A Lich spell: waves of bone shards fly outward from a half circle in front of him.
 _Avoid_: Bone spears, shard burst

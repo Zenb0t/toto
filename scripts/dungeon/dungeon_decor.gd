@@ -127,6 +127,9 @@ static func clutter_cells(map: DungeonMap, kinds: int) -> Dictionary:
 	var busy := {map.exit_cell: true, map.stairs_up_cell: true, map.player_spawn: true}
 	for cell in map.loot_cells + map.enemy_spawns:
 		busy[cell] = true
+	for room in map.locking_room_ids():
+		if map.locking_kind(room) == LockingRoom.Kind.TRAP:
+			busy[map.room_center(room)] = true  # the trap room's chest
 	for cell in map.open_cells():
 		if busy.has(cell) or not map.is_standable(cell) or map.is_door(cell):
 			continue
