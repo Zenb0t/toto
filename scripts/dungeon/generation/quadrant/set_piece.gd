@@ -1,6 +1,6 @@
 class_name SetPiece
 extends RefCounted
-## A hand-made piece to stamp into a quadrant (the village, the crypt entrance, camps and campfires; the ruin later),
+## A hand-made piece to stamp into a quadrant (the village, the crypt entrance, the ruin, camps and campfires),
 ## written in the map format. The placer (SetPiecePlacer) finds it a spot by these rules and stamps it.
 ## Plain data.
 

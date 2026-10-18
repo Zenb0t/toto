@@ -450,7 +450,9 @@ home is the chest cell, the ruin's middle: `Band.home_of` takes monsters within 
 `_spawn_chest(Ruins.NUMBER, cell)`, and opening it records `Ruins.NUMBER` in the `MapRecord`, so it stays open after the hero leaves and
 returns. It holds one gear piece the hero doesn't hold (`LootTable.pick_item_id`), and sometimes a potion. Size is not a Knob: the
 drawing is fixed, and a plains too small to fit it in a corner beside the village (100x60 at the Tune minimum) is made without a ruin, by one more
-last-resort step of the generator (`QuadrantRecipe.without_ruin`). *Planned lever:* a melee start has no ranged answer to a kiting Lich (#8); if playtests show it hurting, the first fix is
+last-resort step of the generator (`QuadrantRecipe.without_ruin`); when the ruin has no corner anywhere beside the village
+(`SetPiecePlacer.fits_anywhere`, every spot tried), the generator skips the remaining tries, which would all fail the same way and
+each cost a village. *Planned lever:* a melee start has no ranged answer to a kiting Lich (#8); if playtests show it hurting, the first fix is
 a ranged weapon in this chest (not built).
 
 **The village** (#40) is the first piece the placer stamps, in the very middle (`SetPiece.at_center`), and the safe place

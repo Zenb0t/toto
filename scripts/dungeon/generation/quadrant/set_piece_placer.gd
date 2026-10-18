@@ -51,6 +51,21 @@ static func stamp(grid: QuadrantGrid, placement: Placement) -> void:
 			grid.put(placement.origin + Vector2i(x, y), placement.piece.rows[y][x])
 
 
+## Whether the piece has any spot at all beside the pieces already placed, trying every spot rather than a random few:
+## when it has none, no number of tries will find one (the caller can give the piece up at once).
+static func fits_anywhere(
+		recipe: QuadrantRecipe, piece: SetPiece, keep_clear: Array[Rect2i], placed: Array[Placement]
+) -> bool:
+	var inside := recipe.interior().grow(-1)
+	var most := inside.end - piece.size() - Vector2i.ONE * piece.apron
+	var least := inside.position + Vector2i.ONE * piece.apron
+	for y in range(least.y, most.y + 1):
+		for x in range(least.x, most.x + 1):
+			if _is_allowed(recipe, Placement.new(piece, Vector2i(x, y)), keep_clear, placed):
+				return true
+	return false
+
+
 static func _find_spot(
 		recipe: QuadrantRecipe, piece: SetPiece, keep_clear: Array[Rect2i], placed: Array[Placement],
 		rng: RandomNumberGenerator

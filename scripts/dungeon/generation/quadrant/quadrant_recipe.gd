@@ -53,16 +53,16 @@ var campfire_count := 3
 var campfire_spacing := 35
 ## The least distance in cells between a lone campfire and any camp.
 var campfire_camp_gap := 12
-## Dirt roads from the village gates to this many of the four exits (see QuadrantRoads), and how much they wander: 0 runs
-## them straight where nothing is in the way, more sends them along the noise's valleys.
+## Whether the quadrant has a ruin at all (only a recipe made by without_ruin has none).
+var has_ruin := true
 ## The ruin in one corner (see Ruins): how many of its four possible wall gaps are open (a number between the least and
 ## the most, rolled per map), and how many monsters its band holds at least. The band always has more than the biggest
 ## camp's, so it is the map's toughest.
-## Whether the quadrant has a ruin at all (only a recipe made by without_ruin has none).
-var has_ruin := true
 var ruin_gaps_min := 2
 var ruin_gaps_max := 3
 var ruin_band_size := 7
+## Dirt roads from the village gates to this many of the four exits (see QuadrantRoads), and how much they wander: 0 runs
+## them straight where nothing is in the way, more sends them along the noise's valleys.
 var road_count := 2
 var road_bend := 3.0
 

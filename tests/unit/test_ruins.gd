@@ -190,8 +190,10 @@ func test_a_plains_too_small_for_a_corner_ruin_is_made_without_one_and_is_still_
 	small.width = 100
 	small.height = 60
 
-	var map := _parser.parse(QuadrantGenerator.new().generate(small, 1))
+	var generator := QuadrantGenerator.new()
+	var map := _parser.parse(generator.generate(small, 1))
 
 	assert_eq(map.size, Vector2i(100, 60))
 	assert_eq(map.ruin_cell, DungeonMap.NO_CELL)
 	assert_true(_reachable(map).has(map.exit_cell))
+	assert_lt(generator.attempts, QuadrantGenerator.MAX_ATTEMPTS, "gives the ruin up without trying again and again")
