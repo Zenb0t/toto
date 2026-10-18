@@ -182,6 +182,12 @@ func alert() -> void:
 	_alerted = true
 
 
+## Its room has just locked (the boss arena, a trap room): it goes after the target, which it ignored until now.
+func wake(target: Node2D) -> void:
+	chase(target)
+	alert()
+
+
 ## What shows over its head: ASLEEP_MARK, NOTICING_MARK, or nothing.
 func mark() -> String:
 	match _brain.state:

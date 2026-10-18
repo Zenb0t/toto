@@ -250,17 +250,25 @@ func _spawn_enemies() -> void:
 		if _record.is_killed(cell):
 			continue
 		var band := Band.home_of(_stage.map, cell, _stage.spec.room_wandering_share(), _camp_wandering_share())
+		var locking := _stage.map.locking_kind(_stage.map.room_at(cell)) != LockingRoom.NONE
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
 		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
+		if monster.id == Lich.ID:
+			monster = GameTuning.lich(_tuning).monster()
+			enemy.spell_picker = GameTuning.lich_spells(_tuning)
 		enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
 		enemy.set_current_health(_record.health_on_return(
 			cell, enemy.health.maximum, _run.seconds_played, GameTuning.enemy_regeneration(_tuning)))
-		enemy.arm(GameTuning.enemy_weapon(_tuning, monster.weapon_id))
+		enemy.arm(GameTuning.monster_weapon(_tuning, monster))
 		enemy.navigation = _stage.pathfinder
 		enemy.squad = _squads_by_band.get_or_add(band.id, Squad.new())
-		enemy.settle(DungeonView.cell_center(band.cell), Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share))
-		enemy.chase(_player)
+		enemy.settle(
+			DungeonView.cell_center(band.cell),
+			Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share, locking))
+		# The band of a locking room is awake but ignores the hero until the room locks (see _on_room_locked).
+		if not locking:
+			enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.noticed.connect(_on_enemy_noticed)
 		enemy.defeated.connect(_on_enemy_defeated.bind(band.id))
@@ -321,8 +329,8 @@ func _create_progress() -> DungeonProgress:
 	for cell: Vector2i in _spawn_cells.values():
 		var room := _stage.map.room_at(cell)
 		counts[room] = counts.get(room, 0) + 1
-	# No room is marked as locking yet (trap rooms and the boss arena will be): monsters come when they notice.
-	var progress := DungeonProgress.new(counts)
+	# Only the rooms the map marks lock (the boss arena, trap rooms): in the others monsters come when they notice.
+	var progress := DungeonProgress.new(counts, _stage.map.locking_room_ids())
 	# A locking room's band never gives up the chase.
 	for enemy: Enemy in _spawn_cells:
 		enemy.never_gives_up = progress.is_locking(_stage.map.room_at(_spawn_cells[enemy]))
@@ -381,6 +389,7 @@ func _connect_menu() -> void:
 	_pause_menu.credits_requested.connect(_on_credits_requested)
 	_credits_panel.finished.connect(_on_credits_finished)
 	_run_summary.play_again_pressed.connect(_restart)
+	_run_summary.keep_playing_pressed.connect(_keep_playing)
 
 
 # --- Input routing -------------------------------------------------------------------------------
@@ -510,10 +519,14 @@ func _track_player_room() -> void:
 		_take_stairs(exit)
 
 
+## A locking room seals with the hero in it, and its band, which ignored the hero until now, wakes and attacks.
 func _on_room_locked(room: int) -> void:
 	_stage.view.set_room_closed(room, true)
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), true)
 	_sight_origin = DungeonMap.NO_CELL
+	for enemy: Enemy in _spawn_cells:
+		if _stage.map.room_at(_spawn_cells[enemy]) == room:
+			enemy.wake(_player)
 
 
 func _on_room_cleared(room: int) -> void:
@@ -571,6 +584,9 @@ func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
 	_run.hero.kills += 1
 	_grow_from(enemy.monster)
 	_refresh_hud()
+	if enemy.monster.id == Lich.ID:
+		_run.lich_killed()
+		_win()
 	if LootTable.rolls_enemy_drop(GameTuning.enemy_drop_chance(_tuning), _rng):
 		var drop_id := LootTable.enemy_drop_id(enemy.weapon.id, GameTuning.item_ids(), _held_ids(), _rng)
 		_spawn_drop(enemy.position, drop_id)
@@ -845,10 +861,13 @@ func _apply_tuning(tuning: Tuning) -> void:
 	for enemies: Array in _enemies_by_band.values():
 		for enemy: Enemy in enemies:
 			enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier
-			enemy.arm(GameTuning.enemy_weapon(tuning, enemy.weapon.id))
+			enemy.arm(GameTuning.monster_weapon(tuning, enemy.monster))
 			enemy.lead_share = GameTuning.enemy_lead_share(tuning)
 			enemy.recover_seconds = GameTuning.enemy_recover_seconds(tuning)
 			enemy.noticing_seconds = GameTuning.enemy_noticing_seconds(tuning)
+			if enemy.monster.id == Lich.ID:
+				enemy.keep_distance_cells = GameTuning.lich(tuning).keep_distance_cells
+				GameTuning.tune_spells(enemy.spell_picker, tuning)
 			enemy.wander_speed_share = GameTuning.enemy_wander_speed_share(tuning)
 			enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
 			GameTuning.tune_awareness(enemy.awareness, tuning)
@@ -973,10 +992,11 @@ func _branch() -> Branch:
 func _refresh_hud() -> void:
 	if not _in_play:
 		return
-	var leads_out := _run.destination(WorldLayout.Exit.STAIRS_DOWN).leaves_world()
-	var goal := "Find the way out" if leads_out else "Find the stairs down"
+	var goal := "Find the stairs down"
 	if _branch().outdoors:
 		goal = "Find the crypt entrance"
+	elif not WorldLayout.has_stairs_down(_stage.spec.id):
+		goal = "The Lich is dead" if _run.won else "Kill the Lich"
 	var place := _place().name
 	_hud.text = "%s    Level %d (%d%%)    HP %d/%d    %s" % [
 		place, _experience.level(), roundi(_experience.progress() * 100), _player.health.current,
@@ -990,14 +1010,11 @@ func _carried_hero() -> HeroState:
 
 
 ## Down (or up) to the next map with everything the player holds: from the plains into the crypt entrance and back,
-## down the floors, or out of the dungeon from the last one.
+## and down the floors (the last has no stairs down: the Lich's arena is the end).
 func _take_stairs(exit: WorldLayout.Exit) -> void:
 	if not _in_play:
 		return
-	var destination := _run.travel(exit, _carried_hero())
-	if destination.leaves_world():
-		_end_run(RunSummary.Ending.ESCAPED)
-		return
+	_run.travel(exit, _carried_hero())
 	_in_play = false
 	var way := "Down" if exit == WorldLayout.Exit.STAIRS_DOWN else "Up"
 	_hud.text = "%s to the %s..." % [way, _run.current_map().branch().display_name]
@@ -1022,6 +1039,29 @@ func _end_run(ending: RunSummary.Ending) -> void:
 	get_tree().paused = true
 	_hud_layer.hide()
 	_run_summary.show_summary(ending, RunSummary.lines(_run, _experience.level(), ending, _player.last_hurt_by))
+
+
+## The Lich is dead: a moment to see it, then the run's summary. Dismissing it carries on playing in the same world
+## (see _keep_playing). A hero who dies in that moment gets the death summary instead.
+func _win() -> void:
+	var run := _run
+	await get_tree().create_timer(SUMMARY_DELAY_SECONDS).timeout
+	if run != _run or not _in_play:
+		return  # The player started over or died meanwhile.
+	_in_play = false
+	get_tree().paused = true
+	_hud_layer.hide()
+	_run_summary.show_summary(
+		RunSummary.Ending.WON, RunSummary.lines(_run, _experience.level(), RunSummary.Ending.WON, ""))
+
+
+## "Keep exploring" on the win summary: back to the same world, the Lich still dead.
+func _keep_playing() -> void:
+	_run_summary.hide()
+	_hud_layer.show()
+	get_tree().paused = false
+	_in_play = true
+	_refresh_hud()
 
 
 ## Dying, restarting from the menu or New world in the Tune screen starts a new world with a new seed.
