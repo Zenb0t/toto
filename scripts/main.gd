@@ -73,7 +73,7 @@ var _rest_offer := false
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
-## The name of the place the banner last showed ("village", "plains"...), to notice crossing a gate.
+## The name of the place the banner last showed ("The village", "The plains"...), to notice crossing a gate.
 var _shown_place := ""
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
 ## How long the mouse button has been held on a weapon that charges.
@@ -111,7 +111,7 @@ func _ready() -> void:
 	_connect_keyboard_mouse()
 	_connect_menu()
 	_touch_controls.apply_layout(_layout)
-	_start_run(Run.random(_rng, GameTuning.plains_recipe(_tuning)))
+	_start_run(Run.random(_rng, GameTuning.plains_recipe(_tuning), GameTuning.crypt_recipe(_tuning)))
 	_show_input_mode(_keyboard_mouse.mode)
 
 
@@ -249,7 +249,7 @@ func _spawn_enemies() -> void:
 	for cell in _stage.map.enemy_spawns:
 		if _record.is_killed(cell):
 			continue
-		var band := Band.home_of(_stage.map, cell, GameTuning.band_wandering_share(_tuning), _camp_wandering_share())
+		var band := Band.home_of(_stage.map, cell, _stage.spec.room_wandering_share(), _camp_wandering_share())
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.position = DungeonView.cell_center(cell)
 		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
@@ -288,10 +288,10 @@ func _refresh_held_campfires() -> void:
 			_held_campfires[cell] = true
 
 
-## The share of camps that start wandering: the quadrant recipe's, or the dungeon's bands' when there is none.
+## The share of camps that start wandering: the quadrant recipe's (a crypt level has no camps, only rooms).
 func _camp_wandering_share() -> float:
 	var quadrant := _stage.spec.quadrant
-	return quadrant.camp_wandering_share() if quadrant != null else GameTuning.band_wandering_share(_tuning)
+	return quadrant.camp_wandering_share() if quadrant != null else _stage.spec.room_wandering_share()
 
 
 ## Things lying around from the start (vault treasure, dead-end finds), but for those taken on an earlier
@@ -940,11 +940,11 @@ func _grow_from(monster: Monster) -> void:
 		_stage.world.float_text(_player.global_position, "LEVEL %d!" % _experience.level(), LEVEL_UP_COLOR)
 
 
-## Names the branch and greets the player, like Dungeon Crawl on arriving somewhere new.
+## Names the place and greets the player, like Dungeon Crawl on arriving somewhere new.
 func _greet() -> void:
 	var place := _place()
 	_shown_place = place.name
-	_arrival.text = "The %s\n%s" % [place.name, place.greeting]
+	_arrival.text = "%s\n%s" % [place.name, place.greeting]
 	_arrival.modulate.a = 1.0
 	if _arrival_fade != null:
 		_arrival_fade.kill()
@@ -953,9 +953,9 @@ func _greet() -> void:
 	_arrival_fade.tween_property(_arrival, "modulate:a", 0.0, ARRIVAL_FADE_SECONDS)
 
 
-## Where the hero stands: the village inside the palisade, else the branch (see Place).
+## Where the hero stands: the village inside the palisade, else the map (see Place).
 func _place() -> Place:
-	return Place.at(_branch(), _stage.map, DungeonView.world_to_cell(_player.global_position))
+	return Place.at(_stage.spec, _stage.map, DungeonView.world_to_cell(_player.global_position))
 
 
 ## Crossing a gate names the new place: on the banner, and in the HUD.
@@ -975,11 +975,9 @@ func _refresh_hud() -> void:
 		return
 	var leads_out := _run.destination(WorldLayout.Exit.STAIRS_DOWN).leaves_world()
 	var goal := "Find the way out" if leads_out else "Find the stairs down"
-	var place := "The %s" % _place().name
 	if _branch().outdoors:
 		goal = "Find the crypt entrance"
-	else:
-		place = "%s (floor %d/%d)" % [_branch().display_name, _stage.spec.floor_number, WorldLayout.FLOOR_COUNT]
+	var place := _place().name
 	_hud.text = "%s    Level %d (%d%%)    HP %d/%d    %s" % [
 		place, _experience.level(), roundi(_experience.progress() * 100), _player.health.current,
 		_player.health.maximum, goal]
@@ -1028,12 +1026,12 @@ func _end_run(ending: RunSummary.Ending) -> void:
 
 ## Dying, restarting from the menu or New world in the Tune screen starts a new world with a new seed.
 func _restart() -> void:
-	_begin_world(_run.next_world(_rng, GameTuning.plains_recipe(_tuning)))
+	_begin_world(_run.next_world(_rng, GameTuning.plains_recipe(_tuning), GameTuning.crypt_recipe(_tuning)))
 
 
 ## Same seed again in the Tune screen: this world's seed from the start, made with the tuning as it is now.
 func _restart_with_same_seed() -> void:
-	_begin_world(_run.same_world_again(GameTuning.plains_recipe(_tuning)))
+	_begin_world(_run.same_world_again(GameTuning.plains_recipe(_tuning), GameTuning.crypt_recipe(_tuning)))
 
 
 func _begin_world(run: Run) -> void:

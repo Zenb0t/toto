@@ -16,6 +16,8 @@ const START := Village.START
 const CRYPT_ENTRANCE := ">"
 ## A campfire: walkable scenery (a camp's home, later a place to rest).
 const CAMPFIRE := "F"
+## A dirt road: grass that looks like beaten earth (see QuadrantRoads); walkable like grass.
+const ROAD := "r"
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 ## Symbols nobody can walk on (the village's palisade, well, props and buildings among them).
 const SOLID := [

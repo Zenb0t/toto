@@ -55,21 +55,20 @@ one is marked). Entries you changed show in gold; Reset resets the page you're o
 saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
-A run starts outdoors on the **plains**, in a **village** (36x28, a palisade with a gate on each side, streets to a square with a well, an inn, a few houses and a smithy, market or church, in KayKit Medieval Hexagon art): you start in front of the inn and know the whole village already; buildings turn see-through when they stand between the camera and you, and the HUD calls the place "the village" while you are inside. The plains are a 160x90 field of grass with tree groves (they block walking and sight),
+A run starts outdoors on the **plains**, in a **village** (36x28, a palisade with a gate on each side, streets to a square with a well, an inn, a few houses and a smithy, market or church, in KayKit Medieval Hexagon art): you start in front of the inn and know the whole village already; buildings turn see-through when they stand between the camera and you, and the HUD calls the place "The village" while you are inside. The plains are a 160x90 field of grass with tree groves (they block walking and sight),
 boulders for cover, ponds and a thick forest border with a barricaded exit in the middle of each side. Somewhere out in
 the grass, halfway to the border or farther, stands a small stone mausoleum: the crypt entrance, with no road to it. Step
-onto its stairs to go down into a descent through 5 floors, each a different branch (the Dungeon, the Lair's caves, the Orcish
-Mines, the Crypt, the Depths) and a new dungeon, all grown from one world seed (shown in the pause menu), inspired by
-Dungeon Crawl Stone Soup. The first floor's silver stairs lead back out to the mausoleum. Six **camps** dot the plains, each a band of 2-4 goblins and kobolds round a campfire (asleep or wandering), bigger and tougher
-the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. Campfires
+onto its stairs to go down into the **crypt**, 3 levels of tombs and undead (the HUD says "Crypt level 2"), all grown from one world seed (shown in the pause menu), inspired by
+Dungeon Crawl Stone Soup. The first level's silver stairs lead back out to the mausoleum. Six **camps** dot the plains, each a band of 2-4 goblins and kobolds round a campfire (asleep or wandering), bigger and tougher
+the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. Two 3-wide dirt roads wind from the village gates to two of the four exits (picked by the seed) to follow across the map; they only change the colour of the ground. Campfires
 show on the minimap once seen, and monsters killed on the plains stay dead. No monster lives in the village, and no camp stands in it or the grass round it.
-Tune → World holds the knobs of the plains and starts a new world or the same seed again. The dungeon floors: oddly
+Tune → World holds the knobs of the plains (the village among them) and of the crypt (how far its campfire lies from the stairs, how many bands wander) and starts a new world or the same seed again. The crypt's levels: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
 lava, and you. Items sometimes lie on the floor (the same ones for the same world seed), and some rooms are tougher than they should be. The monsters of a room are a band that sleeps there (a "z" over
 their heads) or wanders slowly about it; one notices you only when it can see you close by (4 cells asleep, 9
-wandering) or when you hurt it, shows a "!", and comes for you. Your attacks and blasts make noise that wakes monsters
+wandering; in the crypt most bands sleep, a few wander and none starts awake) or when you hurt it, shows a "!", and comes for you. Your attacks and blasts make noise that wakes monsters
 within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
 so a careless fight can pull in a nearby band. You can escape a chase: a monster gives up after 5 seconds without
 seeing you, or when you are 24 cells from its home, checks where it last saw you and walks home, noticing you again if it sees you on the way. Rooms don't lock, so you
@@ -77,10 +76,10 @@ can sneak past or pick your fight. Loot is earned, not handed out:
 clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
 hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
 weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. About one in fifty drops
-its weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
+its weapon. Rooms get tougher the deeper you go, and each level more than the last. Each level has one campfire in an ordinary room a few rooms from the stairs (a rest spot later). Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
-fifth floor's stairs lead out. On every floor you arrive on silver stairs that lead back up, onto the gold
-stairs of the floor above (the first floor's onto the mausoleum). The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
+third level's stairs lead out (until the Lich waits there). On every level you arrive on silver stairs that lead back up, onto the gold
+stairs of the level above (the first level's onto the mausoleum). The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
 you took stay gone, items you dropped stay where they fell and the map stays explored (the plains too). Monsters you left hurt
 heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash and a Potion of
 Healing.
@@ -131,10 +130,10 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `scripts/dungeon`, holds its map letters and what a map knows of it)
 - `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
   `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
-  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires; `CampCrews` fills each camp by how far out it lies)
+  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires; `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
   `BranchLook` (what each place is: the plains, Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
-  (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces),
+  (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces), `CryptRecipe` and `CryptCampfire` (the crypt's Knobs; which room holds the campfire),
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`, `MouseAim`, `TouchZones`) and `InputMode` (touch or
   keyboard and mouse)
@@ -173,7 +172,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   hero arrives on), `MapRecord` (what the hero changed on a map: kills, opened chests, taken floor items, dropped
   items, explored cells, monsters left hurt; it round-trips through a dictionary) and `Regeneration` (how hurt
   monsters heal while the hero is away); `MapStage` (one built map in the running game: the parsed map, its floor, fog, 3D view
-  and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Place` ("the village" or the branch, for the HUD and banner); `Experience`: levels from
+  and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Place` ("The village", or the map's own name: "The plains", "Crypt level 2", for the HUD and banner); `Experience`: levels from
   kills, each adding maximum health
 - `scripts/rest` – resting at a campfire: `Campfire` (unlit, burning, embers), `RestProfile` (its numbers, Knobs),
   `MonstersAround` (when resting is refused), `RestOffer` (when the button reads REST, and the refusal) and `RestSpot` (the node that carries a campfire out in the world)

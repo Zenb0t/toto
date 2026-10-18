@@ -6,7 +6,7 @@ extends RefCounted
 ## The numbers are tunable (Tune → World, see knobs), and the defaults live here.
 
 ## Bumped whenever the same recipe and seed would make a different map.
-const VERSION := 3
+const VERSION := 4
 ## The first lone campfire lies at most this many cells beyond the village's clear radius (see village_radius).
 const NEAR_CAMPFIRE_BEYOND_VILLAGE := 12
 ## Each side's quadrant exit is this many cells wide, in the middle of the side.
@@ -53,6 +53,10 @@ var campfire_count := 3
 var campfire_spacing := 35
 ## The least distance in cells between a lone campfire and any camp.
 var campfire_camp_gap := 12
+## Dirt roads from the village gates to this many of the four exits (see QuadrantRoads), and how much they wander: 0 runs
+## them straight where nothing is in the way, more sends them along the noise's valleys.
+var road_count := 2
+var road_bend := 3.0
 
 
 ## The plains: the centre quadrant, with every number as listed above.
@@ -151,4 +155,6 @@ func knobs() -> Array[Knob]:
 		Knob.new("campfire_count", "Lone campfires", 0, 6, 1),
 		Knob.new("campfire_spacing", "Campfires, least apart (cells)", 10, 60, 1),
 		Knob.new("campfire_camp_gap", "Campfire from a camp, least (cells)", 4, 30, 1),
+		Knob.new("road_count", "Dirt roads to exits", 0, 4, 1),
+		Knob.new("road_bend", "Road wander", 0.0, 8.0, 0.5),
 	]

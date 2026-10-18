@@ -1,15 +1,21 @@
 extends GutTest
 
 
-func test_each_floor_of_the_descent_is_a_different_branch() -> void:
-	var seen := {}
+func test_every_level_of_the_descent_is_in_the_crypt() -> void:
 	for floor_number in range(1, WorldLayout.FLOOR_COUNT + 1):
+		assert_eq(WorldLayout.spec(1, WorldLayout.floor_id(floor_number)).branch().id, "crypt")
+	assert_eq(Branch.crypt().id, "crypt")
+
+
+func test_the_other_branches_stay_in_code_one_per_floor_for_later_ideas() -> void:
+	var seen := {}
+	for floor_number in range(1, Branch.all().size() + 1):
 		seen[Branch.for_floor(floor_number).id] = true
 
-	assert_eq(seen.size(), WorldLayout.FLOOR_COUNT)
+	assert_eq(seen.size(), Branch.all().size())
 
 
-func test_the_descent_starts_in_the_mostly_built_dungeon() -> void:
+func test_the_first_branch_is_the_mostly_built_dungeon() -> void:
 	assert_eq(Branch.for_floor(1).id, "dungeon")
 	assert_lt(Branch.for_floor(1).cave_share, 0.5)
 	assert_true(Branch.for_floor(1).look.flagstones)

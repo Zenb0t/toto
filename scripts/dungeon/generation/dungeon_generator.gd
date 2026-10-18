@@ -6,11 +6,12 @@ extends RefCounted
 ## Rooms of varied shapes sit on a grid of slots (see RoomGraph) and are joined by short, three-wide
 ## corridors with a door at each end. Some rooms are hand-written set pieces instead (see Vaults), the way
 ## Dungeon Crawl Stone Soup mixes vaults into its random levels. The player arrives in a quiet room (on the
-## stairs up, which lead back out to the plains from the first floor); the exit (the stairs down) is in the room farthest from it; rooms get
-## tougher the farther they are from the start (see DungeonDifficulty).
+## stairs up, which lead back out to the mausoleum from the first level); the exit (the stairs down) is in the room
+## farthest from it; rooms get tougher the farther they are from the start (see DungeonDifficulty). Each level has a
+## campfire in an ordinary room a few rooms from the stairs (see CryptCampfire).
 
 ## Bumped whenever the same seed would make a different map, so a saved MapRecord can tell it no longer fits.
-const VERSION := 2
+const VERSION := 3
 
 const GRID := Vector2i(4, 3)
 ## Every slot holds one room plus the gap around it, where corridors run.
@@ -40,20 +41,26 @@ const PUDDLE_EDGE_CLEARANCE := 4
 const EXIT := ">"
 const STAIRS_UP := "<"
 const LOOT := "*"
+const CAMPFIRE := "F"
 
 
-## floor_number: 1 for the top floor; deeper floors hold tougher monsters (see DungeonDifficulty.danger),
-## and each floor is a branch of its own (see Branch): its rooms, vaults and monsters.
-func generate(seed_value: int, floor_number := 1) -> String:
+## floor_number: 1 for the top level; deeper levels hold tougher monsters (see DungeonDifficulty.danger).
+## crypt: what the level is made of (the campfire's distance from the stairs). branch: the kind of rooms, vaults and
+## monsters (see Branch); the crypt unless a test or a later idea asks for another. The level holds one campfire
+## in an ordinary room (see CryptCampfire), clear of monsters (see Camps).
+func generate(seed_value: int, floor_number := 1, crypt := CryptRecipe.new(), branch: Branch = null) -> String:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
-	var branch := Branch.for_floor(floor_number)
+	var level_branch := branch if branch != null else Branch.crypt()
 	var graph := RoomGraph.grow(GRID, rng.randi_range(MIN_ROOMS, MAX_ROOMS), rng.randi_range(0, MAX_EXTRA_LINKS), rng)
+	var campfire_slot := CryptCampfire.slot_for(graph, crypt.campfire_rooms_from_stairs, rng)
 	var rooms := {}  # slot -> {cell: map symbol}
 	for slot in graph.slots:
-		rooms[slot] = _shape_room(slot == graph.start_slot(), room_bounds(slot), branch, rng)
+		var is_start: bool = slot == graph.start_slot()
+		var is_vault: bool = not is_start and slot != campfire_slot and rng.randf() < VAULT_CHANCE
+		rooms[slot] = _shape_room(is_start, is_vault, room_bounds(slot), level_branch, rng)
 	var corridors := _connect(graph, rooms, rng)
-	return _draw(graph, rooms, corridors, floor_number, rng)
+	return _draw(graph, rooms, corridors, campfire_slot, floor_number, level_branch, rng)
 
 
 static func map_size() -> Vector2i:
@@ -65,12 +72,13 @@ static func room_bounds(slot: Vector2i) -> Rect2i:
 	return Rect2i(Vector2i.ONE + slot * SLOT_SIZE, SLOT_SIZE).grow(-ROOM_MARGIN)
 
 
-## The start room is a plain rectangle. The rest are the branch's vaults, natural caves (as many as the
+## The start room is a plain rectangle. The rest are the branch's vaults (is_vault), natural caves (as many as the
 ## branch has), or built shapes; caves and built rooms get a few pillars (rocks, in a cave).
-func _shape_room(is_start: bool, bounds: Rect2i, branch: Branch, rng: RandomNumberGenerator) -> Dictionary:
+func _shape_room(
+		is_start: bool, is_vault: bool, bounds: Rect2i, branch: Branch, rng: RandomNumberGenerator) -> Dictionary:
 	if is_start:
 		return _as_floor(RoomShapes.build(RoomShapes.Kind.RECT, bounds, rng))
-	if rng.randf() < VAULT_CHANCE:
+	if is_vault:
 		return Vaults.stamp(branch.vaults[rng.randi_range(0, branch.vaults.size() - 1)], bounds, rng)
 	var is_cave := rng.randf() < branch.cave_share
 	var shape := RoomShapes.cave(bounds, rng) if is_cave else RoomShapes.build(RoomShapes.random_kind(rng), bounds, rng)
@@ -180,7 +188,8 @@ func _corridor_at(across: int, first: Dictionary, second: Dictionary, horizontal
 
 
 func _draw(
-		graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, floor_number: int, rng: RandomNumberGenerator
+		graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, campfire_slot: Vector2i, floor_number: int,
+		branch: Branch, rng: RandomNumberGenerator
 ) -> String:
 	var size := map_size()
 	var rows: Array[Array] = []
@@ -202,13 +211,18 @@ func _draw(
 		if slot == graph.start_slot():
 			continue
 		var taken: Array[Vector2i] = [exit_cell]
+		var fires: Array[Vector2i] = []
+		if slot == campfire_slot:
+			fires = _spawn_cells(rooms[slot], 1, taken, [], rng)
+			rows[fires[0].y][fires[0].x] = CAMPFIRE
+			taken.append(fires[0])
 		if _hides_loot(slot, graph, rooms[slot], rng):
-			var loot_cell := _spawn_cells(rooms[slot], 1, taken, rng)[0]
+			var loot_cell := _spawn_cells(rooms[slot], 1, taken, [], rng)[0]
 			rows[loot_cell.y][loot_cell.x] = LOOT
 			taken.append(loot_cell)
 		var depth := DungeonDifficulty.rolled_depth(DungeonDifficulty.danger(graph.depth_of(slot), floor_number), rng)
-		var letters := DungeonDifficulty.enemy_letters(depth, rng, Branch.for_floor(floor_number).favoured)
-		for cell in _spawn_cells(rooms[slot], letters.size(), taken, rng):
+		var letters := DungeonDifficulty.enemy_letters(depth, rng, branch.favoured)
+		for cell in _spawn_cells(rooms[slot], letters.size(), taken, fires, rng):
 			rows[cell.y][cell.x] = letters.pop_back()
 	return "\n".join(rows.map(func(row: Array) -> String: return "".join(PackedStringArray(row))))
 
@@ -232,25 +246,30 @@ func _exit_cell(room: Dictionary) -> Vector2i:
 	return farthest
 
 
-## Random cells away from the room's edge and its middle, spread a little apart. Narrow or crowded rooms
-## let enemies start closer to the walls rather than leave anyone out.
-func _spawn_cells(room: Dictionary, count: int, taken: Array[Vector2i], rng: RandomNumberGenerator) -> Array[Vector2i]:
+## Random cells away from the room's edge and its middle, spread a little apart, and farther than a camp's
+## radius from every cell in `clear_of` (campfires: a monster that close would make the campfire a camp's home,
+## see Camps). Narrow or crowded rooms let enemies start closer to the walls rather than leave anyone out.
+func _spawn_cells(
+		room: Dictionary, count: int, taken: Array[Vector2i], clear_of: Array[Vector2i], rng: RandomNumberGenerator
+) -> Array[Vector2i]:
 	var chosen: Array[Vector2i] = []
 	for clearance in range(SPAWN_EDGE_CLEARANCE, 0, -1):
-		chosen = _spread_cells(room, count, clearance, taken, rng)
+		chosen = _spread_cells(room, count, clearance, taken, clear_of, rng)
 		if chosen.size() == count:
 			break
 	return chosen
 
 
 func _spread_cells(
-		room: Dictionary, count: int, clearance: int, taken: Array[Vector2i], rng: RandomNumberGenerator
+		room: Dictionary, count: int, clearance: int, taken: Array[Vector2i], clear_of: Array[Vector2i],
+		rng: RandomNumberGenerator
 ) -> Array[Vector2i]:
 	var area := _main_area(room)
 	var middle := _center_cell(room)
 	var candidates: Array[Vector2i] = []
 	for cell: Vector2i in area:
-		if room[cell] == FLOOR and cell != middle and cell not in taken and _clear_of_edge(cell, area, clearance):
+		if room[cell] == FLOOR and cell != middle and cell not in taken and _clear_of_edge(cell, area, clearance) \
+				and clear_of.all(func(fire: Vector2i) -> bool: return not _near(cell, fire)):
 			candidates.append(cell)
 	var chosen: Array[Vector2i] = []
 	while chosen.size() < count and not candidates.is_empty():
@@ -258,6 +277,12 @@ func _spread_cells(
 		if chosen.all(func(other: Vector2i) -> bool: return other.distance_to(cell) >= 3.0):
 			chosen.append(cell)
 	return chosen
+
+
+## Whether a cell is within a camp's radius (either way) of another.
+func _near(cell: Vector2i, other: Vector2i) -> bool:
+	var apart := (cell - other).abs()
+	return maxi(apart.x, apart.y) <= Camps.RADIUS_CELLS
 
 
 func _clear_of_edge(cell: Vector2i, area: Dictionary, clearance: int) -> bool:

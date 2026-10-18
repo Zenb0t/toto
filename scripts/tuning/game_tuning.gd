@@ -24,7 +24,6 @@ const AWARENESS_GIVE_UP_CELLS := "awareness.give_up_cells"
 const ENEMY_NOTICING := "enemy.noticing"
 const ENEMY_WANDER_SPEED := "enemy.wander_speed"
 const BAND_WANDER_RADIUS := "band.wander_radius"
-const BAND_WANDERING_SHARE := "band.wandering_share"
 const CONTROLS_WEAPON_DEAD_ZONE := "controls.weapon_dead_zone"
 const CONTROLS_UTILITY_DEAD_ZONE := "controls.utility_dead_zone"
 const CONTROLS_BUTTON_CATCH := "controls.button_catch"
@@ -136,6 +135,7 @@ static func create() -> Tuning:
 	params.append_array(_item_params(QuadrantRecipe.plains(), WORLD_GROUP, true))
 	params.append_array(_item_params(RestProfile.campfire(), REST_GROUP))
 	params.append_array(_item_params(MonstersAround.new(), REST_GROUP))
+	params.append_array(_item_params(CryptRecipe.new(), WORLD_GROUP, true))
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", ENEMIES_GROUP, 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, Enemy.DEFAULT_HEALTH_MULTIPLIER, true),
@@ -181,9 +181,6 @@ static func create() -> Tuning:
 			Enemy.DEFAULT_WANDER_SPEED_SHARE),
 		Tuning.Param.new(
 			BAND_WANDER_RADIUS, "Wander radius (cells)", ENEMIES_GROUP, 1, 15, 0.5, Band.DEFAULT_WANDER_RADIUS_CELLS),
-		Tuning.Param.new(
-			BAND_WANDERING_SHARE, "Bands wandering (share, next map)", ENEMIES_GROUP, 0, 1, 0.05,
-			Band.DEFAULT_WANDERING_SHARE),
 		Tuning.Param.new(
 			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.01, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
 		Tuning.Param.new(
@@ -350,11 +347,6 @@ static func band_wander_radius_cells(tuning: Tuning) -> float:
 	return tuning.value(BAND_WANDER_RADIUS)
 
 
-## The share of bands that start wandering (the rest sleep), for maps built from now on.
-static func band_wandering_share(tuning: Tuning) -> float:
-	return tuning.value(BAND_WANDERING_SHARE)
-
-
 ## How much tougher than their kind's health enemies are (1 = as listed in the Bestiary).
 static func enemy_health_multiplier(tuning: Tuning) -> float:
 	return tuning.value(ENEMY_HEALTH_MULTIPLIER)
@@ -425,6 +417,13 @@ static func monsters_around(tuning: Tuning) -> MonstersAround:
 	var rule := MonstersAround.new()
 	_apply_knobs(rule, tuning)
 	return rule
+
+
+## What the crypt of the next world is made of (Tune → World).
+static func crypt_recipe(tuning: Tuning) -> CryptRecipe:
+	var recipe := CryptRecipe.new()
+	_apply_knobs(recipe, tuning)
+	return recipe
 
 
 ## What the plains of the next world are made of (Tune → World).

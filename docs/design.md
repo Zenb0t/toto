@@ -24,7 +24,7 @@ Anything that doesn't help answer that is deferred.
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
 | Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
-| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass) and go down 5 floors and out. Each floor's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first floor's lead out to the mausoleum). Other rooms are optional. The first zone (village, camps, the ruin, a 3-level crypt and the Lich) replaces this descent piece by piece, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent, now with somewhere open to start from |
+| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass) and go down the **crypt**'s 3 levels and out (until the Lich, #47, waits at the bottom). Each level's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first level's lead out to the mausoleum). Other rooms are optional. The first zone (village, camps, the ruin, a 3-level crypt and the Lich) replaces this descent piece by piece, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent, now with somewhere open to start from |
 | Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`; trap rooms and the boss arena, none yet) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
@@ -198,14 +198,15 @@ Within their comfortable range they circle the player instead of standing still.
 
 **Bands** (`Band`, `Awareness`). The monsters of one **home** are a band; in the dungeon a home is a room,
 on the plains a **camp's campfire** (the ruin comes later). A band starts **asleep** at home or **wandering** about it; which is decided
-per home from the map's seed (`Band.start_of`: a quarter of bands wander), so the same map starts the same way.
+per home from the map's seed (`Band.start_of`; in the crypt 15% of bands wander, on the plains each camp by its
+chance asleep), so the same map starts the same way. None starts awake.
 A monster **notices** the hero only when it can see them (line of sight) within **4 cells asleep** or **9
 cells wandering**; there are no dice. Taking damage wakes it at once, and so does hearing a noise or a shout
 (below). `Awareness` holds the rules (the radii are its fields; damage, noise and shouts count as noticing);
 `EnemyBrain` asks it while the enemy is calm, and a calm enemy only checks its line of sight once the hero is
 within its radius. All of it is in Tune → Enemies: notice when asleep, notice when wandering, hero's noise
-carries, monster's shout carries, noticing pause, wander speed, wander radius, bands wandering (for maps built
-after).
+carries, monster's shout carries, noticing pause, wander speed, wander radius (how many bands start wandering
+is the map's: Tune → World, the camps' and the crypt's).
 
 **Giving up and going home** (`Awareness.gives_up`, `EnemyBrain`). The hero can escape a chase. A hunting
 (Hunt or Position) monster settled at a home **gives up** after **5 s without seeing the hero**, or as soon as the
@@ -292,10 +293,11 @@ deepest. Deeper rooms also hold more monsters.
 
 ## Branches (areas)
 
-Like Dungeon Crawl's branches, each floor of the descent is a different place (`Branch`), with its own
-rooms, set pieces, inhabitants and look (`BranchLook`):
+Like Dungeon Crawl's branches, a place has its own rooms, set pieces, inhabitants and look (`Branch`,
+`BranchLook`). The descent is now only the **Crypt** (`Branch.crypt()`, all 3 levels of it); the other branches
+stay in code, one per old floor, for later ideas:
 
-| Floor | Branch | Rooms | Vaults | Lives there | Look |
+| Old floor | Branch | Rooms | Vaults | Lives there | Look |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Dungeon | Built, 15% caves | Pillared hall, statue gallery, treasure closet, moat island | (the depth's mix) | Grey flagstones, stone walls, torches and banners |
 | 2 | Lair | 75% caves | Lake, pool, moat island | Goblins, goblin archers, kobolds | Mossy earth, moss-capped rock, glowing mushrooms, grass, boulders; no torches |
@@ -309,19 +311,35 @@ wander in and out in stretches of three cells, with rounded corners; the middle 
 so corridors can still meet it. Their floors are blotchy earth without grout. Free-standing pillars are carved columns in built places,
 trees in the Lair and plain rock in the Mines (they block like walls all the same); columns and trees stand
 on the floor with a shadow at their foot.
-The HUD, the pause menu and the run summary name the branch ("Killed by an orc in the Orcish Mines"), and
-arriving shows its name and a line of flavour for a moment ("The Orcish Mines. Pickaxes ring somewhere in
-the dark."). The Dungeon itself has the odd cave (15% of its rooms).
+Arriving shows where the hero is (see Place) and the branch's line of flavour for a moment ("Crypt level 1.
+Something stirs in the tombs."). The Dungeon itself has the odd cave (15% of its rooms).
 
-## Floors (the descent)
+## Floors (the crypt)
 
-A run starts on the **plains** (next section), outdoors. Like Dungeon Crawl, the way on is a descent: **5 floors**,
-each a new branch (see Branches), each more dangerous than the last. The plains' **crypt entrance** (the mausoleum's
-stairs) leads down to the first floor's stairs up, and those lead back out onto the mausoleum (`WorldLayout`: the
-plains are map `plains`, the floors `floor_1` to `floor_5`). Every floor, the first included, now starts on its
-stairs up (`DungeonGenerator.VERSION` 2).
+A run starts on the **plains** (next section), outdoors. The way on is a descent into the **crypt**: **3 levels**
+of today's `DungeonGenerator` in the Crypt branch (see Branches), each more dangerous than the last. The plains'
+**crypt entrance** (the mausoleum's stairs) leads down to level 1's stairs up, and those lead back out onto the
+mausoleum (`WorldLayout`: the plains are map `plains`, the levels `crypt_1` to `crypt_3`; the map's depth picks
+the generator's danger, and the branch is always the crypt, see `MapSpec.branch`). Every level starts on its
+stairs up (`DungeonGenerator.VERSION` 3).
 The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
-fifth floor they lead out, and the run is won. Every floor also has **stairs up** (silver, `<` in
+third level they lead out, and the run is won. **Interim win:** the Lich (#47) will replace that, waiting in
+an arena at the bottom; until then the last stairs still win the run.
+
+**The crypt's campfire.** Each level has exactly one campfire (the map letter `F`, the same walkable scenery as the
+plains' lone campfires), in an **ordinary room**: not the arrival room, not the stairs-down room and never a vault
+(the room is chosen from the room graph by `CryptCampfire`, a pure step, and kept from being a vault). It lies the
+wanted number of rooms from the stairs up (Tune → World → "Crypt campfire, rooms from stairs", default 3), or in
+the nearest such room when the level has none that far (ties by the seed). A campfire is a **camp** to `Camps`
+whenever a monster stands within 3 cells, so the generator keeps every monster of the campfire's room more than 3
+cells away (the room may hold a few fewer): a crypt campfire is always a lone one, the future rest spot (#43).
+The crypt has no camps.
+
+**Crypt bands** start **mostly asleep**: 15% of them wander about their room (Tune → World → "Crypt bands
+wandering"; `CryptRecipe.wandering_share`, read through `MapSpec.room_wandering_share`), none starts awake. This
+replaced the old "Bands wandering" knob (a quarter, in Tune → Enemies), which only the dungeon used. No ordinary
+room holds a guaranteed chest. The HUD, the arrival banner, the pause menu and the run summary name the level
+(`MapSpec.place_name`: "Crypt level 2"; "The plains" outdoors, "The village" inside its palisade, see `Place`). Every floor also has **stairs up** (silver, `<` in
 the map format, where the floor's start would be). Each set leads onto the matching stairs on the other floor:
 down arrives on the stairs up below, up arrives on the stairs down above (`WorldLayout.destination` names the map
 and the spot; `WorldLayout.arrival_cell` finds the spot on the parsed map). The stairs the hero arrives on only
@@ -370,8 +388,8 @@ level adds 200 to maximum health (and heals those 200), up to level 10. Levels c
 shows the level and the progress toward the next; "LEVEL n!" rises over the hero.
 
 **Danger** (`DungeonDifficulty.danger`): one level per floor down, plus half a level per room away from the
-start. So rooms on one floor differ less than floors do: floor 1 tops out with orcs, floor 3 brings orc
-wizards and dwarves, floor 5 ogres. Out-of-depth rooms still roll two levels deeper.
+start. So rooms on one floor differ less than floors do: level 1 tops out with orcs and level 3 brings orc
+wizards and dwarves (the deeper floors of the old five-floor descent are not reached). Out-of-depth rooms still roll two levels deeper.
 
 ## The plains (quadrant generation)
 
@@ -391,6 +409,7 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 | Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: the village in the very middle (it comes first), the others inside the border, as far out as the piece asks, no farther from the middle than it allows, clear of the exits and of the pieces before them (the village and its 3 cells of grass among them), and as far from them as the pieces' spacing rules say |
 | Fill the camps (`CampCrews.dress`) | Draws a band of monsters into each reserved camp by how far out it lies (below) |
 | Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
+| Roads (`QuadrantRoads`) | Dirt roads (letter **`r`**, terrain `ROAD`) from the village gates to **2** of the 4 exits (Knob `road_count`, 0-4), the exits picked by a seeded shuffle; a road leaves by the gate on its exit's side. See below |
 | Validate (`QuadrantRules`) | At least `min_walkable_share` (70%) of the ground inside the border walkable, the start inside the village, every exit's front cell, every piece's key cell and the outside of every village gate reachable |
 
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
@@ -446,8 +465,9 @@ Nothing in the village spawns a monster (monsters may still chase the hero in).
 
 **The start and the naming.** The hero starts on the square in front of the inn's doorstep (`@`). `MapStage` starts a map with the
 village's cells already explored (`Exploration.restore`), so the minimap and the fog show it from the first step. `Place.at` names
-where the hero is: "the village" inside the palisade (gates included), the branch ("the plains") outside; the HUD and the arrival
-banner use it, and crossing a gate shows the banner again.
+where the hero is: "The village" inside the palisade (gates included), otherwise the map's own name (`MapSpec.place_name`:
+"The plains", "Crypt level 2"); the HUD and the arrival banner use it, and crossing a gate shows the banner again. The pause menu
+and the run summary name the map.
 
 **Village look.** Real art: KayKit **Medieval Hexagon** (CC0, `assets/kaykit_medieval_hexagon`, only the 17 pieces used; credited in
 `Credits`): houses A and B in blue, red, green and yellow, the inn (the red tavern), church (blue), smithy (green), market (yellow),
@@ -458,6 +478,23 @@ keep fixed ones. A piece standing between the camera and the hero turns see-thro
 are cut down): the cells in front of the hero count as hiding, and a taller piece hides from farther off and wider
 (`CameraFraming.cells_hiding(hero_cell, height)`); props are too low to hide the hero. Streets and the square are drawn as beaten
 earth. Size: the pack adds about 1.3 MB of source (`.gltf`, `.bin`, one shared 15 KB te
+
+**Dirt roads** (#41, `QuadrantRoads`) are landmarks to follow across a 160x90 map. Each is 3 cells wide, like the gate and the exit
+it joins, and bends gently. Decisions: the step runs *after* the set pieces are stamped, so the road is routed round them
+(nothing is moved for a road). Routing is `AStarGrid2D` over the cells where a 3x3 block is all open grass, with the cost of a cell
+`1 + road_bend * noise` (seeded simplex, features about 16 cells across; Knob `road_bend`, default 3, 0 = as straight as the
+obstacles allow), so the cheapest way wanders along the noise's valleys instead of running ruler-straight. Ends: the cell in
+front of the village gate's middle, and the cell in front of the exit's barricade. Roads never cross groves, boulders,
+ponds (shallows included: they would be fords, and this is about landmarks) or the village, and keep out of every other set piece's
+footprint (apron plus 1 cell), so no camp, campfire, monster or crypt entrance is on or touching a road. That
+rule is by construction, so a future set piece (the ruin) is avoided without the road knowing it. Both roads are routed before
+either is drawn; they may run along or cross each other. The seed shuffles the four exits and the roads go to the first ones
+that can be reached (boulders and ponds sometimes shut a 3-wide way to one); only if fewer than `road_count` can is the whole map
+made again (as for any broken rule). Why: remaking the map for one shut exit cost extra tries on 10 of 25 seeds and made the
+plains about 50% slower to build; with the fallback no seed of those needs one. Roads only recolour grass: walkable like it, same speed and sight, and nothing is placed on them. The crypt entrance
+is never a road's end. Map letter **`r`** (parser: `Terrain.ROAD`, walkable like floor); the minimap paints it a darker tan than
+the village streets (`MinimapPainter.ROAD_COLOR`), and the ground is drawn as dry earth (`BranchLook.road_color`). `QuadrantRecipe.VERSION` is 4.
+
 **Camps and campfires** (`SetPieces.camp`, `SetPieces.campfire`, `CampCrews`, `Camps`). The plains get **6 camps** (at
 least 18 cells apart) and **3 lone campfires** (at least 35 cells apart and 12 from any camp; the first within 12 cells
 beyond the village's clear radius, `QuadrantRecipe.village_radius`), all clear of the village and the 3 cells of grass
@@ -534,7 +571,9 @@ village's width, height, share of barrels and crates and art scale, how far out 
 how many, least apart, band sizes nearest and farthest, chance asleep; the lone campfires: how many, least apart, least
 from a camp), all defaults living in `QuadrantRecipe`. They shape the next world, not the one
 being played: the page shows the world's seed with **New world** (a new seed) and **Same seed again** (this seed, a fresh
-hero), both applying the tuning first (`Run.next_world`, `Run.same_world_again`).
+hero), both applying the tuning first (`Run.next_world`, `Run.same_world_again`). The section also holds the crypt's two knobs
+(campfire distance from the stairs, in rooms; share of bands wandering), defaults in `CryptRecipe`; `Run` keeps both
+recipes of a world.
 
 ## Dungeon generation
 
