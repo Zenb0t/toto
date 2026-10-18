@@ -24,7 +24,7 @@ Anything that doesn't help answer that is deferred.
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
 | Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
-| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass) and go down 5 floors and out. Each floor's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first floor's lead out to the mausoleum). Other rooms are optional. The first zone (village, camps, the ruin, a 3-level crypt and the Lich) replaces this descent piece by piece, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent, now with somewhere open to start from |
+| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass) and go down the **crypt**'s 3 levels and out (until the Lich, #47, waits at the bottom). Each level's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first level's lead out to the mausoleum). Other rooms are optional. The first zone (village, camps, the ruin, a 3-level crypt and the Lich) replaces this descent piece by piece, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent, now with somewhere open to start from |
 | Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`; trap rooms and the boss arena, none yet) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
@@ -198,7 +198,8 @@ Within their comfortable range they circle the player instead of standing still.
 
 **Bands** (`Band`, `Awareness`). The monsters of one **home** are a band; in the dungeon a home is a room,
 on the plains a **camp's campfire** (the ruin comes later). A band starts **asleep** at home or **wandering** about it; which is decided
-per home from the map's seed (`Band.start_of`: a quarter of bands wander), so the same map starts the same way.
+per home from the map's seed (`Band.start_of`; in the crypt 15% of bands wander, on the plains each camp by its
+chance asleep), so the same map starts the same way. None starts awake.
 A monster **notices** the hero only when it can see them (line of sight) within **4 cells asleep** or **9
 cells wandering**; there are no dice. Taking damage wakes it at once, and so does hearing a noise or a shout
 (below). `Awareness` holds the rules (the radii are its fields; damage, noise and shouts count as noticing);
@@ -292,10 +293,11 @@ deepest. Deeper rooms also hold more monsters.
 
 ## Branches (areas)
 
-Like Dungeon Crawl's branches, each floor of the descent is a different place (`Branch`), with its own
-rooms, set pieces, inhabitants and look (`BranchLook`):
+Like Dungeon Crawl's branches, a place has its own rooms, set pieces, inhabitants and look (`Branch`,
+`BranchLook`). The descent is now only the **Crypt** (`Branch.crypt()`, all 3 levels of it); the other branches
+stay in code, one per old floor, for later ideas:
 
-| Floor | Branch | Rooms | Vaults | Lives there | Look |
+| Old floor | Branch | Rooms | Vaults | Lives there | Look |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Dungeon | Built, 15% caves | Pillared hall, statue gallery, treasure closet, moat island | (the depth's mix) | Grey flagstones, stone walls, torches and banners |
 | 2 | Lair | 75% caves | Lake, pool, moat island | Goblins, goblin archers, kobolds | Mossy earth, moss-capped rock, glowing mushrooms, grass, boulders; no torches |
@@ -313,15 +315,32 @@ The HUD, the pause menu and the run summary name the branch ("Killed by an orc i
 arriving shows its name and a line of flavour for a moment ("The Orcish Mines. Pickaxes ring somewhere in
 the dark."). The Dungeon itself has the odd cave (15% of its rooms).
 
-## Floors (the descent)
+## Floors (the crypt)
 
-A run starts on the **plains** (next section), outdoors. Like Dungeon Crawl, the way on is a descent: **5 floors**,
-each a new branch (see Branches), each more dangerous than the last. The plains' **crypt entrance** (the mausoleum's
-stairs) leads down to the first floor's stairs up, and those lead back out onto the mausoleum (`WorldLayout`: the
-plains are map `plains`, the floors `floor_1` to `floor_5`). Every floor, the first included, now starts on its
-stairs up (`DungeonGenerator.VERSION` 2).
+A run starts on the **plains** (next section), outdoors. The way on is a descent into the **crypt**: **3 levels**
+of today's `DungeonGenerator` in the Crypt branch (see Branches), each more dangerous than the last. The plains'
+**crypt entrance** (the mausoleum's stairs) leads down to level 1's stairs up, and those lead back out onto the
+mausoleum (`WorldLayout`: the plains are map `plains`, the levels `crypt_1` to `crypt_3`; the map's depth picks
+the generator's danger, and the branch is always the crypt, see `MapSpec.branch`). Every level starts on its
+stairs up (`DungeonGenerator.VERSION` 3).
 The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
-fifth floor they lead out, and the run is won. Every floor also has **stairs up** (silver, `<` in
+third level they lead out, and the run is won. **Interim win:** the Lich (#47) will replace that, waiting in
+an arena at the bottom; until then the last stairs still win the run.
+
+**The crypt's campfire.** Each level has exactly one campfire (the map letter `F`, the same walkable scenery as the
+plains' lone campfires), in an **ordinary room**: not the arrival room, not the stairs-down room and never a vault
+(the room is chosen from the room graph by `CryptCampfire`, a pure step, and kept from being a vault). It lies the
+wanted number of rooms from the stairs up (Tune → World → "Crypt campfire, rooms from stairs", default 3), or in
+the nearest such room when the level has none that far (ties by the seed). A campfire is a **camp** to `Camps`
+whenever a monster stands within 3 cells, so the generator keeps every monster of the campfire's room more than 3
+cells away (the room may hold a few fewer): a crypt campfire is always a lone one, the future rest spot (#43).
+The crypt has no camps.
+
+**Crypt bands** start **mostly asleep**: 15% of them wander about their room (Tune → World → "Crypt bands
+wandering"; `CryptRecipe.wandering_share`, read through `MapSpec.room_wandering_share`), none starts awake. This
+replaced the old "Bands wandering" knob (a quarter, in Tune → Enemies), which only the dungeon used. No ordinary
+room holds a guaranteed chest. The HUD, the arrival banner, the pause menu and the run summary name the level
+(`MapSpec.place_name`: "Crypt level 2"; "The plains" outdoors). Every floor also has **stairs up** (silver, `<` in
 the map format, where the floor's start would be). Each set leads onto the matching stairs on the other floor:
 down arrives on the stairs up below, up arrives on the stairs down above (`WorldLayout.destination` names the map
 and the spot; `WorldLayout.arrival_cell` finds the spot on the parsed map). The stairs the hero arrives on only
@@ -369,8 +388,8 @@ level adds 200 to maximum health (and heals those 200), up to level 10. Levels c
 shows the level and the progress toward the next; "LEVEL n!" rises over the hero.
 
 **Danger** (`DungeonDifficulty.danger`): one level per floor down, plus half a level per room away from the
-start. So rooms on one floor differ less than floors do: floor 1 tops out with orcs, floor 3 brings orc
-wizards and dwarves, floor 5 ogres. Out-of-depth rooms still roll two levels deeper.
+start. So rooms on one floor differ less than floors do: level 1 tops out with orcs and level 3 brings orc
+wizards and dwarves (the deeper floors of the old five-floor descent are not reached). Out-of-depth rooms still roll two levels deeper.
 
 ## The plains (quadrant generation)
 
@@ -447,7 +466,9 @@ pack goes in its own folder of `assets/` with a Credits entry (`Credits.Entry.fo
 ring, how far out the crypt entrance lies, and the camps: how many, least apart, band sizes nearest and farthest,
 chance asleep; the lone campfires: how many, least apart, least from a camp), all defaults living in `QuadrantRecipe`. They shape the next world, not the one
 being played: the page shows the world's seed with **New world** (a new seed) and **Same seed again** (this seed, a fresh
-hero), both applying the tuning first (`Run.next_world`, `Run.same_world_again`).
+hero), both applying the tuning first (`Run.next_world`, `Run.same_world_again`). The section also holds the crypt's two knobs
+(campfire distance from the stairs, in rooms; share of bands wandering), defaults in `CryptRecipe`; `Run` keeps both
+recipes of a world.
 
 ## Dungeon generation
 

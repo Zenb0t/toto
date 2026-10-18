@@ -235,7 +235,9 @@ func test_the_world_section_holds_every_generation_knob_of_the_plains() -> void:
 			assert_true(each.next_run_only, "%s shapes the next world" % each.key)
 	for knob in QuadrantRecipe.plains().knobs():
 		assert_has(keys, GameTuning.key("plains", knob.field))
-	assert_eq(keys.size(), QuadrantRecipe.plains().knobs().size())
+	for knob in CryptRecipe.new().knobs():
+		assert_has(keys, GameTuning.key("crypt", knob.field))
+	assert_eq(keys.size(), QuadrantRecipe.plains().knobs().size() + CryptRecipe.new().knobs().size())
 
 
 func test_untouched_tuning_builds_the_plains_with_the_recipes_own_defaults() -> void:
@@ -256,3 +258,22 @@ func test_tuned_world_knobs_change_the_next_plains() -> void:
 	assert_true(recipe.width is int)
 	assert_almost_eq(recipe.grove_share, 0.25, 0.0001)
 	assert_eq(DungeonMapParser.new().parse(QuadrantGenerator.new().generate(recipe, 1)).size.x, 120)
+
+
+func test_untouched_tuning_builds_the_crypt_with_the_recipes_own_defaults() -> void:
+	var built := GameTuning.crypt_recipe(GameTuning.create())
+
+	for knob in CryptRecipe.new().knobs():
+		assert_eq(built.get(knob.field), CryptRecipe.new().get(knob.field), knob.field)
+
+
+func test_tuned_crypt_knobs_move_the_campfire_and_the_wanderers_of_the_next_world() -> void:
+	var tuning := GameTuning.create()
+	tuning.set_value(GameTuning.key("crypt", "campfire_rooms_from_stairs"), 2)
+	tuning.set_value(GameTuning.key("crypt", "wandering_share"), 0.4)
+
+	var recipe := GameTuning.crypt_recipe(tuning)
+
+	assert_eq(recipe.campfire_rooms_from_stairs, 2)
+	assert_true(recipe.campfire_rooms_from_stairs is int)
+	assert_almost_eq(recipe.wandering_share, 0.4, 0.0001)

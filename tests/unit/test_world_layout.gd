@@ -13,9 +13,9 @@ func test_the_world_is_the_plains_and_each_floor_of_the_descent_each_with_its_ow
 
 
 func test_a_maps_seed_comes_from_the_world_seed() -> void:
-	assert_eq(WorldLayout.map_seed(99, "floor_2"), WorldLayout.map_seed(99, "floor_2"))
-	assert_ne(WorldLayout.map_seed(99, "floor_2"), WorldLayout.map_seed(100, "floor_2"), "another world")
-	assert_ne(WorldLayout.map_seed(99, "floor_2"), WorldLayout.map_seed(99, "floor_3"), "another floor")
+	assert_eq(WorldLayout.map_seed(99, "crypt_2"), WorldLayout.map_seed(99, "crypt_2"))
+	assert_ne(WorldLayout.map_seed(99, "crypt_2"), WorldLayout.map_seed(100, "crypt_2"), "another world")
+	assert_ne(WorldLayout.map_seed(99, "crypt_2"), WorldLayout.map_seed(99, "crypt_3"), "another floor")
 
 
 func test_a_floors_spec_is_its_depth_in_the_descent() -> void:

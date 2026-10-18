@@ -271,3 +271,33 @@ func test_a_new_world_is_made_with_the_recipe_it_is_given() -> void:
 
 	assert_eq(map.size, Vector2i(100, 60))
 	assert_eq(DungeonMapParser.new().parse(run.same_world_again(small).current_map().ascii()).size, Vector2i(100, 60))
+
+
+func test_the_hero_walks_from_the_plains_through_all_three_crypt_levels_and_back_up_onto_the_matching_stairs() -> void:
+	var parser := DungeonMapParser.new()
+	var run := Run.new(21)
+	var visited: Array[String] = [run.current_map_id]
+
+	for _level in WorldLayout.FLOOR_COUNT:
+		run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+		visited.append(run.current_map_id)
+		var map := parser.parse(run.current_map().ascii())
+		assert_eq(WorldLayout.arrival_cell(map, run.arrival_spot), map.stairs_up_cell, run.current_map_id)
+	assert_eq(visited, [WorldLayout.PLAINS_ID, "crypt_1", "crypt_2", "crypt_3"])
+
+	for level in range(WorldLayout.FLOOR_COUNT, 0, -1):
+		run.travel(WorldLayout.Exit.STAIRS_UP, HeroState.new())
+		var map := parser.parse(run.current_map().ascii())
+		assert_eq(run.current_map_id, visited[level - 1])
+		assert_eq(WorldLayout.arrival_cell(map, run.arrival_spot), map.exit_cell, run.current_map_id)
+
+
+func test_the_crypt_recipe_of_a_world_is_kept_for_its_levels_and_for_the_next_worlds() -> void:
+	var crypt := CryptRecipe.new()
+	crypt.campfire_rooms_from_stairs = 5
+	var run := Run.new(1, QuadrantRecipe.plains(), crypt)
+	run.travel(WorldLayout.Exit.STAIRS_DOWN, HeroState.new())
+
+	assert_eq(run.current_map().crypt, crypt)
+	assert_eq(run.same_world_again().crypt, crypt)
+	assert_eq(run.next_world(_seeded_rng(3)).crypt, crypt)
