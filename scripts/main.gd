@@ -22,7 +22,7 @@ const ARRIVAL_FADE_SECONDS := 1.0
 const BESIDE: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 ## How often line of sight is worked out again.
 const SIGHT_UPDATE_SECONDS := 0.1
-const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Cleared rooms leave a chest.  Gold stairs lead down, silver ones back up.  II: menu."
+const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, release = fire.  Gold stairs lead down, silver ones back up.  II: menu."
 const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item.  Q: next weapon.  Esc: menu."
 
 var _rng := RandomNumberGenerator.new()
@@ -153,7 +153,6 @@ func _enter_map() -> void:
 	_spawn_dropped_items()
 	_update_sight()
 	_progress = _create_progress()
-	_spawn_chests_of_cleared_rooms()
 	_apply_tuning(_tuning)
 	_in_play = true
 	_refresh_hud()
@@ -268,16 +267,6 @@ func _spawn_dropped_items() -> void:
 			_spawn_potion(item.position, item.item_id)
 		else:
 			_spawn_drop(item.position, item.item_id)
-
-
-## Rooms whose monsters were all killed on an earlier visit keep their chest, open if it was opened.
-func _spawn_chests_of_cleared_rooms() -> void:
-	var fought_in := {}
-	for cell in _stage.map.enemy_spawns:
-		fought_in[_stage.map.room_at(cell)] = true
-	for room: int in fought_in:
-		if _progress.is_cleared(room):
-			_spawn_chest(room)
 
 
 func _create_progress() -> DungeonProgress:
@@ -474,7 +463,6 @@ func _on_room_cleared(room: int) -> void:
 	_stage.view.set_room_closed(room, false)
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), false)
 	_sight_origin = DungeonMap.NO_CELL
-	_spawn_chest(room)
 
 
 ## A monster that notices the hero shouts, waking the rest of its band and whoever else hears it (see Awareness).
@@ -614,6 +602,8 @@ func _burn(actor: Node2D, delta: float) -> void:
 
 # --- Loot ----------------------------------------------------------------------------------------
 
+## A chest at a room's centre, open if the record says it was opened. Clearing a room no longer leaves one
+## (loot is earned); set pieces that hold a chest, like the ruin, place theirs with this.
 func _spawn_chest(room: int) -> void:
 	var chest := Chest.new(_record.is_chest_opened(room))
 	chest.position = DungeonView.cell_center(_stage.map.room_center(room))

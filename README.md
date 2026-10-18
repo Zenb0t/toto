@@ -62,10 +62,11 @@ their heads) or wanders slowly about it; one notices you only when it can see yo
 wandering) or when you hurt it, shows a "!", and comes for you. Your attacks and blasts make noise that wakes monsters
 within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
 so a careless fight can pull in a nearby band. Rooms don't lock, so you
-can sneak past or pick your fight. Clearing a room leaves a
-chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
-weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
-their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
+can sneak past or pick your fight. Loot is earned, not handed out:
+clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
+hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
+weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. About one in fifty drops
+its weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
 fifth floor's stairs lead out. Below the first floor you arrive on silver stairs that lead back up, onto the gold
 stairs of the floor above. The dungeon remembers: monsters you killed stay dead, opened chests stay open, items

@@ -2,7 +2,8 @@ class_name LootTable
 extends RefCounted
 ## What loot drops. Pure: the caller passes the random number generator, so results can be reproduced.
 
-const DEFAULT_ENEMY_DROP_CHANCE := 0.05
+## Chance a defeated enemy leaves gear. Rare, so new gear is a moment.
+const DEFAULT_ENEMY_DROP_CHANCE := 0.02
 ## Chance a defeated enemy leaves a potion (rolled when it drops no item).
 const DEFAULT_POTION_DROP_CHANCE := 0.1
 ## Chance a chest holds a potion as well as its item.
