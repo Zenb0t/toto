@@ -5,8 +5,8 @@ extends RefCounted
 ## A step that breaks a rule (no spot for a piece, a cut-off exit, too little open ground) doesn't fail the map:
 ## the whole thing is made again with the next random numbers. The same recipe and seed always give the same map.
 ## If every try fails (a recipe asking for the impossible), the last resort is the same quadrant without groves,
-## boulders and ponds. If that breaks a rule too (a small plains with no room for its camps), it is the same
-## without the camps and campfires. If even that breaks a rule (a set piece that fits nowhere at the tuned size, say), it is
+## boulders and ponds. If that breaks a rule too (a small plains with no corner for its ruin), it is the same
+## without the ruin, and then also without the camps and campfires. If even that breaks a rule (a set piece that fits nowhere at the tuned size, say), it is
 ## the default recipe without them, so a tuning never leaves the world without a map.
 
 ## How many times the steps run before the last resort.
@@ -35,6 +35,10 @@ func generate(recipe: QuadrantRecipe, seed_value: int) -> String:
 	if fallback == null:
 		fallback = _try(recipe.without_obstacles().without_camps(), rng)
 	if fallback == null:
+		fallback = _try(recipe.without_obstacles().without_ruin(), rng)
+	if fallback == null:
+		fallback = _try(recipe.without_obstacles().without_camps().without_ruin(), rng)
+	if fallback == null:
 		push_warning("Quadrant '%s' breaks a rule even without obstacles (%s): made by the default recipe instead"
 			% [recipe.id, last_broken_rule])
 		fallback = _try(QuadrantRecipe.new().without_obstacles(), rng)
@@ -51,7 +55,9 @@ func _try(recipe: QuadrantRecipe, rng: RandomNumberGenerator) -> QuadrantGrid:
 	QuadrantBorder.raise(grid, recipe)
 	QuadrantExits.cut(grid, recipe)
 	last_village = VillageGenerator.new().generate(recipe.village_size(), recipe.village_prop_share, rng)
-	var pieces: Array[SetPiece] = [SetPieces.village(last_village), SetPieces.ruin(Ruins.draw(recipe, rng))]
+	var pieces: Array[SetPiece] = [SetPieces.village(last_village)]
+	if recipe.has_ruin:
+		pieces.append(SetPieces.ruin(Ruins.draw(recipe, rng)))
 	pieces.append_array(recipe.set_pieces())
 	var placements := SetPiecePlacer.reserve(recipe, pieces, QuadrantExits.cleared_areas(recipe), rng)
 	if placements.size() < pieces.size():

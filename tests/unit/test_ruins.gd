@@ -183,3 +183,15 @@ func test_the_ruin_knobs_are_in_the_world_section_with_their_defaults() -> void:
 		assert_true(field in fields, field)
 	assert_eq(_recipe.ruin_gaps_min, 2)
 	assert_eq(_recipe.ruin_gaps_max, 3)
+
+
+func test_a_plains_too_small_for_a_corner_ruin_is_made_without_one_and_is_still_playable() -> void:
+	var small := QuadrantRecipe.new()
+	small.width = 100
+	small.height = 60
+
+	var map := _parser.parse(QuadrantGenerator.new().generate(small, 1))
+
+	assert_eq(map.size, Vector2i(100, 60))
+	assert_eq(map.ruin_cell, DungeonMap.NO_CELL)
+	assert_true(_reachable(map).has(map.exit_cell))

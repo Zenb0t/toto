@@ -58,6 +58,8 @@ var campfire_camp_gap := 12
 ## The ruin in one corner (see Ruins): how many of its four possible wall gaps are open (a number between the least and
 ## the most, rolled per map), and how many monsters its band holds at least. The band always has more than the biggest
 ## camp's, so it is the map's toughest.
+## Whether the quadrant has a ruin at all (only a recipe made by without_ruin has none).
+var has_ruin := true
 var ruin_gaps_min := 2
 var ruin_gaps_max := 3
 var ruin_band_size := 7
@@ -72,9 +74,7 @@ static func plains() -> QuadrantRecipe:
 
 ## The same quadrant with nothing in the way: no groves, boulders or ponds. Always valid (see QuadrantGenerator).
 func without_obstacles() -> QuadrantRecipe:
-	var plain := QuadrantRecipe.new()
-	for knob in knobs():
-		plain.set(knob.field, get(knob.field))
+	var plain := _copy()
 	plain.grove_share = 0.0
 	plain.boulder_count = 0
 	plain.pond_count = 0
@@ -83,12 +83,25 @@ func without_obstacles() -> QuadrantRecipe:
 
 ## The same quadrant with no camps or campfires: the last resort for a size that has no room for them.
 func without_camps() -> QuadrantRecipe:
-	var empty := QuadrantRecipe.new()
-	for knob in knobs():
-		empty.set(knob.field, get(knob.field))
+	var empty := _copy()
 	empty.camp_count = 0
 	empty.campfire_count = 0
 	return empty
+
+
+## The same quadrant without its ruin: the last resort for a size too small to fit one in a corner beside the village.
+func without_ruin() -> QuadrantRecipe:
+	var open := _copy()
+	open.has_ruin = false
+	return open
+
+
+func _copy() -> QuadrantRecipe:
+	var copy := QuadrantRecipe.new()
+	for knob in knobs():
+		copy.set(knob.field, get(knob.field))
+	copy.has_ruin = has_ruin
+	return copy
 
 
 func size() -> Vector2i:

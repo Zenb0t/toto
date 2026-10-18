@@ -416,7 +416,7 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
 generator reports how many tries it took). If every try fails (a recipe asking for the impossible), the last resort is
 the same quadrant without groves, boulders and ponds; if a set piece still finds no spot (Tune → World can make the
-plains too small or the village too big for it), the same without camps and campfires (a plains too small for them); if even that fails, the default recipe without obstacles, so no tuning leaves the world
+plains too small or the village too big for it), the same without the ruin (a plains with no free corner for it), without camps and campfires (a plains too small for them), or without both; if even that fails, the default recipe without obstacles, so no tuning leaves the world
 without a map. The same recipe and seed always
 give the same map (`QuadrantRecipe.VERSION` goes in the map's record).
 
@@ -449,7 +449,8 @@ home is the chest cell, the ruin's middle: `Band.home_of` takes monsters within 
 *What.* The chest (map letter **`$`**, at most one per map, parsed to `DungeonMap.ruin_cell`) is guaranteed: `main.gd` places it with
 `_spawn_chest(Ruins.NUMBER, cell)`, and opening it records `Ruins.NUMBER` in the `MapRecord`, so it stays open after the hero leaves and
 returns. It holds one gear piece the hero doesn't hold (`LootTable.pick_item_id`), and sometimes a potion. Size is not a Knob: the
-drawing is fixed. *Planned lever:* a melee start has no ranged answer to a kiting Lich (#8); if playtests show it hurting, the first fix is
+drawing is fixed, and a plains too small to fit it in a corner beside the village (100x60 at the Tune minimum) is made without a ruin, by one more
+last-resort step of the generator (`QuadrantRecipe.without_ruin`). *Planned lever:* a melee start has no ranged answer to a kiting Lich (#8); if playtests show it hurting, the first fix is
 a ranged weapon in this chest (not built).
 
 **The village** (#40) is the first piece the placer stamps, in the very middle (`SetPiece.at_center`), and the safe place
