@@ -93,6 +93,17 @@ func test_enemies_always_drop_loot_at_full_chance() -> void:
 		assert_true(LootTable.rolls_enemy_drop(1.0, rng))
 
 
+func test_by_default_about_one_enemy_in_fifty_drops_gear() -> void:
+	var rng := _seeded(33)
+	var drops := 0
+
+	for _i in 20000:
+		if LootTable.rolls_enemy_drop(LootTable.DEFAULT_ENEMY_DROP_CHANCE, rng):
+			drops += 1
+
+	assert_almost_eq(drops / 20000.0, 0.02, 0.004)
+
+
 func test_potions_turn_up_as_often_as_their_weights_say() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7

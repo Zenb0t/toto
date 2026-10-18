@@ -22,7 +22,7 @@ Anything that doesn't help answer that is deferred.
 | Build identity | No heroes. Your build is your equipment, and equipment comes from RNG | DCSS-style "make do with what you find" |
 | Equipment slots | **Weapon** (attack button) + **Utility** (second button, on a cooldown) | Smallest set where builds feel different |
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
-| Loot sources | Guaranteed chest per cleared room, plus rare enemy drops | Predictable pacing, with occasional surprises |
+| Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
 | Goal | Go down 5 floors and out. Each floor's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back. Other rooms are optional | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent |
 | Rooms | Entering a room with enemies locks its doors until they're all defeated | Forces fights and gives clear pacing |
@@ -79,7 +79,7 @@ strong: it made every fight winnable by waiting. Healing is now only from potion
 
 You carry up to 3 of each kind in the potion belt (buttons under the weapon switch, one per kind held, with
 the count); tap one to drink it. Runs start with one Potion of Healing. Potions lie on the floor (half of the
-floor finds), sit beside chests (30%), and drop from enemies (10%, when they drop no gear). Walking over one
+floor finds), sit beside chests (30%, for the rare chest), and drop from enemies (10%, when they drop no gear). Walking over one
 picks it up; there is nothing to choose, unless that kind is full, then it stays where it is. While haste or
 might works, a ring in its colour shows on the floor around the hero. Each potion's numbers are in Tune.
 
@@ -134,9 +134,12 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
 
 ## Loot (step 6)
 
-- **Chests.** Clearing a room leaves a chest at its centre. Walking onto it opens it and drops a weapon.
-  The open chest stays, so you can see which rooms you have looted.
-- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot, default 5%) to drop a weapon.
+- **Earned loot.** Clearing a room leaves nothing: gear is scarce, so a new piece is a moment. It comes from
+  the floor (dead ends and vaults hide finds, see Floors), from rare enemy drops and from chests.
+- **Chests.** Set pieces hold them (none on today's maps; the ruin's and trap rooms' come with the first zone).
+  Walking onto one opens it and drops a find. The open chest stays, so you can see what you have looted.
+- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot → "Enemy drop chance", default 2%) to drop
+  its weapon. (Room chests used to set the pacing and drops were 5%.)
 - **What drops.** Chests hold a random weapon or utility you don't already hold (a duplicate is no choice).
   An enemy's rare drop is the weapon it fought with (or a random find if you already hold that one).
   On the floor, weapons are round and utilities square.
@@ -147,7 +150,7 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
   (it kills goblins in two stabs) but clearly weaker than found weapons. The HUD weapon switch is a testing aid for
   tuning each weapon: hidden by default, shown by Tune → Controls → "Show weapon switch" (the keyboard key always
   works). Magic Missile stays an enemy weapon and can be found. Known risk: a melee start leaves no ranged answer to
-  a kiting boss; if playtests show it hurting, put a ranged weapon in the guaranteed chest. The weapon picked with the switch is not saved
+  a kiting boss; if playtests show it hurting, put a ranged weapon in the ruin's chest. The weapon picked with the switch is not saved
   between runs (the "Show weapon switch" setting is saved with the rest of the tuning).
 
 `LootTable` holds the rules (pure, given a seeded random generator). `Chest` and `WeaponDrop` only notice the
@@ -288,8 +291,7 @@ The run keeps one record per visited map. It holds:
   same seed would no longer give the same map.
 
 What makes a record match its regenerated map is **stable ids from map position**: an enemy is its spawn cell, a
-floor item its loot cell, a chest its room. A room whose monsters were all killed gets its chest back (open if it
-was opened). **Floor loot is seeded**: what lies on a loot cell is rolled from the map's seed and the cell alone
+floor item its loot cell, a chest its room (an opened chest comes back open). **Floor loot is seeded**: what lies on a loot cell is rolled from the map's seed and the cell alone
 (`LootTable.floor_find`), not from what the hero holds, so a floor item seen, left and come back to is the same
 (it may be something the hero already holds). **Regeneration** (`Regeneration`): hurt monsters heal while the hero
 is away, 10 health a second by default (Tune → Enemies → "Heal while away"), in one-second steps counted from the run
@@ -343,8 +345,8 @@ wrong.
    their enemies are picked as if two rooms deeper. Rooms are optional, so walking away is a real choice.
 5. **Floor loot** (`*`): vault treasure, and half of the dead ends (rooms with one way in) hide an item: a potion or
    gear, rolled from the map's seed and the cell (see Floors). Exploring pays.
-6. **Exit** (the stairs down, `>`): in the deepest room, in its corner farthest from the middle (where the chest
-   appears). Below the first floor, the start is the **stairs up** (`<`) instead of `P`.
+6. **Exit** (the stairs down, `>`): in the deepest room, in its corner farthest from the middle (where chests used
+   to appear, kept so seeds still make the same maps). Below the first floor, the start is the **stairs up** (`<`) instead of `P`.
 
 **Terrain.** Deep water (`~`) blocks walking but not sight or shots: a shooter across a pool can hit you, and
 you can hit back, but nobody walks over. Shallow water (`,`, like Dungeon Crawl's) can be waded through, but
