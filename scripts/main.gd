@@ -60,6 +60,8 @@ var _lava := LavaBurn.new()
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
+## The name of the place the banner last showed ("village", "plains"...), to notice crossing a gate.
+var _shown_place := ""
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
 ## How long the mouse button has been held on a weapon that charges.
 var _mouse_held_seconds := 0.0
@@ -122,6 +124,7 @@ func _physics_process(delta: float) -> void:
 	_attack_button.set_cooldown_ratio(_player.attack_cooldown_ratio())
 	_utility_button.set_cooldown_ratio(_player.utility_cooldown_ratio())
 	_track_player_room()
+	_track_place()
 
 
 # --- Building and leaving a map -----------------------------------------------------------------
@@ -822,13 +825,27 @@ func _grow_from(monster: Monster) -> void:
 
 ## Names the branch and greets the player, like Dungeon Crawl on arriving somewhere new.
 func _greet() -> void:
-	_arrival.text = "The %s\n%s" % [_branch().display_name, _branch().greeting]
+	var place := _place()
+	_shown_place = place.name
+	_arrival.text = "The %s\n%s" % [place.name, place.greeting]
 	_arrival.modulate.a = 1.0
 	if _arrival_fade != null:
 		_arrival_fade.kill()
 	_arrival_fade = create_tween()
 	_arrival_fade.tween_interval(ARRIVAL_SECONDS)
 	_arrival_fade.tween_property(_arrival, "modulate:a", 0.0, ARRIVAL_FADE_SECONDS)
+
+
+## Where the hero stands: the village inside the palisade, else the branch (see Place).
+func _place() -> Place:
+	return Place.at(_branch(), _stage.map, DungeonView.world_to_cell(_player.global_position))
+
+
+## Crossing a gate names the new place: on the banner, and in the HUD.
+func _track_place() -> void:
+	if _in_play and _place().name != _shown_place:
+		_greet()
+		_refresh_hud()
 
 
 ## The branch this map is in (see Branch).
@@ -841,7 +858,7 @@ func _refresh_hud() -> void:
 		return
 	var leads_out := _run.destination(WorldLayout.Exit.STAIRS_DOWN).leaves_world()
 	var goal := "Find the way out" if leads_out else "Find the stairs down"
-	var place := "The %s" % _branch().display_name
+	var place := "The %s" % _place().name
 	if _branch().outdoors:
 		goal = "Find the crypt entrance"
 	else:

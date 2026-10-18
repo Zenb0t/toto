@@ -256,3 +256,28 @@ func test_tuned_world_knobs_change_the_next_plains() -> void:
 	assert_true(recipe.width is int)
 	assert_almost_eq(recipe.grove_share, 0.25, 0.0001)
 	assert_eq(DungeonMapParser.new().parse(QuadrantGenerator.new().generate(recipe, 1)).size.x, 120)
+
+
+func test_the_village_knobs_are_in_tune_world_and_default_to_36_by_28_with_15_percent_props_at_scale_six() -> void:
+	var tuning := GameTuning.create()
+	var in_world := {}
+	for each in tuning.params():
+		if each.group == GameTuning.WORLD_GROUP:
+			in_world[each.key] = each
+
+	for field in ["village_width", "village_height", "village_prop_share", "building_scale"]:
+		assert_true(in_world.has(GameTuning.key("plains", field)), field)
+	var defaults := GameTuning.plains_recipe(tuning)
+	assert_eq(defaults.village_size(), Vector2i(36, 28))
+	assert_almost_eq(defaults.village_prop_share, 0.15, 0.0001)
+	assert_almost_eq(defaults.building_scale, 6.0, 0.0001)
+
+
+func test_a_tuned_village_size_makes_a_bigger_village_in_the_next_plains() -> void:
+	var tuning := GameTuning.create()
+	tuning.set_value(GameTuning.key("plains", "village_width"), 44)
+	tuning.set_value(GameTuning.key("plains", "village_height"), 34)
+
+	var map := DungeonMapParser.new().parse(QuadrantGenerator.new().generate(GameTuning.plains_recipe(tuning), 2))
+
+	assert_eq(map.village.area.size, Vector2i(44, 34))

@@ -52,12 +52,12 @@ one is marked). Entries you changed show in gold; Reset resets the page you're o
 saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
-A run starts outdoors on the **plains**: a 160x90 field of grass with tree groves (they block walking and sight),
+A run starts outdoors on the **plains**, in a **village** (36x28, a palisade with a gate on each side, streets to a square with a well, an inn, a few houses and a smithy, market or church, in KayKit Medieval Hexagon art): you start in front of the inn and know the whole village already; buildings turn see-through when they stand between the camera and you, and the HUD calls the place "the village" while you are inside. The plains are a 160x90 field of grass with tree groves (they block walking and sight),
 boulders for cover, ponds and a thick forest border with a barricaded exit in the middle of each side. Somewhere out in
 the grass, halfway to the border or farther, stands a small stone mausoleum: the crypt entrance, with no road to it. Step
 onto its stairs to go down into a descent through 5 floors, each a different branch (the Dungeon, the Lair's caves, the Orcish
 Mines, the Crypt, the Depths) and a new dungeon, all grown from one world seed (shown in the pause menu), inspired by
-Dungeon Crawl Stone Soup. The first floor's silver stairs lead back out to the mausoleum. The plains hold no monsters yet.
+Dungeon Crawl Stone Soup. The first floor's silver stairs lead back out to the mausoleum. The plains hold no monsters yet, and no monster lives in the village.
 Tune → World holds the knobs of the plains and starts a new world or the same seed again. The dungeon floors: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
@@ -99,7 +99,8 @@ Tests use [GUT](https://github.com/bitwes/Gut), vendored in `addons/gut`.
 
 Characters, weapons and dungeon props: [KayKit Adventurers](https://kaylousberg.itch.io/kaykit-adventurers),
 [KayKit Skeletons](https://kaylousberg.itch.io/kaykit-skeletons) and
-[KayKit Dungeon Remastered](https://kaylousberg.itch.io/kaykit-dungeon-remastered) by Kay Lousberg (CC0), in
+[KayKit Dungeon Remastered](https://kaylousberg.itch.io/kaykit-dungeon-remastered) and
+[KayKit Medieval Hexagon](https://kaylousberg.itch.io/kaykit-medieval-hexagon) by Kay Lousberg (CC0), in
 `assets/` with their licenses. Also built with [Godot Engine](https://godotengine.org) (MIT) and its default font,
 Noto Sans (SIL OFL 1.1); tests use [GUT](https://github.com/bitwes/Gut) (MIT). The phone playtest page loads
 Pixelify Sans and IBM Plex Sans from Google Fonts (both SIL OFL 1.1). The pause menu's **Credits** screen lists
@@ -109,10 +110,13 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`, `Ammo`)
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` stairs down
-  (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item, and outdoors `T` tree grove, `B` boulder, `=` barricade), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
+  (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item, and outdoors `T` tree grove, `B` boulder, `=` barricade, and the village's `F` palisade, `G` gate, `:` street, `U` well, `X` prop, `D` inn doorstep, `I C S M` inn, church, smithy, market, `1`-`4` houses, `@` start), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
   lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
   torches and their light), moving liquids (`LiquidView`), room rules: enemies left per room, and the lock
   of rooms marked as locking (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
+- `scripts/dungeon/generation/village` – the village, stamped in the plains' middle: `VillageGenerator` runs `VillagePalisade`,
+  `VillageStreets`, `VillageLotPacker` (with the hand-written `VillageLots`), `VillageProps` and `VillageRules` (`Village`, in
+  `scripts/dungeon`, holds its map letters and what a map knows of it)
 - `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
   `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
   `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance)
@@ -146,7 +150,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   (`PickupArea`, `Chest`, `ItemDrop`). The player holds no input code
 - `scripts/view3d` – how the game is shown: the 2D world runs the game and `WorldView3D` shows it in 3D.
   `GroundView` lays the 2D plane on the floor (floor, aim previews, telegraphs, fog), `MapView3D` stands walls
-  and closed doors on it, and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
+  and closed doors on it (`VillageView3D` the village's models, see-through when they hide the hero), and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
   the floor texture shows). `models/` holds the models: `CharacterModel` (KayKit characters, animated), `HeroBars` (health and ammo over the hero) and
   `CharacterLook` (who wears what), and the simple ones (chests, loot, shots, torches, the stairs' arch, the bow in hand: `BowModel`, picked with the others by `WeaponModel`)
@@ -157,7 +161,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   hero arrives on), `MapRecord` (what the hero changed on a map: kills, opened chests, taken floor items, dropped
   items, explored cells, monsters left hurt; it round-trips through a dictionary) and `Regeneration` (how hurt
   monsters heal while the hero is away); `MapStage` (one built map in the running game: the parsed map, its floor, fog, 3D view
-  and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Experience`: levels from
+  and everything on it, freed whole on leaving); `RunSummary` (the end-of-run lines); `Place` ("the village" or the branch, for the HUD and banner); `Experience`: levels from
   kills, each adding maximum health
 - `scripts/main.gd` – composition root: wires controls, HUD and menus once, builds the run's current map
   (rebuilt in place on the stairs and on starting over, then its record applied; the record is written on leaving),
