@@ -30,6 +30,8 @@ const INN_RESTING_TEXT := "Resting..."
 const INN_RESTED_TEXT := "Fully rested"
 const INN_INTERRUPTED_TEXT := "Rest interrupted"
 const REST_REFUSED_COLOR := Color(1.0, 0.45, 0.4)
+## Floats up when a lighting brings an ambush, before the ambushers arrive.
+const AMBUSH_WARNING_TEXT := "Something is coming..."
 const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item, or rest at a campfire or the inn.  Q: next weapon.  Esc: menu."
 
 var _rng := RandomNumberGenerator.new()
@@ -68,6 +70,12 @@ var _rest_spots := {}  # Vector2i (its cell) -> RestSpot: the map's campfires as
 ## The campfires a band still holds (they burn for it and can't be rested at), until its last monster dies.
 var _held_campfires := {}  # Vector2i -> true
 var _rest_profile := RestProfile.campfire()
+var _ambush := Ambush.new()
+## Ambushes on their way (hit by a lighting, not arrived yet), and the monsters that arrived in one. Ambushers
+## belong to no spawn cell, so the record never holds them: they are not saved, and the lighting's spent roll is
+## all that keeps another ambush from coming for it.
+var _ambush_parties: Array[AmbushParty] = []
+var _ambushers := {}  # Enemy -> true
 var _inn: InnSpot  # the inn's doorstep, or null (only the plains have a village)
 var _inn_in_reach := false
 var _monsters_around := MonstersAround.new()
@@ -123,6 +131,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_run.advance(delta)
 	_update_rest_offer()
+	_tick_ambushes(delta)
 	_player.move(_move_input())
 	var mouse_held := _keyboard_mouse.is_attack_held() and _in_play
 	if mouse_held and _player.weapon.charge_seconds() > 0.0:
@@ -199,6 +208,8 @@ func _leave_map() -> void:
 	_floor_loot_cells.clear()
 	_rest_spots.clear()
 	_held_campfires.clear()
+	_ambush_parties.clear()
+	_ambushers.clear()
 	_fire_in_reach = DungeonMap.NO_CELL
 	_inn = null
 	_inn_in_reach = false
@@ -610,12 +621,15 @@ func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
 
 
 func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
-	var spawn_cell: Vector2i = _spawn_cells[enemy]
-	_record.kill(spawn_cell)
-	_refresh_held_campfires()
-	_spawn_cells.erase(enemy)
 	_enemies_by_band[band].erase(enemy)
-	_progress.record_defeat(_stage.map.room_at(spawn_cell))
+	if _ambushers.has(enemy):
+		_ambushers.erase(enemy)  # not a spawn of the map: nothing to record, no room to clear
+	else:
+		var spawn_cell: Vector2i = _spawn_cells[enemy]
+		_record.kill(spawn_cell)
+		_refresh_held_campfires()
+		_spawn_cells.erase(enemy)
+		_progress.record_defeat(_stage.map.room_at(spawn_cell))
 	_run.hero.kills += 1
 	_grow_from(enemy.monster)
 	_refresh_hud()
@@ -759,7 +773,62 @@ func _rest() -> void:
 	if refusal != "":
 		_stage.world.float_text(_player.global_position, refusal, REST_REFUSED_COLOR)
 		return
-	spot.rest()
+	if spot.rest():
+		_roll_ambush(_fire_in_reach)
+
+
+## Each lighting of a campfire makes one seeded ambush roll (see Ambush); a spent roll stays in the record. On a hit
+## the ambushers are on their way: they arrive after the rule's delay.
+func _roll_ambush(fire: Vector2i) -> void:
+	var lighting := _record.spend_lighting(fire)
+	var seed_value := _stage.spec.seed_value
+	var outdoors := _stage.spec.branch().outdoors
+	if not _ambush.hits(seed_value, fire, lighting, outdoors):
+		return
+	var cells := AmbushPlacement.cells(
+		_stage.map, fire, _rest_profile.light_radius_cells, _ambush.margin_cells, _ambush.size,
+		Ambush.placement_rng(seed_value, fire, lighting))
+	if cells.is_empty():
+		return  # no ground outside the light for anyone to come from: no warning for nobody
+	var crew := _ambush.crew(_stage.map, fire, seed_value, lighting)
+	crew.resize(cells.size())
+	_ambush_parties.append(AmbushParty.new(crew, cells, _ambush.delay_seconds, fire))
+	_stage.world.float_text(_player.global_position, AMBUSH_WARNING_TEXT, REST_REFUSED_COLOR)
+
+
+## Moves the ambushes on their way on; the ones that are due arrive.
+func _tick_ambushes(delta: float) -> void:
+	if not _in_play:
+		return
+	for party in _ambush_parties.duplicate():
+		if party.tick(delta):
+			_ambush_parties.erase(party)
+			_spawn_ambushers(party)
+
+
+## The ambushers appear at the edge of the light, already hunting the hero. They are a band of their own at the
+## campfire, fight as a squad and can give up like any hunter, but are never recorded as the map's monsters.
+func _spawn_ambushers(party: AmbushParty) -> void:
+	var band := Ambush.band_id(_stage.map, party.fire)
+	for index in party.cells.size():
+		var enemy: Enemy = ENEMY_SCENE.instantiate()
+		enemy.position = DungeonView.cell_center(party.cells[index])
+		var monster := Bestiary.by_id(party.monster_ids[index])
+		enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
+		enemy.arm(GameTuning.monster_weapon(_tuning, monster))
+		enemy.navigation = _stage.pathfinder
+		var squad: Squad = _squads_by_band.get_or_add(band, Squad.new())
+		GameTuning.tune_squad(squad, _tuning)
+		enemy.squad = squad
+		_tune_enemy(enemy, _tuning)
+		enemy.ambush(_player, DungeonView.cell_center(party.fire))
+		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
+		enemy.noticed.connect(_on_enemy_noticed)
+		enemy.defeated.connect(_on_enemy_defeated.bind(band))
+		_stage.add_actor(enemy)
+		_stage.world.add_enemy(enemy)
+		_enemies_by_band.get_or_add(band, []).append(enemy)
+		_ambushers[enemy] = true
 
 
 ## Sits down at the inn: a 3 s rest that moving or a hit cancels (see InnRest). Nothing happens while already resting.
@@ -928,27 +997,33 @@ func _apply_tuning(tuning: Tuning) -> void:
 	_utility_button.drag_reach = GameTuning.drag_reach(tuning)
 	for enemies: Array in _enemies_by_band.values():
 		for enemy: Enemy in enemies:
-			enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier
 			enemy.arm(GameTuning.monster_weapon(tuning, enemy.monster))
-			enemy.lead_share = GameTuning.enemy_lead_share(tuning)
-			enemy.recover_seconds = GameTuning.enemy_recover_seconds(tuning)
-			enemy.noticing_seconds = GameTuning.enemy_noticing_seconds(tuning)
-			if enemy.monster.id == Lich.ID:
-				enemy.keep_distance_cells = GameTuning.lich(tuning).keep_distance_cells
-				GameTuning.tune_spells(enemy.spell_picker, tuning)
-				enemy.spell_weapons = GameTuning.lich_spell_weapons(tuning)
-			enemy.wander_speed_share = GameTuning.enemy_wander_speed_share(tuning)
-			enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
-			GameTuning.tune_awareness(enemy.awareness, tuning)
+			_tune_enemy(enemy, tuning)
 	GameTuning.tune_awareness(_hearing, tuning)
 	_rest_profile = GameTuning.rest_profile(tuning)
 	_monsters_around = GameTuning.monsters_around(tuning)
+	_ambush = GameTuning.ambush(tuning)
 	for spot: RestSpot in _rest_spots.values():
 		spot.fire.profile = _rest_profile
 	if _inn != null:
 		_inn.rest.profile = GameTuning.inn_profile(tuning)
 	for squad: Squad in _squads_by_band.values():
 		GameTuning.tune_squad(squad, tuning)
+
+
+## The tuned pace, awareness and wandering of one monster (its weapon is armed separately).
+func _tune_enemy(enemy: Enemy, tuning: Tuning) -> void:
+	enemy.move_speed = GameTuning.enemy_move_speed(tuning) * enemy.monster.speed_multiplier
+	enemy.lead_share = GameTuning.enemy_lead_share(tuning)
+	enemy.recover_seconds = GameTuning.enemy_recover_seconds(tuning)
+	enemy.noticing_seconds = GameTuning.enemy_noticing_seconds(tuning)
+	enemy.wander_speed_share = GameTuning.enemy_wander_speed_share(tuning)
+	enemy.wander_radius = GameTuning.band_wander_radius_cells(tuning) * DungeonView.TILE_SIZE
+	GameTuning.tune_awareness(enemy.awareness, tuning)
+	if enemy.monster.id == Lich.ID:
+		enemy.keep_distance_cells = GameTuning.lich(tuning).keep_distance_cells
+		GameTuning.tune_spells(enemy.spell_picker, tuning)
+		enemy.spell_weapons = GameTuning.lich_spell_weapons(tuning)
 
 
 ## The attack button shows the weapon, or REST while the hero can rest at a campfire or the inn's doorstep.

@@ -196,6 +196,15 @@ func retreat_to(spot: Vector2) -> void:
 	_has_retreat = true
 
 
+## Arrives already hunting its target (an ambusher, see Ambush): no noticing pause, no shout. It lives at home like
+## any other monster, so it gives up the chase as they do (see Awareness) and goes back there.
+func ambush(target: Node2D, at_home: Vector2) -> void:
+	chase(target)
+	home = at_home
+	_has_home = true
+	_brain.state = EnemyBrain.State.HUNT
+
+
 ## It heard a noise or a shout (see Awareness): a calm enemy notices the target.
 func alert() -> void:
 	_alerted = true

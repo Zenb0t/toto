@@ -82,3 +82,25 @@ func test_a_campfire_comes_back_as_it_was_left_through_a_dictionary_too() -> voi
 	assert_eq(again.state, Campfire.State.EMBERS)
 	assert_eq(again.seconds_left(), 42.0)
 	assert_eq(back.campfire_at(Vector2i(1, 1), profile).state, Campfire.State.UNLIT, "never lit")
+
+
+func test_each_lighting_of_a_campfire_spends_the_next_ambush_roll() -> void:
+	var record := MapRecord.new(DungeonGenerator.VERSION)
+	var fire := Vector2i(20, 9)
+
+	assert_eq(record.lightings_of(fire), 0)
+	assert_eq(record.spend_lighting(fire), 0)
+	assert_eq(record.spend_lighting(fire), 1)
+	assert_eq(record.lightings_of(fire), 2)
+	assert_eq(record.lightings_of(Vector2i(1, 1)), 0, "another campfire is not affected")
+
+
+func test_the_rolls_spent_come_back_through_a_dictionary_too() -> void:
+	var record := MapRecord.new(DungeonGenerator.VERSION)
+	record.spend_lighting(Vector2i(20, 9))
+	record.spend_lighting(Vector2i(20, 9))
+
+	var back := MapRecord.from_dict(JSON.parse_string(JSON.stringify(record.to_dict())))
+
+	assert_eq(back.lightings_of(Vector2i(20, 9)), 2)
+	assert_eq(back.spend_lighting(Vector2i(20, 9)), 2, "the next lighting is the third")

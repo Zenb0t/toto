@@ -2,7 +2,7 @@ class_name RestProfile
 extends RefCounted
 ## How a place of rest heals: how long the rest lasts, how far its light reaches, how much it heals and how fast,
 ## and how long it is spent afterwards. A campfire is the first profile (campfire()), the inn the second (inn(): a
-## short rest, a full heal, no wait after, cancelled by moving) and an ambush roll will be another field, so the
+## short rest, a full heal, no wait after, cancelled by moving), so the
 ## rules that carry a rest out (Campfire, InnRest, MonstersAround) never name a particular place. Pure; every
 ## number is a Knob.
 
