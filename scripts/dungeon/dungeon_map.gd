@@ -6,11 +6,16 @@ extends RefCounted
 ## waded through, slowly; lava can be walked on, but it burns.
 
 enum Terrain { FLOOR, WATER, LAVA, SHALLOW }
+## Solid things outdoors that aren't plain wall: tree groves (they block walking and sight), boulders (small
+## cover: they block walking and shots, but sight passes over them) and barricades (they shut a quadrant exit).
+enum Blocker { GROVE, BOULDER, BARRICADE }
 
 ## Wading through shallow water, everyone moves at this share of their speed.
 const WADING_SPEED := 0.6
 const NO_ROOM := -1
 const NO_CELL := Vector2i(-1, -1)
+## blocker_at's answer for a cell that holds none.
+const NO_BLOCKER := -1
 
 var size: Vector2i
 var player_spawn: Vector2i
@@ -28,6 +33,7 @@ var _doors_by_room: Dictionary  # int -> Array[Vector2i]
 var _door_cells: Dictionary  # Vector2i -> true
 var _monster_by_cell: Dictionary  # Vector2i -> monster id
 var _terrain_by_cell: Dictionary  # Vector2i -> Terrain, only for cells that aren't plain floor
+var _blocker_by_cell: Dictionary  # Vector2i -> Blocker, for the outdoor things that stand in the way
 
 
 func _init(
@@ -42,6 +48,7 @@ func _init(
 	terrain_by_cell: Dictionary = {},
 	loot: Array[Vector2i] = [],
 	stairs_up: Vector2i = NO_CELL,
+	blocker_by_cell: Dictionary = {},
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -55,6 +62,7 @@ func _init(
 	_terrain_by_cell = terrain_by_cell
 	loot_cells = loot
 	stairs_up_cell = stairs_up
+	_blocker_by_cell = blocker_by_cell
 
 
 ## The id of the monster (see Bestiary) spawning at cell, or "" if none does.
@@ -72,8 +80,22 @@ func is_walkable(cell: Vector2i) -> bool:
 
 
 ## Sight and shots cross water and lava; only walls (and closed doors, handled by the doors) stop them.
+## Boulders are low enough to see over (shots still stop at them).
 func is_see_through(cell: Vector2i) -> bool:
-	return is_open(cell)
+	return is_open(cell) or blocker_at(cell) == Blocker.BOULDER
+
+
+## Which Blocker stands on a cell, or NO_BLOCKER.
+func blocker_at(cell: Vector2i) -> int:
+	return _blocker_by_cell.get(cell, NO_BLOCKER)
+
+
+func cells_with_blocker(blocker: Blocker) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for cell: Vector2i in _blocker_by_cell:
+		if _blocker_by_cell[cell] == blocker:
+			cells.append(cell)
+	return cells
 
 
 func terrain_at(cell: Vector2i) -> Terrain:

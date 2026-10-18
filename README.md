@@ -45,15 +45,20 @@ and mouse, following whichever you used last.
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 **Tune gameplay** exposes the numbers that shape the feel, sorted into a menu: Player, Weapons, Utilities,
-Potions, Enemies, Loot, Controls (each button's aim dead zone) and Camera (tilt, distance, field of view,
-look-ahead, wall height). Weapons, Utilities and Potions list every item, so any of them can be tuned (the equipped
+Potions, Enemies, Loot, Controls (each button's aim dead zone), Camera (tilt, distance, field of view,
+look-ahead, wall height) and World (the plains' size, groves, ponds and the rest; they shape the next world, with
+**New world** and **Same seed again** buttons). Weapons, Utilities and Potions list every item, so any of them can be tuned (the equipped
 one is marked). Entries you changed show in gold; Reset resets the page you're on. Changes apply live and are
 saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
-A run is a descent through 5 floors, each a different branch (the Dungeon, the Lair's caves, the Orcish
+A run starts outdoors on the **plains**: a 160x90 field of grass with tree groves (they block walking and sight),
+boulders for cover, ponds and a thick forest border with a barricaded exit in the middle of each side. Somewhere out in
+the grass, halfway to the border or farther, stands a small stone mausoleum: the crypt entrance, with no road to it. Step
+onto its stairs to go down into a descent through 5 floors, each a different branch (the Dungeon, the Lair's caves, the Orcish
 Mines, the Crypt, the Depths) and a new dungeon, all grown from one world seed (shown in the pause menu), inspired by
-Dungeon Crawl Stone Soup: oddly
+Dungeon Crawl Stone Soup. The first floor's silver stairs lead back out to the mausoleum. The plains hold no monsters yet.
+Tune → World holds the knobs of the plains and starts a new world or the same seed again. The dungeon floors: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
@@ -63,15 +68,16 @@ wandering) or when you hurt it, shows a "!", and comes for you. Your attacks and
 within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
 so a careless fight can pull in a nearby band. You can escape a chase: a monster gives up after 5 seconds without
 seeing you, or when you are 24 cells from its home, checks where it last saw you and walks home, noticing you again if it sees you on the way. Rooms don't lock, so you
-can sneak past or pick your fight. Clearing a room leaves a
-chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
-weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
-their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
+can sneak past or pick your fight. Loot is earned, not handed out:
+clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
+hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
+weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. About one in fifty drops
+its weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
-fifth floor's stairs lead out. Below the first floor you arrive on silver stairs that lead back up, onto the gold
-stairs of the floor above. The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
-you took stay gone, items you dropped stay where they fell and the map stays explored. Monsters you left hurt
-heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. If you die, you start over on floor 1 of a new world (a new seed) with the Dagger, the Dash and a Potion of
+fifth floor's stairs lead out. On every floor you arrive on silver stairs that lead back up, onto the gold
+stairs of the floor above (the first floor's onto the mausoleum). The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
+you took stay gone, items you dropped stay where they fell and the map stays explored (the plains too). Monsters you left hurt
+heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash and a Potion of
 Healing.
 
 ## Play on a phone
@@ -103,12 +109,15 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`, `Ammo`)
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` stairs down
-  (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
+  (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item, and outdoors `T` tree grove, `B` boulder, `=` barricade), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
   lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
   torches and their light), moving liquids (`LiquidView`), room rules: enemies left per room, and the lock
   of rooms marked as locking (`DungeonProgress`), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
+- `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
+  `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
+  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
-  `BranchLook` (what each floor is: Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
+  `BranchLook` (what each place is: the plains, Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
   (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces),
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`, `MouseAim`, `TouchZones`) and `InputMode` (touch or

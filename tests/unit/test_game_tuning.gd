@@ -103,6 +103,13 @@ func test_hurt_monsters_heal_while_away_at_the_rate_regeneration_sets() -> void:
 	assert_eq(GameTuning.enemy_regeneration(tuning), Regeneration.DEFAULT_HEALTH_PER_SECOND)
 
 
+func test_the_enemy_drop_chance_is_tuned_under_loot_and_starts_rare() -> void:
+	var tuning := GameTuning.create()
+
+	assert_eq(tuning.param(GameTuning.LOOT_ENEMY_DROP_CHANCE).group, GameTuning.LOOT_GROUP)
+	assert_almost_eq(GameTuning.enemy_drop_chance(tuning), 0.02, 0.005)
+
+
 func test_enemies_open_straight_onto_their_knobs() -> void:
 	var enemies := _section("Enemies", GameTuning.sections("wand", "dash"))
 
@@ -211,3 +218,41 @@ func test_the_give_up_time_and_distance_are_enemy_knobs_that_default_to_the_awar
 	assert_eq(tuning.param(GameTuning.AWARENESS_GIVE_UP_SECONDS).group, GameTuning.ENEMIES_GROUP)
 	assert_eq(awareness.give_up_seconds, Awareness.DEFAULT_GIVE_UP_SECONDS)
 	assert_eq(awareness.give_up_cells, Awareness.DEFAULT_GIVE_UP_CELLS)
+
+
+func test_the_world_section_holds_every_generation_knob_of_the_plains() -> void:
+	var world: TuningSection
+	for section in GameTuning.sections("dagger", "dash"):
+		if section.title == GameTuning.WORLD_GROUP:
+			world = section
+	assert_not_null(world, "Tune has a World section")
+
+	var tuning := GameTuning.create()
+	var keys: Array[String] = []
+	for each in tuning.params():
+		if each.group == GameTuning.WORLD_GROUP:
+			keys.append(each.key)
+			assert_true(each.next_run_only, "%s shapes the next world" % each.key)
+	for knob in QuadrantRecipe.plains().knobs():
+		assert_has(keys, GameTuning.key("plains", knob.field))
+	assert_eq(keys.size(), QuadrantRecipe.plains().knobs().size())
+
+
+func test_untouched_tuning_builds_the_plains_with_the_recipes_own_defaults() -> void:
+	var built := GameTuning.plains_recipe(GameTuning.create())
+
+	for knob in QuadrantRecipe.plains().knobs():
+		assert_eq(built.get(knob.field), QuadrantRecipe.plains().get(knob.field), knob.field)
+
+
+func test_tuned_world_knobs_change_the_next_plains() -> void:
+	var tuning := GameTuning.create()
+	tuning.set_value(GameTuning.key("plains", "width"), 120)
+	tuning.set_value(GameTuning.key("plains", "grove_share"), 0.25)
+
+	var recipe := GameTuning.plains_recipe(tuning)
+
+	assert_eq(recipe.width, 120)
+	assert_true(recipe.width is int)
+	assert_almost_eq(recipe.grove_share, 0.25, 0.0001)
+	assert_eq(DungeonMapParser.new().parse(QuadrantGenerator.new().generate(recipe, 1)).size.x, 120)

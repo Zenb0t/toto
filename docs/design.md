@@ -22,9 +22,9 @@ Anything that doesn't help answer that is deferred.
 | Build identity | No heroes. Your build is your equipment, and equipment comes from RNG | DCSS-style "make do with what you find" |
 | Equipment slots | **Weapon** (attack button) + **Utility** (second button, on a cooldown) | Smallest set where builds feel different |
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
-| Loot sources | Guaranteed chest per cleared room, plus rare enemy drops | Predictable pacing, with occasional surprises |
+| Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
-| Goal | Go down 5 floors and out. Each floor's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back. Other rooms are optional | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent |
+| Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass) and go down 5 floors and out. Each floor's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first floor's lead out to the mausoleum). Other rooms are optional. The first zone (village, camps, the ruin, a 3-level crypt and the Lich) replaces this descent piece by piece, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; Dungeon Crawl's descent, now with somewhere open to start from |
 | Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`; trap rooms and the boss arena, none yet) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
@@ -79,7 +79,7 @@ strong: it made every fight winnable by waiting. Healing is now only from potion
 
 You carry up to 3 of each kind in the potion belt (buttons under the weapon switch, one per kind held, with
 the count); tap one to drink it. Runs start with one Potion of Healing. Potions lie on the floor (half of the
-floor finds), sit beside chests (30%), and drop from enemies (10%, when they drop no gear). Walking over one
+floor finds), sit beside chests (30%, for the rare chest), and drop from enemies (10%, when they drop no gear). Walking over one
 picks it up; there is nothing to choose, unless that kind is full, then it stays where it is. While haste or
 might works, a ring in its colour shows on the floor around the hero. Each potion's numbers are in Tune.
 
@@ -103,7 +103,7 @@ every weapon keeps its own settings. A HUD button (or Q) cycles weapons for test
 When a playtest settles on better values, they get copied into those defaults.
 
 **Tune screen menus.** The knobs are sorted into sections (`GameTuning.sections`): Player, Weapons, Utilities,
-Potions, Enemies, Loot, Controls, Camera. A section with one group of knobs opens straight onto them; Weapons,
+Potions, Enemies, Loot, Controls, Camera, World (see The plains). A section with one group of knobs opens straight onto them; Weapons,
 Utilities and Potions first list every item, so any of them can be tuned, not only the one equipped (which is
 marked). Back or Esc goes up a page. Entries holding changed knobs are marked in gold, and Reset resets what the
 page shows (Reset all, from the top menu).
@@ -134,9 +134,12 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
 
 ## Loot (step 6)
 
-- **Chests.** Clearing a room leaves a chest at its centre. Walking onto it opens it and drops a weapon.
-  The open chest stays, so you can see which rooms you have looted.
-- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot, default 5%) to drop a weapon.
+- **Earned loot.** Clearing a room leaves nothing: gear is scarce, so a new piece is a moment. It comes from
+  the floor (dead ends and vaults hide finds, see Floors), from rare enemy drops and from chests.
+- **Chests.** Set pieces hold them (none on today's maps; the ruin's and trap rooms' come with the first zone).
+  Walking onto one opens it and drops a find. The open chest stays, so you can see what you have looted.
+- **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot → "Enemy drop chance", default 2%) to drop
+  its weapon. (Room chests used to set the pacing and drops were 5%.)
 - **What drops.** Chests hold a random weapon or utility you don't already hold (a duplicate is no choice).
   An enemy's rare drop is the weapon it fought with (or a random find if you already hold that one).
   On the floor, weapons are round and utilities square.
@@ -147,7 +150,7 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
   (it kills goblins in two stabs) but clearly weaker than found weapons. The HUD weapon switch is a testing aid for
   tuning each weapon: hidden by default, shown by Tune → Controls → "Show weapon switch" (the keyboard key always
   works). Magic Missile stays an enemy weapon and can be found. Known risk: a melee start leaves no ranged answer to
-  a kiting boss; if playtests show it hurting, put a ranged weapon in the guaranteed chest. The weapon picked with the switch is not saved
+  a kiting boss; if playtests show it hurting, put a ranged weapon in the ruin's chest. The weapon picked with the switch is not saved
   between runs (the "Show weapon switch" setting is saved with the rest of the tuning).
 
 `LootTable` holds the rules (pure, given a seeded random generator). `Chest` and `WeaponDrop` only notice the
@@ -309,14 +312,17 @@ the dark."). The Dungeon itself has the odd cave (15% of its rooms).
 
 ## Floors (the descent)
 
-Like Dungeon Crawl, a run is a descent: **5 floors**, each a new branch (see Branches), each more dangerous
-than the last.
+A run starts on the **plains** (next section), outdoors. Like Dungeon Crawl, the way on is a descent: **5 floors**,
+each a new branch (see Branches), each more dangerous than the last. The plains' **crypt entrance** (the mausoleum's
+stairs) leads down to the first floor's stairs up, and those lead back out onto the mausoleum (`WorldLayout`: the
+plains are map `plains`, the floors `floor_1` to `floor_5`). Every floor, the first included, now starts on its
+stairs up (`DungeonGenerator.VERSION` 2).
 The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down; on the
-fifth floor they lead out, and the run is won. Every floor but the first also has **stairs up** (silver, `<` in
+fifth floor they lead out, and the run is won. Every floor also has **stairs up** (silver, `<` in
 the map format, where the floor's start would be). Each set leads onto the matching stairs on the other floor:
 down arrives on the stairs up below, up arrives on the stairs down above (`WorldLayout.destination` names the map
 and the spot; `WorldLayout.arrival_cell` finds the spot on the parsed map). The stairs the hero arrives on only
-lead on once the hero has stepped off them. Dying, or restarting from the menu, starts over from floor 1 in a
+lead on once the hero has stepped off them. Dying, or restarting from the menu, starts over on the plains of a
 new world, with a new seed.
 
 Taking the stairs carries the hero (`HeroState`): the weapon and utility held, health as it is (no free
@@ -336,8 +342,7 @@ The run keeps one record per visited map. It holds:
   same seed would no longer give the same map.
 
 What makes a record match its regenerated map is **stable ids from map position**: an enemy is its spawn cell, a
-floor item its loot cell, a chest its room. A room whose monsters were all killed gets its chest back (open if it
-was opened). **Floor loot is seeded**: what lies on a loot cell is rolled from the map's seed and the cell alone
+floor item its loot cell, a chest its room (an opened chest comes back open). **Floor loot is seeded**: what lies on a loot cell is rolled from the map's seed and the cell alone
 (`LootTable.floor_find`), not from what the hero holds, so a floor item seen, left and come back to is the same
 (it may be something the hero already holds). **Regeneration** (`Regeneration`): hurt monsters heal while the hero
 is away, 10 health a second by default (Tune → Enemies → "Heal while away"), in one-second steps counted from the run
@@ -363,6 +368,57 @@ shows the level and the progress toward the next; "LEVEL n!" rises over the hero
 **Danger** (`DungeonDifficulty.danger`): one level per floor down, plus half a level per room away from the
 start. So rooms on one floor differ less than floors do: floor 1 tops out with orcs, floor 3 brings orc
 wizards and dwarves, floor 5 ogres. Out-of-depth rooms still roll two levels deeper.
+
+## The plains (quadrant generation)
+
+The first map of a run is the **plains**, the centre **quadrant** of the world's 3x3 grid (see `GLOSSARY.md`).
+It is made by `QuadrantGenerator` from a plain-data `QuadrantRecipe` and the map's seed (derived from the world seed,
+like every map's), into the same ASCII format the parser always read; new letters `T` (tree grove), `B` (boulder)
+and `=` (barricade) became `DungeonMap` *blockers*, so fog, minimap, pathfinding and terrain keep working.
+
+Small pure steps run in order, each a class of its own (`scripts/dungeon/generation/quadrant`):
+
+| Step | What it does |
+| --- | --- |
+| Ground (`QuadrantGround`) | Grass; tree groves where seeded noise (`FastNoiseLite`) is highest, cut so exactly the recipe's share of the ground is grove however the noise falls; boulders on grass; ponds (deep water, wobbly edge, a shallow shore 1.5 cells wide) clear of the middle and the border; then the ring of ~20 cells round the hero's start (the village will take that spot) cleared to plain grass |
+| Border (`QuadrantBorder`) | A forest of groves, 5 cells thick, all round |
+| Exits (`QuadrantExits`) | A 3-wide lane through the border in the middle of each side, with a barricade across its outer end (the way is shut until that quadrant exists) and a cleared approach inside the border |
+| Reserve (`SetPiecePlacer.reserve`) | A spot for each set piece: inside the border, as far out as the piece asks, clear of the ring round the start, the exits and the other pieces |
+| Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
+| Validate (`QuadrantRules`) | At least `min_walkable_share` (70%) of the ground inside the border walkable, the start in the middle, every exit's front cell and every piece's key cell reachable, the ring round the start clear |
+
+A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
+generator reports how many tries it took). If every try fails (a recipe asking for the impossible), the last resort is
+the same quadrant without groves, boulders and ponds; if a set piece still finds no spot (Tune → World can make the
+plains too small or the clear ring too wide for it), the default recipe without them, so no tuning leaves the world
+without a map. The same recipe and seed always
+give the same map (`QuadrantRecipe.VERSION` goes in the map's record).
+
+**Set pieces** (`SetPiece`: a drawing in the map format, its key cell, how far out it must lie, its margin) are stamped by
+**one shared placer**; the camps, campfires, the ruin and the village of later tickets are new pieces for the same two
+calls. The first is the **crypt entrance** (`SetPieces.crypt_entrance`): a 5x5 stone mausoleum with its door facing the
+camera and the stairs down inside, at least halfway out from the middle (0 in the middle, 1 at the border, measured to
+the nearest side in the same proportion on both axes: `QuadrantRecipe.outward`), with no road to it. Stepping onto its
+stairs goes down, through the same transition rule as any stairs, to the first floor.
+
+**Rules to know.** The "walkable at least 70%" share is counted over the ground *inside* the border (a thick border would
+otherwise eat it). Groves and barricades stop walking, sight and shots; boulders are small cover: they stop walking and
+shots but sight passes over them (`DungeonMap.is_see_through`). Deep water stops feet but not shots, as in the dungeon.
+For now the plains hold no monsters and no loot (camps and the rest come in later tickets), and the hero starts in the
+middle.
+
+**Look.** The plains have their own `Branch` (outdoors, so the HUD and the arrival banner say "the plains" and the run
+summary "on the plains") and `BranchLook`: grass ground, no torches, trees for small free-standing groves. Big groves
+are canopy blocks (taller than walls, uneven), boulders low grey blocks, barricades brown ones: **stand-ins built in
+code.** The planned KayKit Forest Nature trees and rocks and the Halloween Bits mausoleum could not be downloaded in the
+build session (the packs are only offered on itch.io, which the sandbox blocks), so no new asset pack ships yet; a new
+pack goes in its own folder of `assets/` with a Credits entry (`Credits.Entry.folder`) and only its used pieces, and
+`test_shipped_assets` fails if a pack is uncredited or a file unused.
+
+**Tune → World** lists every knob of the recipe (size, walkable share, border thickness, groves, boulders, ponds, clear
+ring, how far out the crypt entrance lies), all defaults living in `QuadrantRecipe`. They shape the next world, not the one
+being played: the page shows the world's seed with **New world** (a new seed) and **Same seed again** (this seed, a fresh
+hero), both applying the tuning first (`Run.next_world`, `Run.same_world_again`).
 
 ## Dungeon generation
 
@@ -391,8 +447,8 @@ wrong.
    their enemies are picked as if two rooms deeper. Rooms are optional, so walking away is a real choice.
 5. **Floor loot** (`*`): vault treasure, and half of the dead ends (rooms with one way in) hide an item: a potion or
    gear, rolled from the map's seed and the cell (see Floors). Exploring pays.
-6. **Exit** (the stairs down, `>`): in the deepest room, in its corner farthest from the middle (where the chest
-   appears). Below the first floor, the start is the **stairs up** (`<`) instead of `P`.
+6. **Exit** (the stairs down, `>`): in the deepest room, in its corner farthest from the middle (where chests used
+   to appear, kept so seeds still make the same maps). The start is the **stairs up** (`<`) on every floor, the first included (it leads back to the plains).
 
 **Terrain.** Deep water (`~`) blocks walking but not sight or shots: a shooter across a pool can hit you, and
 you can hit back, but nobody walks over. Shallow water (`,`, like Dungeon Crawl's) can be waded through, but
@@ -405,7 +461,8 @@ nothing hits you from the dark), through floor, water and lava but not walls or 
 seen stays drawn, dimmed; what you haven't is dark. Enemies out of sight are hidden.
 
 **Minimap** (`MinimapPainter`, `MinimapView`). Top left of the HUD, a picture with one pixel per cell (shown at
-2 px) of what `Exploration` has seen: floor, doors, water, lava and the stairs in their own colours, cells in
+2 px) of what `Exploration` has seen: floor, doors, water, lava and the stairs in their own colours (outdoors also
+tree groves, boulders and the barricaded exits), cells in
 view brighter than remembered ones, you as a bright dot. Walls and unseen cells are left blank, so the map's
 shape shows through the gaps. It redraws whenever sight does. Enemies and loot aren't marked: the minimap is for
 finding the way, and the fog already hides what you haven't seen. The **Map** button under the help line (or
@@ -492,7 +549,8 @@ counted across floors (`HeroState`); the lines are written by `RunSummary` (pure
 
 **Credits.** Everything third-party that ships (the three KayKit packs, Godot and its default Noto Sans font) is
 listed in the pause menu's Credits screen. `Credits` is plain data and `CreditsPanel` only shows it, so a new
-asset pack means one new entry, and a test fails if a pack in `assets/` is not credited. CC0 does not require
+asset pack means one new entry (naming its `assets/` folder), and tests fail if a pack in `assets/` is not credited, has no
+license file, or holds a model or texture nothing uses. CC0 does not require
 attribution; we credit anyway, and the MIT and OFL licenses of the engine and font do ask for it.
 
 **Characters** (phase 3, first pass). The models are KayKit's Adventurers and Skeletons packs (CC0, by Kay

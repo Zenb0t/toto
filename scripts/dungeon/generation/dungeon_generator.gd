@@ -5,12 +5,12 @@ extends RefCounted
 ##
 ## Rooms of varied shapes sit on a grid of slots (see RoomGraph) and are joined by short, three-wide
 ## corridors with a door at each end. Some rooms are hand-written set pieces instead (see Vaults), the way
-## Dungeon Crawl Stone Soup mixes vaults into its random levels. The player starts in a quiet room (on the
-## stairs up, below the first floor); the exit (the stairs down) is in the room farthest from it; rooms get
+## Dungeon Crawl Stone Soup mixes vaults into its random levels. The player arrives in a quiet room (on the
+## stairs up, which lead back out to the plains from the first floor); the exit (the stairs down) is in the room farthest from it; rooms get
 ## tougher the farther they are from the start (see DungeonDifficulty).
 
 ## Bumped whenever the same seed would make a different map, so a saved MapRecord can tell it no longer fits.
-const VERSION := 1
+const VERSION := 2
 
 const GRID := Vector2i(4, 3)
 ## Every slot holds one room plus the gap around it, where corridors run.
@@ -37,7 +37,6 @@ const SHALLOW := ","
 const MAX_PUDDLES := 3
 const PUDDLE_RADIUS := 2
 const PUDDLE_EDGE_CLEARANCE := 4
-const PLAYER := "P"
 const EXIT := ">"
 const STAIRS_UP := "<"
 const LOOT := "*"
@@ -196,7 +195,7 @@ func _draw(
 	for cell: Vector2i in corridors:
 		rows[cell.y][cell.x] = corridors[cell]
 	var start_center := _center_cell(rooms[graph.start_slot()])
-	rows[start_center.y][start_center.x] = PLAYER if floor_number == 1 else STAIRS_UP
+	rows[start_center.y][start_center.x] = STAIRS_UP
 	var exit_cell := _exit_cell(rooms[graph.deepest_slot()])
 	rows[exit_cell.y][exit_cell.x] = EXIT
 	for slot in graph.slots:
@@ -221,7 +220,7 @@ func _hides_loot(slot: Vector2i, graph: RoomGraph, room: Dictionary, rng: Random
 	return rng.randf() < DEAD_END_LOOT_CHANCE
 
 
-## The exit sits in the corner of its room farthest from the middle (where the chest appears), clear of the walls.
+## The exit sits in the corner of its room farthest from the middle, clear of the walls.
 func _exit_cell(room: Dictionary) -> Vector2i:
 	var area := _main_area(room)
 	var middle := _center_cell(room)
@@ -269,7 +268,7 @@ func _clear_of_edge(cell: Vector2i, area: Dictionary, clearance: int) -> bool:
 	return true
 
 
-## Where the chest will appear: the same rule DungeonMap.room_center uses on the parsed room.
+## The room's middle: the same rule DungeonMap.room_center (where a chest goes) uses on the parsed room.
 func _center_cell(room: Dictionary) -> Vector2i:
 	var area := _main_area(room)
 	return DungeonMap.middle_cell(area.keys().filter(func(cell: Vector2i) -> bool: return room[cell] == FLOOR))

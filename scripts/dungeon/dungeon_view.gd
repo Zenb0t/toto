@@ -9,7 +9,6 @@ const TILE_SIZE := 32
 const STONE_TINT := 0.035
 const GROUT_WIDTH := 1.5
 const EARTH_SPECK_COLOR := Color(0, 0, 0, 0.18)
-const EARTH_SPECKS := 3
 ## Columns and trees stand on the floor, with a shadow at their foot (rock fills its whole cell instead).
 const PILLAR_SHADOW_COLOR := Color(0, 0, 0, 0.35)
 const PILLAR_SHADOW_RADIUS := 13.0
@@ -40,6 +39,8 @@ const STAIRS_STEPS := 4
 var _map: DungeonMap
 var _look := BranchLook.dungeon()
 var _doors := {}  # Vector2i -> Door
+var _walls: Array[Vector2i] = []
+var _walls_found := false
 
 
 static func cell_center(cell: Vector2i) -> Vector2:
@@ -53,6 +54,8 @@ static func world_to_cell(world_position: Vector2) -> Vector2i:
 func show_map(map: DungeonMap, look := BranchLook.dungeon()) -> void:
 	_map = map
 	_look = look
+	_walls.clear()
+	_walls_found = false
 	_build_colliders(wall_cells(), WALL_LAYER)
 	_build_colliders(_map.cells_with(DungeonMap.Terrain.WATER), WATER_LAYER)
 	_build_doors()
@@ -136,7 +139,7 @@ func _draw_earth(cell: Vector2i) -> void:
 		blotch += DungeonDecor.noise(cell + step, 12)
 	var tile := _tile_rect(cell)
 	draw_rect(tile, _look.floor_color.lerp(_look.floor_alt_color, blotch / 5.0))
-	for i in EARTH_SPECKS:
+	for i in _look.ground_specks:
 		var speck := Vector2(DungeonDecor.noise(cell, 13 + i), DungeonDecor.noise(cell, 23 + i)) * (TILE_SIZE - 3)
 		draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
 
@@ -174,15 +177,16 @@ func _build_doors() -> void:
 		_doors[cell] = door
 
 
-## The walls next to open cells: the only ones anyone can see or touch.
+## The walls next to open cells: the only ones anyone can see or touch. Worked out once per map.
 func wall_cells() -> Array[Vector2i]:
-	var cells: Array[Vector2i] = []
-	for y in _map.size.y:
-		for x in _map.size.x:
-			var cell := Vector2i(x, y)
-			if not _map.is_open(cell) and _has_open_neighbour(cell):
-				cells.append(cell)
-	return cells
+	if not _walls_found:
+		for y in _map.size.y:
+			for x in _map.size.x:
+				var cell := Vector2i(x, y)
+				if not _map.is_open(cell) and _has_open_neighbour(cell):
+					_walls.append(cell)
+		_walls_found = true
+	return _walls
 
 
 func _has_open_neighbour(cell: Vector2i) -> bool:

@@ -10,13 +10,18 @@ class Entry:
 	var license: String
 	var url: String
 	var used_for: String
+	## The folder of assets/ the pack lives in, or "" for what is not a pack of files (the engine, a font).
+	var folder: String
 
-	func _init(entry_name: String, entry_author: String, entry_license: String, entry_url: String, entry_used_for: String) -> void:
+	func _init(
+			entry_name: String, entry_author: String, entry_license: String, entry_url: String, entry_used_for: String,
+			assets_folder := "") -> void:
 		name = entry_name
 		author = entry_author
 		license = entry_license
 		url = entry_url
 		used_for = entry_used_for
+		folder = assets_folder
 
 
 const CC0 := "CC0 1.0 (public domain)"
@@ -25,9 +30,9 @@ const CC0 := "CC0 1.0 (public domain)"
 ## Art first, then what the game runs on.
 static func entries() -> Array[Entry]:
 	return [
-		Entry.new("KayKit Adventurers", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-adventurers", "Hero models, their animations and the weapons"),
-		Entry.new("KayKit Skeletons", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-skeletons", "Enemy models and animations"),
-		Entry.new("KayKit Dungeon Remastered", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-dungeon-remastered", "Chests, torches, banners, candles, bottles and coins"),
+		Entry.new("KayKit Adventurers", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-adventurers", "Hero models, their animations and the weapons", "kaykit_adventurers"),
+		Entry.new("KayKit Skeletons", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-skeletons", "Enemy models and animations", "kaykit_skeletons"),
+		Entry.new("KayKit Dungeon Remastered", "Kay Lousberg", CC0, "https://kaylousberg.itch.io/kaykit-dungeon-remastered", "Chests, torches, banners, candles, bottles and coins", "kaykit_dungeon"),
 		Entry.new("Godot Engine", "Juan Linietsky, Ariel Manzur and Godot Engine contributors", "MIT", "https://godotengine.org", "The engine the game runs on"),
 		Entry.new("Noto Sans", "Google", "SIL Open Font License 1.1", "https://fonts.google.com/noto/specimen/Noto+Sans", "Godot's default font, used for all the text"),
 	]

@@ -210,3 +210,39 @@ func test_shallow_water_can_be_waded_through_slowly() -> void:
 	assert_true(map.is_standable(Vector2i(2, 1)))
 	assert_lt(map.ground_speed(Vector2i(2, 1)), 1.0)
 	assert_eq(map.ground_speed(Vector2i(3, 1)), 1.0)
+
+
+const OUTDOORS := """
+#######
+#P.T.B#
+#....B#
+#T=..>#
+#######
+"""
+
+
+func test_groves_boulders_and_barricades_are_in_the_way_of_walking() -> void:
+	var map := _parser.parse(OUTDOORS)
+
+	assert_eq(map.blocker_at(Vector2i(3, 1)), DungeonMap.Blocker.GROVE)
+	assert_eq(map.blocker_at(Vector2i(5, 1)), DungeonMap.Blocker.BOULDER)
+	assert_eq(map.blocker_at(Vector2i(2, 3)), DungeonMap.Blocker.BARRICADE)
+	assert_eq(map.blocker_at(Vector2i(1, 1)), DungeonMap.NO_BLOCKER)
+	for cell in [Vector2i(3, 1), Vector2i(5, 1), Vector2i(2, 3)]:
+		assert_false(map.is_walkable(cell), str(cell))
+		assert_false(map.is_open(cell), str(cell))
+
+
+func test_groves_and_barricades_stop_sight_but_boulders_are_low_enough_to_see_over() -> void:
+	var map := _parser.parse(OUTDOORS)
+
+	assert_false(map.is_see_through(Vector2i(3, 1)), "grove")
+	assert_false(map.is_see_through(Vector2i(2, 3)), "barricade")
+	assert_true(map.is_see_through(Vector2i(5, 1)), "boulder")
+
+
+func test_the_ground_between_groves_is_one_room() -> void:
+	var map := _parser.parse(OUTDOORS)
+
+	assert_eq(map.room_count, 1)
+	assert_eq(map.cells_with_blocker(DungeonMap.Blocker.BOULDER).size(), 2)

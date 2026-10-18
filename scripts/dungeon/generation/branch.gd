@@ -20,6 +20,8 @@ var favoured: Array[String] = []
 var puddles := false
 ## A line on arriving, the way Dungeon Crawl greets a new branch.
 var greeting := ""
+## Open ground under the sky rather than rooms and corridors: named "the plains", not "floor n".
+var outdoors := false
 var look: BranchLook
 
 
@@ -66,3 +68,11 @@ static func all() -> Array[Branch]:
 static func for_floor(floor_number: int) -> Branch:
 	var branches := all()
 	return branches[clampi(floor_number - 1, 0, branches.size() - 1)]
+
+
+## The plains: the centre quadrant, where a run starts. Not a floor of the descent, so it is not in all().
+static func plains() -> Branch:
+	var branch := Branch.new("plains", "plains", "Plains", 0.0, [], [], BranchLook.plains())
+	branch.greeting = "Grass and wind. Somewhere out here, a way down."
+	branch.outdoors = true
+	return branch

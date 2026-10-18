@@ -46,6 +46,8 @@ const ENEMIES_GROUP := "Enemies"
 const LOOT_GROUP := "Loot"
 const CONTROLS_GROUP := "Controls"
 const CAMERA_GROUP := "Camera"
+## The world's generation knobs (see QuadrantRecipe): they shape the next world, not the one being played.
+const WORLD_GROUP := "World"
 const EQUIPPED_MARK := "  (equipped)"
 const DEFAULT_WEAPON_ID := "dagger"
 const DEFAULT_UTILITY_ID := "dash"
@@ -129,6 +131,7 @@ static func create() -> Tuning:
 		params.append_array(_item_params(each, utility_group(each.id)))
 	for each in potions():
 		params.append_array(_item_params(each, potion_group(each.id)))
+	params.append_array(_item_params(QuadrantRecipe.plains(), WORLD_GROUP, true))
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", ENEMIES_GROUP, 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, Enemy.DEFAULT_HEALTH_MULTIPLIER, true),
@@ -178,7 +181,7 @@ static func create() -> Tuning:
 			BAND_WANDERING_SHARE, "Bands wandering (share, next map)", ENEMIES_GROUP, 0, 1, 0.05,
 			Band.DEFAULT_WANDERING_SHARE),
 		Tuning.Param.new(
-			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
+			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.01, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
 		Tuning.Param.new(
 			LOOT_POTION_DROP_CHANCE, "Enemy potion chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_POTION_DROP_CHANCE),
 		Tuning.Param.new(
@@ -245,6 +248,7 @@ static func sections(equipped_weapon_id: String, equipped_utility_id: String) ->
 		TuningSection.new(LOOT_GROUP, [LOOT_GROUP]),
 		TuningSection.new(CONTROLS_GROUP, [CONTROLS_GROUP]),
 		TuningSection.new(CAMERA_GROUP, [CAMERA_GROUP]),
+		TuningSection.new(WORLD_GROUP, [WORLD_GROUP]),
 	]
 
 
@@ -404,6 +408,13 @@ static func wall_height(tuning: Tuning) -> float:
 	return tuning.value(CAMERA_WALL_HEIGHT)
 
 
+## What the plains of the next world are made of (Tune → World).
+static func plains_recipe(tuning: Tuning) -> QuadrantRecipe:
+	var recipe := QuadrantRecipe.plains()
+	_apply_knobs(recipe, tuning)
+	return recipe
+
+
 ## items: Items or Potions; group_of: their id -> their group.
 static func _items_section(title: String, items: Array, group_of: Callable, equipped_id: String) -> TuningSection:
 	var groups: Array[String] = []
@@ -443,17 +454,17 @@ static func _new_potion(potion_id: String) -> Potion:
 	return HealingPotion.new()
 
 
-## fresh: an Item or a Potion, as built with its defaults.
-static func _item_params(fresh: Object, group: String) -> Array[Tuning.Param]:
+## fresh: an Item, a Potion or a recipe, as built with its defaults. next_run_only: its knobs shape the next world.
+static func _item_params(fresh: Object, group: String, next_run_only := false) -> Array[Tuning.Param]:
 	var params: Array[Tuning.Param] = []
 	for knob in fresh.knobs():
 		params.append(Tuning.Param.new(
 			key(fresh.id, knob.field), knob.label, group, knob.min_value, knob.max_value, knob.step,
-			fresh.get(knob.field)))
+			fresh.get(knob.field), next_run_only))
 	return params
 
 
-## Builds an item or potion from tuning values, keeping whole-number fields (counts, damage) whole.
+## Builds an item, potion or recipe from tuning values, keeping whole-number fields (counts, damage) whole.
 static func _apply_knobs(built: Object, tuning: Tuning) -> void:
 	for knob in built.knobs():
 		var value := tuning.value(key(built.id, knob.field))
