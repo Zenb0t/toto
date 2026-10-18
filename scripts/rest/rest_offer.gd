@@ -18,3 +18,8 @@ static func refusal(fire: Campfire, verdict: MonstersAround.Verdict) -> String:
 	if fire.can_light():
 		return MonstersAround.message(verdict)
 	return ""
+
+
+## Why the hero can't rest at the inn now ("" when they can): only the monsters around can forbid it.
+static func inn_refusal(verdict: MonstersAround.Verdict) -> String:
+	return MonstersAround.message(verdict)
