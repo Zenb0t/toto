@@ -202,6 +202,15 @@ func slow(multiplier: float, seconds: float) -> void:
 	_slow_time_left = maxf(_slow_time_left, seconds)
 
 
+## It has noticed the hero and is after them (see EnemyBrain.is_hunting).
+func is_hunting() -> bool:
+	return _brain.is_hunting()
+
+
+func is_asleep() -> bool:
+	return _brain.is_asleep()
+
+
 func is_slowed() -> bool:
 	return _slow_time_left > 0.0
 

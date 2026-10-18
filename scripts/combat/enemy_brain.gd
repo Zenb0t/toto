@@ -125,6 +125,16 @@ func is_calm() -> bool:
 	return state == State.ASLEEP or state == State.WANDER
 
 
+## It has noticed its target and is after it (noticing, hunting, in position, attacking or stepping aside), as
+## opposed to asleep, wandering or giving up.
+func is_hunting() -> bool:
+	return state in [State.NOTICING, State.HUNT, State.POSITION, State.WINDUP, State.RECOVER]
+
+
+func is_asleep() -> bool:
+	return state == State.ASLEEP
+
+
 ## Checking or on its way home: it has given up the chase, but is awake and can notice its target again.
 func is_giving_up() -> bool:
 	return state == State.CHECK or state == State.RETURN

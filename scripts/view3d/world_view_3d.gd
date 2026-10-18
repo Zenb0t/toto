@@ -59,6 +59,10 @@ func set_doors_closed(door_cells: Array[Vector2i], closed: bool) -> void:
 	_map.set_doors_closed(door_cells, closed)
 
 
+func show_campfire(cell: Vector2i, state: Campfire.State, seconds_left: float, held := false) -> void:
+	_map.show_campfire(cell, state, seconds_left, held)
+
+
 func show_exploration(exploration: Exploration) -> void:
 	_map.show_exploration(exploration)
 
