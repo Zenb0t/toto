@@ -93,6 +93,9 @@ var home := Vector2.ZERO
 ## How far from home it wanders, in pixels.
 var wander_radius := Band.DEFAULT_WANDER_RADIUS_CELLS * DungeonView.TILE_SIZE
 var wander_speed_share := DEFAULT_WANDER_SPEED_SHARE
+## Optional: the only cells it wanders over (Vector2i -> true). A locking room's band keeps to its room, so it is
+## still inside when the room locks; empty lets it wander anywhere near home and in sight of it.
+var wander_cells := {}
 ## Its home never gives up the chase (the Lich's arena, a sealed trap room): set by whoever builds the band.
 var never_gives_up := false
 ## Optional: a caster that casts one spell at a time with a pause between (the Lich). Without one, it attacks
@@ -400,12 +403,13 @@ func _movement() -> Vector2:
 	return Vector2.ZERO
 
 
-## Strolls from one spot near home to the next. Spots out of sight of home (in the next room, say), and spots
-## it shouldn't stand on (lava), are skipped.
+## Strolls from one spot near home to the next. Spots out of sight of home (in the next room, say), spots it
+## shouldn't stand on (lava) and spots outside its wander_cells are skipped.
 func _wander_direction() -> Vector2:
 	if not _has_wander_goal or global_position.distance_to(_wander_goal) < WAYPOINT_REACHED:
 		var goal := EnemyTactics.wander_goal(home, wander_radius, _rng)
-		_has_wander_goal = navigation == null or (navigation.is_safe_footing(goal) and navigation.can_see(home, goal))
+		_has_wander_goal = (navigation == null or (navigation.is_safe_footing(goal) and navigation.can_see(home, goal))) \
+				and (wander_cells.is_empty() or wander_cells.has(DungeonView.world_to_cell(goal)))
 		_wander_goal = goal
 		_repath_left = 0.0
 		return Vector2.ZERO

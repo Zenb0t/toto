@@ -86,6 +86,20 @@ func test_the_lich_dying_opens_the_arena() -> void:
 	assert_eq(opened, [arena])
 
 
+## As main.gd builds the rooms on a return: a monster killed on an earlier visit is not spawned, so not counted.
+func test_with_the_lich_dead_from_an_earlier_visit_the_arena_no_longer_locks() -> void:
+	var map := _arena()
+	var counts := {}
+	for cell in map.enemy_spawns:
+		if map.monster_at(cell) != Lich.ID:
+			counts[map.room_at(cell)] = counts.get(map.room_at(cell), 0) + 1
+	var progress := DungeonProgress.new(counts, map.locking_room_ids())
+
+	progress.enter_room(map.locking_room_of_kind(LockingRoom.Kind.ARENA))
+
+	assert_eq(progress.locked_room, DungeonProgress.NO_ROOM, "the hero is never shut in with nobody to kill")
+
+
 func test_the_lich_backs_away_from_a_hero_who_comes_close() -> void:
 	var hero := _hero_at(Vector2(3 * CELL, 0))
 	var lich := _lich()
@@ -154,3 +168,36 @@ func test_the_lich_never_gives_up_however_far_the_hero_gets_from_his_home() -> v
 	await wait_seconds(Awareness.DEFAULT_GIVE_UP_SECONDS + 2.0)
 
 	assert_gt(lich.position.x, 6.0 * CELL, "he is still coming for the hero, not walking home")
+
+
+func test_the_band_of_a_locking_room_wanders_only_inside_it_not_out_through_its_door() -> void:
+	var map := DungeonMapParser.new().parse("""
+#####
+#P..#
+#.R.#
+##+##
+#...#
+#...#
+#...#
+#####
+""".strip_edges())
+	var room := map.room_at(Vector2i(2, 2))
+	var room_cells := {}
+	for cell in map.cells_of_room(room):
+		room_cells[cell] = true
+	var enemy: Enemy = ENEMY_SCENE.instantiate()
+	enemy.become(Lich.new().monster())
+	enemy.position = DungeonView.cell_center(Vector2i(2, 2))
+	enemy.navigation = Pathfinder.new(map)
+	enemy.wander_radius = 4 * CELL
+	enemy.wander_speed_share = 1.0
+	enemy.wander_cells = room_cells
+	enemy.settle(enemy.position, Band.start_of(1, 0, 0.0, true))
+	add_child_autofree(enemy)
+	var left_the_room := false
+
+	for frame in 120:
+		await wait_physics_frames(1)
+		left_the_room = left_the_room or not room_cells.has(DungeonView.world_to_cell(enemy.position))
+
+	assert_false(left_the_room, "he never strolls into the corridor, where the lock would shut him out")

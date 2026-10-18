@@ -10,7 +10,7 @@ static func title(ending: Ending) -> String:
 	return "You killed the Lich" if ending == Ending.WON else "You died"
 
 
-## killer: what dealt the last blow (see Player.last_hurt_by); ignored for an escape.
+## killer: what dealt the last blow (see Player.last_hurt_by); ignored for a win.
 static func lines(run: Run, level: int, ending: Ending, killer: String) -> PackedStringArray:
 	var result := PackedStringArray()
 	if ending == Ending.DIED:

@@ -274,8 +274,11 @@ func _spawn_enemies() -> void:
 		enemy.settle(
 			DungeonView.cell_center(band.cell),
 			Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share, locking))
-		# The band of a locking room is awake but ignores the hero until the room locks (see _on_room_locked).
-		if not locking:
+		# The band of a locking room is awake but ignores the hero until the room locks (see _on_room_locked), and
+		# keeps to its room meanwhile: strolling out through a door, it would be shut out when the room locks.
+		if locking:
+			enemy.wander_cells = _cell_set(_stage.map.cells_of_room(_stage.map.room_at(cell)))
+		else:
 			enemy.chase(_player)
 		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
 		enemy.noticed.connect(_on_enemy_noticed)
@@ -284,6 +287,14 @@ func _spawn_enemies() -> void:
 		_stage.world.add_enemy(enemy)
 		_enemies_by_band.get_or_add(band.id, []).append(enemy)
 		_spawn_cells[enemy] = cell
+
+
+## A set of cells (cell -> true), for Enemy.wander_cells.
+static func _cell_set(cells: Array[Vector2i]) -> Dictionary:
+	var result := {}
+	for cell in cells:
+		result[cell] = true
+	return result
 
 
 ## The map's campfires as the record has them (unlit if never lit), and which a band still holds.
@@ -1088,10 +1099,11 @@ func _end_run(ending: RunSummary.Ending) -> void:
 
 
 ## The Lich is dead: a moment to see it, then the run's summary. Dismissing it carries on playing in the same world
-## (see _keep_playing). A hero who dies in that moment gets the death summary instead.
+## (see _keep_playing). A hero who dies in that moment gets the death summary instead. The moment only runs while
+## the game does, so the summary never opens over the pause menu or the map (whose closing would unpause under it).
 func _win() -> void:
 	var run := _run
-	await get_tree().create_timer(SUMMARY_DELAY_SECONDS).timeout
+	await get_tree().create_timer(SUMMARY_DELAY_SECONDS, false).timeout
 	if run != _run or not _in_play:
 		return  # The player started over or died meanwhile.
 	_in_play = false
