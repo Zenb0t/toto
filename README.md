@@ -60,10 +60,11 @@ areas stay dimmed on the map, and a minimap (top left) charts what you've seen: 
 lava, and you. Items sometimes lie on the floor (the same ones for the same world seed), and some rooms are tougher than they should be. The monsters of a room are a band that sleeps there (a "z" over
 their heads) or wanders slowly about it; one notices you only when it can see you close by (4 cells asleep, 9
 wandering) or when you hurt it, shows a "!", and comes for you with the rest of its band. Rooms don't lock, so you
-can sneak past or pick your fight. Clearing a room leaves a
-chest with a random weapon or utility (Dash, Shield, Blink, Frost Nova), and often a potion. Enemies carry the same weapons you do and fight the way their
-weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. They sometimes drop
-their weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
+can sneak past or pick your fight. Loot is earned, not handed out:
+clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
+hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
+weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. About one in fifty drops
+its weapon. Rooms get tougher the deeper you go, and each floor more than the last. Find the gold stairs (in the room
 farthest from the start, usable once it is clear) to go down, keeping your gear, health and potions; the
 fifth floor's stairs lead out. Below the first floor you arrive on silver stairs that lead back up, onto the gold
 stairs of the floor above. The dungeon remembers: monsters you killed stay dead, opened chests stay open, items

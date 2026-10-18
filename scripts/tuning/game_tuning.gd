@@ -162,7 +162,7 @@ static func create() -> Tuning:
 			BAND_WANDERING_SHARE, "Bands wandering (share, next map)", ENEMIES_GROUP, 0, 1, 0.05,
 			Band.DEFAULT_WANDERING_SHARE),
 		Tuning.Param.new(
-			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
+			LOOT_ENEMY_DROP_CHANCE, "Enemy drop chance", LOOT_GROUP, 0, 1, 0.01, LootTable.DEFAULT_ENEMY_DROP_CHANCE),
 		Tuning.Param.new(
 			LOOT_POTION_DROP_CHANCE, "Enemy potion chance", LOOT_GROUP, 0, 1, 0.05, LootTable.DEFAULT_POTION_DROP_CHANCE),
 		Tuning.Param.new(
