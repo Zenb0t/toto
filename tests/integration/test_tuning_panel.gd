@@ -220,3 +220,33 @@ func test_same_seed_again_closes_the_screen_and_asks_for_the_same_seed() -> void
 	assert_false(panel.visible)
 	assert_signal_emitted(panel, "same_seed_requested")
 	assert_signal_not_emitted(panel, "new_world_requested")
+
+
+func test_warp_is_off_by_default_and_its_places_are_hidden_until_it_is_turned_on() -> void:
+	var panel := _open_panel()
+	await _press(panel, "World")
+
+	assert_false(GameTuning.warp_enabled(GameTuning.create()))
+	for each in Warp.targets():
+		assert_null(_row(panel, "Warp_" + each.id), each.id)
+
+	panel.nudge(GameTuning.WORLD_WARP, 1)
+	await wait_process_frames(1)
+
+	for each in Warp.targets():
+		assert_not_null(_row(panel, "Warp_" + each.id), each.id)
+
+
+func test_picking_a_warp_place_applies_the_tuning_closes_the_screen_and_asks_to_go_there() -> void:
+	var panel := _open_panel()
+	watch_signals(panel)
+	await _press(panel, "World")
+	panel.nudge(GameTuning.WORLD_WARP, 1)
+	await wait_process_frames(1)
+
+	await _press(panel, "Warp_" + Warp.ARENA)
+
+	assert_false(panel.visible)
+	assert_signal_emitted_with_parameters(panel, "warp_requested", [Warp.ARENA])
+	assert_signal_not_emitted(panel, "new_world_requested")
+	assert_true(GameTuning.warp_enabled(_last_tuning(panel, "finished")))

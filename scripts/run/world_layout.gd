@@ -23,6 +23,9 @@ enum Spot {
 	START,
 	STAIRS_DOWN,
 	STAIRS_UP,
+	## Beside the ruin's chest and just outside the arena's door: only warping lands here (see Warp).
+	RUIN,
+	ARENA_DOOR,
 }
 
 
@@ -97,6 +100,10 @@ static func arrival_cell(map: DungeonMap, spot: Spot) -> Vector2i:
 			return map.exit_cell
 		Spot.STAIRS_UP:
 			return map.stairs_up_cell
+		Spot.RUIN:
+			return Warp.cell_beside_ruin(map)
+		Spot.ARENA_DOOR:
+			return Warp.cell_outside_arena(map)
 	return map.player_spawn
 
 

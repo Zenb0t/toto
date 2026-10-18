@@ -86,3 +86,12 @@ func travel(exit: WorldLayout.Exit, carried: HeroState) -> WorldLayout.Destinati
 	current_map_id = leads_to.map_id
 	arrival_spot = leads_to.spot
 	return leads_to
+
+
+## Jumps to a place (Warp, a playtest aid) with the hero as they are now, by the same rule as an exit: the current
+## map becomes the target's and the hero arrives on its spot. Every map's record is left as it is.
+func warp(to: Warp.Target, carried: HeroState) -> WorldLayout.Destination:
+	hero = carried
+	current_map_id = to.destination.map_id
+	arrival_spot = to.destination.spot
+	return to.destination
