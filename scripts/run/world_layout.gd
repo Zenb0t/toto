@@ -1,11 +1,12 @@
 class_name WorldLayout
 extends RefCounted
 ## Which maps a world holds and how they connect: the plains (the centre quadrant, where a run starts), whose
-## crypt entrance leads down to a descent of FLOOR_COUNT floors, each one's stairs down leading to the next floor's
-## stairs up (and back), and the last one's out of the dungeon. The first floor's stairs up lead back out to the
-## mausoleum. Every map's seed comes from the world seed, so the same world seed always gives the same maps. Pure.
+## crypt entrance leads down into the crypt: FLOOR_COUNT levels, each one's stairs down leading to the next level's
+## stairs up (and back). Until the Lich waits at the bottom, the last level's stairs lead out of the world (the run
+## is won). The first level's stairs up lead back out to the mausoleum. Every map's seed comes from the world seed, so the same world seed always gives the same maps. Pure.
 
-const FLOOR_COUNT := 5
+## The levels of the crypt.
+const FLOOR_COUNT := 3
 const PLAINS_ID := "plains"
 ## exit_at's answer for a cell that leads nowhere.
 const NO_EXIT := -1
@@ -46,7 +47,7 @@ static func start_map_id() -> String:
 
 
 static func floor_id(floor_number: int) -> String:
-	return "floor_%d" % floor_number
+	return "crypt_%d" % floor_number
 
 
 static func map_ids() -> Array[String]:
@@ -56,11 +57,13 @@ static func map_ids() -> Array[String]:
 	return ids
 
 
-## The map's spec in the world grown from world_seed. plains: what the plains is made of.
-static func spec(world_seed: int, map_id: String, plains := QuadrantRecipe.plains()) -> MapSpec:
+## The map's spec in the world grown from world_seed. plains: what the plains is made of; crypt: what the
+## crypt's levels are made of.
+static func spec(
+		world_seed: int, map_id: String, plains := QuadrantRecipe.plains(), crypt := CryptRecipe.new()) -> MapSpec:
 	if map_id == PLAINS_ID:
-		return MapSpec.new(map_id, MapSpec.Recipe.QUADRANT, 0, map_seed(world_seed, map_id), plains)
-	return MapSpec.new(map_id, MapSpec.Recipe.DUNGEON_FLOOR, _floor_number(map_id), map_seed(world_seed, map_id))
+		return MapSpec.new(map_id, MapSpec.Recipe.QUADRANT, 0, map_seed(world_seed, map_id), plains, crypt)
+	return MapSpec.new(map_id, MapSpec.Recipe.DUNGEON_FLOOR, _floor_number(map_id), map_seed(world_seed, map_id), null, crypt)
 
 
 ## A map's own seed: the same for the same world seed and map, different from map to map.
@@ -107,7 +110,7 @@ static func exit_at(map: DungeonMap, cell: Vector2i) -> int:
 	return NO_EXIT
 
 
-## The plains are 0, the descent's floors 1 to FLOOR_COUNT.
+## The plains are 0, the crypt's levels 1 to FLOOR_COUNT.
 static func _floor_number(map_id: String) -> int:
 	var index := map_ids().find(map_id)
 	if index < 0:

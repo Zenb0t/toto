@@ -19,10 +19,9 @@ static func lines(run: Run, level: int, ending: Ending, killer: String) -> Packe
 		if map.branch().outdoors:
 			result.append("%s on the %s." % [cause, map.branch().display_name])
 		else:
-			result.append("%s in the %s (floor %d of %d)." % [
-				cause, map.branch().display_name, map.floor_number, WorldLayout.FLOOR_COUNT])
+			result.append("%s on %s of %d." % [cause, map.place_name().to_lower(), WorldLayout.FLOOR_COUNT])
 	else:
-		result.append("Escaped with the treasure of floor %d." % WorldLayout.FLOOR_COUNT)
+		result.append("Escaped with the treasure of crypt level %d." % WorldLayout.FLOOR_COUNT)
 	result.append("Reached level %d." % level)
 	var kills := run.hero.kills
 	result.append("%d %s slain." % [kills, "monster" if kills == 1 else "monsters"])

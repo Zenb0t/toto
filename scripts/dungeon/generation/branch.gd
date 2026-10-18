@@ -1,7 +1,7 @@
 class_name Branch
 extends RefCounted
-## A part of the dungeon with a character of its own, like Dungeon Crawl's branches: each floor of the
-## descent is one, with its own kind of rooms (built or natural caves), its own set pieces (vaults), the
+## A part of the dungeon with a character of its own, like Dungeon Crawl's branches: the descent is the crypt
+## (the others wait for later ideas), with its own kind of rooms (built or natural caves), its own set pieces (vaults), the
 ## monsters that live there and its own look (see BranchLook). Plain data.
 
 ## Stable identifier.
@@ -38,7 +38,7 @@ func _init(
 	puddles = wet
 
 
-## Every branch, in the order the descent goes through them: one per floor.
+## Every branch, in the order the descent once went through them.
 static func all() -> Array[Branch]:
 	var branches: Array[Branch] = [
 		Branch.new("dungeon", "Dungeon", "D", 0.15,
@@ -64,7 +64,17 @@ static func all() -> Array[Branch]:
 	return branches
 
 
-## The branch a floor of the descent is in (the last one for anything deeper).
+## The crypt: the branch every level of the descent is in. The others stay in code for later ideas.
+static func crypt() -> Branch:
+	for each in all():
+		if each.id == "crypt":
+			return each
+	push_error("No crypt branch")
+	return all()[0]
+
+
+## The branch the nth entry of all() gives a floor (the last one for anything deeper): how the descent once
+## went through every branch, one per floor.
 static func for_floor(floor_number: int) -> Branch:
 	var branches := all()
 	return branches[clampi(floor_number - 1, 0, branches.size() - 1)]
