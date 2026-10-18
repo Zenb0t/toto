@@ -17,6 +17,8 @@ const SQUAD_TURN_GAP := "squad.turn_gap"
 const SQUAD_FLANK_SPREAD := "squad.flank_spread"
 const AWARENESS_ASLEEP_SIGHT := "awareness.asleep_sight"
 const AWARENESS_WANDER_SIGHT := "awareness.wander_sight"
+const AWARENESS_NOISE := "awareness.noise"
+const AWARENESS_SHOUT := "awareness.shout"
 const ENEMY_NOTICING := "enemy.noticing"
 const ENEMY_WANDER_SPEED := "enemy.wander_speed"
 const BAND_WANDER_RADIUS := "band.wander_radius"
@@ -151,6 +153,12 @@ static func create() -> Tuning:
 		Tuning.Param.new(
 			AWARENESS_WANDER_SIGHT, "Notice when wandering (cells)", ENEMIES_GROUP, 0, 20, 0.5,
 			Awareness.DEFAULT_WANDER_SIGHT_CELLS),
+		Tuning.Param.new(
+			AWARENESS_NOISE, "Hero's noise carries (cells)", ENEMIES_GROUP, 0, 20, 0.5,
+			Awareness.DEFAULT_NOISE_CELLS),
+		Tuning.Param.new(
+			AWARENESS_SHOUT, "Monster's shout carries (cells)", ENEMIES_GROUP, 0, 20, 0.5,
+			Awareness.DEFAULT_SHOUT_CELLS),
 		Tuning.Param.new(
 			ENEMY_NOTICING, "Noticing pause (s)", ENEMIES_GROUP, 0, 2, 0.05, EnemyBrain.DEFAULT_NOTICING_SECONDS),
 		Tuning.Param.new(
@@ -299,10 +307,13 @@ static func tune_squad(target: Squad, tuning: Tuning) -> void:
 	target.flank_spread_degrees = tuning.value(SQUAD_FLANK_SPREAD)
 
 
-## Applies the tuned noticing rules (how far a calm monster notices the hero from, asleep or wandering).
+## Applies the tuned noticing rules (how far a calm monster notices the hero from, asleep or wandering, and how
+## far noises and shouts carry).
 static func tune_awareness(target: Awareness, tuning: Tuning) -> void:
 	target.asleep_sight_cells = tuning.value(AWARENESS_ASLEEP_SIGHT)
 	target.wander_sight_cells = tuning.value(AWARENESS_WANDER_SIGHT)
+	target.noise_cells = tuning.value(AWARENESS_NOISE)
+	target.shout_cells = tuning.value(AWARENESS_SHOUT)
 
 
 ## How long a monster stands still, showing "!", once it notices the hero.

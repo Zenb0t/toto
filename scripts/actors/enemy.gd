@@ -11,7 +11,7 @@ extends CharacterBody2D
 ## through them with a weapon that lobs.
 
 signal defeated(enemy: Enemy)
-## It has just noticed its target (seen it, been hurt, or been alerted), so its band can join it.
+## It has just noticed its target (seen it, been hurt, or heard a noise or a shout). It shouts: see Awareness.
 signal noticed(enemy: Enemy)
 ## The Shots and Slashes of one attack, for the world to carry out. They hurt the player.
 signal attack_fired(attacks: Array)
@@ -161,7 +161,7 @@ func settle(at_home: Vector2, start: Band.Start) -> void:
 	_brain.state = EnemyBrain.State.ASLEEP if start == Band.Start.ASLEEP else EnemyBrain.State.WANDER
 
 
-## Its band noticed the target: a calm enemy notices it too.
+## It heard a noise or a shout (see Awareness): a calm enemy notices the target.
 func alert() -> void:
 	_alerted = true
 

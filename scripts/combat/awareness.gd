@@ -1,9 +1,14 @@
 class_name Awareness
 extends RefCounted
 ## When a monster that is asleep or wandering at home notices the hero. No dice: it notices when it can see the
-## hero (line of sight) close enough, when it is hurt, or when its band calls it.
-## Pure rules: the monster gathers the Cues, its EnemyBrain asks notices().
-
+## hero (line of sight) close enough, when it is hurt, or when it hears a noise or a shout.
+## Pure rules: the monster gathers the Cues, its EnemyBrain asks notices(). Who hears a sound is decided here too
+## (noise_hearers, shout_hearers); the world only tells it where the sound was made and carries out the waking.
+## Sound goes through walls: only the distance counts.
+## How far, in cells, the hero's attacks and blasts are heard.
+const DEFAULT_NOISE_CELLS := 8.0
+## How far, in cells, a monster that notices the hero is heard.
+const DEFAULT_SHOUT_CELLS := 8.0
 ## How close the hero must be, in cells, for a sleeping monster to notice them.
 const DEFAULT_ASLEEP_SIGHT_CELLS := 4.0
 ## How close the hero must be, in cells, for a wandering monster to notice them.
@@ -20,12 +25,14 @@ class Cues:
 	var hero_in_line_of_sight := false
 	## It took damage.
 	var hurt := false
-	## Its band noticed the hero.
+	## It heard a noise or a shout.
 	var alerted := false
 
 
 var asleep_sight_cells := DEFAULT_ASLEEP_SIGHT_CELLS
 var wander_sight_cells := DEFAULT_WANDER_SIGHT_CELLS
+var noise_cells := DEFAULT_NOISE_CELLS
+var shout_cells := DEFAULT_SHOUT_CELLS
 
 
 ## How far it can notice the hero from, in cells.
@@ -38,3 +45,21 @@ func notices(cues: Cues) -> bool:
 	if cues.hurt or cues.alerted:
 		return true
 	return cues.hero_in_line_of_sight and cues.hero_cells <= sight_cells(cues.asleep)
+
+
+## Which of the listeners hear a noise (the hero's attack, a blast) made at origin: their indexes. All in cells.
+func noise_hearers(origin: Vector2, listeners: PackedVector2Array) -> Array[int]:
+	return _within(noise_cells, origin, listeners)
+
+
+## Which of the listeners hear a shout (a monster noticing the hero) made at origin: their indexes. All in cells.
+func shout_hearers(origin: Vector2, listeners: PackedVector2Array) -> Array[int]:
+	return _within(shout_cells, origin, listeners)
+
+
+func _within(radius: float, origin: Vector2, listeners: PackedVector2Array) -> Array[int]:
+	var heard: Array[int] = []
+	for index in listeners.size():
+		if origin.distance_to(listeners[index]) <= radius:
+			heard.append(index)
+	return heard

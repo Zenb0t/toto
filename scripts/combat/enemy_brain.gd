@@ -35,7 +35,7 @@ class Senses:
 	var target_cells := INF
 	## It took damage since the last step.
 	var hurt := false
-	## Its band noticed the target since the last step.
+	## It heard a noise or a shout since the last step.
 	var alerted := false
 	## Its weapon is ready, the target is within reach, and its squad gave it the turn to attack.
 	var has_turn := false

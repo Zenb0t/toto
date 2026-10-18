@@ -1,5 +1,5 @@
 extends GutTest
-## A calm monster notices the hero only when it can see them close enough, or when it is hurt or alerted.
+## A calm monster notices the hero only when it can see them close enough, or when it is hurt or hears a noise or a shout.
 
 const ASLEEP := true
 const WANDERING := false
@@ -55,3 +55,68 @@ func test_the_sight_radii_can_be_tuned() -> void:
 
 	assert_false(awareness.notices(_cues(ASLEEP, 3.0)))
 	assert_true(awareness.notices(_cues(WANDERING, 11.0)))
+
+
+func _line_of_monsters(count: int, spacing: float) -> PackedVector2Array:
+	var cells := PackedVector2Array()
+	for i in count:
+		cells.append(Vector2(i * spacing, 0))
+	return cells
+
+
+func test_a_noise_is_heard_by_a_monster_seven_cells_away_but_not_nine_even_behind_a_wall() -> void:
+	# Distance is all that counts: the rules are never told where the walls are.
+	var listeners := PackedVector2Array([Vector2(7, 0), Vector2(0, 9)])
+
+	var heard := Awareness.new().noise_hearers(Vector2.ZERO, listeners)
+
+	assert_eq(heard, [0] as Array[int])
+
+
+func test_a_blast_is_a_noise_heard_where_it_bursts() -> void:
+	var listeners := PackedVector2Array([Vector2(10, 20), Vector2(30, 20)])
+
+	assert_eq(Awareness.new().noise_hearers(Vector2(26, 20), listeners), [1] as Array[int])
+
+
+func test_a_noise_wakes_a_sleeping_monster_that_hears_it() -> void:
+	var cues := _cues(ASLEEP, INF, false)
+	cues.alerted = true
+
+	assert_true(Awareness.new().notices(cues))
+
+
+func test_the_noise_radius_can_be_tuned() -> void:
+	var awareness := Awareness.new()
+	awareness.noise_cells = 3.0
+
+	assert_eq(awareness.noise_hearers(Vector2.ZERO, PackedVector2Array([Vector2(2, 0), Vector2(5, 0)])), [0] as Array[int])
+
+
+func test_a_shout_is_heard_within_eight_cells_whatever_band_the_monster_belongs_to() -> void:
+	var listeners := PackedVector2Array([Vector2(8, 0), Vector2(8.5, 0)])
+
+	assert_eq(Awareness.new().shout_hearers(Vector2.ZERO, listeners), [0] as Array[int])
+
+
+func test_a_shout_chains_through_a_line_of_monsters_each_closer_than_eight_cells_to_the_next() -> void:
+	var awareness := Awareness.new()
+	var line := _line_of_monsters(6, 7.0)
+	var awake := {0: true}
+	var to_shout: Array[int] = [0]
+
+	while not to_shout.is_empty():
+		var shouter: int = to_shout.pop_front()
+		for heard in awareness.shout_hearers(line[shouter], line):
+			if not awake.has(heard):
+				awake[heard] = true
+				to_shout.append(heard)
+
+	assert_eq(awake.size(), 6, "the last monster, 35 cells from the first, is woken")
+
+
+func test_a_shout_stops_where_the_monsters_are_eight_cells_or_more_apart_than_its_reach() -> void:
+	var awareness := Awareness.new()
+	var line := PackedVector2Array([Vector2(0, 0), Vector2(7, 0), Vector2(16, 0)])
+
+	assert_eq(awareness.shout_hearers(line[1], line), [0, 1] as Array[int])
