@@ -106,7 +106,9 @@ func _draw() -> void:
 
 
 func _draw_ground(cell: Vector2i) -> void:
-	if _look.flagstones:
+	if _map.terrain_at(cell) == DungeonMap.Terrain.PATH:
+		_draw_street(cell)
+	elif _look.flagstones:
 		_draw_flagstone(cell)
 	else:
 		_draw_earth(cell)
@@ -129,6 +131,15 @@ func _draw_flagstone(cell: Vector2i) -> void:
 		for point in crack:
 			points.append(stone.position + point * stone.size)
 		draw_polyline(points, CRACK_COLOR, 1.0)
+
+
+## Beaten earth: the village's streets and square, a warmer shade than the grass, with a few pebbles.
+func _draw_street(cell: Vector2i) -> void:
+	var tile := _tile_rect(cell)
+	var blotch := DungeonDecor.noise(cell, 12)
+	draw_rect(tile, _look.street_color.lerp(_look.street_alt_color, blotch))
+	var speck := Vector2(DungeonDecor.noise(cell, 13), DungeonDecor.noise(cell, 23)) * (TILE_SIZE - 3)
+	draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
 
 
 ## Bare ground: the two colours mixed in soft blotches (each cell blends its neighbours' noise), with a few

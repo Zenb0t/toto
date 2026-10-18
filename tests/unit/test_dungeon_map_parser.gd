@@ -246,3 +246,74 @@ func test_the_ground_between_groves_is_one_room() -> void:
 
 	assert_eq(map.room_count, 1)
 	assert_eq(map.cells_with_blocker(DungeonMap.Blocker.BOULDER).size(), 2)
+
+
+## A tiny village: a palisade with a gate on the left, a street, a well, a barrel, an inn with its doorstep,
+## the hero's start and a house of the second colour.
+const VILLAGE := """
+FFFFFFFFFFF
+F....:....F
+F.III.222.F
+F.III.222.F
+F..DP.....F
+G::::::U:.F
+F.....X...F
+FFFFFFFFFFF
+"""
+
+
+func test_the_palisade_marks_the_village_and_its_gates_are_gaps_in_it() -> void:
+	var map := _parser.parse(VILLAGE)
+
+	assert_not_null(map.village)
+	assert_eq(map.village.area, Rect2i(0, 0, 11, 8))
+	assert_eq(map.village.gates, [Vector2i(0, 5)] as Array[Vector2i])
+	assert_true(map.is_in_village(Vector2i(5, 5)))
+	assert_false(map.is_in_village(Vector2i(11, 5)))
+	assert_true(map.is_walkable(Vector2i(0, 5)), "a gate is open")
+	assert_eq(map.blocker_at(Vector2i(0, 4)), DungeonMap.Blocker.PALISADE)
+
+
+func test_a_map_without_a_palisade_has_no_village() -> void:
+	assert_null(_parser.parse(OUTDOORS).village)
+	assert_false(_parser.parse(OUTDOORS).is_in_village(Vector2i(1, 1)))
+
+
+func test_buildings_are_solid_and_each_run_of_one_letter_is_one_building() -> void:
+	var map := _parser.parse(VILLAGE)
+
+	var inn := map.village.building_of(Village.Kind.INN)
+	var house := map.village.building_of(Village.Kind.HOUSE)
+	assert_eq(inn.rect, Rect2i(2, 2, 3, 2))
+	assert_eq(house.rect, Rect2i(6, 2, 3, 2))
+	assert_eq(house.variant, 1, "the digit 2 is the second colour")
+	assert_eq(map.village.buildings.size(), 2)
+	assert_eq(map.blocker_at(Vector2i(3, 2)), DungeonMap.Blocker.BUILDING)
+	assert_false(map.is_walkable(Vector2i(3, 2)))
+	assert_false(map.is_see_through(Vector2i(3, 2)))
+	assert_eq(map.village.building_at(Vector2i(7, 3)), house)
+	assert_null(map.village.building_at(Vector2i(1, 1)))
+
+
+func test_the_inns_doorstep_the_well_and_the_streets_are_found_on_the_map() -> void:
+	var map := _parser.parse(VILLAGE)
+
+	assert_eq(map.village.inn_doorstep, Vector2i(3, 4))
+	assert_true(map.is_walkable(Vector2i(3, 4)))
+	assert_eq(map.village.well_cell, Vector2i(7, 5))
+	assert_eq(map.terrain_at(Vector2i(5, 1)), DungeonMap.Terrain.PATH)
+	assert_true(map.is_walkable(Vector2i(5, 1)))
+
+
+func test_the_well_and_barrels_are_in_the_way_but_low_enough_to_see_over() -> void:
+	var map := _parser.parse(VILLAGE)
+
+	for cell in [Vector2i(7, 5), Vector2i(6, 6)]:
+		assert_false(map.is_walkable(cell), str(cell))
+		assert_true(map.is_see_through(cell), str(cell))
+	assert_false(map.is_see_through(Vector2i(0, 4)), "the palisade stops sight")
+
+
+func test_no_village_letter_is_also_a_monster() -> void:
+	for letter in Village.solid_letters() + [Village.GATE, Village.STREET, Village.DOORSTEP]:
+		assert_false(letter in Bestiary.letters(), "%s is a monster" % letter)
