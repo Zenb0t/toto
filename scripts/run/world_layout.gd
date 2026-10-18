@@ -1,10 +1,12 @@
 class_name WorldLayout
 extends RefCounted
-## Which maps a world holds and how they connect: today a descent of FLOOR_COUNT floors, each one's stairs down
-## leading to the next floor's stairs up (and back), and the last one's out of the dungeon. Every map's seed comes from the world seed, so the same
-## world seed always gives the same maps. Pure.
+## Which maps a world holds and how they connect: the plains (the centre quadrant, where a run starts), whose
+## crypt entrance leads down to a descent of FLOOR_COUNT floors, each one's stairs down leading to the next floor's
+## stairs up (and back), and the last one's out of the dungeon. The first floor's stairs up lead back out to the
+## mausoleum. Every map's seed comes from the world seed, so the same world seed always gives the same maps. Pure.
 
 const FLOOR_COUNT := 5
+const PLAINS_ID := "plains"
 ## exit_at's answer for a cell that leads nowhere.
 const NO_EXIT := -1
 
@@ -40,7 +42,7 @@ class Destination:
 
 ## The map a run starts on.
 static func start_map_id() -> String:
-	return floor_id(1)
+	return PLAINS_ID
 
 
 static func floor_id(floor_number: int) -> String:
@@ -48,14 +50,16 @@ static func floor_id(floor_number: int) -> String:
 
 
 static func map_ids() -> Array[String]:
-	var ids: Array[String] = []
+	var ids: Array[String] = [PLAINS_ID]
 	for floor_number in range(1, FLOOR_COUNT + 1):
 		ids.append(floor_id(floor_number))
 	return ids
 
 
-## The map's spec in the world grown from world_seed.
-static func spec(world_seed: int, map_id: String) -> MapSpec:
+## The map's spec in the world grown from world_seed. plains: what the plains is made of.
+static func spec(world_seed: int, map_id: String, plains := QuadrantRecipe.plains()) -> MapSpec:
+	if map_id == PLAINS_ID:
+		return MapSpec.new(map_id, MapSpec.Recipe.QUADRANT, 0, map_seed(world_seed, map_id), plains)
 	return MapSpec.new(map_id, MapSpec.Recipe.DUNGEON_FLOOR, _floor_number(map_id), map_seed(world_seed, map_id))
 
 
@@ -74,7 +78,9 @@ static func destination(from_map_id: String, exit: Exit) -> Destination:
 				return Destination.new("")
 			return Destination.new(floor_id(floor_number + 1), Spot.STAIRS_UP)
 		Exit.STAIRS_UP:
-			assert(floor_number > 1, "the top floor has no stairs up")
+			assert(floor_number > 0, "the plains have no stairs up")
+			if floor_number == 1:
+				return Destination.new(PLAINS_ID, Spot.STAIRS_DOWN)
 			return Destination.new(floor_id(floor_number - 1), Spot.STAIRS_DOWN)
 	push_error("Unknown exit %d" % exit)
 	return Destination.new(from_map_id)
@@ -101,8 +107,9 @@ static func exit_at(map: DungeonMap, cell: Vector2i) -> int:
 	return NO_EXIT
 
 
+## The plains are 0, the descent's floors 1 to FLOOR_COUNT.
 static func _floor_number(map_id: String) -> int:
 	var index := map_ids().find(map_id)
 	if index < 0:
 		push_error("Unknown map id '%s'" % map_id)
-	return index + 1
+	return index

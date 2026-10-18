@@ -51,3 +51,20 @@ func test_every_kind_of_clutter_can_be_made() -> void:
 			var thing := DecorModel.make(kind, 0.5)
 			assert_not_null(thing, "%s: %s" % [branch.id, kind])
 			thing.free()
+
+
+func test_the_plains_are_an_outdoor_place_of_grass_and_trees_with_no_torches() -> void:
+	var plains := Branch.plains()
+
+	assert_true(plains.outdoors)
+	assert_eq(plains.display_name, "plains")
+	assert_ne(plains.greeting, "")
+	assert_false(plains.look.torches)
+	assert_false(plains.look.flagstones)
+	assert_gt(plains.look.floor_color.g, plains.look.floor_color.r, "green ground")
+
+
+func test_the_plains_are_not_a_floor_of_the_descent() -> void:
+	for branch in Branch.all():
+		assert_ne(branch.id, Branch.plains().id)
+		assert_false(branch.outdoors, branch.id)

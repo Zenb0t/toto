@@ -18,7 +18,8 @@ func test_every_monster_carries_a_weapon_the_player_can_find() -> void:
 
 func test_map_letters_never_clash_with_the_map_symbols() -> void:
 	var symbols := [DungeonMapParser.WALL, DungeonMapParser.FLOOR, DungeonMapParser.DOOR, DungeonMapParser.PLAYER,
-		DungeonMapParser.EXIT, DungeonMapParser.STAIRS_UP, DungeonMapParser.LOOT, DungeonMapParser.WATER, DungeonMapParser.LAVA]
+		DungeonMapParser.EXIT, DungeonMapParser.STAIRS_UP, DungeonMapParser.LOOT, DungeonMapParser.WATER, DungeonMapParser.LAVA,
+		DungeonMapParser.SHALLOW, DungeonMapParser.GROVE, DungeonMapParser.BOULDER, DungeonMapParser.BARRICADE]
 	for letter in Bestiary.letters():
 		assert_does_not_have(symbols, letter)
 

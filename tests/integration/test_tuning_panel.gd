@@ -183,3 +183,40 @@ func test_reopening_shows_the_latest_values() -> void:
 
 	var slider: HSlider = _row(panel, WINDUP_ROW).get_node("Slider")
 	assert_almost_eq(slider.value, 0.8, 0.0001)
+
+
+func test_the_world_page_shows_the_seed_and_every_generation_knob() -> void:
+	var panel := _open_panel()
+	panel.open(GameTuning.create(), GameTuning.sections("dagger", "dash"), 424242)
+
+	await _press(panel, "World")
+
+	assert_eq((_row(panel, "Seed") as Label).text, "World seed 424242")
+	for knob in QuadrantRecipe.plains().knobs():
+		assert_not_null(_row(panel, GameTuning.key("plains", knob.field).replace(".", "_")), knob.field)
+
+
+func test_new_world_applies_the_tuning_closes_the_screen_and_asks_for_a_new_world() -> void:
+	var panel := _open_panel()
+	watch_signals(panel)
+	await _press(panel, "World")
+	panel.nudge(GameTuning.key("plains", "boulder_count"), 2)
+
+	await _press(panel, "NewWorld")
+
+	assert_false(panel.visible)
+	assert_signal_emitted(panel, "new_world_requested")
+	assert_signal_not_emitted(panel, "same_seed_requested")
+	assert_eq(_last_tuning(panel, "finished").value(GameTuning.key("plains", "boulder_count")), 80.0)
+
+
+func test_same_seed_again_closes_the_screen_and_asks_for_the_same_seed() -> void:
+	var panel := _open_panel()
+	watch_signals(panel)
+	await _press(panel, "World")
+
+	await _press(panel, "SameSeedAgain")
+
+	assert_false(panel.visible)
+	assert_signal_emitted(panel, "same_seed_requested")
+	assert_signal_not_emitted(panel, "new_world_requested")

@@ -205,3 +205,41 @@ func test_a_magic_missile_is_worth_between_two_and_three_punches() -> void:
 func test_the_bow_is_among_the_weapons_the_player_can_find() -> void:
 	assert_has(GameTuning.weapon_ids(), "bow")
 	assert_eq(GameTuning.weapon(GameTuning.create(), "bow").id, "bow")
+
+
+func test_the_world_section_holds_every_generation_knob_of_the_plains() -> void:
+	var world: TuningSection
+	for section in GameTuning.sections("dagger", "dash"):
+		if section.title == GameTuning.WORLD_GROUP:
+			world = section
+	assert_not_null(world, "Tune has a World section")
+
+	var tuning := GameTuning.create()
+	var keys: Array[String] = []
+	for each in tuning.params():
+		if each.group == GameTuning.WORLD_GROUP:
+			keys.append(each.key)
+			assert_true(each.next_run_only, "%s shapes the next world" % each.key)
+	for knob in QuadrantRecipe.plains().knobs():
+		assert_has(keys, GameTuning.key("plains", knob.field))
+	assert_eq(keys.size(), QuadrantRecipe.plains().knobs().size())
+
+
+func test_untouched_tuning_builds_the_plains_with_the_recipes_own_defaults() -> void:
+	var built := GameTuning.plains_recipe(GameTuning.create())
+
+	for knob in QuadrantRecipe.plains().knobs():
+		assert_eq(built.get(knob.field), QuadrantRecipe.plains().get(knob.field), knob.field)
+
+
+func test_tuned_world_knobs_change_the_next_plains() -> void:
+	var tuning := GameTuning.create()
+	tuning.set_value(GameTuning.key("plains", "width"), 120)
+	tuning.set_value(GameTuning.key("plains", "grove_share"), 0.25)
+
+	var recipe := GameTuning.plains_recipe(tuning)
+
+	assert_eq(recipe.width, 120)
+	assert_true(recipe.width is int)
+	assert_almost_eq(recipe.grove_share, 0.25, 0.0001)
+	assert_eq(DungeonMapParser.new().parse(QuadrantGenerator.new().generate(recipe, 1)).size.x, 120)
