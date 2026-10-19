@@ -140,10 +140,12 @@ func test_the_arena_is_a_big_hall_with_his_crypt_at_the_front() -> void:
 		var map := _level(seed_value)
 		var lich := _lich_cells(map)[0]
 		var cells := map.cells_of_room(_arena_of(map))
-		var front: int = cells.map(func(cell: Vector2i) -> int: return cell.y).min()
+		var rows: Array = cells.map(func(cell: Vector2i) -> int: return cell.y)
+		# The crypt is at the north end, or the south end when a corridor comes from the north.
+		var from_the_end: int = mini(lich.y - rows.min(), rows.max() - lich.y)
 
 		assert_gt(cells.size(), 250, "seed %d" % seed_value)
-		assert_lt(lich.y - front, BossArena.CRYPT_SIZE.y, "seed %d: he stands in the recess at the front" % seed_value)
+		assert_lt(from_the_end, BossArena.CRYPT_SIZE.y, "seed %d: he stands in the recess at the front" % seed_value)
 
 
 func test_the_arena_is_made_the_same_way_every_time() -> void:
@@ -161,3 +163,40 @@ func test_a_locking_mark_makes_a_room_lock_and_other_rooms_never_do() -> void:
 	assert_eq(map.locking_room_ids().size(), 1)
 	assert_eq(map.locking_kind(map.room_at(Vector2i(6, 1))), LockingRoom.Kind.TRAP)
 	assert_eq(map.locking_kind(map.room_at(Vector2i(1, 1))), LockingRoom.NONE)
+
+
+func test_the_crypt_turns_its_back_on_a_corridor_that_comes_from_the_north() -> void:
+	var graph := RoomGraph.new()
+	var arena := Vector2i(1, 1)
+	graph.slots = [Vector2i(1, 0), arena, Vector2i(2, 1)]
+	graph.links = [[Vector2i(1, 0), arena], [arena, Vector2i(2, 1)]]
+
+	assert_true(BossArena.faces_south(graph, arena), "a room above it: the crypt faces south")
+	graph.links = [[arena, Vector2i(2, 1)]]
+	assert_false(BossArena.faces_south(graph, arena))
+
+
+func test_the_mirrored_arena_has_the_same_floor_with_the_crypt_at_the_other_end() -> void:
+	var bounds := Rect2i(2, 2, 24, 18)
+	var north := BossArena.room(bounds)
+	var south := BossArena.room(bounds, true)
+
+	assert_eq(south.size(), north.size())
+	assert_lt(BossArena.lich_cell(bounds).y, bounds.position.y + bounds.size.y / 2)
+	assert_gt(BossArena.lich_cell(bounds, true).y, bounds.position.y + bounds.size.y / 2)
+	assert_true(south.has(BossArena.lich_cell(bounds, true)))
+
+
+func test_no_corridor_opens_into_the_crypt_nor_high_up_the_side_walls() -> void:
+	var bounds := Rect2i(2, 2, 24, 16)
+	var hall := BossArena.hall(bounds)
+	var beside_the_crypt := Vector2i(bounds.position.x + 1, hall.position.y)
+	var high_on_the_side := Vector2i(bounds.position.x, hall.position.y + 1)
+	var low_on_the_side := Vector2i(bounds.position.x, hall.end.y - 2)
+
+	assert_false(BossArena.admits_door(BossArena.lich_cell(bounds), false, bounds), "not into the crypt")
+	assert_false(BossArena.admits_door(BossArena.nook_cells(bounds)[0], false, bounds), "nor into a nook")
+	assert_true(BossArena.admits_door(beside_the_crypt, false, bounds), "from above, down beside the crypt")
+	assert_false(BossArena.admits_door(high_on_the_side, true, bounds), "a side door near the crypt sees a nook")
+	assert_true(BossArena.admits_door(low_on_the_side, true, bounds))
+	assert_true(BossArena.admits_door(BossArena.oriented(low_on_the_side, bounds, true), true, bounds, true), "mirrored")

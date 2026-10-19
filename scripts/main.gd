@@ -296,6 +296,7 @@ func _spawn_enemy(cell: Vector2i) -> void:
 	if monster.id == Lich.ID:
 		monster = GameTuning.lich(_tuning).monster()
 		enemy.spell_picker = GameTuning.lich_spells(_tuning)
+		enemy.spell_weapons = GameTuning.lich_spell_weapons(_tuning)
 	enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
 	enemy.set_current_health(_record.health_on_return(
 		cell, enemy.health.maximum, _run.seconds_played, GameTuning.enemy_regeneration(_tuning)))
@@ -309,6 +310,9 @@ func _spawn_enemy(cell: Vector2i) -> void:
 	# keeps to its room meanwhile: strolling out through a door, it would be shut out when the room locks.
 	if locking:
 		enemy.wander_cells = _cell_set(_stage.map.cells_of_room(_stage.map.room_at(cell)))
+		# Hurt before the lock, the Lich withdraws to where no doorway can see him: the hero has to walk in.
+		if _stage.map.locking_kind(_stage.map.room_at(cell)) == LockingRoom.Kind.ARENA:
+			enemy.retreat_to(DungeonView.cell_center(Hideout.cell_for(_stage.map, cell, _stage.pathfinder)))
 	else:
 		enemy.chase(_player)
 	enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
@@ -674,7 +678,8 @@ func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
 func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 	for attack: Variant in attacks:
 		if attack is Shot and attack.delay > 0.0:
-			get_tree().create_timer(attack.delay, false, true).timeout.connect(_follow_up.bind(attack, attacker))
+			var from_attacker: Vector2 = attack.origin - attacker.global_position
+			get_tree().create_timer(attack.delay, false, true).timeout.connect(_follow_up.bind(attack, attacker, from_attacker))
 		elif attack is Shot:
 			_launch(attack)
 		elif attack is Slash:
@@ -691,11 +696,12 @@ func _launch(shot: Shot) -> void:
 	_stage.world.add_projectile(projectile)
 
 
-## A delayed shot (a flurry's later punch) sets off from where its attacker stands now, if still standing.
-func _follow_up(shot: Shot, attacker: Node2D) -> void:
+## A delayed shot (a flurry's later punch, a later wave of Bone Spray) sets off from where its attacker stands now,
+## the same distance out as it was meant to start, if the attacker is still standing.
+func _follow_up(shot: Shot, attacker: Node2D, from_attacker: Vector2) -> void:
 	if not is_instance_valid(attacker) or not attacker.is_physics_processing():
 		return
-	shot.origin = Weapon.muzzle(attacker.global_position, shot.direction)
+	shot.origin = attacker.global_position + from_attacker
 	_launch(shot)
 
 
@@ -1069,6 +1075,7 @@ func _tune_enemy(enemy: Enemy, tuning: Tuning) -> void:
 	if enemy.monster.id == Lich.ID:
 		enemy.keep_distance_cells = GameTuning.lich(tuning).keep_distance_cells
 		GameTuning.tune_spells(enemy.spell_picker, tuning)
+		enemy.spell_weapons = GameTuning.lich_spell_weapons(tuning)
 
 
 ## The attack button shows the weapon, or REST while the hero can rest at a campfire or the inn's doorstep.

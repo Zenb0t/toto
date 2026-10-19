@@ -325,3 +325,43 @@ func test_a_monster_that_gave_up_at_the_edge_of_its_territory_does_not_notice_th
 
 	assert_eq(brain.update(STEP, _hunter_senses(true, 24.0)), EnemyBrain.State.CHECK)
 	assert_eq(brain.update(STEP, _hunter_senses(true, 23.0)), EnemyBrain.State.NOTICING, "back in its territory")
+
+
+func _hurt_without_target(can_retreat: bool) -> EnemyBrain.Senses:
+	var senses := _senses(false)
+	senses.hurt = true
+	senses.can_retreat = can_retreat
+	return senses
+
+
+func test_a_wandering_enemy_with_a_hideout_that_is_hurt_before_it_has_a_target_retreats() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.WANDER)
+
+	assert_eq(brain.update(STEP, _hurt_without_target(true)), EnemyBrain.State.RETREAT)
+	assert_true(brain.is_out_of_the_fight())
+	assert_false(brain.is_hunting())
+
+
+func test_an_idle_enemy_with_a_hideout_retreats_when_hurt_and_stays_there() -> void:
+	var brain := EnemyBrain.new()
+	brain.update(STEP, _senses(false))
+
+	brain.update(STEP, _hurt_without_target(true))
+	for _i in 50:
+		brain.update(STEP, _senses(false))
+
+	assert_eq(brain.state, EnemyBrain.State.RETREAT)
+
+
+func test_an_enemy_without_a_hideout_does_not_retreat_when_hurt() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.WANDER)
+
+	assert_ne(brain.update(STEP, _hurt_without_target(false)), EnemyBrain.State.RETREAT)
+
+
+func test_an_enemy_in_its_hideout_fights_once_it_has_a_target() -> void:
+	var brain := EnemyBrain.new(EnemyBrain.State.WANDER)
+	brain.update(STEP, _hurt_without_target(true))
+
+	assert_eq(brain.update(STEP, _senses(true, true)), EnemyBrain.State.POSITION)
+	assert_eq(brain.update(STEP, _senses(true, false)), EnemyBrain.State.HUNT)
