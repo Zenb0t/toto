@@ -473,7 +473,7 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 
 | Step | What it does |
 | --- | --- |
-| Ground (`QuadrantGround`) | Grass; tree groves where seeded noise (`FastNoiseLite`) is highest, cut so exactly the recipe's share of the ground is grove however the noise falls; boulders on grass; ponds (deep water, wobbly edge, a shallow shore 1.5 cells wide) clear of the middle and the border; then the middle, where the village will stand (its size plus 3 cells of margin), cleared to plain grass |
+| Ground (`QuadrantGround`) | Open grass split into **zones** (`PlainsZones`, see below): a few hold a wood or a pond, the rest are meadow. Then single trees at every wood's edge and lone trees in the open (`PlainsWoods`), a few small piles of rocks (boulders) out in the meadows, and the middle, where the village will stand (its size plus 3 cells of margin), cleared to plain grass |
 | Border (`QuadrantBorder`) | A forest of groves, 5 cells thick, all round |
 | Exits (`QuadrantExits`) | A 3-wide lane through the border in the middle of each side, with a barricade across its outer end (the way is shut until that quadrant exists) and a cleared approach inside the border |
 | Village (`VillageGenerator`) | Draws the village (next section) from the recipe's size and the quadrant's random numbers |
@@ -481,11 +481,33 @@ Small pure steps run in order, each a class of its own (`scripts/dungeon/generat
 | Fill the camps (`CampCrews.dress`) | Draws a band of monsters into each reserved camp by how far out it lies (below) |
 | Place (`SetPiecePlacer.stamp`) | Draws each piece on its spot and clears a margin of ground round it; then walkable ground cut off from the start is turned into grove, so nothing is unreachable |
 | Roads (`QuadrantRoads`) | Dirt roads (letter **`r`**, terrain `ROAD`) from the village gates to **2** of the 4 exits (Knob `road_count`, 0-4), the exits picked by a seeded shuffle; a road leaves by the gate on its exit's side. See below |
-| Validate (`QuadrantRules`) | At least `min_walkable_share` (70%) of the ground inside the border walkable, the start inside the village, every exit's front cell, every piece's key cell and the outside of every village gate reachable |
+| Validate (`QuadrantRules`) | At least `min_walkable_share` (80%) of the ground inside the border walkable, the start inside the village, every exit's front cell, every piece's key cell and the outside of every village gate reachable |
+
+**Plains and rolling land, not a maze** (#40 follow-up). The plains were first one noise field cut at a level (16% grove)
+plus 70 boulders dropped at random: many small clumps, walls of green blocks, and corridors between them. They are now made
+the way open land looks, in three ideas (decided over layered noise alone, which has no intent, and Wave Function Collapse,
+which is slow in GDScript and fights the reachability rules):
+
+- **Zones** (`PlainsZones`): zone centres spread evenly with `PoissonDisc` (Bridson's algorithm: no two closer than the
+  spacing, no wide gaps), half a zone in from the border, `zone_spacing` 30 cells apart. Each zone's room is half the way to
+  the nearest other centre (the disc inside its Voronoi cell). The zones clear of the village get, in a seeded order,
+  `wood_count` woods (6), then `pond_count` ponds (3) where a pond fits; the rest are meadow.
+- **Woods** (`PlainsWoods`): a round wood in each wood zone, `wood_reach` (75%) of its room, whose edge wanders with seeded
+  noise; a wood stays 6 cells off the forest border (one near it is smaller, and a zone with no room for a 6-cell wood stays
+  meadow), so woods stand alone instead of swelling the border. Each wood is rounded off by **smoothing** (`GroveSmoothing`,
+  a cellular automaton, 2 passes: grass with 5 or more trees round it becomes trees, trees with 2 or fewer become grass), so
+  there are no specks or nooks. Then single trees are scattered (spaced by `PoissonDisc`) up to 3 cells out from every wood
+  and the inside of the border, thinning out with distance, so the land never stops at a hard line; and `lone_tree_count`
+  (40) lone trees stand in the open, at least 7 cells apart and 4 from any wood.
+- **Rocks**: `rock_pile_count` (5) piles of 2-5 boulders near the middle of meadows away from the village, instead of
+  boulders scattered everywhere.
+
+At least `min_walkable_share` (80%) of the ground inside the border must be walkable; the defaults give about 87%. Hills
+(height, or shading that reads as slopes) were discussed and left out for now.
 
 A step that breaks a rule does not fail the map: the whole thing is made again with the next random numbers (the
 generator reports how many tries it took). If every try fails (a recipe asking for the impossible), the last resort is
-the same quadrant without groves, boulders and ponds; if a set piece still finds no spot (Tune → World can make the
+the same quadrant without woods, trees, rocks and ponds; if a set piece still finds no spot (Tune → World can make the
 plains too small or the village too big for it), the same without the ruin (a plains with no free corner for it), without camps and campfires (a plains too small for them), or without both; if even that fails, the default recipe without obstacles, so no tuning leaves the world
 without a map. The same recipe and seed always
 give the same map (`QuadrantRecipe.VERSION` goes in the map's record).
@@ -497,7 +519,7 @@ camera and the stairs down inside, at least halfway out from the middle (0 in th
 the nearest side in the same proportion on both axes: `QuadrantRecipe.outward`), with no road to it. Stepping onto its
 stairs goes down, through the same transition rule as any stairs, to the first floor.
 
-**Rules to know.** The "walkable at least 70%" share is counted over the ground *inside* the border (a thick border would
+**Rules to know.** The "walkable at least 80%" share is counted over the ground *inside* the border (a thick border would
 otherwise eat it). Groves and barricades stop walking, sight and shots; boulders are small cover: they stop walking and
 shots but sight passes over them (`DungeonMap.is_see_through`). Deep water stops feet but not shots, as in the dungeon.
 The plains hold monsters in camps and in the ruin, and loot only in the ruin's chest; the hero
@@ -526,16 +548,16 @@ each cost a village. *Planned lever:* a melee start has no ranged answer to a ki
 a ranged weapon in this chest (not built).
 
 **The village** (#40) is the first piece the placer stamps, in the very middle (`SetPiece.at_center`), and the safe place
-the run starts in. It is 36x28 cells by default (Tune → World) and made by pure steps (`scripts/dungeon/generation/village`),
+the run starts in. It is 48x36 cells by default (Tune → World) and made by pure steps (`scripts/dungeon/generation/village`),
 each a class of its own, from the quadrant's random numbers:
 
 | Step | What it does |
 | --- | --- |
 | Palisade (`VillagePalisade`) | A wall of `Y` all round with a 3-cell gate (`G`) in the middle of each side, in line with the plains' own exits |
 | Streets (`VillageStreets`) | A plus of 3-wide streets (`:`, walkable beaten earth) from the four gates to a 9x9 square with a 3x3 well (`U`) in the middle. The seed moves the square up to 2 cells off the middle on each axis, so the streets don't always cross at the same place |
-| Lots (`VillageLotPacker`, `VillageLots`) | In this order: the **inn**, whose door must face the square; one or two of the **smithy, market, church**; three to five **houses** (a small or a big one). A lot is a hand-written drawing (see below), turned a quarter turn at a time so its doorstep faces a street, and maybe mirrored (8 ways). It must stay off the streets, the other lots and the strip along the palisade, and never touch another building. Of the ways it fits, one of the snuggest is taken (most neighbours: palisade, lots, streets), so lots end up packed along the street edges |
+| Lots (`VillageLotPacker`, `VillageLots`) | In this order: the **inn**, whose door must face the square; one or two of the **smithy, market, church**; three to five **houses** (a small or a big one). A lot is a hand-written drawing (see below), turned a quarter turn at a time so its doorstep faces a street, and maybe mirrored (8 ways). It must stay off the streets, the other lots and the strip along the palisade, and keep `village_lot_gap` (2) open cells between its building and every other. Of the ways it fits, one of those farthest from the lots already placed is taken (up to 8 cells: farther doesn't count), and of those one of the snuggest (backed onto the palisade, along a street), so lots spread along the streets instead of bunching round the square (changed with the plains rework: the first rule, snug against other lots too, packed them in the middle and left the corners empty) |
 | Colours | Each house gets one of four colours, the four shuffled by the seed, so a village shows as many colours as it has houses |
-| Props (`VillageProps`) | Barrels and crates (`X`) on 15% of the leftover ground (Knob), but never at a gate and only where the walkable cells round a cell stay joined, so nothing gets walled off |
+| Props (`VillageProps`) | Barrels and crates (`X`) on 1% of the leftover ground (Knob; it was 15%, which read as clutter), but never at a gate and only where the walkable cells round a cell stay joined, so nothing gets walled off |
 | Rules (`VillageRules`) | Every gate, the square and every lot's doorstep can be walked to from the start, and the inn faces the square |
 
 **Fallbacks, so it never fails.** A seed whose lots don't fit is drawn again, 20 tries; then the plan shrinks, one house at a time
@@ -572,7 +594,7 @@ are cut down): the cells in front of the hero count as hiding, and a taller piec
 (`CameraFraming.cells_hiding(hero_cell, height)`); props are too low to hide the hero. Streets and the square are drawn as beaten
 earth. Size: the pack adds about 1.3 MB of source (`.gltf`, `.bin`, one shared 15 KB te
 
-**Dirt roads** (#41, `QuadrantRoads`) are landmarks to follow across a 160x90 map. Each is 3 cells wide, like the gate and the exit
+**Dirt roads** (#41, `QuadrantRoads`) are landmarks to follow across the 260x150 map. Each is 3 cells wide, like the gate and the exit
 it joins, and bends gently. Decisions: the step runs *after* the set pieces are stamped, so the road is routed round them
 (nothing is moved for a road). Routing is `AStarGrid2D` over the cells where a 3x3 block is all open grass, with the cost of a cell
 `1 + road_bend * noise` (seeded simplex, features about 16 cells across; Knob `road_bend`, default 3, 0 = as straight as the
@@ -741,7 +763,10 @@ puddles of it, and its lake and pool have shallow shores. Lava (`L`) can be cros
 every half second; the Shield blocks it). Enemies path around water and avoid lava when they can.
 
 **Fog of war** (`Exploration`, `FogView`). You see 16 cells around you (farther than any weapon reaches, so
-nothing hits you from the dark), through floor, water and lava but not walls or closed doors. What you have
+nothing hits you from the dark), 22 outdoors (`Exploration.OUTDOOR_SIGHT_RADIUS`: open land, and a camera farther back),
+through floor, water and lava but not walls or closed doors. On the plains the woods are known from the start (`MapStage`
+restores every tree cell as seen, like the village): they are landmarks seen from afar over the grass, and a wood whose
+inside was never in sight would otherwise be a black hole behind a ring of trees. What you have
 seen stays drawn, dimmed; what you haven't is dark. Enemies out of sight are hidden.
 Sight is worked out again each time the hero steps into another cell (or a door opens or closes). Each look reports
 the cells it changed (`Exploration.changed_cells`: those that came into view, a first sighting among them, and
@@ -797,10 +822,17 @@ phases, each played on a phone before the next:
   like the fog); heroes, enemies, chests, floor items and shots are 3D models that copy their 2D actor every
   frame (`Puppets`). So in 2D, actors now draw only their marks on the ground: a team ring under heroes (blue)
   and enemies (red), shadows under shots and chests, a glow under items.
-- **The camera** never turns. It looks down at the hero from the bottom of the screen, tilted 55°, from 17
+- **The camera** never turns. It looks down at the hero from the bottom of the screen, tilted 55°, from 26.5
   cells away with a narrow 38° field of view, aimed 1.5 cells ahead so more of what's in front shows. Up on
   the stick is still up on the screen, so the controls didn't change. All of it, and the wall height, is in
-  Tune → Camera.
+  Tune → Camera. Outdoors the camera stands farther back (Tune → Camera → Distance outdoors, default 34 cells
+  against 26.5), so the open land shows wider; the floor texture then covers more cells at the same texture size
+  (`GroundView.set_reach`), a little coarser.
+- **Trees** (`ForestView`, `TreeShape`): outdoors every tree grove cell near open ground (2 cells deep) gets a tree, deeper
+  in every other cell (their crowns, 1.5-2x a wall's size, meet in a canopy anyway); each tree's size, nudge off the cell's
+  middle and turn come from the cell, so the same map grows the same woods. They are the Lair's tree (trunk and three balls
+  of leaves) drawn as MultiMeshes in 16x16-cell chunks, so a 260x150 map's thousands of trees only cost what is near the
+  camera. The floor under them is grass in the canopy's shade. A tree between the camera and the hero shrinks to 45%.
 - **Placeholders**: characters are capsules with a head, eyes (which way they face) and the weapon in its
   colour; enemies have a health bar. Lobbed fireballs fly high above their shadow.
 

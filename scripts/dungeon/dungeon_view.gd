@@ -18,6 +18,8 @@ const CRACK_COLOR := Color(0.16, 0.14, 0.18, 0.45)
 ## The warm pool of light on the floor below each torch (see DungeonDecor.torch_light), at its brightest.
 const TORCH_LIGHT_COLOR := Color(1.0, 0.68, 0.32, 0.22)
 const WALL_COLOR := Color(0.1, 0.09, 0.12)
+## The shade over the ground under a wood's trees.
+const WOOD_SHADE_COLOR := Color(0, 0.05, 0, 0.45)
 const WALL_LAYER := 1
 ## Deep water stops bodies (on this layer) but not shots (which only collide with walls and their targets).
 const WATER_LAYER := 5
@@ -66,11 +68,21 @@ func show_map(map: DungeonMap, look := BranchLook.dungeon()) -> void:
 	queue_redraw()
 
 
-## Every cell this view draws: open cells and the walls around them.
+## Every cell this view draws: open cells, the walls around them, and the floor of every wood (trees stand on it).
 func drawn_cells() -> Array[Vector2i]:
 	var cells := _map.open_cells()
 	cells.append_array(wall_cells())
+	cells.append_array(_deep_wood_cells())
 	return cells
+
+
+## Grove cells too far into a wood to be walls (see wall_cells): their floor is drawn all the same.
+func _deep_wood_cells() -> Array[Vector2i]:
+	var walls := {}
+	for cell in wall_cells():
+		walls[cell] = true
+	return _map.cells_with_blocker(DungeonMap.Blocker.GROVE).filter(
+		func(cell: Vector2i) -> bool: return not walls.has(cell))
 
 
 func is_door_closed(cell: Vector2i) -> bool:
@@ -90,8 +102,12 @@ func _draw() -> void:
 	for cell in wall_cells():
 		if _is_village_piece(cell):
 			_draw_ground(cell)  # Its model stands on the ground.
+		elif _map.blocker_at(cell) == DungeonMap.Blocker.GROVE:
+			_draw_wood_floor(cell)
 		else:
 			draw_rect(_tile_rect(cell), WALL_COLOR)
+	for cell in _deep_wood_cells():
+		_draw_wood_floor(cell)
 	if _look.pillar_style != BranchLook.PillarStyle.ROCK:
 		for cell in DungeonDecor.pillar_cells(_map, wall_cells()):
 			_draw_ground(cell)
@@ -111,6 +127,12 @@ func _draw() -> void:
 ## The village's buildings, palisade, well and props are models standing on ground, not walls.
 func _is_village_piece(cell: Vector2i) -> bool:
 	return _map.blocker_at(cell) in DungeonMap.VILLAGE_BLOCKERS
+
+
+## The ground under the trees: the grass, in the canopy's shade.
+func _draw_wood_floor(cell: Vector2i) -> void:
+	_draw_ground(cell)
+	draw_rect(_tile_rect(cell), WOOD_SHADE_COLOR)
 
 
 func _draw_ground(cell: Vector2i) -> void:

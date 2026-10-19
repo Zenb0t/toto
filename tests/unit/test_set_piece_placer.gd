@@ -78,6 +78,6 @@ func test_the_village_goes_in_the_middle_and_the_pieces_after_it_keep_clear_of_i
 
 
 func test_a_village_too_big_for_the_quadrant_is_left_without_a_spot() -> void:
-	var placements := SetPiecePlacer.reserve(_recipe, [_village_piece(40, 100)], [], _rng(1))
+	var placements := SetPiecePlacer.reserve(_recipe, [_village_piece(40, 200)], [], _rng(1))
 
 	assert_eq(placements.size(), 0)

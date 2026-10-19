@@ -22,6 +22,11 @@ func _init(map_spec: MapSpec) -> void:
 	# A village is home: the hero knows it all before taking a step.
 	if map.village != null:
 		exploration.restore(map.village.cells())
+	# Outdoors the land is open: the hero sees farther, and woods are landmarks seen from afar over the grass, so
+	# they are known (dimmed) before the hero gets close.
+	if map_spec.branch().outdoors:
+		exploration.sight_radius = Exploration.OUTDOOR_SIGHT_RADIUS
+		exploration.restore(map.cells_with_blocker(DungeonMap.Blocker.GROVE))
 
 
 func _ready() -> void:

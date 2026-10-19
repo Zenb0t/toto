@@ -1,5 +1,6 @@
 extends GutTest
-## A map's stage starts out knowing what the hero knows from the start: a village is home, so all of it is explored.
+## A map's stage starts out knowing what the hero knows from the start: a village is home, so all of it is explored,
+## and the woods of the plains are landmarks seen from afar.
 
 
 func _plains_stage(world_seed: int) -> MapStage:
@@ -27,3 +28,17 @@ func test_a_dungeon_floor_starts_unexplored() -> void:
 	var stage: MapStage = autofree(MapStage.new(WorldLayout.spec(1, WorldLayout.floor_id(1))))
 
 	assert_eq(stage.exploration.seen_cells().size(), 0)
+
+
+func test_the_woods_of_the_plains_are_known_from_the_start() -> void:
+	var stage := _plains_stage(2)
+
+	for cell in stage.map.cells_with_blocker(DungeonMap.Blocker.GROVE):
+		assert_true(stage.exploration.is_seen(cell), str(cell))
+
+
+func test_the_hero_sees_farther_on_the_plains_than_in_the_crypt() -> void:
+	var plains := _plains_stage(1)
+	var crypt: MapStage = autofree(MapStage.new(WorldLayout.spec(1, WorldLayout.floor_id(1))))
+
+	assert_gt(plains.exploration.sight_radius, crypt.exploration.sight_radius)

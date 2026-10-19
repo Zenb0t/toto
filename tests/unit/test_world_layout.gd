@@ -29,7 +29,7 @@ func test_a_floors_spec_is_its_depth_in_the_descent() -> void:
 
 func test_the_plains_spec_is_a_quadrant_made_by_its_recipe() -> void:
 	var recipe := QuadrantRecipe.new()
-	recipe.boulder_count = 3
+	recipe.rock_pile_count = 3
 
 	var spec := WorldLayout.spec(99, WorldLayout.PLAINS_ID, recipe)
 

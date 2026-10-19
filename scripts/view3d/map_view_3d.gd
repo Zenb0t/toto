@@ -5,6 +5,7 @@ extends Node3D
 ## caves), the doors of locked rooms, torches and banners on the walls where the branch has them, small
 ## things lying along them (see DecorModel), campfires and the arch over the stairs. Like the fog on
 ## the floor, what the player has never seen isn't shown, and what is out of sight is dimmed.
+## Outdoors, tree groves are trees (see ForestView), not blocks.
 ## Owns no game rules: it is told the map, which doors are closed and what is seen.
 
 const DEFAULT_WALL_HEIGHT := 1.0
@@ -25,12 +26,11 @@ const LIT := 1.0
 ## Walls right in front of the hero (toward the camera) are cut down to this share of their height, so they
 ## don't hide the hero.
 const CUTAWAY_SHARE := 0.3
-## Outdoors, tree groves stand this many times as tall as a wall (a little more or less, cell by cell), boulders
-## are low cover and barricades come up to a man's chest.
-const GROVE_HEIGHT := 1.25
-const GROVE_HEIGHT_VARIATION := 0.5
+## Outdoors, boulders are low cover and barricades come up to a man's chest.
 const BOULDER_HEIGHT := 0.4
 const BARRICADE_HEIGHT := 0.8
+## A tree is about this many cells tall for each unit of its size (see ForestView, TreeShape).
+const TREE_HEIGHT_PER_SIZE := 1.2
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 
 ## Height of the walls, in cells. Closed doors are as tall.
@@ -63,6 +63,7 @@ var _stairs := StairsModel.new()
 var _stairs_up_cell := DungeonMap.NO_CELL
 var _stairs_up := StairsModel.new(StairsModel.SILVER_COLOR)
 var _village := VillageView3D.new()
+var _forest := ForestView.new()
 var _blocks := _multimesh(ModelParts.box(Vector3.ONE))
 var _caps := _multimesh(ModelParts.box(Vector3.ONE))
 var _columns := _multimesh(_column_mesh())
@@ -76,18 +77,20 @@ func _init() -> void:
 	add_child(_stairs)
 	add_child(_stairs_up)
 	add_child(_village)
+	add_child(_forest)
 
 
 ## wall_cells: the walls to stand up (those next to open cells).
 func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.dungeon()) -> void:
 	_look = look
 	_map = map
-	# Pillars are carved columns, trees (the Lair's), or plain rock like the walls around them. A boulder or
-	# a barricade standing on its own is not one.
+	# Pillars are carved columns, trees (the Lair's), or plain rock like the walls around them. Anything outdoors
+	# standing on its own (a boulder, a barricade, a lone tree of a grove) is not one.
 	var pillars: Array[Vector2i] = []
 	var trees: Array[Vector2i] = []
 	var free_standing := DungeonDecor.pillar_cells(map, wall_cells).filter(
-		func(cell: Vector2i) -> bool: return map.blocker_at(cell) in [DungeonMap.NO_BLOCKER, DungeonMap.Blocker.GROVE])
+		func(cell: Vector2i) -> bool: return map.blocker_at(cell) == DungeonMap.NO_BLOCKER)
+	var groves := ForestView.tree_cells(map)
 	match look.pillar_style:
 		BranchLook.PillarStyle.COLUMN:
 			pillars.assign(free_standing)
@@ -96,7 +99,8 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 	_column_cells = pillars
 	_block_cells.clear()
 	for cell in wall_cells:
-		if cell not in pillars and cell not in trees and not _is_village_piece(map, cell):
+		if cell not in pillars and cell not in trees and not _is_village_piece(map, cell) \
+				and map.blocker_at(cell) != DungeonMap.Blocker.GROVE:
 			_block_cells.append(cell)
 	_block_cells.append_array(map.door_cells())
 	_block_index = _index_of(_block_cells)
@@ -118,6 +122,7 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 	_clutter.clear()
 	_trees.clear()
 	_campfires.clear()
+	_forest.plant(groves)
 	for cell in map.campfire_cells:
 		var fire := CampfireModel.new()
 		add_child(fire)
@@ -193,6 +198,9 @@ func show_hero_at(hero_cell: Vector2i) -> void:
 	for cell in CameraFraming.cells_hiding(hero_cell):
 		if _has_block.has(cell):
 			cut[cell] = true
+	for cell in CameraFraming.cells_hiding(hero_cell, ForestView.SIZE_MAX * TREE_HEIGHT_PER_SIZE):
+		if _forest.has_tree(cell):
+			cut[cell] = true
 	if cut == _cut_cells:
 		return
 	var changed := cut.keys() + _cut_cells.keys()
@@ -215,7 +223,16 @@ func has_village_piece(cell: Vector2i) -> bool:
 	return _village.has_piece_at(cell)
 
 
-## Whether a wall stands cut down in front of the hero.
+## Whether a tree of a grove stands on a cell (see ForestView).
+func has_tree(cell: Vector2i) -> bool:
+	return _forest.has_tree(cell)
+
+
+func tree_count() -> int:
+	return _forest.tree_count()
+
+
+## Whether a wall (or tree) stands cut down in front of the hero.
 func is_cut_away(cell: Vector2i) -> bool:
 	return _cut_cells.has(cell)
 
@@ -236,11 +253,13 @@ func brightness(cell: Vector2i) -> float:
 	return LIT if _is_known(cell, _exploration.is_visible) else REMEMBERED_BRIGHTNESS
 
 
-## How brightly the block (or village piece) on a cell is drawn right now; it matches brightness() once the view
-## has been told what changed. -1 where nothing has been drawn.
+## How brightly the block (or village piece, or tree) on a cell is drawn right now; it matches brightness() once
+## the view has been told what changed. -1 where nothing has been drawn.
 func shown_brightness(cell: Vector2i) -> float:
 	if _village.has_piece_at(cell):
 		return _village.shown_brightness(cell)
+	if _forest.has_tree(cell):
+		return _forest.shown_brightness(cell)
 	return _shown.get(cell, -1.0)
 
 
@@ -253,6 +272,15 @@ func _is_known(cell: Vector2i, known: Callable) -> bool:
 		if not _has_block.has(cell + step) and known.call(cell + step):
 			return true
 	return false
+
+
+## Like brightness(), for a tree: deep in a wood, where no wall stands, it counts as seen like any other cell.
+func _tree_brightness(cell: Vector2i) -> float:
+	if _exploration == null:
+		return LIT
+	if _is_known(cell, _exploration.is_visible):
+		return LIT
+	return REMEMBERED_BRIGHTNESS if _is_known(cell, _exploration.is_seen) else HIDDEN
 
 
 ## Like brightness(), for something standing on open floor.
@@ -283,6 +311,8 @@ func _refresh(everything := false) -> void:
 		_refresh_column(j)
 	for cell: Vector2i in _torches.keys() + _banners.keys() + _trees.keys() + _clutter.keys() + _campfires.keys():
 		_refresh_props_at(cell)
+	for cell in _forest.cells():
+		_forest.show_tree(cell, _tree_brightness(cell), _cut_cells.has(cell))
 	_refresh_stairs()
 	_village.show_brightness(brightness)
 
@@ -331,6 +361,7 @@ func _refresh_column(index: int) -> void:
 
 ## The torch, banner, tree, clutter or campfire on a cell, if there is one.
 func _refresh_props_at(cell: Vector2i) -> void:
+	_forest.show_tree(cell, _tree_brightness(cell), _cut_cells.has(cell))
 	if _torches.has(cell):
 		_torches[cell].show_on_wall(cell, _height_at(cell), brightness(cell))
 	if _banners.has(cell):
@@ -379,13 +410,11 @@ func _height_at(cell: Vector2i) -> float:
 	return wall_height * _height_share(cell) * (CUTAWAY_SHARE if _cut_cells.has(cell) else 1.0)
 
 
-## How tall a block is compared with a wall: groves rise (unevenly, like a forest), boulders sit low.
+## How tall a block is compared with a wall: boulders sit low.
 func _height_share(cell: Vector2i) -> float:
 	if _map == null:
 		return 1.0
 	match _map.blocker_at(cell):
-		DungeonMap.Blocker.GROVE:
-			return GROVE_HEIGHT + GROVE_HEIGHT_VARIATION * (DungeonDecor.noise(cell, 17) - 0.5)
 		DungeonMap.Blocker.BOULDER:
 			return BOULDER_HEIGHT
 		DungeonMap.Blocker.BARRICADE:
@@ -403,8 +432,6 @@ func _upright(cell: Vector2i, size: Vector3, center_height: float, shade: float)
 func _wall_color(cell: Vector2i) -> Color:
 	if _map != null:
 		match _map.blocker_at(cell):
-			DungeonMap.Blocker.GROVE:
-				return _look.grove_color
 			DungeonMap.Blocker.BOULDER:
 				return _look.boulder_color
 			DungeonMap.Blocker.BARRICADE:
@@ -417,8 +444,6 @@ func _wall_color(cell: Vector2i) -> Color:
 func _cap_color(cell: Vector2i) -> Color:
 	if _map != null:
 		match _map.blocker_at(cell):
-			DungeonMap.Blocker.GROVE:
-				return _look.grove_cap_color
 			DungeonMap.Blocker.BOULDER:
 				return _look.boulder_cap_color
 			DungeonMap.Blocker.BARRICADE:
