@@ -31,6 +31,17 @@ func test_the_same_cell_always_looks_the_same() -> void:
 	assert_eq(DungeonDecor.crack(Vector2i(9, 2)), DungeonDecor.crack(Vector2i(9, 2)))
 
 
+func test_noise_always_picks_an_entry_of_a_list() -> void:
+	var three := ["a", "b", "c"]
+	for x in 200:
+		for y in 200:
+			var index := floori(DungeonDecor.noise(Vector2i(x, y), 18) * three.size())
+			if index < 0 or index >= three.size():
+				fail_test("cell (%d, %d) picks index %d" % [x, y, index])
+				return
+	pass_test("every cell picks one of the three")
+
+
 func test_tints_vary_within_their_range() -> void:
 	var seen := {}
 	for x in 50:

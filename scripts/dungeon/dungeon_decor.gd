@@ -19,9 +19,10 @@ const NEIGHBOURS_8: Array[Vector2i] = [
 ]
 
 
-## A number from 0 to 1 that looks random but is always the same for a cell (and salt).
+## A number from 0 up to (not including) 1 that looks random but is always the same for a cell (and salt), so
+## floori(noise * list.size()) always picks an entry of a list.
 static func noise(cell: Vector2i, salt := 0) -> float:
-	return float(hash(Vector3i(cell.x, cell.y, salt)) % 10007) / 10006.0
+	return float(hash(Vector3i(cell.x, cell.y, salt)) % 10007) / 10007.0
 
 
 ## How much lighter (above 0) or darker (below 0) a cell's stone is than the plain colour, -1..1.
