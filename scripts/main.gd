@@ -547,8 +547,9 @@ func _auto_aim_target() -> Enemy:
 # --- Rooms and combat ----------------------------------------------------------------------------
 
 ## Lock a (locking) room only once the player is a full tile past its doorway, so a closing door can't trap them in it.
-## Stepping on the stairs down, once their room is clear, leads down (or out, from the last floor); the stairs
-## up always lead up. The stairs the hero arrived on only lead on once stepped off.
+## Stepping on the stairs down leads down when WorldLayout.stairs_down_open says so (the crypt entrance always, a crypt
+## level's once their room is clear); the stairs up always lead up. The stairs the hero arrived on only lead on once
+## stepped off.
 func _track_player_room() -> void:
 	var cell := DungeonView.world_to_cell(_player.global_position)
 	if _stage.map.is_clear_of_doors(cell):
@@ -558,7 +559,8 @@ func _track_player_room() -> void:
 	_arrival_cell = DungeonMap.NO_CELL
 	var exit := WorldLayout.exit_at(_stage.map, cell)
 	if exit == WorldLayout.Exit.STAIRS_UP \
-			or (exit == WorldLayout.Exit.STAIRS_DOWN and _progress.is_cleared(_stage.map.room_at(cell))):
+			or (exit == WorldLayout.Exit.STAIRS_DOWN
+				and WorldLayout.stairs_down_open(_stage.spec.id, _progress.is_cleared(_stage.map.room_at(cell)))):
 		_take_stairs(exit)
 
 

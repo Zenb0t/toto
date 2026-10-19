@@ -319,7 +319,7 @@ Something stirs in the tombs."). The Dungeon itself has the odd cave (15% of its
 
 A run starts on the **plains** (next section), outdoors. The way on is a descent into the **crypt**: **3 levels**
 of today's `DungeonGenerator` in the Crypt branch (see Branches), each more dangerous than the last. The plains'
-**crypt entrance** (the mausoleum's stairs) leads down to level 1's stairs up, and those lead back out onto the
+**crypt entrance** (the mausoleum's stairs, always open: the plains have no rooms to clear) leads down to level 1's stairs up, and those lead back out onto the
 mausoleum (`WorldLayout`: the plains are map `plains`, the levels `crypt_1` to `crypt_3`; the map's depth picks
 the generator's danger, and the branch is always the crypt, see `MapSpec.branch`). Every level starts on its
 stairs up (`DungeonGenerator.VERSION` 4).
