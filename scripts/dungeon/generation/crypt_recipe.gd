@@ -14,10 +14,14 @@ var id := "crypt"
 var campfire_rooms_from_stairs := 3
 ## The share of bands that start wandering a few cells about their room; the rest sleep. None starts awake.
 var wandering_share := 0.15
+## A trap room's band is picked as if its room lay this many levels deeper than it does (see TrapRoom): tougher, and
+## with more monsters, than the level's usual bands.
+var trap_band_extra_depth := 2
 
 
 func knobs() -> Array[Knob]:
 	return [
 		Knob.new("campfire_rooms_from_stairs", "Crypt campfire, rooms from stairs", 1, 6, 1),
 		Knob.new("wandering_share", "Crypt bands wandering (share)", 0.0, 1.0, 0.05),
+		Knob.new("trap_band_extra_depth", "Crypt trap room band, levels deeper", 0, 6, 1),
 	]

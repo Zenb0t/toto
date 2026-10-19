@@ -60,6 +60,9 @@ var _progress: DungeonProgress
 var _enemies_by_band := {}  # int -> Array[Enemy]: each band (a camp round its campfire, or a room's monsters)
 var _squads_by_band := {}  # int -> Squad: each band fights as a team
 var _spawn_cells := {}  # Enemy -> its spawn cell, which is how the record knows it
+## The band of each trap room the hero hasn't sprung (room -> its monsters' spawn cells): not in the world yet.
+var _hidden_trap_band := {}
+var _trap_chests := {}  # int (trap room) -> its Chest
 ## Who hears the hero's noise and a monster's shout (see Awareness); tuned like each enemy's own.
 var _hearing := Awareness.new()
 var _floor_loot_cells := {}  # PickupArea -> its loot cell, for the floor items not taken yet
@@ -190,6 +193,7 @@ func _enter_map() -> void:
 	_spawn_dropped_items()
 	_update_sight()
 	_progress = _create_progress()
+	_spawn_trap_chests()
 	_apply_tuning(_tuning)
 	_in_play = true
 	_refresh_hud()
@@ -208,6 +212,8 @@ func _leave_map() -> void:
 	_enemies_by_band.clear()
 	_squads_by_band.clear()
 	_spawn_cells.clear()
+	_hidden_trap_band.clear()
+	_trap_chests.clear()
 	_floor_loot_cells.clear()
 	_rest_spots.clear()
 	_held_campfires.clear()
@@ -273,36 +279,48 @@ func _spawn_enemies() -> void:
 	for cell in _stage.map.enemy_spawns:
 		if _record.is_killed(cell):
 			continue
-		var band := Band.home_of(_stage.map, cell, _stage.spec.room_wandering_share(), _camp_wandering_share())
-		var locking := _stage.map.locking_kind(_stage.map.room_at(cell)) != LockingRoom.NONE
-		var enemy: Enemy = ENEMY_SCENE.instantiate()
-		enemy.position = DungeonView.cell_center(cell)
-		var monster := Bestiary.by_id(_stage.map.monster_at(cell))
-		if monster.id == Lich.ID:
-			monster = GameTuning.lich(_tuning).monster()
-			enemy.spell_picker = GameTuning.lich_spells(_tuning)
-		enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
-		enemy.set_current_health(_record.health_on_return(
-			cell, enemy.health.maximum, _run.seconds_played, GameTuning.enemy_regeneration(_tuning)))
-		enemy.arm(GameTuning.monster_weapon(_tuning, monster))
-		enemy.navigation = _stage.pathfinder
-		enemy.squad = _squads_by_band.get_or_add(band.id, Squad.new())
-		enemy.settle(
-			DungeonView.cell_center(band.cell),
-			Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share, locking))
-		# The band of a locking room is awake but ignores the hero until the room locks (see _on_room_locked), and
-		# keeps to its room meanwhile: strolling out through a door, it would be shut out when the room locks.
-		if locking:
-			enemy.wander_cells = _cell_set(_stage.map.cells_of_room(_stage.map.room_at(cell)))
-		else:
-			enemy.chase(_player)
-		enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
-		enemy.noticed.connect(_on_enemy_noticed)
-		enemy.defeated.connect(_on_enemy_defeated.bind(band.id))
-		_stage.add_actor(enemy)
-		_stage.world.add_enemy(enemy)
-		_enemies_by_band.get_or_add(band.id, []).append(enemy)
-		_spawn_cells[enemy] = cell
+		var room := _stage.map.room_at(cell)
+		if _stage.map.locking_kind(room) == LockingRoom.Kind.TRAP:
+			_hidden_trap_band.get_or_add(room, []).append(cell)  # unseen until the room seals (_on_room_locked)
+			continue
+		_spawn_enemy(cell)
+
+
+## One monster of the map at its spawn cell, as its band has it.
+func _spawn_enemy(cell: Vector2i) -> void:
+	var band := Band.home_of(_stage.map, cell, _stage.spec.room_wandering_share(), _camp_wandering_share())
+	var locking := _stage.map.locking_kind(_stage.map.room_at(cell)) != LockingRoom.NONE
+	var enemy: Enemy = ENEMY_SCENE.instantiate()
+	enemy.position = DungeonView.cell_center(cell)
+	var monster := Bestiary.by_id(_stage.map.monster_at(cell))
+	if monster.id == Lich.ID:
+		monster = GameTuning.lich(_tuning).monster()
+		enemy.spell_picker = GameTuning.lich_spells(_tuning)
+	enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
+	enemy.set_current_health(_record.health_on_return(
+		cell, enemy.health.maximum, _run.seconds_played, GameTuning.enemy_regeneration(_tuning)))
+	enemy.arm(GameTuning.monster_weapon(_tuning, monster))
+	enemy.navigation = _stage.pathfinder
+	enemy.squad = _squads_by_band.get_or_add(band.id, Squad.new())
+	enemy.settle(
+		DungeonView.cell_center(band.cell),
+		Band.start_of(_stage.spec.seed_value, band.id, band.wandering_share, locking))
+	# The band of a locking room is awake but ignores the hero until the room locks (see _on_room_locked), and
+	# keeps to its room meanwhile: strolling out through a door, it would be shut out when the room locks.
+	if locking:
+		enemy.wander_cells = _cell_set(_stage.map.cells_of_room(_stage.map.room_at(cell)))
+	else:
+		enemy.chase(_player)
+	enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
+	enemy.noticed.connect(_on_enemy_noticed)
+	enemy.defeated.connect(_on_enemy_defeated.bind(band.id))
+	_stage.add_actor(enemy)
+	_stage.world.add_enemy(enemy)
+	enemy.never_gives_up = locking
+	_tune_enemy(enemy, _tuning)  # a trap room's band joins after the map's tuning was applied
+	GameTuning.tune_squad(enemy.squad, _tuning)
+	_enemies_by_band.get_or_add(band.id, []).append(enemy)
+	_spawn_cells[enemy] = cell
 
 
 ## A set of cells (cell -> true), for Enemy.wander_cells.
@@ -372,14 +390,14 @@ func _spawn_dropped_items() -> void:
 
 func _create_progress() -> DungeonProgress:
 	var counts := {}
-	for cell: Vector2i in _spawn_cells.values():
+	var cells: Array = _spawn_cells.values()
+	for band_cells: Array in _hidden_trap_band.values():
+		cells.append_array(band_cells)
+	for cell: Vector2i in cells:
 		var room := _stage.map.room_at(cell)
 		counts[room] = counts.get(room, 0) + 1
 	# Only the rooms the map marks lock (the boss arena, trap rooms): in the others monsters come when they notice.
 	var progress := DungeonProgress.new(counts, _stage.map.locking_room_ids())
-	# A locking room's band never gives up the chase.
-	for enemy: Enemy in _spawn_cells:
-		enemy.never_gives_up = progress.is_locking(_stage.map.room_at(_spawn_cells[enemy]))
 	progress.room_locked.connect(_on_room_locked)
 	progress.room_cleared.connect(_on_room_cleared)
 	return progress
@@ -573,12 +591,17 @@ func _on_room_locked(room: int) -> void:
 	_stage.view.set_room_closed(room, true)
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), true)
 	_sight_origin = DungeonMap.NO_CELL
+	for cell: Vector2i in _hidden_trap_band.get(room, []):
+		_spawn_enemy(cell)
+	_hidden_trap_band.erase(room)
 	for enemy: Enemy in _spawn_cells:
 		if _stage.map.room_at(_spawn_cells[enemy]) == room:
 			enemy.wake(_player)
 
 
 func _on_room_cleared(room: int) -> void:
+	if _trap_chests.has(room):
+		_trap_chests[room].unlock()
 	_stage.view.set_room_closed(room, false)
 	_stage.world.set_doors_closed(_stage.map.doors_of_room(room), false)
 	_sight_origin = DungeonMap.NO_CELL
@@ -886,12 +909,22 @@ func _spawn_ruin_chest() -> void:
 
 ## A chest on a cell, open if the record says it was opened. It is known by the id of whatever holds it: a room, or a
 ## set piece like the ruin (see Ruins.NUMBER). Clearing a room no longer leaves one (loot is earned).
-func _spawn_chest(chest_id: int, cell: Vector2i) -> void:
-	var chest := Chest.new(_record.is_chest_opened(chest_id))
+func _spawn_chest(chest_id: int, cell: Vector2i, locked := false) -> Chest:
+	var chest := Chest.new(_record.is_chest_opened(chest_id), locked)
 	chest.position = DungeonView.cell_center(cell)
 	chest.opened.connect(_open_chest.bind(chest.position, chest_id))
 	_stage.add_on_floor.call_deferred(chest)
 	_stage.world.add_chest(chest)
+	return chest
+
+
+## The chest in the middle of each trap room, on its mark (a cell no monster spawns on), known by its room's id. It
+## stays shut and ignores the hero until the room is clear (see _on_room_cleared); a room cleared on an earlier visit
+## has its chest ready at once.
+func _spawn_trap_chests() -> void:
+	for room: int in _stage.map.locking_room_ids():
+		if _stage.map.locking_kind(room) == LockingRoom.Kind.TRAP:
+			_trap_chests[room] = _spawn_chest(room, _stage.map.locking_mark_cell(room), not _progress.is_cleared(room))
 
 
 ## A chest holds a random weapon or utility the player doesn't already have, picked when it opens, and
