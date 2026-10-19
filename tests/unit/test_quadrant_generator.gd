@@ -37,9 +37,9 @@ func test_different_seeds_give_different_plains() -> void:
 	assert_ne(_ascii_by_seed[0], _ascii_by_seed[1])
 
 
-func test_the_plains_are_160_by_90_cells_by_default() -> void:
+func test_the_plains_are_260_by_150_cells_by_default() -> void:
 	for seed_value in SEEDS:
-		assert_eq(_map_by_seed[seed_value].size, Vector2i(160, 90), "seed %d" % seed_value)
+		assert_eq(_map_by_seed[seed_value].size, Vector2i(260, 150), "seed %d" % seed_value)
 
 
 func test_the_hero_starts_in_the_village_by_the_inns_doorstep() -> void:
@@ -56,7 +56,7 @@ func test_every_walkable_cell_can_be_reached_from_the_start() -> void:
 		assert_eq(_reachable(map).size(), map.walkable_cells().size(), "seed %d" % seed_value)
 
 
-func test_at_least_seventy_percent_of_the_ground_inside_the_border_can_be_walked() -> void:
+func test_at_least_eighty_percent_of_the_ground_inside_the_border_can_be_walked() -> void:
 	var inside := _recipe.interior()
 	for seed_value in SEEDS:
 		var map: DungeonMap = _map_by_seed[seed_value]
@@ -65,14 +65,14 @@ func test_at_least_seventy_percent_of_the_ground_inside_the_border_can_be_walked
 			for x in range(inside.position.x, inside.end.x):
 				if map.is_walkable(Vector2i(x, y)):
 					walkable += 1
-		assert_gte(float(walkable) / (inside.size.x * inside.size.y), 0.7, "seed %d" % seed_value)
+		assert_gte(float(walkable) / (inside.size.x * inside.size.y), 0.8, "seed %d" % seed_value)
 
 
-func test_there_are_groves_boulders_and_ponds() -> void:
+func test_there_are_trees_rocks_and_ponds() -> void:
 	for seed_value in SEEDS:
 		var map: DungeonMap = _map_by_seed[seed_value]
-		assert_gt(map.cells_with_blocker(DungeonMap.Blocker.GROVE).size(), 1000, "groves, seed %d" % seed_value)
-		assert_gt(map.cells_with_blocker(DungeonMap.Blocker.BOULDER).size(), 0, "boulders, seed %d" % seed_value)
+		assert_gt(map.cells_with_blocker(DungeonMap.Blocker.GROVE).size(), 1000, "trees, seed %d" % seed_value)
+		assert_gt(map.cells_with_blocker(DungeonMap.Blocker.BOULDER).size(), 0, "rocks, seed %d" % seed_value)
 		assert_gt(map.cells_with(DungeonMap.Terrain.WATER).size(), 0, "ponds, seed %d" % seed_value)
 		assert_gt(map.cells_with(DungeonMap.Terrain.SHALLOW).size(), 0, "shores, seed %d" % seed_value)
 
@@ -80,8 +80,8 @@ func test_there_are_groves_boulders_and_ponds() -> void:
 func test_the_village_stands_in_the_middle_of_the_plains_with_a_gate_on_each_side() -> void:
 	for seed_value in SEEDS:
 		var village: Village = _map_by_seed[seed_value].village
-		assert_eq(village.area.get_center(), Vector2i(80, 45), "seed %d" % seed_value)
-		assert_gte(village.area.size.x, 36, "seed %d" % seed_value)
+		assert_eq(village.area.get_center(), Vector2i(130, 75), "seed %d" % seed_value)
+		assert_gte(village.area.size.x, 48, "seed %d" % seed_value)
 		assert_eq(village.gates.size(), 12, "three cells for each of the four gates, seed %d" % seed_value)
 
 
@@ -130,8 +130,8 @@ func test_each_side_has_a_barricaded_exit_in_the_middle_of_it() -> void:
 			var middle := Vector2.ZERO
 			for cell: Vector2i in on_side:
 				middle += Vector2(cell) / on_side.size()
-			assert_eq(middle, Vector2(80, 0) if side == Vector2i.UP else Vector2(80, 89) if side == Vector2i.DOWN \
-				else Vector2(0, 45) if side == Vector2i.LEFT else Vector2(159, 45), "side %s, seed %d" % [side, seed_value])
+			assert_eq(middle, Vector2(130, 0) if side == Vector2i.UP else Vector2(130, 149) if side == Vector2i.DOWN \
+				else Vector2(0, 75) if side == Vector2i.LEFT else Vector2(259, 75), "side %s, seed %d" % [side, seed_value])
 
 
 func test_every_exit_can_be_walked_up_to_from_the_start() -> void:
@@ -184,6 +184,7 @@ func test_a_recipe_that_breaks_a_rule_is_made_again_with_the_next_random_numbers
 	var generator := QuadrantGenerator.new()
 	var demanding := QuadrantRecipe.new()
 	demanding.min_walkable_share = 0.9
+	demanding.wood_count = 12
 
 	var map := _parser.parse(generator.generate(demanding, 0))
 
@@ -195,8 +196,9 @@ func test_a_recipe_that_breaks_a_rule_is_made_again_with_the_next_random_numbers
 func test_a_recipe_asking_for_the_impossible_still_gives_a_playable_plains() -> void:
 	var impossible := QuadrantRecipe.new()
 	impossible.min_walkable_share = 0.95
-	impossible.grove_share = 0.4
-	impossible.boulder_count = 300
+	impossible.wood_count = 20
+	impossible.wood_reach = 1.0
+	impossible.lone_tree_count = 200
 
 	var map := _parser.parse(QuadrantGenerator.new().generate(impossible, 9))
 

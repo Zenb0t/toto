@@ -51,15 +51,16 @@ and mouse, following whichever you used last.
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
 **Tune gameplay** exposes the numbers that shape the feel, sorted into a menu: Player, Weapons, Movement,
-Skills, Potions, Enemies, Lich, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light; ambush chances, size and delay; the inn's rest time and reach), Camera (tilt, distance, field of view,
-look-ahead, wall height) and World (the plains' size, groves, ponds and the rest; they shape the next world, with
+Skills, Potions, Enemies, Lich, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light; ambush chances, size and delay; the inn's rest time and reach), Camera (tilt, distance indoors and outdoors, field of view,
+look-ahead, wall height) and World (the plains' size, woods, lone trees, rock piles, ponds and the rest; they shape the next world, with
 **New world** and **Same seed again** buttons). Weapons, Movement, Skills and Potions list every item, so any of them can be tuned (the equipped
 one is marked). Entries you changed show in gold; Reset resets the page you're on. Changes apply live and are
 saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
 
-A run starts outdoors on the **plains**, in a **village** (36x28, a palisade with a gate on each side, streets to a square with a well, an inn, a few houses and a smithy, market or church, in KayKit Medieval Hexagon art): you start in front of the inn and know the whole village already; buildings turn see-through when they stand between the camera and you, and the HUD calls the place "The village" while you are inside. The plains are a 160x90 field of grass with tree groves (they block walking and sight),
-boulders for cover, ponds and a thick forest border with a barricaded exit in the middle of each side. Somewhere out in
+A run starts outdoors on the **plains**, in a **village** (48x36, a palisade with a gate on each side, streets to a square with a well, an inn, a few houses and a smithy, market or church, in KayKit Medieval Hexagon art): you start in front of the inn and know the whole village already; buildings turn see-through when they stand between the camera and you, and the HUD calls the place "The village" while you are inside. The plains are open grassland, 260x150, with a handful of separate woods (drawn as trees; they block walking and sight),
+lone trees, a few piles of rocks for cover, ponds and a thick forest border with a barricaded exit in the middle of
+each side. The camera stands farther back there than in the crypt, and you see farther (22 cells instead of 16). Somewhere out in
 the grass, halfway to the border or farther, stands a small stone mausoleum: the crypt entrance, with no road to it. Step
 onto its stairs to go down into the **crypt**, 3 levels of tombs and undead (the HUD says "Crypt level 2"), all grown from one world seed (shown in the pause menu), inspired by
 Dungeon Crawl Stone Soup. The first level's silver stairs lead back out to the mausoleum. Six **camps** dot the plains, each a band of 2-4 goblins and kobolds round a campfire (asleep or wandering), bigger and tougher
@@ -138,7 +139,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `scripts/dungeon`, holds its map letters and what a map knows of it)
 - `scripts/dungeon/generation/quadrant` – the plains: `QuadrantGenerator` runs the steps (`QuadrantGround`,
   `QuadrantBorder`, `QuadrantExits`, `SetPiecePlacer`, `QuadrantRules`) over a `QuadrantGrid` by a plain-data
-  `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires, the ruin (`Ruins`: its drawing, gaps, band); `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
+  `QuadrantRecipe` (every number a Knob); the ground comes from `PlainsZones` (meadow, wood and pond zones spread by
+  `PoissonDisc`), `PlainsWoods` (woods rounded off by `GroveSmoothing`, single trees at their edges, lone trees), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires, the ruin (`Ruins`: its drawing, gaps, band); `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
   `BranchLook` (what each place is: the plains, Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
   (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces), `BossArena` (the Lich's room on crypt level 3), `TrapRoom` (which crypt room is the trap), `CryptRecipe` and `CryptCampfire` (the crypt's Knobs; which room holds the campfire),
@@ -169,7 +171,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   (`PickupArea`, `Chest`, `ItemDrop`). The player holds no input code
 - `scripts/view3d` – how the game is shown: the 2D world runs the game and `WorldView3D` shows it in 3D.
   `GroundView` lays the 2D plane on the floor (floor, aim previews, telegraphs, fog), `MapView3D` stands walls
-  and closed doors on it (`VillageView3D` the village's models, see-through when they hide the hero), and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
+  and closed doors on it (`VillageView3D` the village's models, see-through when they hide the hero; `ForestView` the
+  plains' trees, in chunks of MultiMeshes, from `TreeShape`), and `Puppets` moves a 3D stand-in with each actor. Pure parts: `WorldSpace`
   (2D plane to 3D), `CameraFraming` (the Brawl Stars-style camera), `GroundWindow` (which part of the plane
   the floor texture shows). `models/` holds the models: `CharacterModel` (KayKit characters, animated), `HeroBars` (health and ammo over the hero) and
   `CharacterLook` (who wears what), and the simple ones (chests, loot, shots, torches, the stairs' arch, the bow in hand: `BowModel`, picked with the others by `WeaponModel`)

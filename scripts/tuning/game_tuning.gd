@@ -38,6 +38,7 @@ const LOOT_POTION_DROP_CHANCE := "loot.potion_drop_chance"
 const LOOT_CHEST_POTION_CHANCE := "loot.chest_potion_chance"
 const CAMERA_PITCH := "camera.pitch"
 const CAMERA_DISTANCE := "camera.distance"
+const CAMERA_OUTDOOR_DISTANCE := "camera.outdoor_distance"
 const CAMERA_FIELD_OF_VIEW := "camera.field_of_view"
 const CAMERA_LOOK_AHEAD := "camera.look_ahead"
 const CAMERA_WALL_HEIGHT := "camera.wall_height"
@@ -224,6 +225,8 @@ static func create() -> Tuning:
 			CAMERA_PITCH, "Tilt (90 = top-down)", CAMERA_GROUP, 30, 90, 1, CameraFraming.DEFAULT_PITCH_DEGREES),
 		Tuning.Param.new(
 			CAMERA_DISTANCE, "Distance (cells)", CAMERA_GROUP, 6, 30, 0.5, CameraFraming.DEFAULT_DISTANCE),
+		Tuning.Param.new(CAMERA_OUTDOOR_DISTANCE, "Distance outdoors (cells)", CAMERA_GROUP, 6, 50, 0.5,
+			CameraFraming.DEFAULT_OUTDOOR_DISTANCE),
 		Tuning.Param.new(
 			CAMERA_FIELD_OF_VIEW, "Field of view", CAMERA_GROUP, 15, 75, 1, CameraFraming.DEFAULT_FIELD_OF_VIEW),
 		Tuning.Param.new(
@@ -471,10 +474,11 @@ static func warp_enabled(tuning: Tuning) -> bool:
 	return tuning.value(WORLD_WARP) >= 1.0
 
 
-static func camera_framing(tuning: Tuning) -> CameraFraming:
+## outdoors: the camera stands at the outdoor distance (the plains), not the one for indoors (the crypt).
+static func camera_framing(tuning: Tuning, outdoors := false) -> CameraFraming:
 	var framing := CameraFraming.new()
 	framing.pitch_degrees = tuning.value(CAMERA_PITCH)
-	framing.distance = tuning.value(CAMERA_DISTANCE)
+	framing.distance = tuning.value(CAMERA_OUTDOOR_DISTANCE if outdoors else CAMERA_DISTANCE)
 	framing.field_of_view = tuning.value(CAMERA_FIELD_OF_VIEW)
 	framing.look_ahead = tuning.value(CAMERA_LOOK_AHEAD)
 	return framing

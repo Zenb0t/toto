@@ -6,7 +6,7 @@ extends RefCounted
 ## The numbers are tunable (Tune → World, see knobs), and the defaults live here.
 
 ## Bumped whenever the same recipe and seed would make a different map.
-const VERSION := 5
+const VERSION := 6
 ## The first lone campfire lies at most this many cells beyond the village's clear radius (see village_radius).
 const NEAR_CAMPFIRE_BEYOND_VILLAGE := 12
 ## Each side's quadrant exit is this many cells wide, in the middle of the side.
@@ -14,26 +14,34 @@ const EXIT_WIDTH := 3
 
 ## Stable identifier; also the prefix of its tuning keys.
 var id := "plains"
-var width := 160
-var height := 90
+var width := 260
+var height := 150
 ## The share of the cells inside the border that can be walked on (not trees, boulders, deep water).
-var min_walkable_share := 0.7
+var min_walkable_share := 0.8
 ## How many cells thick the forest border is.
 var border_thickness := 5
-## The share of the cells inside the border that are tree groves, before ponds and clearings take their part.
-var grove_share := 0.16
-## About how many cells across a grove is (the noise's feature size).
-var grove_size := 14
-var boulder_count := 70
-var pond_count := 6
+## The land is split into zones about this many cells apart (see PlainsZones): most are open meadow, a few hold a
+## wood or a pond.
+var zone_spacing := 30
+## How many zones hold a wood, and how much of its zone's room a wood fills (0-1).
+var wood_count := 6
+var wood_reach := 0.75
+## Trees standing alone out in the open.
+var lone_tree_count := 40
+## Small piles of rocks out in the meadows.
+var rock_pile_count := 5
+## How many zones hold a pond.
+var pond_count := 3
 ## A pond's deep water is about this many cells from its middle to its edge, plus a shallow shore around it.
-var pond_radius_min := 3
-var pond_radius_max := 6
+var pond_radius_min := 4
+var pond_radius_max := 7
 ## The village in the middle of the plains (see VillageGenerator): its size, and the share of its leftover ground
 ## that gets barrels and crates.
-var village_width := 36
-var village_height := 28
-var village_prop_share := 0.15
+var village_width := 48
+var village_height := 36
+var village_prop_share := 0.01
+## The least number of open cells between two of the village's buildings.
+var village_lot_gap := 2
 ## How much bigger than the models themselves the village's buildings, well and palisade are drawn (KayKit's
 ## Medieval Hexagon pieces are tiny next to a cell).
 var building_scale := 6.0
@@ -72,11 +80,12 @@ static func plains() -> QuadrantRecipe:
 	return QuadrantRecipe.new()
 
 
-## The same quadrant with nothing in the way: no groves, boulders or ponds. Always valid (see QuadrantGenerator).
+## The same quadrant with nothing in the way: no woods, trees, rocks or ponds. Always valid (see QuadrantGenerator).
 func without_obstacles() -> QuadrantRecipe:
 	var plain := _copy()
-	plain.grove_share = 0.0
-	plain.boulder_count = 0
+	plain.wood_count = 0
+	plain.lone_tree_count = 0
+	plain.rock_pile_count = 0
 	plain.pond_count = 0
 	return plain
 
@@ -163,19 +172,22 @@ func camp_wandering_share() -> float:
 
 func knobs() -> Array[Knob]:
 	return [
-		Knob.new("width", "Width (cells)", 100, 260, 10),
-		Knob.new("height", "Height (cells)", 60, 150, 10),
+		Knob.new("width", "Width (cells)", 100, 400, 10),
+		Knob.new("height", "Height (cells)", 60, 240, 10),
 		Knob.new("min_walkable_share", "Walkable at least", 0.5, 0.95, 0.01),
 		Knob.new("border_thickness", "Forest border (cells)", 3, 10, 1),
-		Knob.new("grove_share", "Tree groves (share)", 0.0, 0.4, 0.01),
-		Knob.new("grove_size", "Grove size (cells)", 4, 40, 1),
-		Knob.new("boulder_count", "Boulders", 0, 300, 5),
-		Knob.new("pond_count", "Ponds", 0, 20, 1),
+		Knob.new("zone_spacing", "Zones, apart (cells)", 20, 70, 2),
+		Knob.new("wood_count", "Woods", 0, 20, 1),
+		Knob.new("wood_reach", "Wood size (share of its zone)", 0.3, 1.0, 0.05),
+		Knob.new("lone_tree_count", "Lone trees", 0, 200, 5),
+		Knob.new("rock_pile_count", "Rock piles", 0, 30, 1),
+		Knob.new("pond_count", "Ponds", 0, 10, 1),
 		Knob.new("pond_radius_min", "Pond radius, least", 2, 8, 1),
 		Knob.new("pond_radius_max", "Pond radius, most", 3, 12, 1),
-		Knob.new("village_width", "Village width (cells)", 24, 60, 2),
-		Knob.new("village_height", "Village height (cells)", 20, 44, 2),
+		Knob.new("village_width", "Village width (cells)", 24, 80, 2),
+		Knob.new("village_height", "Village height (cells)", 20, 60, 2),
 		Knob.new("village_prop_share", "Village barrels and crates (share)", 0.0, 0.4, 0.01),
+		Knob.new("village_lot_gap", "Village, gap between buildings (cells)", 1, 6, 1),
 		Knob.new("building_scale", "Village art scale (x)", 2.0, 10.0, 0.5),
 		Knob.new("crypt_min_outward", "Crypt entrance, least out (0-1)", 0.2, 0.9, 0.05),
 		Knob.new("camp_count", "Camps", 0, 10, 1),

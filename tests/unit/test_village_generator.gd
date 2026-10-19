@@ -265,3 +265,27 @@ func test_a_seed_gets_twenty_tries_before_the_plan_shrinks() -> void:
 		var result: VillageGenerator.Result = _result_by_seed[seed_value]
 		if not result.fallbacks.is_empty():
 			assert_gt(result.attempts, VillageGenerator.TRIES, "seed %d" % seed_value)
+
+
+func test_buildings_keep_the_gap_asked_for_between_them() -> void:
+	for seed_value in 10:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = seed_value
+		var map := _parser.parse(VillageGenerator.new().generate(Vector2i(48, 36), 0.01, rng, 2).ascii())
+		for building in map.village.buildings:
+			for other in map.village.buildings:
+				if other != building:
+					assert_false(building.rect.grow(2).intersects(other.rect), "seed %d" % seed_value)
+
+
+func test_buildings_spread_round_the_whole_village_rather_than_bunching_by_the_square() -> void:
+	for seed_value in 10:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = seed_value
+		var map := _parser.parse(VillageGenerator.new().generate(Vector2i(48, 36), 0.01, rng, 2).ascii())
+		var middle := map.village.area.get_center()
+		var quarters := {}
+		for building in map.village.buildings:
+			var center := building.rect.get_center()
+			quarters[Vector2i(signi(center.x - middle.x), signi(center.y - middle.y))] = true
+		assert_gte(quarters.size(), 3, "seed %d" % seed_value)

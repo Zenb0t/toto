@@ -141,3 +141,13 @@ func _states(exploration: Exploration) -> Dictionary:
 			var cell := Vector2i(x, y)
 			states[cell] = 2 if exploration.is_visible(cell) else (1 if exploration.is_seen(cell) else 0)
 	return states
+
+
+func test_a_wider_sight_sees_farther() -> void:
+	var exploration := Exploration.new()
+	exploration.sight_radius = Exploration.OUTDOOR_SIGHT_RADIUS
+
+	exploration.look_from(Vector2i.ZERO, func(_cell: Vector2i) -> bool: return true)
+
+	assert_true(exploration.is_visible(Vector2i(Exploration.OUTDOOR_SIGHT_RADIUS, 0)))
+	assert_false(exploration.is_visible(Vector2i(Exploration.OUTDOOR_SIGHT_RADIUS + 1, 0)))

@@ -6,6 +6,11 @@ extends RefCounted
 
 ## How far the player sees, in cells: farther than any weapon reaches, so nothing can hit you from the dark.
 const SIGHT_RADIUS := 16
+## Outdoors the land is open and the camera stands farther back, so the hero sees farther.
+const OUTDOOR_SIGHT_RADIUS := 22
+
+## How far the player sees from here, in cells (SIGHT_RADIUS, or OUTDOOR_SIGHT_RADIUS outdoors).
+var sight_radius := SIGHT_RADIUS
 
 var _visible := {}  # Vector2i -> true
 var _seen := {}  # Vector2i -> true
@@ -22,10 +27,10 @@ func look_from(origin: Vector2i, is_clear: Callable) -> void:
 		return clear_by_cell[cell]
 	var before := _visible
 	_visible = {origin: true}
-	for y in range(-SIGHT_RADIUS, SIGHT_RADIUS + 1):
-		for x in range(-SIGHT_RADIUS, SIGHT_RADIUS + 1):
+	for y in range(-sight_radius, sight_radius + 1):
+		for x in range(-sight_radius, sight_radius + 1):
 			var target := origin + Vector2i(x, y)
-			if Vector2(x, y).length() <= SIGHT_RADIUS and _line_is_clear(origin, target, remembered_is_clear):
+			if Vector2(x, y).length() <= sight_radius and _line_is_clear(origin, target, remembered_is_clear):
 				_visible[target] = true
 	_seen.merge(_visible)
 	_changed = _difference(before, _visible)

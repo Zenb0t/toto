@@ -1101,7 +1101,7 @@ func _on_take_pressed() -> void:
 ## Applies everything that can change mid-run. The rest (like enemy health) waits for the next run.
 func _apply_tuning(tuning: Tuning) -> void:
 	_player.move_speed = GameTuning.player_move_speed(tuning)
-	_stage.world.framing = GameTuning.camera_framing(tuning)
+	_stage.world.framing = GameTuning.camera_framing(tuning, _branch().outdoors)
 	_stage.world.set_wall_height(GameTuning.wall_height(tuning))
 	_weapon_switch.visible = GameTuning.shows_weapon_switch(tuning)
 	_equip(

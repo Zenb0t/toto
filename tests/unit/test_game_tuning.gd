@@ -193,6 +193,21 @@ func test_camera_knobs_shape_the_framing() -> void:
 	assert_eq(GameTuning.wall_height(tuning), MapView3D.DEFAULT_WALL_HEIGHT)
 
 
+func test_outdoors_the_camera_stands_at_its_own_distance() -> void:
+	var tuning := GameTuning.create()
+	tuning.set_value(GameTuning.CAMERA_DISTANCE, 12)
+	tuning.set_value(GameTuning.CAMERA_OUTDOOR_DISTANCE, 40)
+
+	assert_eq(GameTuning.camera_framing(tuning, true).distance, 40.0)
+	assert_eq(GameTuning.camera_framing(tuning, false).distance, 12.0)
+
+
+func test_by_default_the_camera_stands_farther_back_outdoors() -> void:
+	var tuning := GameTuning.create()
+
+	assert_gt(GameTuning.camera_framing(tuning, true).distance, GameTuning.camera_framing(tuning).distance)
+
+
 func test_heal_is_no_longer_a_utility_it_is_a_potion() -> void:
 	assert_does_not_have(GameTuning.utility_ids(), "heal")
 	assert_has(GameTuning.potion_ids(), "healing")
@@ -282,13 +297,13 @@ func test_untouched_tuning_builds_the_plains_with_the_recipes_own_defaults() -> 
 func test_tuned_world_knobs_change_the_next_plains() -> void:
 	var tuning := GameTuning.create()
 	tuning.set_value(GameTuning.key("plains", "width"), 120)
-	tuning.set_value(GameTuning.key("plains", "grove_share"), 0.25)
+	tuning.set_value(GameTuning.key("plains", "wood_reach"), 0.5)
 
 	var recipe := GameTuning.plains_recipe(tuning)
 
 	assert_eq(recipe.width, 120)
 	assert_true(recipe.width is int)
-	assert_almost_eq(recipe.grove_share, 0.25, 0.0001)
+	assert_almost_eq(recipe.wood_reach, 0.5, 0.0001)
 	assert_eq(DungeonMapParser.new().parse(QuadrantGenerator.new().generate(recipe, 1)).size.x, 120)
 
 
@@ -311,18 +326,18 @@ func test_tuned_crypt_knobs_move_the_campfire_and_the_wanderers_of_the_next_worl
 	assert_almost_eq(recipe.wandering_share, 0.4, 0.0001)
 
 
-func test_the_village_knobs_are_in_tune_world_and_default_to_36_by_28_with_15_percent_props_at_scale_six() -> void:
+func test_the_village_knobs_are_in_tune_world_and_default_to_48_by_36_with_1_percent_props_at_scale_six() -> void:
 	var tuning := GameTuning.create()
 	var in_world := {}
 	for each in tuning.params():
 		if each.group == GameTuning.WORLD_GROUP:
 			in_world[each.key] = each
 
-	for field in ["village_width", "village_height", "village_prop_share", "building_scale"]:
+	for field in ["village_width", "village_height", "village_prop_share", "village_lot_gap", "building_scale"]:
 		assert_true(in_world.has(GameTuning.key("plains", field)), field)
 	var defaults := GameTuning.plains_recipe(tuning)
-	assert_eq(defaults.village_size(), Vector2i(36, 28))
-	assert_almost_eq(defaults.village_prop_share, 0.15, 0.0001)
+	assert_eq(defaults.village_size(), Vector2i(48, 36))
+	assert_almost_eq(defaults.village_prop_share, 0.01, 0.0001)
 	assert_almost_eq(defaults.building_scale, 6.0, 0.0001)
 
 
