@@ -10,6 +10,8 @@ var square: Rect2i
 var streets: Array[Rect2i] = []
 ## Cells a lot has taken (its building, its doorstep row and what stands by it).
 var taken := {}  # Vector2i -> true
+## The rectangle of each lot placed so far.
+var lot_rects: Array[Rect2i] = []
 
 var _square_cells: Array[Vector2i] = []
 var _street_cells: Array[Vector2i] = []

@@ -4,8 +4,8 @@ extends RefCounted
 ##   ground → border → exits → the village → reserve set-piece spots → fill the camps → place set pieces → roads → validate
 ## A step that breaks a rule (no spot for a piece, a cut-off exit, too little open ground) doesn't fail the map:
 ## the whole thing is made again with the next random numbers. The same recipe and seed always give the same map.
-## If every try fails (a recipe asking for the impossible), the last resort is the same quadrant without groves,
-## boulders and ponds. If that breaks a rule too (a small plains with no room for its camps or no corner for its ruin),
+## If every try fails (a recipe asking for the impossible), the last resort is the same quadrant without woods,
+## trees, rocks and ponds. If that breaks a rule too (a small plains with no room for its camps or no corner for its ruin),
 ## it is the same without the camps and campfires, then without the ruin, then without both; a ruin with no corner
 ## anywhere beside the village is given up after the first try, not after every one. If even that breaks a rule
 ## (a set piece that fits nowhere at the tuned size, say), it is the default recipe without them, so a tuning never
@@ -64,7 +64,8 @@ func _try(recipe: QuadrantRecipe, rng: RandomNumberGenerator) -> QuadrantGrid:
 	QuadrantGround.lay(grid, recipe, rng)
 	QuadrantBorder.raise(grid, recipe)
 	QuadrantExits.cut(grid, recipe)
-	last_village = VillageGenerator.new().generate(recipe.village_size(), recipe.village_prop_share, rng)
+	last_village = VillageGenerator.new().generate(
+		recipe.village_size(), recipe.village_prop_share, rng, recipe.village_lot_gap)
 	var pieces: Array[SetPiece] = [SetPieces.village(last_village)]
 	if recipe.has_ruin:
 		pieces.append(SetPieces.ruin(Ruins.draw(recipe, rng)))

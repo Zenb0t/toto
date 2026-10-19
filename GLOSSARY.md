@@ -12,8 +12,16 @@ One map of the world's 3×3 grid, entered and left through its exits. The run st
 _Avoid_: Zone, region, level, floor (for an outdoor map)
 
 **Plains**:
-The open grassland of the centre quadrant around the village: groves, boulders, ponds and monster camps.
+The open grassland of the centre quadrant around the village: a few woods, lone trees, piles of rocks, ponds and monster camps.
 _Avoid_: Field, overworld
+
+**Zone**:
+One part of a quadrant's land, round a centre spread evenly over it: a meadow, a wood or a pond (`PlainsZones`). Never a whole quadrant.
+_Avoid_: Biome, region
+
+**Wood**:
+A patch of tree groves on the plains, standing alone in its zone; the map letter `T` (grove) is its cells.
+_Avoid_: Forest (the border), clump
 
 **Village**:
 The palisaded settlement in the centre of the plains where every run starts, with a gate on each side. No monsters live there, though they may chase the hero in.

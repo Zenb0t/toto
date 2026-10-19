@@ -37,9 +37,14 @@ class Result:
 
 ## The broken rule of the latest try that failed, for tests ("" if none did).
 var last_broken_rule := ""
+var _lot_gap := VillageLotPacker.DEFAULT_GAP
 
 
-func generate(size: Vector2i, prop_share: float, rng: RandomNumberGenerator) -> Result:
+## lot_gap: the least number of open cells between two buildings (see VillageLotPacker).
+func generate(
+		size: Vector2i, prop_share: float, rng: RandomNumberGenerator, lot_gap := VillageLotPacker.DEFAULT_GAP
+) -> Result:
+	_lot_gap = lot_gap
 	var result := Result.new()
 	var plan := _plan(rng)
 	var village_size := size
@@ -101,7 +106,7 @@ func _try_once(
 	var layout := VillageStreets.lay(grid, rng)
 	var lots: Array[VillageLotPacker.Placed] = []
 	for lot_id in plan:
-		var placed := VillageLotPacker.pack(grid, layout, lot_id, lot_id == VillageLots.INN, rng)
+		var placed := VillageLotPacker.pack(grid, layout, lot_id, lot_id == VillageLots.INN, rng, _lot_gap)
 		if placed == null:
 			last_broken_rule = "no room for the %s" % lot_id
 			return null

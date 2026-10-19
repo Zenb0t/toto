@@ -2,14 +2,19 @@ class_name VillageLotPacker
 extends RefCounted
 ## The third step of the village: puts a lot on the ground left by the streets. A lot stands with its doorstep right
 ## beside a street (or, for the inn, the square), turned to face it and maybe mirrored; it keeps off the palisade,
-## the streets and the other lots, and never touches another building. Of all the ways it can stand it takes one
-## of the snuggest (the most neighbours: the palisade, other lots, the streets), so the lots end up packed along
-## the street edges. Pure: the caller passes the random number generator.
+## the streets and the other lots, and keeps a gap of open ground between its building and every other one. Of all
+## the ways it can stand it takes one of those farthest from the lots already there (up to SPREAD_ENOUGH cells),
+## and of those one of the snuggest (backed onto the palisade, along the streets), so the lots spread out along the
+## streets instead of bunching up round the square. Pure: the caller passes the random number generator.
 
 const BUILDING_LETTERS := "HICSM"
-## A cell next to the palisade or another lot counts double a cell next to a street.
-const SNUG_NEIGHBOUR := 2
+## Lots this many cells apart or more count as spread out enough: farther doesn't score better.
+const SPREAD_ENOUGH := 8
+## A cell next to the palisade counts double a cell next to a street.
+const SNUG_PALISADE := 2
 const SNUG_STREET := 1
+## The least gap between two buildings unless told otherwise: one open cell, so no two ever touch.
+const DEFAULT_GAP := 1
 
 
 ## Where a lot ended up.
@@ -34,9 +39,10 @@ class Placed:
 
 
 ## Stamps the lot on the grid and returns where it went, or null if it fits nowhere. on_square: its doorstep must
-## face the square (the inn's).
+## face the square (the inn's). gap: the least number of open cells between its building and any other.
 static func pack(
-		grid: QuadrantGrid, layout: VillageLayout, lot_id: String, on_square: bool, rng: RandomNumberGenerator
+		grid: QuadrantGrid, layout: VillageLayout, lot_id: String, on_square: bool, rng: RandomNumberGenerator,
+		gap := DEFAULT_GAP
 ) -> Placed:
 	var fronts: Array[Vector2i] = layout.square_cells() if on_square else layout.street_cells()
 	var best: Array[Placed] = []
@@ -49,9 +55,9 @@ static func pack(
 				continue
 			var origin := doorstep - variant.doorstep
 			var rect := Rect2i(origin, variant.size())
-			if not _fits(grid, layout, variant, rect):
+			if not _fits(grid, layout, variant, rect, gap):
 				continue
-			var score := _snugness(grid, layout, rect)
+			var score := mini(_gap_to_lots(layout, rect), SPREAD_ENOUGH) * 1000 + _snugness(grid, layout, rect)
 			if score > best_score:
 				best_score = score
 				best.clear()
@@ -66,7 +72,9 @@ static func pack(
 	return best[pick]
 
 
-static func _fits(grid: QuadrantGrid, layout: VillageLayout, variant: VillageLots.Variant, rect: Rect2i) -> bool:
+static func _fits(
+		grid: QuadrantGrid, layout: VillageLayout, variant: VillageLots.Variant, rect: Rect2i, gap: int
+) -> bool:
 	if not layout.lot_area().encloses(rect):
 		return false
 	for y in range(rect.position.y, rect.end.y):
@@ -75,29 +83,39 @@ static func _fits(grid: QuadrantGrid, layout: VillageLayout, variant: VillageLot
 			if grid.at(cell) != QuadrantGrid.GRASS or layout.taken.has(cell):
 				return false
 			if BUILDING_LETTERS.contains(variant.rows[y - rect.position.y][x - rect.position.x]) \
-					and _touches_a_building(grid, rect, cell):
+					and _has_a_building_near(grid, rect, cell, gap):
 				return false
 	return true
 
 
-## Whether another building stands in one of the eight cells around a building cell.
-static func _touches_a_building(grid: QuadrantGrid, own: Rect2i, cell: Vector2i) -> bool:
-	for dy in range(-1, 2):
-		for dx in range(-1, 2):
+## Whether another building stands within `gap` cells of a building cell (counted the way a king moves).
+static func _has_a_building_near(grid: QuadrantGrid, own: Rect2i, cell: Vector2i, gap: int) -> bool:
+	for dy in range(-gap, gap + 1):
+		for dx in range(-gap, gap + 1):
 			var next := cell + Vector2i(dx, dy)
 			if not own.has_point(next) and grid.contains(next) and BUILDING_LETTERS.contains(grid.at(next)):
 				return true
 	return false
 
 
-## How tightly a lot sits: the cells all round it that are the palisade, another lot or a street.
+## How many cells lie between a rectangle and the nearest lot already placed (SPREAD_ENOUGH when there is none).
+static func _gap_to_lots(layout: VillageLayout, rect: Rect2i) -> int:
+	var nearest := SPREAD_ENOUGH
+	for other in layout.lot_rects:
+		var across := maxi(maxi(other.position.x - rect.end.x, rect.position.x - other.end.x), 0)
+		var down := maxi(maxi(other.position.y - rect.end.y, rect.position.y - other.end.y), 0)
+		nearest = mini(nearest, maxi(across, down))
+	return nearest
+
+
+## How tightly a lot sits: the cells all round it that are the palisade or a street.
 static func _snugness(grid: QuadrantGrid, layout: VillageLayout, rect: Rect2i) -> int:
 	var score := 0
 	for next in _cells_round(rect):
 		if layout.is_street(next):
 			score += SNUG_STREET
-		elif not grid.contains(next) or grid.at(next) == Village.PALISADE or layout.taken.has(next):
-			score += SNUG_NEIGHBOUR
+		elif not grid.contains(next) or grid.at(next) == Village.PALISADE:
+			score += SNUG_PALISADE
 	return score
 
 
@@ -124,3 +142,4 @@ static func _stamp(
 				symbol = QuadrantGrid.GRASS
 			grid.put(cell, symbol)
 			layout.taken[cell] = true
+	layout.lot_rects.append(rect)

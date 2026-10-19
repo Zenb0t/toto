@@ -3,7 +3,8 @@ extends RefCounted
 ## How the floor of a map looks, cell by cell: built floors are flagstones that alternate between two shades (the
 ## branch's, see BranchLook), so distances read at a glance; each stone is tinted a little differently (see
 ## DungeonDecor) and set in grout. Cave floors are bare earth or rock: blotchy, speckled, no grout. Walls are
-## dark; columns and trees stand on the floor with a shadow at their foot; torches warm the floor below them.
+## dark; columns and trees stand on the floor with a shadow at their foot; the ground under a wood's trees is grass in
+## the canopy's shade; torches warm the floor below them.
 ##
 ## paint() draws any set of cells onto a canvas, so the floor can be split into pieces that are each drawn (and
 ## skipped when off screen) on their own (see FloorChunk). It paints in layers, all of one kind of shape at a
@@ -24,6 +25,8 @@ const CRACK_COLOR := Color(0.16, 0.14, 0.18, 0.45)
 ## The warm pool of light on the floor below each torch (see DungeonDecor.torch_light), at its brightest.
 const TORCH_LIGHT_COLOR := Color(1.0, 0.68, 0.32, 0.22)
 const WALL_COLOR := Color(0.1, 0.09, 0.12)
+## The shade over the ground under a wood's trees.
+const WOOD_SHADE_COLOR := Color(0, 0.05, 0, 0.45)
 const STAIRS_COLOR := Color(0.95, 0.75, 0.3)
 const STAIRS_UP_COLOR := Color(0.8, 0.84, 0.9)
 const STAIRS_STEPS := 4
@@ -51,6 +54,9 @@ func paint(canvas: CanvasItem, cells: Array[Vector2i]) -> void:
 	for cell in cells:
 		_paint_base(canvas, cell)
 	for cell in cells:
+		if _map.blocker_at(cell) == DungeonMap.Blocker.GROVE:
+			canvas.draw_rect(_tile_rect(cell), WOOD_SHADE_COLOR)
+	for cell in cells:
 		if _shows_flagstone(cell):
 			_paint_crack(canvas, cell)
 	for cell in cells:
@@ -66,8 +72,8 @@ func paint(canvas: CanvasItem, cells: Array[Vector2i]) -> void:
 			_paint_stairs(canvas, _tile_rect(cell), STAIRS_UP_COLOR, false)
 
 
-## The ground of an open cell, of a pillar's cell and under a village piece (its model stands on it); a dark
-## block for any other wall.
+## The ground of an open cell, of a pillar's cell and under a village piece or a tree (its model stands on it); a
+## dark block for any other wall.
 func _paint_base(canvas: CanvasItem, cell: Vector2i) -> void:
 	if not _stands_on_ground(cell):
 		canvas.draw_rect(_tile_rect(cell), WALL_COLOR)
@@ -82,7 +88,8 @@ func _paint_base(canvas: CanvasItem, cell: Vector2i) -> void:
 
 
 func _stands_on_ground(cell: Vector2i) -> bool:
-	return _map.is_open(cell) or _pillars.has(cell) or _map.blocker_at(cell) in DungeonMap.VILLAGE_BLOCKERS
+	return _map.is_open(cell) or _pillars.has(cell) or _map.blocker_at(cell) in DungeonMap.VILLAGE_BLOCKERS \
+		or _map.blocker_at(cell) == DungeonMap.Blocker.GROVE
 
 
 func _shows_flagstone(cell: Vector2i) -> bool:

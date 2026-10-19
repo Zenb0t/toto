@@ -56,11 +56,21 @@ func show_map(map: DungeonMap, look := BranchLook.dungeon()) -> void:
 	_build_doors()
 
 
-## Every cell this view draws: open cells and the walls around them.
+## Every cell this view draws: open cells, the walls around them, and the floor of every wood (trees stand on it).
 func drawn_cells() -> Array[Vector2i]:
 	var cells := _map.open_cells()
 	cells.append_array(wall_cells())
+	cells.append_array(_deep_wood_cells())
 	return cells
+
+
+## Grove cells too far into a wood to be walls (see wall_cells): their floor is drawn all the same.
+func _deep_wood_cells() -> Array[Vector2i]:
+	var walls := {}
+	for cell in wall_cells():
+		walls[cell] = true
+	return _map.cells_with_blocker(DungeonMap.Blocker.GROVE).filter(
+		func(cell: Vector2i) -> bool: return not walls.has(cell))
 
 
 func is_door_closed(cell: Vector2i) -> bool:

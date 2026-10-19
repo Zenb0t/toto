@@ -22,8 +22,12 @@ const CORPSE_SECONDS := 1.4
 const SHAKE_DISTANCE := 0.12
 const SHAKE_SECONDS := 0.18
 
-## Where the camera sits. Takes effect on the next frame.
-var framing := CameraFraming.new()
+## Where the camera sits. Takes effect on the next frame; a camera farther back than the default sees more of
+## the floor, so the floor texture reaches farther too.
+var framing := CameraFraming.new():
+	set(value):
+		framing = value
+		_ground.set_reach(framing.distance / CameraFraming.DEFAULT_DISTANCE)
 
 var _camera := Camera3D.new()
 var _ground := GroundView.new()

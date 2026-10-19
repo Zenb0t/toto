@@ -5,6 +5,8 @@ extends RefCounted
 
 const DEFAULT_PITCH_DEGREES := 55.0
 const DEFAULT_DISTANCE := 26.5
+## Outdoors the camera stands farther back, so the open land shows wider round the hero.
+const DEFAULT_OUTDOOR_DISTANCE := 34.0
 const DEFAULT_FIELD_OF_VIEW := 38.0
 const DEFAULT_LOOK_AHEAD := 1.5
 
