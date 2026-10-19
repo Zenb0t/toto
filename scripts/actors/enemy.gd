@@ -17,6 +17,11 @@ signal defeated(enemy: Enemy)
 signal noticed(enemy: Enemy)
 ## The Shots and Slashes of one attack, for the world to carry out. They hurt the player.
 signal attack_fired(attacks: Array)
+## It begins to cast Summon Undead (the wind-up): count skeletons are to rise, and whoever carries the spell out
+## marks their spots now (see Summoning).
+signal summon_telegraphed(caster: Enemy, count: int)
+## The Summon Undead wind-up is over: the skeletons rise.
+signal summon_cast(caster: Enemy)
 
 ## Every enemy is in this group, so area attacks can find them.
 const GROUP := &"enemies"
@@ -96,16 +101,35 @@ var wander_speed_share := DEFAULT_WANDER_SPEED_SHARE
 ## Optional: the only cells it wanders over (Vector2i -> true). A locking room's band keeps to its room, so it is
 ## still inside when the room locks; empty lets it wander anywhere near home and in sight of it.
 var wander_cells := {}
+## Optional: where it withdraws to when hurt while it has no target (the Lich's nook, see Hideout), set by
+## retreat_to(); it stays there until woken.
+var retreat_spot := Vector2.ZERO
 ## Its home never gives up the chase (the Lich's arena, a sealed trap room): set by whoever builds the band.
 var never_gives_up := false
 ## Optional: a caster that casts one spell at a time with a pause between (the Lich). Without one, it attacks
 ## whenever its weapon is ready and it has its turn.
 var spell_picker: SpellPicker
+## Optional: the weapon each spell casts with, other than the one it is armed with (the Lich's Bone Spray); the
+## spell wields it for that cast only.
+var spell_weapons := {}  # SpellPicker.Spell -> Weapon
 ## How far from its target it likes to stay, in cells; 0 keeps the distance its weapon likes (a kiter that backs
 ## off when the target comes closer sets this).
 var keep_distance_cells := 0.0
+## Whether it was raised by a caster's Summon Undead (see adopt()): a summoned skeleton gives no experience, no
+## kill and no drop, and is no spawn of the map, so nothing about it is recorded.
+var is_summoned := false
+
+## The skeletons it raised (see adopt()), which collapse when it dies.
+var _minions: Array[Enemy] = []
+## Whether its Summon Undead would find ground to raise a skeleton on now, () -> bool, set by whoever carries the
+## spell out (see Summoning). Unset, it always would. Without ground it casts another spell rather than an empty summon.
+var summon_ground := Callable()
+## Skeletons whose spot is already pulsing, so as good as alive for the summon cap (see expect_minions()).
+var _expected_minions := 0
 
 var _wielder := Wielder.new(Sword.new())
+## The weapon it is armed with, which it goes back to after casting a spell with another.
+var _own_weapon: Weapon = _wielder.weapon
 var _brain := EnemyBrain.new()
 var _target: Node2D
 var _strafe_sign := 1.0
@@ -122,6 +146,7 @@ var _wander_goal := Vector2.ZERO
 var _has_wander_goal := false
 var _rng := RandomNumberGenerator.new()
 var _has_home := false
+var _has_retreat := false
 ## Where it last saw its target (within its territory), the place it checks when it gives up.
 var _last_seen := Vector2.ZERO
 ## Checking or returning, and no way on to where it is going.
@@ -157,6 +182,39 @@ func body_radius() -> float:
 	return RADIUS * monster.size
 
 
+## A skeleton it raised joins it: it counts toward the summon cap while it lives and collapses when its summoner dies.
+func adopt(minion: Enemy) -> void:
+	minion.is_summoned = true
+	_minions.append(minion)
+	_expected_minions = maxi(_expected_minions - 1, 0)
+
+
+## count more skeletons are on their way up (their spots pulse): they already count toward the summon cap, so a
+## cast that follows quickly does not raise more than the cap allows. Each adopt() settles one.
+func expect_minions(count: int) -> void:
+	_expected_minions += count
+
+
+## How many of the skeletons it raised are still alive. Only living ones count toward the summon cap (and those
+## about to rise, see expect_minions()).
+func living_minions() -> int:
+	return _living_minions().size() + _expected_minions
+
+
+func _living_minions() -> Array[Enemy]:
+	var living: Array[Enemy] = []
+	for minion in _minions:
+		if is_instance_valid(minion) and not minion.is_queued_for_deletion():
+			living.append(minion)
+	_minions = living
+	return living
+
+
+## Falls apart at once, whatever its health (its summoner is dead).
+func collapse() -> void:
+	health.take_damage(health.current)
+
+
 ## Starts hurt, at current of its maximum health (back on a map it was left on hurt). Must be called after
 ## become(), before the enemy is added to the tree.
 func set_current_health(current: int) -> void:
@@ -164,6 +222,7 @@ func set_current_health(current: int) -> void:
 
 
 func arm(new_weapon: Weapon) -> void:
+	_own_weapon = new_weapon
 	_wielder.equip(new_weapon)
 	queue_redraw()
 
@@ -178,6 +237,12 @@ func settle(at_home: Vector2, start: Band.Start) -> void:
 	home = at_home
 	_has_home = true
 	_brain.state = EnemyBrain.State.ASLEEP if start == Band.Start.ASLEEP else EnemyBrain.State.WANDER
+
+
+## Where it withdraws to when hurt before it has a target (see EnemyBrain.State.RETREAT).
+func retreat_to(spot: Vector2) -> void:
+	retreat_spot = spot
+	_has_retreat = true
 
 
 ## Arrives already hunting its target (an ambusher, see Ambush): no noticing pause, no shout. It lives at home like
@@ -283,6 +348,7 @@ func _senses() -> EnemyBrain.Senses:
 	senses.hurt = _hurt
 	senses.alerted = _alerted
 	senses.has_home = _has_home
+	senses.can_retreat = _has_retreat
 	senses.never_gives_up = never_gives_up
 	senses.arrived = _blocked or global_position.distance_to(_goal_of_giving_up()) < WAYPOINT_REACHED
 	_hurt = false
@@ -327,7 +393,7 @@ func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
 		if squad != null:
 			squad.leave(get_instance_id())
 		_start_walk()
-	elif to == EnemyBrain.State.RETURN:
+	elif to == EnemyBrain.State.RETURN or to == EnemyBrain.State.RETREAT:
 		_start_walk()
 	elif to == EnemyBrain.State.WANDER:
 		_has_wander_goal = false
@@ -336,6 +402,8 @@ func _on_state_changed(from: EnemyBrain.State, to: EnemyBrain.State) -> void:
 	if from == EnemyBrain.State.WINDUP:
 		if spell_picker != null:
 			spell_picker.end(float(health.current) / health.maximum)
+		if weapon != _own_weapon:
+			_wielder.equip(_own_weapon)
 		_end_turn()
 		# Step aside the other way next time, so its moves are harder to read.
 		_strafe_sign = -_strafe_sign
@@ -347,17 +415,30 @@ func _start_walk() -> void:
 	_blocked = false
 
 
-## Where it is walking to once it has given up: the spot it last saw its target, then home.
+## Where it is walking to once it has given up: the spot it last saw its target, then home; or its retreat spot.
 func _goal_of_giving_up() -> Vector2:
-	return _last_seen if _brain.state == EnemyBrain.State.CHECK else home
+	match _brain.state:
+		EnemyBrain.State.CHECK:
+			return _last_seen
+		EnemyBrain.State.RETREAT:
+			return retreat_spot
+	return home
 
 
-## A caster picks its spell first (see SpellPicker); the Cloud is the weapon's own attack. The Lich's other spells
-## are carried out here when they are built.
+## A caster picks its spell first (see SpellPicker); the Cloud is the weapon's own attack, a spell with a weapon of
+## its own (spell_weapons: Bone Spray) is cast with that one until the cast is over. Summon Undead is carried out
+## here: the wind-up is the telegraph (summon_telegraphed) and its end the rising (summon_cast).
 func _start_attack() -> void:
 	if spell_picker != null:
-		var spell := spell_picker.pick(SpellPicker.Situation.new(0, float(health.current) / health.maximum))
+		var share := float(health.current) / health.maximum
+		var ground: bool = not summon_ground.is_valid() or summon_ground.call()
+		var spell := spell_picker.pick(SpellPicker.Situation.new(living_minions(), share, ground))
 		spell_picker.begin(spell)
+		if spell_weapons.has(spell):
+			_wielder.equip(spell_weapons[spell])
+		if spell == SpellPicker.Spell.SUMMON and weapon is SummonUndead:
+			var summon: SummonUndead = weapon
+			summon_telegraphed.emit(self, summon.count_to_raise(living_minions(), spell_picker.cap(share)))
 	_start_weapon_attack()
 
 
@@ -394,6 +475,10 @@ func _movement() -> Vector2:
 	match _brain.state:
 		EnemyBrain.State.WANDER:
 			return _wander_direction() * wander_speed_share
+		EnemyBrain.State.RETREAT:
+			var direction := _path_direction(retreat_spot)
+			_blocked = direction == Vector2.ZERO
+			return direction
 		EnemyBrain.State.CHECK, EnemyBrain.State.RETURN:
 			var direction := _path_direction(_goal_of_giving_up())
 			_blocked = direction == Vector2.ZERO
@@ -466,6 +551,9 @@ func _path_direction(goal: Vector2) -> Vector2:
 func _release(attacks: Array) -> void:
 	if attacks.is_empty():
 		return
+	if attacks[0] is SummonCast:
+		summon_cast.emit(self)
+		return
 	for attack: Variant in attacks:
 		attack.hurts_player = true
 		attack.damage += monster.damage_bonus
@@ -483,6 +571,8 @@ func _draw() -> void:
 
 
 func _on_died() -> void:
+	for minion in _living_minions():
+		minion.collapse()
 	if squad != null:
 		squad.leave(get_instance_id())
 	defeated.emit(self)

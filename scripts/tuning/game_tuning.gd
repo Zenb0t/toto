@@ -144,6 +144,8 @@ static func create() -> Tuning:
 	params.append(Tuning.Param.new(WORLD_WARP, "Warp (0 = off)", WORLD_GROUP, 0, 1, 1, 0))
 	params.append_array(_item_params(Lich.new(), LICH_GROUP))
 	params.append_array(_item_params(SpellPicker.new(), LICH_GROUP))
+	params.append_array(_item_params(BoneSpray.new(), LICH_GROUP))
+	params.append_array(_item_params(SummonUndead.new(), LICH_GROUP))
 	params.append_array([
 		Tuning.Param.new(ENEMY_MOVE_SPEED, "Move speed", ENEMIES_GROUP, 20, 250, 5, Enemy.DEFAULT_MOVE_SPEED),
 		Tuning.Param.new(ENEMY_HEALTH_MULTIPLIER, "Health (x)", ENEMIES_GROUP, 0.25, 4, 0.05, Enemy.DEFAULT_HEALTH_MULTIPLIER, true),
@@ -293,6 +295,16 @@ static func lich_spells(tuning: Tuning) -> SpellPicker:
 	var result := SpellPicker.new()
 	tune_spells(result, tuning)
 	return result
+
+
+## The weapons the Lich's spells cast with other than his own (Enemy.spell_weapons), with the tuned numbers. The
+## spray's and the summon's wind-ups are the Lich's telegraph (Tune → Lich), and the enemies' extra telegraph is not added to it.
+static func lich_spell_weapons(tuning: Tuning) -> Dictionary:
+	var spray := BoneSpray.new()
+	_apply_knobs(spray, tuning)
+	var summon := SummonUndead.new()
+	_apply_knobs(summon, tuning)
+	return {SpellPicker.Spell.BONE_SPRAY: spray, SpellPicker.Spell.SUMMON: summon}
 
 
 ## Applies the tuned numbers to a spell rule, keeping its pause and what it is casting.

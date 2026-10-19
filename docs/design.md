@@ -322,7 +322,7 @@ of today's `DungeonGenerator` in the Crypt branch (see Branches), each more dang
 **crypt entrance** (the mausoleum's stairs, always open: the plains have no rooms to clear) leads down to level 1's stairs up, and those lead back out onto the
 mausoleum (`WorldLayout`: the plains are map `plains`, the levels `crypt_1` to `crypt_3`; the map's depth picks
 the generator's danger, and the branch is always the crypt, see `MapSpec.branch`). Every level starts on its
-stairs up (`DungeonGenerator.VERSION` 4).
+stairs up (`DungeonGenerator.VERSION` 6).
 The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down on the first
 two levels. **The third level has no stairs down**: its farthest room is the boss arena (next section).
 
@@ -330,7 +330,14 @@ two levels. **The third level has no stairs down**: its farthest room is the bos
 (`BossArena`, a pure generation step; farthest, so never the start room, never the campfire's room, which
 `CryptCampfire` keeps off the farthest room, and room for trap rooms to stay clear of it). It is a 24x16 hall
 with **four 2x2 pillars** (they block walking and shots, not the lobbed Cloud) and **the Lich's crypt** at the front:
-an 8x3 recess in the middle of the north wall where he stands. No other monster and no loot is generated in it.
+an 8x3 recess in the middle of the north wall where he stands, whose back row reaches a 2-cell **nook** on each side
+(`BossArena.NOOK_WIDTH`). No other monster and no loot is generated in it. The crypt **faces south instead (the plan is
+mirrored top to bottom, `BossArena.faces_south`) when the arena is linked to the room above it and not the one below**: a
+corridor from the north would otherwise open a door into the back of the crypt (28% of seeds), and the Lich could be
+shot from behind. Linked above and below (1 seed in 300) it stays north-facing and the corridor from the north comes down
+beside the crypt instead: corridors open into the arena only where `BossArena.admits_door` allows, never into the crypt or a
+nook and through a side wall only in the half of the hall away from the crypt (a doorway higher up looked across the crypt's
+mouth into the far nook on 2 seeds in 1500). With that, every one of 1500 seeds has a hideout no doorway sees (see below).
 Because every other room can be reached without passing through it, locking it never cuts the level in two.
 
 *Locking rooms.* A map marks a room that locks with one **mark letter** on a floor cell of it (`LockingRoom`: `A` the
@@ -344,6 +351,18 @@ shut out when the arena locks and the hero locked in with nobody to kill (found 
 wander radius keeps him in by luck of geometry, but at 8 cells, which Tune allows, he could leave on 92 of 300
 seeds). When the room locks, `main.gd` calls `Enemy.wake(hero)` on its band (target plus `alert()`), so it attacks at
 once (the #34 review note: `_on_room_locked` used to wake nobody). Its monsters never give up (`never_gives_up`).
+
+*Hurt before the lock: he hides in his crypt* (decided after #47: with no target, being hurt from a doorway only took
+him Noticing → Idle, standing still without casting, so he could be shot dead from outside and the arena never
+locked). A locking monster that has a **retreat spot** and is hurt while it has no target now walks there
+(`EnemyBrain.State.RETREAT`, `Senses.can_retreat`; out of the fight, no "!" and no shout) and stays until woken: the
+lock's `wake(hero)` gives it a target and it fights as before. Only the arena sets one: `Hideout.cell_for(map, near)` (pure,
+reads the map) picks the cell of the arena that **no doorway can see** (the doors' cells sampled middle and sides,
+a body's middle and four sides) **and the middle of the room cannot see either**, so it is a real alcove and not a
+corner of the hall, nearest to where he stands: one of the crypt's two nooks, whose side walls shade them from the hall.
+`main.gd` hands it to the Lich with `Enemy.retreat_to`. `test_hideout` checks on 40 generated crypts that no doorway sees it and that it is the
+back row of his crypt. To finish him the hero must walk in, which locks the arena. Trap rooms have no retreat spot
+(their band is not in the world until the seal, see below), nothing else changes.
 
 **Trap rooms** (#46). Greed is tested: crypt levels 1 and 2 each get **one trap room** (`TrapRoom`, a pure generation step;
 none on level 3). It looks like any room with a chest: an ordinary room (never the start room, the stairs-down room, the
@@ -362,7 +381,7 @@ trap room's band back (`_hidden_trap_band`) and spawns them on `room_locked`, th
 its chest invites; `DungeonProgress` counts the held-back monsters, so the lock rule is unchanged. The lock is built from
 the survivors in the record: kills are recorded by spawn cell as usual, so a trap room cleared on an earlier visit
 spawns nobody, doesn't lock again, and has its chest ready at once; a half-cleared one (reachable only by leaving the
-level, which the seal prevents, or a future save) locks again on entry and brings back just the survivors. `DungeonGenerator.VERSION` is 5.
+level, which the seal prevents, or a future save) locks again on entry and brings back just the survivors. `DungeonGenerator.VERSION` is 5 (6 since the arena's nooks and door rules, #48).
 
 *The Lich* (`Lich`, `Bestiary` entry `lich`, map letter `l`, a unique monster, not the Necromancer). A Skeleton Mage
 dressed in code (`LichDress`: 1.3x size, dark purple all over, a gold crown, glowing eyes, a long robe and a staff
@@ -374,12 +393,53 @@ chase. He casts **one spell at a time** by **`SpellPicker`**, a small rule like 
 else Cloud, Cloud, Bone Spray round and round; `begin`/`end` bracket a cast (the enemy calls `end` when the wind-up
 is over) and the pause (1.5 s, 0.8 s in phase two) starts at `end`. Phase two is below half his health: shorter
 pause, cap +2, the cap starting at 5 and never past 10. Each spell is telegraphed (a cast is the weapon's wind-up with
-its red preview). **Only Mephitic Cloud ships** (his weapon, lobbed like the existing weapon, reload 0 because the
-pause is his pace): `SpellPicker.known` holds only the Cloud, so the picker skips the others; #48 (Bone Spray)
-and #49 (Summon Undead, the skeleton count in `SpellPicker.Situation` and phase two) add their spell to `known` and
-carry it out in `Enemy._start_attack`. Every Lich number is a Knob (Tune → Lich: his health, speed, size and kept
-distance, and the spell rule's pauses, phase threshold, cap, cap bonus and Clouds between sprays); health and size
+its red preview). **All three spells ship** (the Cloud is his weapon, lobbed like the existing weapon, reload 0 because the
+pause is his pace): `SpellPicker.known` holds the Cloud, Bone Spray and Summon Undead, and Summon Undead comes first whenever
+fewer skeletons live than the cap (`Enemy._start_attack` passes the real count, `Enemy.living_minions()`); with the cap full the Cloud/Spray cycle
+runs, Bone Spray being the rarest (one cast in `clouds_per_spray + 1`, 2 by default). A spell with a weapon of its own is carried out by swapping it in: `Enemy.spell_weapons`
+(spell -> weapon, set by `main.gd` from `GameTuning.lich_spell_weapons`) is equipped for that cast only and the enemy goes back to
+its own weapon when the wind-up is over. Every Lich number is a Knob (Tune → Lich: his health, speed, size and kept
+distance, the spell rule's pauses, phase threshold, cap, cap bonus and Clouds between sprays, and the Bone Spray's numbers below); health and size
 apply the next time the level is entered, the rest live. 3000 health is a guess, to be tuned in play.
+
+*Bone Spray* (#48, a test of footwork). `BoneSpray` is a `Weapon` (so the Enemy telegraphs and releases it like any other
+attack) whose pattern is pure: `wave_angles_degrees(wave)` (`Spread.angles_degrees` over the half circle, 5 shards at -90, -45, 0, 45, 90
+degrees from the aim, which is the hero), `wave_turn_degrees` (the first wave straight at the hero, the second turned by
+`wave_offset_degrees`, the third back, and so on, so every wave is offset from the last; the default 22.5 degrees is half the gap
+between neighbouring shards, so the second wave comes through the first one's gaps while a hero who stands still is hit by the first and
+the third), `shard_directions`, `start_point` (each shard starts `start_distance_cells`, 1.5, out from him along its own direction)
+and `wave_delay`. `attacks()` turns it into 15 ordinary `Shot`s, the later waves carrying `Shot.delay` (0.4 s between waves);
+`main.gd._follow_up` releases a delayed shot from where its attacker stands then, keeping its start distance out (it used to move
+it to the muzzle, which is what Knuckles wanted and still gets, since its shots start at the muzzle). The shards are plain straight shots: walls and
+the arena's pillars stop them. The telegraph is the weapon's wind-up (0.5 s) with the cone preview over the half circle. Knobs (Tune → Lich):
+shards per wave, waves, spread, offset between waves, time between waves, start distance, shard speed, range, damage and the telegraph.
+The spell is over when the wind-up is, so the later waves fly during his pause. Defaults (80 damage, 200 speed) are guesses for play.
+
+*Summon Undead* (#49, he shields himself, so the target is him). `SummonUndead` is a `Weapon` like `BoneSpray`: its wind-up
+(0.8 s) is the telegraph and what it releases is a `SummonCast`, not shots. The rule for where is the pure **`SummonSpots`**: floor
+spots within `summon_range_cells` (6) of him, in his own room (the arena), in front of him along the line to the hero (past 1.5
+cells from him, short of the hero by 1.5, no farther off that line than half the range), on standable ground (never a pillar, wall,
+water, lava, doorway or boulder), 1.5 cells apart, and not on a cell any monster or the hero stands on; seeded by the caller's
+generator. A hero too close for any such spot (under 3 cells, easy for a hero faster than him) gets no skeletons, and then he doesn't
+cast Summon Undead at all but his Cloud/Spray cycle: `Summoning` tells the Lich whether there is ground (`Enemy.summon_ground`), which
+`SpellPicker.Situation.room_to_summon` carries (without it a hero hugging him would get an endless string of empty summons and
+never be attacked). **How many rise per cast:** `skeletons_per_summon` (Knob, 3) but never more than the gap under the cap
+(`SummonUndead.count_to_raise`), so the cap is never passed. **Carrying it out** is `Summoning`, a node the stage gets
+for the Lich: on `Enemy.summon_telegraphed` it picks the spots and draws a **glow**; on `Enemy.summon_cast` (wind-up over) the spots **pulse**
+one after another (`rise_seconds` 0.6 each, `rise_interval_seconds` 0.2 apart) and as each pulse ends a skeleton stands up there. The visuals are
+drawn in code. It makes the skeleton through a factory Callable (`main.gd._raise_skeleton`: the Bestiary skeleton, its tuning, its own
+band and squad `Summoning.BAND_ID`, so it never takes the Lich's turns), then makes it **hunt at once** (`Enemy.ambush`), **never give up**, and wander
+only in the arena, and hands it to the Lich (`Enemy.adopt`). **Counting:** only living skeletons count toward the summon cap
+(`living_minions`), plus those whose spot is already pulsing (`expect_minions`; without that a quick second cast would overshoot while
+the first batch rises). A dead skeleton frees a place and he summons again. **Phase two** (below `phase_two_health_share` 50%):
+the pause drops from 1.5 s to 0.8 s and the cap rises by 2 (5 to 7), never past `MAX_SUMMON_CAP` 10 (a constant: the cap Knob and the bonus
+are clamped to it). **His death:** every living skeleton **collapses** (`Enemy._on_died` -> `collapse()`), and what is still rising never stands
+up (`Summoning` frees itself). **Summoned skeletons give no experience, no kill and no drop**, whether the hero or the Lich's death kills them
+(otherwise a summon-capped Lich is a farm). **The map doesn't know them:** like ambushers they are no spawn of the map, so `main.gd._on_enemy_defeated`
+returns before the record (`MapRecord.kill`), `DungeonProgress.record_defeat` (the arena opens when the Lich dies, never waits for
+skeletons) and the hurt-monster record; they are never ambush candidates; they do count as monsters around for resting. Knobs
+(Tune → Lich): summon range, skeletons per summon, spot pulse time, time between spots, telegraph; the spell rule's pauses, phase
+threshold, cap and cap bonus were already there. `test_summoning` runs the real Lich, a real arena and `Summoning`.
 
 *The win.* When he dies `main.gd` tells the run (`Run.lich_killed()`: `Run.won`, and the map's `MapRecord` remembers
 `lich_dead`; his spawn cell is among the killed as for every monster, so he is still dead when the hero comes back and
@@ -818,6 +878,12 @@ phases, each played on a phone before the next:
   lava and water, the fog. The main screen doesn't draw the 2D world itself (it is on its own canvas layer,
   culled there). The texture covers a window around the camera, not the whole map, so it stays small
   enough for a phone, and it moves in whole texels so the floor doesn't shimmer.
+  That texture is drawn again every frame, and the renderer can only skip whole canvas items, so the floor and
+  each liquid are split into 16x16-cell pieces (`FloorChunk`): only the few near the camera are drawn. Each piece
+  paints in layers, one kind of shape at a time (`FloorPainter`: rectangles, with the stones' bevels as thin
+  rectangles rather than lines, then cracks, pillar shadows, torch light, stairs), because each switch between
+  kinds starts a new draw call. Nothing a cell paints reaches outside it, so it looks the same. A crypt level went
+  from about 4,600 draw calls a frame to under 200, and the plains from about 300 to 165 (#71).
 - **What stands up is 3D.** Walls and closed doors are blocks (hidden until seen, dimmed when out of sight,
   like the fog); heroes, enemies, chests, floor items and shots are 3D models that copy their 2D actor every
   frame (`Puppets`). So in 2D, actors now draw only their marks on the ground: a team ring under heroes (blue)

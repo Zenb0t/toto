@@ -296,6 +296,7 @@ func _spawn_enemy(cell: Vector2i) -> void:
 	if monster.id == Lich.ID:
 		monster = GameTuning.lich(_tuning).monster()
 		enemy.spell_picker = GameTuning.lich_spells(_tuning)
+		enemy.spell_weapons = GameTuning.lich_spell_weapons(_tuning)
 	enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
 	enemy.set_current_health(_record.health_on_return(
 		cell, enemy.health.maximum, _run.seconds_played, GameTuning.enemy_regeneration(_tuning)))
@@ -309,6 +310,9 @@ func _spawn_enemy(cell: Vector2i) -> void:
 	# keeps to its room meanwhile: strolling out through a door, it would be shut out when the room locks.
 	if locking:
 		enemy.wander_cells = _cell_set(_stage.map.cells_of_room(_stage.map.room_at(cell)))
+		# Hurt before the lock, the Lich withdraws to where no doorway can see him: the hero has to walk in.
+		if _stage.map.locking_kind(_stage.map.room_at(cell)) == LockingRoom.Kind.ARENA:
+			enemy.retreat_to(DungeonView.cell_center(Hideout.cell_for(_stage.map, cell, _stage.pathfinder)))
 	else:
 		enemy.chase(_player)
 	enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
@@ -321,6 +325,8 @@ func _spawn_enemy(cell: Vector2i) -> void:
 	GameTuning.tune_squad(enemy.squad, _tuning)
 	_enemies_by_band.get_or_add(band.id, []).append(enemy)
 	_spawn_cells[enemy] = cell
+	if monster.id == Lich.ID:
+		_stage.add_effect(Summoning.new(enemy, _player, _stage.map, _raise_skeleton))
 
 
 ## A set of cells (cell -> true), for Enemy.wander_cells.
@@ -648,6 +654,8 @@ func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
 
 func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
 	_enemies_by_band[band].erase(enemy)
+	if enemy.is_summoned:
+		return  # nothing of the map: no record, no room to clear, no experience, kill or drop
 	if _ambushers.has(enemy):
 		_ambushers.erase(enemy)  # not a spawn of the map: nothing to record, no room to clear
 	else:
@@ -674,7 +682,8 @@ func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
 func _spawn_attacks(attacks: Array, attacker: Node2D) -> void:
 	for attack: Variant in attacks:
 		if attack is Shot and attack.delay > 0.0:
-			get_tree().create_timer(attack.delay, false, true).timeout.connect(_follow_up.bind(attack, attacker))
+			var from_attacker: Vector2 = attack.origin - attacker.global_position
+			get_tree().create_timer(attack.delay, false, true).timeout.connect(_follow_up.bind(attack, attacker, from_attacker))
 		elif attack is Shot:
 			_launch(attack)
 		elif attack is Slash:
@@ -691,11 +700,12 @@ func _launch(shot: Shot) -> void:
 	_stage.world.add_projectile(projectile)
 
 
-## A delayed shot (a flurry's later punch) sets off from where its attacker stands now, if still standing.
-func _follow_up(shot: Shot, attacker: Node2D) -> void:
+## A delayed shot (a flurry's later punch, a later wave of Bone Spray) sets off from where its attacker stands now,
+## the same distance out as it was meant to start, if the attacker is still standing.
+func _follow_up(shot: Shot, attacker: Node2D, from_attacker: Vector2) -> void:
 	if not is_instance_valid(attacker) or not attacker.is_physics_processing():
 		return
-	shot.origin = Weapon.muzzle(attacker.global_position, shot.direction)
+	shot.origin = attacker.global_position + from_attacker
 	_launch(shot)
 
 
@@ -865,6 +875,28 @@ func _spawn_ambushers(party: AmbushParty) -> void:
 		_stage.world.add_enemy(enemy)
 		_enemies_by_band.get_or_add(band, []).append(enemy)
 		_ambushers[enemy] = true
+
+
+## A skeleton raised by the Lich's Summon Undead (see Summoning), at a cell: a band of its own that fights as a team.
+## Like an ambusher it is no spawn of the map, so it is never recorded and doesn't count toward clearing a room; the
+## Lich's death collapses it (see Enemy.adopt). It gives no experience, kill or drop (see _on_enemy_defeated).
+func _raise_skeleton(cell: Vector2i) -> Enemy:
+	var enemy: Enemy = ENEMY_SCENE.instantiate()
+	enemy.position = DungeonView.cell_center(cell)
+	var monster := Bestiary.by_id(Summoning.SKELETON_ID)
+	enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
+	enemy.arm(GameTuning.monster_weapon(_tuning, monster))
+	var squad: Squad = _squads_by_band.get_or_add(Summoning.BAND_ID, Squad.new())
+	GameTuning.tune_squad(squad, _tuning)
+	enemy.squad = squad
+	_tune_enemy(enemy, _tuning)
+	enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
+	enemy.noticed.connect(_on_enemy_noticed)
+	enemy.defeated.connect(_on_enemy_defeated.bind(Summoning.BAND_ID))
+	_stage.add_actor(enemy)
+	_stage.world.add_enemy(enemy)
+	_enemies_by_band.get_or_add(Summoning.BAND_ID, []).append(enemy)
+	return enemy
 
 
 ## Sits down at the inn: a 3 s rest that moving or a hit cancels (see InnRest). Nothing happens while already resting.
@@ -1069,6 +1101,7 @@ func _tune_enemy(enemy: Enemy, tuning: Tuning) -> void:
 	if enemy.monster.id == Lich.ID:
 		enemy.keep_distance_cells = GameTuning.lich(tuning).keep_distance_cells
 		GameTuning.tune_spells(enemy.spell_picker, tuning)
+		enemy.spell_weapons = GameTuning.lich_spell_weapons(tuning)
 
 
 ## The attack button shows the weapon, or REST while the hero can rest at a campfire or the inn's doorstep.
