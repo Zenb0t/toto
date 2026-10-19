@@ -1,23 +1,10 @@
 class_name DungeonView
 extends Node2D
-## Draws a DungeonMap and gives its walls, doors and deep water collision. Owns no game rules.
+## Draws a DungeonMap and gives its walls, doors and deep water collision. Owns no game rules. The floor and the
+## liquids are drawn in square pieces (FloorChunk), so only those near the camera are drawn each frame; how the
+## floor looks is FloorPainter's.
 
 const TILE_SIZE := 32
-## Built floors are flagstones that alternate between two shades (the branch's, see BranchLook), so
-## distances read at a glance; each stone is tinted a little differently (see DungeonDecor) and set in
-## grout. Cave floors are bare earth or rock: blotchy, speckled, no grout.
-const STONE_TINT := 0.035
-const GROUT_WIDTH := 1.5
-const EARTH_SPECK_COLOR := Color(0, 0, 0, 0.18)
-## Columns and trees stand on the floor, with a shadow at their foot (rock fills its whole cell instead).
-const PILLAR_SHADOW_COLOR := Color(0, 0, 0, 0.35)
-const PILLAR_SHADOW_RADIUS := 13.0
-const BEVEL_LIGHT := Color(1, 1, 1, 0.08)
-const BEVEL_DARK := Color(0, 0, 0, 0.18)
-const CRACK_COLOR := Color(0.16, 0.14, 0.18, 0.45)
-## The warm pool of light on the floor below each torch (see DungeonDecor.torch_light), at its brightest.
-const TORCH_LIGHT_COLOR := Color(1.0, 0.68, 0.32, 0.22)
-const WALL_COLOR := Color(0.1, 0.09, 0.12)
 const WALL_LAYER := 1
 ## Deep water stops bodies (on this layer) but not shots (which only collide with walls and their targets).
 const WATER_LAYER := 5
@@ -32,15 +19,14 @@ const LAVA_SPEED := 0.45
 const SHALLOW_COLOR := Color(0.2, 0.42, 0.62, 0.55)
 const SHALLOW_SHINE_COLOR := Color(0.55, 0.78, 0.95, 0.7)
 const SHALLOW_SPEED := 0.8
-const STAIRS_COLOR := Color(0.95, 0.75, 0.3)
-const STAIRS_UP_COLOR := Color(0.8, 0.84, 0.9)
-const STAIRS_STEPS := 4
 
 var _map: DungeonMap
 var _look := BranchLook.dungeon()
 var _doors := {}  # Vector2i -> Door
 var _walls: Array[Vector2i] = []
 var _walls_found := false
+## Kept here: the floor's pieces only hold a Callable to its paint(), which doesn't keep it alive.
+var _floor_painter: FloorPainter
 
 
 static func cell_center(cell: Vector2i) -> Vector2:
@@ -58,12 +44,16 @@ func show_map(map: DungeonMap, look := BranchLook.dungeon()) -> void:
 	_walls_found = false
 	_build_colliders(wall_cells(), WALL_LAYER)
 	_build_colliders(_map.cells_with(DungeonMap.Terrain.WATER), WATER_LAYER)
-	_build_doors()
-	add_child(LiquidView.new(_map.cells_with(DungeonMap.Terrain.WATER), WATER_COLOR, WATER_SHINE_COLOR, WATER_SPEED))
-	add_child(LiquidView.new(_map.cells_with(DungeonMap.Terrain.LAVA), LAVA_COLOR, LAVA_SHINE_COLOR, LAVA_SPEED))
-	add_child(LiquidView.new(
+	_floor_painter = FloorPainter.new(_map, _look, wall_cells())
+	var ground: Array[FloorChunk] = []
+	for cells: Array[Vector2i] in FloorChunk.split(drawn_cells()):
+		ground.append(FloorChunk.new(cells, _floor_painter.paint))
+	_add_pieces(ground)
+	_add_pieces(LiquidView.pieces(_map.cells_with(DungeonMap.Terrain.WATER), WATER_COLOR, WATER_SHINE_COLOR, WATER_SPEED))
+	_add_pieces(LiquidView.pieces(_map.cells_with(DungeonMap.Terrain.LAVA), LAVA_COLOR, LAVA_SHINE_COLOR, LAVA_SPEED))
+	_add_pieces(LiquidView.pieces(
 		_map.cells_with(DungeonMap.Terrain.SHALLOW), SHALLOW_COLOR, SHALLOW_SHINE_COLOR, SHALLOW_SPEED))
-	queue_redraw()
+	_build_doors()
 
 
 ## Every cell this view draws: open cells and the walls around them.
@@ -80,109 +70,6 @@ func is_door_closed(cell: Vector2i) -> bool:
 func set_room_closed(room: int, closed: bool) -> void:
 	for cell in _map.doors_of_room(room):
 		_doors[cell].set_closed(closed)
-
-
-func _draw() -> void:
-	if _map == null:
-		return
-	for cell in _map.open_cells():
-		_draw_ground(cell)
-	for cell in wall_cells():
-		if _is_village_piece(cell):
-			_draw_ground(cell)  # Its model stands on the ground.
-		else:
-			draw_rect(_tile_rect(cell), WALL_COLOR)
-	if _look.pillar_style != BranchLook.PillarStyle.ROCK:
-		for cell in DungeonDecor.pillar_cells(_map, wall_cells()):
-			_draw_ground(cell)
-			draw_circle(cell_center(cell), PILLAR_SHADOW_RADIUS, PILLAR_SHADOW_COLOR)
-	var torches: Array[Vector2i] = []
-	if _look.torches:
-		torches = DungeonDecor.torch_cells(_map, wall_cells())
-	var light := DungeonDecor.torch_light(_map, torches)
-	for cell: Vector2i in light:
-		draw_rect(_tile_rect(cell), Color(TORCH_LIGHT_COLOR, TORCH_LIGHT_COLOR.a * light[cell]))
-	if _map.exit_cell != DungeonMap.NO_CELL:
-		_draw_stairs(_tile_rect(_map.exit_cell), STAIRS_COLOR, true)
-	if _map.stairs_up_cell != DungeonMap.NO_CELL:
-		_draw_stairs(_tile_rect(_map.stairs_up_cell), STAIRS_UP_COLOR, false)
-
-
-## The village's buildings, palisade, well and props are models standing on ground, not walls.
-func _is_village_piece(cell: Vector2i) -> bool:
-	return _map.blocker_at(cell) in DungeonMap.VILLAGE_BLOCKERS
-
-
-func _draw_ground(cell: Vector2i) -> void:
-	if _map.terrain_at(cell) == DungeonMap.Terrain.PATH:
-		_draw_street(cell)
-	elif _map.terrain_at(cell) == DungeonMap.Terrain.ROAD:
-		_draw_road(cell)
-	elif _look.flagstones:
-		_draw_flagstone(cell)
-	else:
-		_draw_earth(cell)
-
-
-func _draw_flagstone(cell: Vector2i) -> void:
-	var tile := _tile_rect(cell)
-	draw_rect(tile, _look.grout_color)
-	var base := _look.floor_color if (cell.x + cell.y) % 2 == 0 else _look.floor_alt_color
-	var tint := DungeonDecor.tint(cell) * STONE_TINT
-	var stone := tile.grow(-GROUT_WIDTH)
-	draw_rect(stone, Color(base.r + tint, base.g + tint, base.b + tint))
-	draw_line(stone.position, Vector2(stone.end.x, stone.position.y), BEVEL_LIGHT, 1.0)
-	draw_line(stone.position, Vector2(stone.position.x, stone.end.y), BEVEL_LIGHT, 1.0)
-	draw_line(Vector2(stone.position.x, stone.end.y), stone.end, BEVEL_DARK, 1.0)
-	draw_line(Vector2(stone.end.x, stone.position.y), stone.end, BEVEL_DARK, 1.0)
-	var crack := DungeonDecor.crack(cell)
-	if not crack.is_empty():
-		var points := PackedVector2Array()
-		for point in crack:
-			points.append(stone.position + point * stone.size)
-		draw_polyline(points, CRACK_COLOR, 1.0)
-
-
-## Beaten earth: the village's streets and square, a warmer shade than the grass, with a few pebbles.
-func _draw_street(cell: Vector2i) -> void:
-	var tile := _tile_rect(cell)
-	var blotch := DungeonDecor.noise(cell, 12)
-	draw_rect(tile, _look.street_color.lerp(_look.street_alt_color, blotch))
-	var speck := Vector2(DungeonDecor.noise(cell, 13), DungeonDecor.noise(cell, 23)) * (TILE_SIZE - 3)
-	draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
-
-
-## A dirt road across the plains: dry earth, a shade between the grass and the village streets, with a few pebbles.
-func _draw_road(cell: Vector2i) -> void:
-	var tile := _tile_rect(cell)
-	var blotch := DungeonDecor.noise(cell, 12)
-	draw_rect(tile, _look.road_color.lerp(_look.road_alt_color, blotch))
-	var speck := Vector2(DungeonDecor.noise(cell, 13), DungeonDecor.noise(cell, 23)) * (TILE_SIZE - 3)
-	draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
-
-
-## Bare ground: the two colours mixed in soft blotches (each cell blends its neighbours' noise), with a few
-## specks of grit.
-func _draw_earth(cell: Vector2i) -> void:
-	var blotch := DungeonDecor.noise(cell, 12)
-	for step in DungeonDecor.NEIGHBOURS_4:
-		blotch += DungeonDecor.noise(cell + step, 12)
-	var tile := _tile_rect(cell)
-	draw_rect(tile, _look.floor_color.lerp(_look.floor_alt_color, blotch / 5.0))
-	for i in _look.ground_specks:
-		var speck := Vector2(DungeonDecor.noise(cell, 13 + i), DungeonDecor.noise(cell, 23 + i)) * (TILE_SIZE - 3)
-		draw_rect(Rect2(tile.position + speck, Vector2(2, 2)), EARTH_SPECK_COLOR)
-
-
-## Steps shrinking toward the bottom (going down) or toward the top (going up), fading as they go.
-func _draw_stairs(tile: Rect2, color: Color, going_down: bool) -> void:
-	var step_height := tile.size.y / STAIRS_STEPS
-	for i in STAIRS_STEPS:
-		var row := i if going_down else STAIRS_STEPS - 1 - i
-		var inset := tile.size.x * 0.1 * i
-		var step := Rect2(tile.position.x + inset, tile.position.y + row * step_height,
-			tile.size.x - inset * 2.0, step_height - 2.0)
-		draw_rect(step, Color(color, 1.0 - i * 0.2))
 
 
 func _build_colliders(cells: Array[Vector2i], layer: int) -> void:
@@ -227,5 +114,15 @@ func _has_open_neighbour(cell: Vector2i) -> bool:
 	return false
 
 
-func _tile_rect(cell: Vector2i) -> Rect2:
-	return Rect2(Vector2(cell) * TILE_SIZE, Vector2(TILE_SIZE, TILE_SIZE))
+## The floor's pieces, in the order they are drawn: the ground, then each liquid (water, lava, shallows) over it.
+func floor_pieces() -> Array[FloorChunk]:
+	var pieces: Array[FloorChunk] = []
+	for child in get_children():
+		if child is FloorChunk:
+			pieces.append(child)
+	return pieces
+
+
+func _add_pieces(pieces: Array[FloorChunk]) -> void:
+	for piece: FloorChunk in pieces:
+		add_child(piece)

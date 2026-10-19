@@ -128,7 +128,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`, `Ammo`)
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` stairs down
   (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item, and outdoors `T` tree grove, `B` boulder, `=` barricade, and the village's `Y` palisade, `G` gate, `:` street, `U` well, `X` prop, `D` inn doorstep, `I C S M` inn, church, smithy, market, `1`-`4` houses, `@` start), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
-  lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
+  lava damage (`LavaBurn`), how the floor looks (`FloorPainter`, drawn in square `FloorChunk`s so the off-screen ones are skipped), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
   torches and their light), moving liquids (`LiquidView`), room rules: enemies left per room, and the lock
   of rooms marked as locking (`DungeonProgress`; `LockingRoom`: the arena and trap marks; `Hideout`: where the Lich hides in the arena), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/dungeon/generation/village` – the village, stamped in the plains' middle: `VillageGenerator` runs `VillagePalisade`,
