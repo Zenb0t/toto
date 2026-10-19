@@ -10,10 +10,11 @@ extends RefCounted
 ## farthest from it; rooms get tougher the farther they are from the start (see DungeonDifficulty). Each level has a
 ## campfire in an ordinary room a few rooms from the stairs (see CryptCampfire). The crypt's last level has no
 ## stairs down: the room farthest from the stairs up is the boss arena instead (see BossArena), marked as a locking
-## room, with the Lich in it and nothing else.
+## room, with the Lich in it and nothing else. The first two levels each hold a trap room (see TrapRoom): an
+## ordinary-looking room whose band is picked tougher and which carries the trap mark at its middle, where its chest goes.
 
 ## Bumped whenever the same seed would make a different map, so a saved MapRecord can tell it no longer fits.
-const VERSION := 5
+const VERSION := 6
 
 const GRID := Vector2i(4, 3)
 ## Every slot holds one room plus the gap around it, where corridors run.
@@ -60,14 +61,30 @@ func generate(seed_value: int, floor_number := 1, crypt := CryptRecipe.new(), br
 	var graph := RoomGraph.grow(GRID, rng.randi_range(MIN_ROOMS, MAX_ROOMS), rng.randi_range(0, MAX_EXTRA_LINKS), rng)
 	var campfire_slot := CryptCampfire.slot_for(graph, crypt.campfire_rooms_from_stairs, rng)
 	var arena_slot := BossArena.slot_for(graph) if floor_number >= CryptRecipe.LEVELS else NO_SLOT
+	var taken_slots: Array[Vector2i] = [campfire_slot, arena_slot]
+	var trap_slot := TrapRoom.slot_for(graph, taken_slots, rng) if TrapRoom.on_level(floor_number) else NO_SLOT
 	var rooms := {}  # slot -> {cell: map symbol}
 	for slot in graph.slots:
 		var is_start: bool = slot == graph.start_slot()
-		var is_vault: bool = not is_start and slot != campfire_slot and slot != arena_slot and rng.randf() < VAULT_CHANCE
+		var is_vault: bool = not is_start and slot != campfire_slot and slot != arena_slot and slot != trap_slot \
+				and rng.randf() < VAULT_CHANCE
 		rooms[slot] = _shape_room(is_start, is_vault, room_bounds(slot), level_branch, rng) \
 				if slot != arena_slot else _as_floor(BossArena.room(room_bounds(slot), BossArena.faces_south(graph, slot)))
 	var corridors := _connect(graph, rooms, arena_slot, rng)
-	return _draw(graph, rooms, corridors, campfire_slot, arena_slot, floor_number, level_branch, rng)
+	return _draw(graph, rooms, corridors, Slots.new(campfire_slot, arena_slot, trap_slot), floor_number, crypt, level_branch, rng)
+
+
+## The slots of a level that are not ordinary rooms (NO_SLOT for the ones the level lacks).
+class Slots:
+	extends RefCounted
+	var campfire: Vector2i
+	var arena: Vector2i
+	var trap: Vector2i
+
+	func _init(campfire_slot: Vector2i, arena_slot: Vector2i, trap_slot: Vector2i) -> void:
+		campfire = campfire_slot
+		arena = arena_slot
+		trap = trap_slot
 
 
 static func map_size() -> Vector2i:
@@ -213,9 +230,11 @@ func _corridor_at(across: int, first: Dictionary, second: Dictionary, horizontal
 
 
 func _draw(
-		graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, campfire_slot: Vector2i, arena_slot: Vector2i,
-		floor_number: int, branch: Branch, rng: RandomNumberGenerator
+		graph: RoomGraph, rooms: Dictionary, corridors: Dictionary, special: Slots, floor_number: int,
+		crypt: CryptRecipe, branch: Branch, rng: RandomNumberGenerator
 ) -> String:
+	var campfire_slot := special.campfire
+	var arena_slot := special.arena
 	var size := map_size()
 	var rows: Array[Array] = []
 	for y in size.y:
@@ -247,14 +266,19 @@ func _draw(
 			fires = _spawn_cells(rooms[slot], 1, taken, [], rng)
 			rows[fires[0].y][fires[0].x] = CAMPFIRE
 			taken.append(fires[0])
-		if _hides_loot(slot, graph, rooms[slot], rng):
+		if slot != special.trap and _hides_loot(slot, graph, rooms[slot], rng):
 			var loot_cell := _spawn_cells(rooms[slot], 1, taken, [], rng)[0]
 			rows[loot_cell.y][loot_cell.x] = LOOT
 			taken.append(loot_cell)
-		var depth := DungeonDifficulty.rolled_depth(DungeonDifficulty.danger(graph.depth_of(slot), floor_number), rng)
+		var danger := DungeonDifficulty.danger(graph.depth_of(slot), floor_number)
+		var depth := TrapRoom.band_depth(danger, crypt.trap_band_extra_depth) if slot == special.trap \
+				else DungeonDifficulty.rolled_depth(danger, rng)
 		var letters := DungeonDifficulty.enemy_letters(depth, rng, branch.favoured)
 		for cell in _spawn_cells(rooms[slot], letters.size(), taken, fires, rng):
 			rows[cell.y][cell.x] = letters.pop_back()
+		if slot == special.trap:
+			var chest_cell := _center_cell(rooms[slot])
+			rows[chest_cell.y][chest_cell.x] = LockingRoom.mark_of(LockingRoom.Kind.TRAP)
 	return "\n".join(rows.map(func(row: Array) -> String: return "".join(PackedStringArray(row))))
 
 

@@ -131,7 +131,7 @@ func test_the_earlier_levels_have_no_arena_and_no_lich() -> void:
 		for level in range(1, LAST):
 			var map := _level(seed_value, level)
 
-			assert_true(map.locking_room_ids().is_empty(), "seed %d level %d" % [seed_value, level])
+			assert_eq(map.locking_room_of_kind(LockingRoom.Kind.ARENA), DungeonMap.NO_ROOM, "seed %d level %d" % [seed_value, level])
 			assert_true(_lich_cells(map).is_empty(), "seed %d level %d" % [seed_value, level])
 
 

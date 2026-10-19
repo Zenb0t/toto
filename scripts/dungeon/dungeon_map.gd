@@ -41,6 +41,8 @@ var village: Village
 var campfire_cells: Array[Vector2i] = []
 ## The rooms that lock when the hero walks in (room -> LockingRoom.Kind): the boss arena and trap rooms.
 var locking_rooms := {}
+## Where each locking room's mark lies (room -> cell): a free floor cell in its middle, where a trap room's chest stands.
+var locking_marks := {}
 ## Where the ruin's guaranteed chest stands (its middle, and its band's home), or NO_CELL for a map without a ruin.
 var ruin_cell: Vector2i = NO_CELL
 
@@ -69,6 +71,7 @@ func _init(
 	campfires: Array[Vector2i] = [],
 	locking: Dictionary = {},
 	ruin_chest: Vector2i = NO_CELL,
+	marks: Dictionary = {},
 ) -> void:
 	size = grid_size
 	_room_by_cell = room_by_cell
@@ -87,6 +90,7 @@ func _init(
 	campfire_cells = campfires
 	locking_rooms = locking
 	ruin_cell = ruin_chest
+	locking_marks = marks
 
 
 ## The id of the monster (see Bestiary) spawning at cell, or "" if none does.
@@ -140,6 +144,11 @@ func locking_room_ids() -> Array[int]:
 	var ids: Array[int] = []
 	ids.assign(locking_rooms.keys())
 	return ids
+
+
+## The cell a locking room's mark lies on (where a trap room's chest stands), or NO_CELL for a room that never locks.
+func locking_mark_cell(room: int) -> Vector2i:
+	return locking_marks.get(room, NO_CELL)
 
 
 ## The room of the given kind, or NO_ROOM (the boss arena, say).

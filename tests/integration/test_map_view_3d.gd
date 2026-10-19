@@ -146,3 +146,31 @@ func test_the_lairs_pillars_are_trees_that_still_stand_like_walls() -> void:
 	view.show_exploration(_looking_from(Vector2i(29, 3)))
 
 	assert_true(view.is_standing(PILLAR))
+
+
+func test_walking_along_the_hall_draws_every_block_as_bright_as_the_rules_say() -> void:
+	var view := _map_view()
+	var exploration := _looking_from(Vector2i(2, 3))
+	view.show_exploration(exploration)
+
+	for x in [8, 20, 33, 47, 60, 12]:
+		exploration.look_from(Vector2i(x, 3), func(_cell: Vector2i) -> bool: return true)
+		view.show_changes(exploration)
+
+	for y in 5:
+		for x in HALL_WIDTH:
+			var cell := Vector2i(x, y)
+			if not _hall().is_open(cell):
+				assert_eq(view.shown_brightness(cell), view.brightness(cell), str(cell))
+
+
+func test_walls_that_stop_hiding_the_hero_grow_back_lit() -> void:
+	var view := _map_view()
+	var bottom_wall := Vector2i(20, 4)
+	view.show_exploration(_looking_from(Vector2i(20, 3)))
+
+	view.show_hero_at(Vector2i(20, 3))
+	view.show_hero_at(Vector2i(20, 1))
+
+	assert_false(view.is_cut_away(bottom_wall))
+	assert_eq(view.shown_brightness(bottom_wall), view.brightness(bottom_wall))

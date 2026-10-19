@@ -66,7 +66,7 @@ func test_stamping_mirrors_vaults_for_variety() -> void:
 ## The Dungeon branch (no longer the descent) has water-filled vaults.
 func test_vaults_show_up_in_generated_dungeons() -> void:
 	var with_water_or_lava := 0
-	for seed_value in 20:
+	for seed_value in 40:
 		var map := DungeonMapParser.new().parse(DungeonGenerator.new().generate(seed_value, 1, CryptRecipe.new(), Branch.for_floor(1)))
 		if not map.cells_with(DungeonMap.Terrain.WATER).is_empty() or not map.cells_with(DungeonMap.Terrain.LAVA).is_empty():
 			with_water_or_lava += 1

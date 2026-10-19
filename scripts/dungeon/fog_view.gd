@@ -9,6 +9,7 @@ const UNKNOWN_COLOR := Color(0.05, 0.04, 0.07)
 const REMEMBERED_ALPHA := 0.6
 
 var _cells: Array[Vector2i] = []
+var _is_drawn := {}  # Vector2i -> true, for the cells in _cells
 var _image: Image
 var _texture: ImageTexture
 
@@ -17,6 +18,8 @@ var _texture: ImageTexture
 ## to them); everything else stays hidden.
 func _init(map_size: Vector2i, cells: Array[Vector2i]) -> void:
 	_cells = cells
+	for cell in cells:
+		_is_drawn[cell] = true
 	z_index = 10
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_image = Image.create(map_size.x, map_size.y, false, Image.FORMAT_RGBA8)
@@ -24,8 +27,22 @@ func _init(map_size: Vector2i, cells: Array[Vector2i]) -> void:
 	_texture = ImageTexture.create_from_image(_image)
 
 
+## Covers every drawn cell as the exploration says (after entering a map, or restoring what was seen).
 func show_exploration(exploration: Exploration) -> void:
-	for cell in _cells:
+	_show_cells(exploration, _cells)
+
+
+## Covers again only the cells the exploration's last look changed (see Exploration.changed_cells).
+func show_changes(exploration: Exploration) -> void:
+	var cells: Array[Vector2i] = []
+	for cell in exploration.changed_cells():
+		if _is_drawn.has(cell):
+			cells.append(cell)
+	_show_cells(exploration, cells)
+
+
+func _show_cells(exploration: Exploration, cells: Array[Vector2i]) -> void:
+	for cell in cells:
 		_image.set_pixelv(cell, Color(UNKNOWN_COLOR, _alpha(exploration, cell)))
 	_texture.update(_image)
 	queue_redraw()

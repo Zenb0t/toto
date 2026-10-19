@@ -94,3 +94,14 @@ func test_every_level_has_stairs_down_but_the_last_where_the_lich_waits() -> voi
 		assert_true(WorldLayout.has_stairs_down(WorldLayout.floor_id(floor_number)))
 	assert_false(WorldLayout.has_stairs_down(WorldLayout.floor_id(WorldLayout.FLOOR_COUNT)))
 
+
+
+func test_the_crypt_entrance_lets_the_hero_down_while_monsters_still_roam_the_plains() -> void:
+	assert_true(WorldLayout.stairs_down_open(WorldLayout.PLAINS_ID, false))
+
+
+func test_a_crypt_levels_stairs_down_wait_for_their_room_to_be_clear() -> void:
+	var level := WorldLayout.floor_id(1)
+
+	assert_false(WorldLayout.stairs_down_open(level, false))
+	assert_true(WorldLayout.stairs_down_open(level, true))

@@ -35,6 +35,9 @@ class Piece:
 				mesh.material_override = material.duplicate()
 
 var _pieces: Array[Piece] = []
+var _piece_at := {}  # Vector2i -> the Piece standing on it
+## The cell the hero stood on when see-through pieces were last worked out.
+var _hero_cell := DungeonMap.NO_CELL
 
 
 ## Stands the village's pieces up. scale: see BranchLook.building_scale.
@@ -53,6 +56,8 @@ func clear() -> void:
 	for piece in _pieces:
 		piece.model.queue_free()
 	_pieces.clear()
+	_piece_at.clear()
+	_hero_cell = DungeonMap.NO_CELL
 
 
 ## Adds the barrels and crates standing on cells.
@@ -65,7 +70,7 @@ func show_props(cells: Array[Vector2i], scale: float) -> void:
 		add_child(model)
 		var piece := Piece.new(model, [cell] as Array[Vector2i], PROP_HEIGHT)
 		piece.hides_hero = false
-		_pieces.append(piece)
+		_add(piece)
 
 
 func piece_count() -> int:
@@ -75,22 +80,24 @@ func piece_count() -> int:
 ## Shows each piece as bright as the brightest of its cells; brightness: Callable(cell) -> float (0 hides).
 func show_brightness(brightness: Callable) -> void:
 	for piece in _pieces:
-		var best := HIDDEN
-		for cell in piece.cells:
-			best = maxf(best, brightness.call(cell))
-			if best >= 1.0:
-				break
-		if best == piece.shade:
-			continue
-		piece.shade = best
-		piece.model.visible = best > HIDDEN
-		for mesh in piece.meshes:
-			if mesh.material_override is BaseMaterial3D:
-				mesh.material_override.albedo_color = Color(best, best, best)
+		_shade(piece, brightness)
+
+
+## Like show_brightness, for only the pieces standing on any of these cells.
+func show_brightness_of(cells: Array[Vector2i], brightness: Callable) -> void:
+	var pieces := {}  # Piece -> true
+	for cell in cells:
+		if _piece_at.has(cell):
+			pieces[_piece_at[cell]] = true
+	for piece: Piece in pieces:
+		_shade(piece, brightness)
 
 
 ## Pieces between the camera and a hero standing on a cell turn see-through; the rest turn solid again.
 func show_hero_at(hero_cell: Vector2i) -> void:
+	if hero_cell == _hero_cell:
+		return
+	_hero_cell = hero_cell
 	for piece in _pieces:
 		var hiding := piece.hides_hero and _covers_any(piece, CameraFraming.cells_hiding(hero_cell, piece.height))
 		if hiding == piece.see_through:
@@ -102,18 +109,40 @@ func show_hero_at(hero_cell: Vector2i) -> void:
 
 ## Whether the piece standing on a cell is see-through now (false where nothing of the village stands).
 func is_see_through(cell: Vector2i) -> bool:
-	for piece in _pieces:
-		if cell in piece.cells:
-			return piece.see_through
-	return false
+	return _piece_at.has(cell) and _piece_at[cell].see_through
+
+
+## How brightly the piece on a cell is drawn (-1 before it has been shaded, or where none stands).
+func shown_brightness(cell: Vector2i) -> float:
+	return _piece_at[cell].shade if _piece_at.has(cell) else -1.0
 
 
 ## Whether a piece of the village stands on a cell.
 func has_piece_at(cell: Vector2i) -> bool:
-	for piece in _pieces:
-		if cell in piece.cells:
-			return true
-	return false
+	return _piece_at.has(cell)
+
+
+func _add(piece: Piece) -> void:
+	_pieces.append(piece)
+	for cell in piece.cells:
+		if not _piece_at.has(cell):
+			_piece_at[cell] = piece
+
+
+## As bright as the brightest of its cells.
+static func _shade(piece: Piece, brightness: Callable) -> void:
+	var best := HIDDEN
+	for cell in piece.cells:
+		best = maxf(best, brightness.call(cell))
+		if best >= 1.0:
+			break
+	if best == piece.shade:
+		return
+	piece.shade = best
+	piece.model.visible = best > HIDDEN
+	for mesh in piece.meshes:
+		if mesh.material_override is BaseMaterial3D:
+			mesh.material_override.albedo_color = Color(best, best, best)
 
 
 static func _covers_any(piece: Piece, hiding: Array[Vector2i]) -> bool:
@@ -128,14 +157,14 @@ func _add_building(building: Village.Building, scale: float) -> void:
 	var pivot := _pivot_for(model, Vector2(building.rect.position) + Vector2(building.rect.size) / 2.0)
 	# The pack's doors face +Z; the pivot turns them toward the street.
 	pivot.rotation.y = WorldSpace.yaw_toward(-Vector2(building.facing))
-	_pieces.append(Piece.new(pivot, _cells_of(building.rect), VillageModels.bounds_of(model).size.y))
+	_add(Piece.new(pivot, _cells_of(building.rect), VillageModels.bounds_of(model).size.y))
 
 
 func _add_well(well_cell: Vector2i, scale: float) -> void:
 	var model := VillageModels.load_model(VillageModels.WELL, scale * VillageModels.WELL_FIT)
 	var pivot := _pivot_for(model, Vector2(well_cell) + Vector2(0.5, 0.5))
 	var cells := _cells_of(Rect2i(well_cell - Vector2i.ONE, Vector2i(3, 3)))
-	_pieces.append(Piece.new(pivot, cells, VillageModels.bounds_of(model).size.y))
+	_add(Piece.new(pivot, cells, VillageModels.bounds_of(model).size.y))
 
 
 ## A wooden fence along each side, an odd number of pieces so the middle one is the gate.
@@ -163,7 +192,7 @@ func _add_palisade(village: Village, scale: float) -> void:
 			var pivot := _pivot_for(model, middle)
 			# The pack's fence runs along Z; the sides that run along X turn a quarter.
 			pivot.rotation.y = PI / 2.0 if side.y != 0 else 0.0
-			_pieces.append(Piece.new(pivot, cells, VillageModels.bounds_of(model).size.y))
+			_add(Piece.new(pivot, cells, VillageModels.bounds_of(model).size.y))
 
 
 ## A node on the floor at a point of the plane (cells), holding a model with the middle of its footprint on it.
