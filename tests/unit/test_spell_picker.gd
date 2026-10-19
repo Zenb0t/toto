@@ -22,6 +22,7 @@ func _cast(picker: SpellPicker, situation := SpellPicker.Situation.new()) -> SPE
 
 func test_a_fresh_lich_is_ready_to_cast_a_cloud() -> void:
 	var picker := SpellPicker.new()
+	picker.known = [SPELL.CLOUD, SPELL.BONE_SPRAY]
 
 	assert_true(picker.is_ready())
 	assert_eq(picker.pick(SpellPicker.Situation.new()), SPELL.CLOUD)
@@ -56,6 +57,7 @@ func test_a_second_spell_cannot_start_while_one_is_being_cast() -> void:
 
 func test_after_a_spell_the_pause_holds_until_it_has_run_out() -> void:
 	var picker := SpellPicker.new()
+	picker.known = [SPELL.CLOUD]
 	picker.pause_seconds = 2.0
 	picker.begin(SPELL.CLOUD)
 	picker.end(1.0)
@@ -153,22 +155,43 @@ func test_the_summon_cap_never_passes_ten() -> void:
 	assert_ne(picker.pick(SpellPicker.Situation.new(10, 0.1)), SPELL.SUMMON)
 
 
-func test_as_shipped_he_knows_the_cloud_and_bone_spray_but_not_yet_summoning() -> void:
+func test_as_shipped_he_knows_the_cloud_bone_spray_and_summon_undead() -> void:
 	var picker := SpellPicker.new()
 
 	assert_has(picker.known, SPELL.CLOUD)
 	assert_has(picker.known, SPELL.BONE_SPRAY)
-	assert_does_not_have(picker.known, SPELL.SUMMON)
+	assert_has(picker.known, SPELL.SUMMON)
 
 
-func test_as_shipped_he_casts_cloud_cloud_bone_spray_whatever_stands_around_him() -> void:
+func test_as_shipped_he_raises_skeletons_first_and_then_casts_cloud_cloud_bone_spray() -> void:
 	var picker := SpellPicker.new()
 
+	assert_eq(_cast(picker, SpellPicker.Situation.new(0)), SPELL.SUMMON)
+	var full := SpellPicker.Situation.new(picker.summon_cap)
 	var spells: Array[SPELL] = []
 	for _i in 6:
-		spells.append(_cast(picker, SpellPicker.Situation.new(0)))
+		spells.append(_cast(picker, full))
 
 	assert_eq(spells, [SPELL.CLOUD, SPELL.CLOUD, SPELL.BONE_SPRAY, SPELL.CLOUD, SPELL.CLOUD, SPELL.BONE_SPRAY])
+
+
+func test_a_skeleton_that_dies_frees_a_place_and_he_summons_again() -> void:
+	var picker := _knowing_everything()
+
+	assert_ne(picker.pick(SpellPicker.Situation.new(picker.summon_cap)), SPELL.SUMMON, "the cap is full")
+	assert_eq(picker.pick(SpellPicker.Situation.new(picker.summon_cap - 1)), SPELL.SUMMON, "one fell")
+
+
+func test_in_phase_two_the_pause_is_shorter_and_the_cap_two_higher() -> void:
+	var picker := _knowing_everything()
+	picker.begin(SPELL.CLOUD)
+	picker.end(0.3)
+
+	picker.advance(picker.phase_two_pause_seconds + 0.01)
+
+	assert_true(picker.is_ready())
+	assert_lt(picker.phase_two_pause_seconds, picker.pause_seconds)
+	assert_eq(picker.cap(0.3), picker.cap(1.0) + 2)
 
 
 func test_bone_spray_is_his_rarest_spell() -> void:

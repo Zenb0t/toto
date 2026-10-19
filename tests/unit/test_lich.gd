@@ -51,7 +51,7 @@ func test_the_tune_screen_has_a_lich_section_holding_his_knobs() -> void:
 		func(param: Tuning.Param) -> bool: return param.group == GameTuning.LICH_GROUP)
 
 	assert_not_null(lich_section)
-	assert_eq(in_group.size(), Lich.new().knobs().size() + SpellPicker.new().knobs().size() + BoneSpray.new().knobs().size())
+	assert_eq(in_group.size(), Lich.new().knobs().size() + SpellPicker.new().knobs().size() + BoneSpray.new().knobs().size() + SummonUndead.new().knobs().size())
 
 
 func test_the_lich_casts_as_often_as_his_pause_lets_him() -> void:
@@ -62,3 +62,11 @@ func test_the_lich_casts_as_often_as_his_pause_lets_him() -> void:
 
 	assert_eq(lich_cloud.reload, 0.0)
 	assert_gt(necromancer_cloud.reload, 0.0)
+
+
+func test_the_summon_undead_numbers_are_knobs_that_default_to_the_class() -> void:
+	var weapons := GameTuning.lich_spell_weapons(GameTuning.create())
+	var summon: SummonUndead = weapons[SpellPicker.Spell.SUMMON]
+
+	for knob in SummonUndead.new().knobs():
+		assert_eq(summon.get(knob.field), SummonUndead.new().get(knob.field), knob.field)

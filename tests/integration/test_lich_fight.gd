@@ -22,8 +22,15 @@ func _hero_at(position: Vector2) -> Player:
 	return player
 
 
+## His spell rule without Summon Undead, which has tests of its own (test_summoning): the Cloud and the Bone Spray.
+func _spells() -> SpellPicker:
+	var spells := SpellPicker.new()
+	spells.known = [SpellPicker.Spell.CLOUD, SpellPicker.Spell.BONE_SPRAY]
+	return spells
+
+
 ## The Lich as the game builds him: his Cloud, his spell rule and the distance he keeps. He starts at the origin.
-func _lich(spells := SpellPicker.new()) -> Enemy:
+func _lich(spells := _spells()) -> Enemy:
 	var lich := Lich.new()
 	var enemy: Enemy = ENEMY_SCENE.instantiate()
 	enemy.become(lich.monster())
@@ -123,7 +130,7 @@ func test_the_lich_closes_in_on_a_hero_who_is_far_away() -> void:
 
 
 func test_the_lich_casts_one_spell_and_the_pause_holds_before_the_next() -> void:
-	var spells := SpellPicker.new()
+	var spells := _spells()
 	spells.pause_seconds = 5.0
 	var hero := _hero_at(Vector2(8 * CELL, 0))
 	var lich := _lich(spells)
@@ -136,7 +143,7 @@ func test_the_lich_casts_one_spell_and_the_pause_holds_before_the_next() -> void
 
 
 func test_with_a_short_pause_the_lich_keeps_casting() -> void:
-	var spells := SpellPicker.new()
+	var spells := _spells()
 	spells.pause_seconds = 0.2
 	var hero := _hero_at(Vector2(8 * CELL, 0))
 	var lich := _lich(spells)
@@ -294,7 +301,7 @@ func test_a_pillar_between_the_lich_and_the_hero_blocks_the_shards() -> void:
 
 
 func test_the_lich_casts_the_spray_as_its_turn_comes_and_goes_back_to_his_cloud() -> void:
-	var spells := SpellPicker.new()
+	var spells := _spells()
 	spells.pause_seconds = 0.1
 	spells.clouds_per_spray = 1
 	var hero := _hero_at(Vector2(8 * CELL, 0))

@@ -8,9 +8,9 @@ extends RefCounted
 ##   otherwise Mephitic Cloud, Mephitic Cloud, Bone Spray, round and round.
 ##
 ## Below phase_two_health_share of his health (phase two) the pause is shorter and the cap goes up by
-## phase_two_cap_bonus, never past MAX_SUMMON_CAP. A spell the Lich doesn't know yet (known) is skipped: today he
-## knows the Cloud and Bone Spray, so (with no skeletons to raise) he casts Cloud, Cloud, Bone Spray round and
-## round; Summon Undead is added to `known` when it is built, and then comes first whenever the cap is not full.
+## phase_two_cap_bonus, never past MAX_SUMMON_CAP. A spell the caster doesn't know (known) is skipped: one that
+## knows only the Cloud and Bone Spray casts Cloud, Cloud, Bone Spray round and round; the Lich knows Summon Undead
+## too, which comes first whenever the cap is not full.
 ## Bone Spray is the rarest spell: once per clouds_per_spray + 1 casts; the rule has no dice.
 
 enum Spell { NONE, CLOUD, BONE_SPRAY, SUMMON }
@@ -49,7 +49,7 @@ var phase_two_cap_bonus := DEFAULT_PHASE_TWO_CAP_BONUS
 ## How many Clouds he casts between two Bone Sprays.
 var clouds_per_spray := DEFAULT_CLOUDS_PER_SPRAY
 ## The spells he knows. The Cloud is always among them.
-var known: Array[Spell] = [Spell.CLOUD, Spell.BONE_SPRAY]
+var known: Array[Spell] = [Spell.CLOUD, Spell.BONE_SPRAY, Spell.SUMMON]
 
 var _casting := false
 ## Seconds of pause left; he starts ready.
