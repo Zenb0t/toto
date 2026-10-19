@@ -86,6 +86,9 @@ var _rest_offer := false
 var _sight_update_left := 0.0
 ## Where the player last looked from; sight is only worked out again when this or a door changes.
 var _sight_origin := DungeonMap.NO_CELL
+## The fog, minimap and 3D view show this map's exploration as a whole: from then on a step only redraws the
+## cells it changed.
+var _sight_drawn := false
 ## The name of the place the banner last showed ("The village", "The plains"...), to notice crossing a gate.
 var _shown_place := ""
 var _offered_drop: ItemDrop  ## The dropped item the player is standing on, if any.
@@ -216,6 +219,7 @@ func _leave_map() -> void:
 	_rest_offer = false
 	_lava = LavaBurn.new()
 	_sight_origin = DungeonMap.NO_CELL
+	_sight_drawn = false
 	_sight_update_left = 0.0
 	_mouse_held_seconds = 0.0
 
@@ -681,14 +685,26 @@ func _update_sight() -> void:
 		_sight_origin = origin
 		var is_clear := func(cell: Vector2i) -> bool: return _stage.map.is_see_through(cell) and not _stage.view.is_door_closed(cell)
 		_stage.exploration.look_from(origin, is_clear)
-		_stage.fog.show_exploration(_stage.exploration)
-		_stage.world.show_exploration(_stage.exploration)
-		_minimap.show_map(_stage.map, _stage.exploration, origin)
+		_show_sight(origin)
 	for enemies: Array in _enemies_by_band.values():
 		for enemy: Enemy in enemies:
 			enemy.visible = _stage.exploration.is_visible(DungeonView.world_to_cell(enemy.global_position))
 	for pickup: PickupArea in get_tree().get_nodes_in_group(PickupArea.GROUP):
 		pickup.visible = _stage.exploration.is_seen(DungeonView.world_to_cell(pickup.global_position))
+
+
+## The first look at a map draws all of it (what was remembered from earlier visits too); later ones only what
+## they changed (see Exploration.changed_cells).
+func _show_sight(origin: Vector2i) -> void:
+	if _sight_drawn:
+		_stage.fog.show_changes(_stage.exploration)
+		_stage.world.show_changes(_stage.exploration)
+		_minimap.show_changes(_stage.map, _stage.exploration, origin)
+		return
+	_stage.fog.show_exploration(_stage.exploration)
+	_stage.world.show_exploration(_stage.exploration)
+	_minimap.show_map(_stage.map, _stage.exploration, origin)
+	_sight_drawn = true
 
 
 ## Shows or hides the minimap, and remembers the choice for the next floor and the next run.

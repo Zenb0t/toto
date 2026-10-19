@@ -724,6 +724,13 @@ every half second; the Shield blocks it). Enemies path around water and avoid la
 **Fog of war** (`Exploration`, `FogView`). You see 16 cells around you (farther than any weapon reaches, so
 nothing hits you from the dark), through floor, water and lava but not walls or closed doors. What you have
 seen stays drawn, dimmed; what you haven't is dark. Enemies out of sight are hidden.
+Sight is worked out again each time the hero steps into another cell (or a door opens or closes). Each look reports
+the cells it changed (`Exploration.changed_cells`: those that came into view, a first sighting among them, and
+those that left it), and the fog, the minimap and the 3D walls redraw only those (the 3D walls also their
+neighbours, since a wall shows as seen when an open cell next to it is). Only the first look at a map draws
+everything, since restoring what was seen on an earlier visit reports nothing. Redrawing the whole 160x90 plains
+took about 39 ms a step on a desktop CPU, which stuttered on a phone; redrawing only what changed takes about
+3.5 ms, most of it the line of sight itself (#70).
 
 **Minimap** (`MinimapPainter`, `MinimapView`). Top left of the HUD, a picture with one pixel per cell (shown at
 2 px) of what `Exploration` has seen: floor, doors, water, lava and the stairs in their own colours (outdoors also

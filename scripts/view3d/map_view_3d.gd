@@ -31,6 +31,7 @@ const GROVE_HEIGHT := 1.25
 const GROVE_HEIGHT_VARIATION := 0.5
 const BOULDER_HEIGHT := 0.4
 const BARRICADE_HEIGHT := 0.8
+const NEIGHBOURS: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 
 ## Height of the walls, in cells. Closed doors are as tall.
 var wall_height := DEFAULT_WALL_HEIGHT:
@@ -42,6 +43,8 @@ var wall_height := DEFAULT_WALL_HEIGHT:
 var _block_cells: Array[Vector2i] = []
 ## Pillars: column j is instance j of _columns, and its cap is instance _block_cells.size() + j of _caps.
 var _column_cells: Array[Vector2i] = []
+var _block_index := {}  # Vector2i -> its index in _block_cells
+var _column_index := {}  # Vector2i -> its index in _column_cells
 var _has_block := {}  # Vector2i -> true, for walls, pillars and doors
 var _door_cells := {}  # Vector2i -> true
 var _closed_doors := {}  # Vector2i -> true
@@ -96,6 +99,8 @@ func show_map(map: DungeonMap, wall_cells: Array[Vector2i], look := BranchLook.d
 		if cell not in pillars and cell not in trees and not _is_village_piece(map, cell):
 			_block_cells.append(cell)
 	_block_cells.append_array(map.door_cells())
+	_block_index = _index_of(_block_cells)
+	_column_index = _index_of(_column_cells)
 	_has_block.clear()
 	for cell in wall_cells + map.door_cells():
 		_has_block[cell] = true
@@ -159,7 +164,7 @@ func set_doors_closed(door_cells: Array[Vector2i], closed: bool) -> void:
 			_closed_doors[cell] = true
 		else:
 			_closed_doors.erase(cell)
-	_refresh()
+	_refresh_around(door_cells)
 
 
 ## The look of the campfire on a cell: its state and the seconds until it changes (see CampfireModel.show_rest).
@@ -168,9 +173,17 @@ func show_campfire(cell: Vector2i, state: Campfire.State, seconds_left: float, h
 		_campfires[cell].show_rest(state, seconds_left, held)
 
 
+## Shows everything as the exploration says (after entering a map, or restoring what was seen).
 func show_exploration(exploration: Exploration) -> void:
 	_exploration = exploration
 	_refresh()
+
+
+## Shows again only what stands on or beside the cells the exploration's last look changed (see
+## Exploration.changed_cells).
+func show_changes(exploration: Exploration) -> void:
+	_exploration = exploration
+	_refresh_around(exploration.changed_cells())
 
 
 ## Cuts down the walls between the camera and the hero standing on a cell.
@@ -184,9 +197,11 @@ func show_hero_at(hero_cell: Vector2i) -> void:
 		return
 	var changed := cut.keys() + _cut_cells.keys()
 	_cut_cells = cut
+	var cells: Array[Vector2i] = []
 	for cell: Vector2i in changed:
 		_shown.erase(cell)
-	_refresh()
+		cells.append(cell)
+	_refresh_around(cells)
 
 
 ## Whether the village building, palisade or well standing on a cell is see-through, because it stands between the
@@ -221,12 +236,20 @@ func brightness(cell: Vector2i) -> float:
 	return LIT if _is_known(cell, _exploration.is_visible) else REMEMBERED_BRIGHTNESS
 
 
+## How brightly the block (or village piece) on a cell is drawn right now; it matches brightness() once the view
+## has been told what changed. -1 where nothing has been drawn.
+func shown_brightness(cell: Vector2i) -> float:
+	if _village.has_piece_at(cell):
+		return _village.shown_brightness(cell)
+	return _shown.get(cell, -1.0)
+
+
 ## Sight is worked out cell by cell, and a line along a wall grazes the wall cells beside it, so a wall
 ## counts as in sight (or seen) when it is, or when an open cell next to it is.
 func _is_known(cell: Vector2i, known: Callable) -> bool:
 	if known.call(cell):
 		return true
-	for step: Vector2i in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+	for step in NEIGHBOURS:
 		if not _has_block.has(cell + step) and known.call(cell + step):
 			return true
 	return false
@@ -255,36 +278,82 @@ func _refresh(everything := false) -> void:
 	if everything:
 		_shown.clear()
 	for i in _block_cells.size():
-		var cell := _block_cells[i]
-		var shade := brightness(cell)
-		if _shown.get(cell, -1.0) == shade:
-			continue
-		_shown[cell] = shade
-		var is_door := _door_cells.has(cell)
-		_place_block(i, cell, shade, DOOR_COLOR if is_door else _wall_color(cell))
-		_place_cap(i, cell, shade, DOOR_CAP_COLOR if is_door else _cap_color(cell), 1.0 + CAP_OVERHANG * 2.0)
+		_refresh_block(i)
 	for j in _column_cells.size():
-		var cell := _column_cells[j]
-		var shade := brightness(cell)
-		if _shown.get(cell, -1.0) == shade:
-			continue
-		_shown[cell] = shade
-		_place_column(j, cell, shade)
-		_place_cap(_block_cells.size() + j, cell, shade, _look.cap_color, COLUMN_RADIUS * 2.4)
-	for cell: Vector2i in _torches:
+		_refresh_column(j)
+	for cell: Vector2i in _torches.keys() + _banners.keys() + _trees.keys() + _clutter.keys() + _campfires.keys():
+		_refresh_props_at(cell)
+	_refresh_stairs()
+	_village.show_brightness(brightness)
+
+
+## Updates only what stands on or beside these cells: a block's brightness depends on its open neighbours too
+## (see _is_known), so they are looked at as well.
+func _refresh_around(cells: Array[Vector2i]) -> void:
+	var near := {}  # Vector2i -> true
+	for cell in cells:
+		near[cell] = true
+		for step in NEIGHBOURS:
+			near[cell + step] = true
+	for cell: Vector2i in near:
+		if _block_index.has(cell):
+			_refresh_block(_block_index[cell])
+		if _column_index.has(cell):
+			_refresh_column(_column_index[cell])
+		_refresh_props_at(cell)
+	if near.has(_stairs_cell) or near.has(_stairs_up_cell):
+		_refresh_stairs()
+	var near_cells: Array[Vector2i] = []
+	near_cells.assign(near.keys())
+	_village.show_brightness_of(near_cells, brightness)
+
+
+func _refresh_block(index: int) -> void:
+	var cell := _block_cells[index]
+	var shade := brightness(cell)
+	if _shown.get(cell, -1.0) == shade:
+		return
+	_shown[cell] = shade
+	var is_door := _door_cells.has(cell)
+	_place_block(index, cell, shade, DOOR_COLOR if is_door else _wall_color(cell))
+	_place_cap(index, cell, shade, DOOR_CAP_COLOR if is_door else _cap_color(cell), 1.0 + CAP_OVERHANG * 2.0)
+
+
+func _refresh_column(index: int) -> void:
+	var cell := _column_cells[index]
+	var shade := brightness(cell)
+	if _shown.get(cell, -1.0) == shade:
+		return
+	_shown[cell] = shade
+	_place_column(index, cell, shade)
+	_place_cap(_block_cells.size() + index, cell, shade, _look.cap_color, COLUMN_RADIUS * 2.4)
+
+
+## The torch, banner, tree, clutter or campfire on a cell, if there is one.
+func _refresh_props_at(cell: Vector2i) -> void:
+	if _torches.has(cell):
 		_torches[cell].show_on_wall(cell, _height_at(cell), brightness(cell))
-	_stairs.show_at(_stairs_cell, _ground_brightness(_stairs_cell))
-	_stairs_up.show_at(_stairs_up_cell, _ground_brightness(_stairs_up_cell))
-	for cell: Vector2i in _campfires:
-		_campfires[cell].show_at(cell, _ground_brightness(cell))
-	for cell: Vector2i in _banners:
+	if _banners.has(cell):
 		_banners[cell].visible = brightness(cell) > HIDDEN
 		_banners[cell].scale.y = PropModel.SCALE * PropModel.BANNER_SIZE * _height_at(cell)
-	for cell: Vector2i in _clutter:
-		_clutter[cell].visible = _ground_brightness(cell) > HIDDEN
-	for cell: Vector2i in _trees:
+	if _trees.has(cell):
 		_trees[cell].visible = brightness(cell) > HIDDEN
-	_village.show_brightness(brightness)
+	if _clutter.has(cell):
+		_clutter[cell].visible = _ground_brightness(cell) > HIDDEN
+	if _campfires.has(cell):
+		_campfires[cell].show_at(cell, _ground_brightness(cell))
+
+
+func _refresh_stairs() -> void:
+	_stairs.show_at(_stairs_cell, _ground_brightness(_stairs_cell))
+	_stairs_up.show_at(_stairs_up_cell, _ground_brightness(_stairs_up_cell))
+
+
+static func _index_of(cells: Array[Vector2i]) -> Dictionary:
+	var index := {}
+	for i in cells.size():
+		index[cells[i]] = i
+	return index
 
 
 ## The wall's body, below its cap.

@@ -23,6 +23,8 @@ const STREET_COLOR := Color(0.78, 0.68, 0.5)
 const ROAD_COLOR := Color(0.74, 0.6, 0.38)
 const CAMPFIRE_COLOR := Color(1.0, 0.55, 0.15)
 const PLAYER_COLOR := Color(0.3, 1.0, 0.9)
+## Blank where nothing is shown: a cell never seen, or a wall.
+const BLANK := Color(0, 0, 0, 0)
 ## Cells seen before but out of view are drawn this much darker.
 const REMEMBERED_SHADE := 0.55
 
@@ -32,11 +34,18 @@ static func paint(map: DungeonMap, exploration: Exploration, player_cell: Vector
 	for y in map.size.y:
 		for x in map.size.x:
 			var cell := Vector2i(x, y)
-			if (map.is_open(cell) or map.blocker_at(cell) != DungeonMap.NO_BLOCKER) and exploration.is_seen(cell):
-				image.set_pixelv(cell, _shaded(_color_of(map, cell), exploration.is_visible(cell)))
-	if Rect2i(Vector2i.ZERO, map.size).has_point(player_cell):
-		image.set_pixelv(player_cell, PLAYER_COLOR)
+			image.set_pixelv(cell, color_at(map, exploration, cell, player_cell))
 	return image
+
+
+## The colour of one cell's pixel: the player's, the cell's own (darker when only remembered), or BLANK. A view
+## that keeps its picture repaints the cells that changed with it, and gets the same picture as paint().
+static func color_at(map: DungeonMap, exploration: Exploration, cell: Vector2i, player_cell: Vector2i) -> Color:
+	if cell == player_cell:
+		return PLAYER_COLOR
+	if (map.is_open(cell) or map.blocker_at(cell) != DungeonMap.NO_BLOCKER) and exploration.is_seen(cell):
+		return _shaded(_color_of(map, cell), exploration.is_visible(cell))
+	return BLANK
 
 
 static func _color_of(map: DungeonMap, cell: Vector2i) -> Color:
