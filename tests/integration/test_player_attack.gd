@@ -117,14 +117,14 @@ func test_shot_starts_in_front_of_the_player_not_inside_it() -> void:
 	assert_gt(_fired_shot(player).origin.x - player.global_position.x, Player.RADIUS)
 
 
-func test_dash_covers_the_equipped_utilitys_distance() -> void:
+func test_dash_covers_the_equipped_movements_distance() -> void:
 	var player := _player()
 	var start := player.global_position
 
-	player.use_utility(Vector2.RIGHT)
-	await wait_seconds(player.utility.dash_duration + MARGIN)
+	player.use_utility(Utility.Slot.MOVEMENT, Vector2.RIGHT)
+	await wait_seconds(player.movement.dash_duration + MARGIN)
 
-	var expected := player.utility.aim_range()
+	var expected := player.movement.aim_range()
 	assert_almost_eq(player.global_position.x - start.x, expected, expected * 0.15)
 
 
@@ -188,7 +188,7 @@ func _player_with(utility: Utility) -> Player:
 func test_a_raised_shield_blocks_damage() -> void:
 	var player := _player_with(Shield.new())
 
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.SKILL, Vector2.RIGHT)
 	player.take_damage(3)
 
 	assert_eq(player.health.current, Player.MAX_HEALTH)
@@ -199,7 +199,7 @@ func test_damage_gets_through_again_once_the_shield_drops() -> void:
 	shield.duration = 0.2
 	var player := _player_with(shield)
 
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.SKILL, Vector2.RIGHT)
 	await wait_seconds(shield.duration + MARGIN)
 	player.take_damage(3)
 
@@ -249,7 +249,7 @@ func test_using_a_utility_says_which_one() -> void:
 	var player := _player_with(Shield.new())
 	watch_signals(player)
 
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.SKILL, Vector2.RIGHT)
 
 	assert_signal_emitted_with_parameters(player, "utility_used", ["shield"])
 
@@ -300,3 +300,42 @@ func test_charging_does_not_slow_a_weapon_that_does_not_charge() -> void:
 	await wait_physics_frames(2)
 
 	assert_almost_eq(player.velocity.length(), walking, 0.01)
+
+
+func test_a_new_hero_holds_the_dash_and_no_skill() -> void:
+	var player := _player()
+
+	assert_true(player.movement is Dash)
+	assert_null(player.skill)
+
+
+func test_the_empty_skill_button_does_nothing() -> void:
+	var player := _player()
+	watch_signals(player)
+
+	player.use_utility(Utility.Slot.SKILL, Vector2.RIGHT)
+
+	assert_signal_not_emitted(player, "utility_used")
+
+
+func test_a_found_utility_goes_into_its_own_slot() -> void:
+	var player := _player_with(Shield.new())
+
+	player.equip_utility(Blink.new())
+
+	assert_true(player.movement is Blink)
+	assert_true(player.skill is Shield)
+
+
+func test_the_movement_and_the_skill_cool_down_apart() -> void:
+	var player := _player_with(Shield.new())
+	watch_signals(player)
+
+	player.use_utility(Utility.Slot.MOVEMENT, Vector2.RIGHT)
+	player.use_utility(Utility.Slot.SKILL, Vector2.RIGHT)
+	player.use_utility(Utility.Slot.MOVEMENT, Vector2.RIGHT)
+
+	assert_signal_emit_count(player, "utility_used", 2)
+	assert_true(player.is_shielded())
+	assert_gt(player.utility_cooldown_ratio(Utility.Slot.MOVEMENT), 0.0)
+	assert_gt(player.utility_cooldown_ratio(Utility.Slot.SKILL), 0.0)

@@ -1,7 +1,7 @@
 class_name GameTuning
 extends RefCounted
 ## The knobs exposed in the Tune screen, and how they become game objects.
-## Items (weapons, utilities) and potions declare their own knobs; their tuning keys are "<id>.<field>".
+## Items (weapons, movements, skills) and potions declare their own knobs; their tuning keys are "<id>.<field>".
 ## Defaults come from the classes themselves, so there is one source of truth for every value.
 
 const PLAYER_MOVE_SPEED := "player.move_speed"
@@ -54,7 +54,9 @@ const REST_GROUP := "Rest"
 const WORLD_GROUP := "World"
 const EQUIPPED_MARK := "  (equipped)"
 const DEFAULT_WEAPON_ID := "dagger"
-const DEFAULT_UTILITY_ID := "dash"
+const DEFAULT_MOVEMENT_ID := "dash"
+## The skill slot starts empty: the first skill found is a moment.
+const NO_SKILL := ""
 
 
 ## Every weapon, in the order the quick switch cycles through them.
@@ -66,7 +68,17 @@ static func weapons() -> Array[Weapon]:
 
 
 static func utilities() -> Array[Utility]:
-	return [Dash.new(), Shield.new(), Blink.new(), FrostNova.new(), Beckoning.new()]
+	return [Dash.new(), Blink.new(), Shield.new(), FrostNova.new(), Beckoning.new()]
+
+
+## The utilities for the movement button (Dash, Blink).
+static func movements() -> Array[Utility]:
+	return _in_slot(Utility.Slot.MOVEMENT)
+
+
+## The utilities for the skill button (Shield, Frost Nova, Lesser Beckoning).
+static func skills() -> Array[Utility]:
+	return _in_slot(Utility.Slot.SKILL)
 
 
 ## Every potion, in the order the potion belt shows them.
@@ -118,7 +130,8 @@ static func weapon_group(weapon_id: String) -> String:
 
 
 static func utility_group(utility_id: String) -> String:
-	return "Utility: %s" % _new_utility(utility_id).display_name
+	var found := _new_utility(utility_id)
+	return "%s: %s" % ["Movement" if found.slot == Utility.Slot.MOVEMENT else "Skill", found.display_name]
 
 
 static func potion_group(potion_id: String) -> String:
@@ -200,7 +213,7 @@ static func create() -> Tuning:
 		Tuning.Param.new(
 			CONTROLS_WEAPON_DEAD_ZONE, "Weapon dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.ATTACK_DEAD_ZONE),
 		Tuning.Param.new(
-			CONTROLS_UTILITY_DEAD_ZONE, "Utility dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
+			CONTROLS_UTILITY_DEAD_ZONE, "Movement and skill dead zone", CONTROLS_GROUP, 0, 100, 2, AimButton.DEFAULT_DEAD_ZONE),
 		Tuning.Param.new(
 			CONTROLS_BUTTON_CATCH, "Button catch area (x)", CONTROLS_GROUP, 1, 3, 0.1, AimButton.DEFAULT_CATCH_SCALE),
 		Tuning.Param.new(
@@ -249,13 +262,16 @@ static func rescaled_points(saved: Dictionary, factor: float) -> Dictionary:
 	return result
 
 
-## The Tune screen's menu: every group of knobs, sorted into sections. Weapons and utilities each get an
+## The Tune screen's menu: every group of knobs, sorted into sections. Weapons, movements and skills each get an
 ## entry under their section, with the equipped one marked.
-static func sections(equipped_weapon_id: String, equipped_utility_id: String) -> Array[TuningSection]:
+static func sections(
+		equipped_weapon_id: String, equipped_movement_id: String, equipped_skill_id := NO_SKILL
+) -> Array[TuningSection]:
 	return [
 		TuningSection.new(PLAYER_GROUP, [PLAYER_GROUP]),
 		_items_section("Weapons", weapons(), weapon_group, equipped_weapon_id),
-		_items_section("Utilities", utilities(), utility_group, equipped_utility_id),
+		_items_section("Movement", movements(), utility_group, equipped_movement_id),
+		_items_section("Skills", skills(), utility_group, equipped_skill_id),
 		_items_section("Potions", potions(), potion_group, ""),
 		TuningSection.new(ENEMIES_GROUP, [ENEMIES_GROUP]),
 		TuningSection.new(LICH_GROUP, [LICH_GROUP]),
@@ -321,11 +337,21 @@ static func monster_weapon(tuning: Tuning, monster: Monster) -> Weapon:
 	return result
 
 
-## Unknown ids fall back to the starter utility.
+## Unknown ids fall back to the starter movement.
 static func utility(tuning: Tuning, utility_id: String) -> Utility:
 	var result := _new_utility(utility_id)
 	_apply_knobs(result, tuning)
 	return result
+
+
+## The movement held, with the tuned numbers. Anything that isn't a movement falls back to the starter one.
+static func movement(tuning: Tuning, movement_id: String) -> Utility:
+	return utility(tuning, movement_id if movement_id in _ids(movements()) else DEFAULT_MOVEMENT_ID)
+
+
+## The skill held, with the tuned numbers, or null for an empty slot (NO_SKILL, or anything that isn't a skill).
+static func skill(tuning: Tuning, skill_id: String) -> Utility:
+	return utility(tuning, skill_id) if skill_id in _ids(skills()) else null
 
 
 ## Unknown ids fall back to healing.
@@ -533,7 +559,15 @@ static func _new_utility(utility_id: String) -> Utility:
 	for each in utilities():
 		if each.id == utility_id:
 			return each
-	return _new_utility(DEFAULT_UTILITY_ID)
+	return _new_utility(DEFAULT_MOVEMENT_ID)
+
+
+static func _in_slot(slot: Utility.Slot) -> Array[Utility]:
+	var result: Array[Utility] = []
+	for each in utilities():
+		if each.slot == slot:
+			result.append(each)
+	return result
 
 
 static func _new_potion(potion_id: String) -> Potion:

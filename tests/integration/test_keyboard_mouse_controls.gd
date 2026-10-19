@@ -50,16 +50,28 @@ func test_holding_the_left_button_holds_the_attack_until_it_is_let_go() -> void:
 	assert_false(controls.is_attack_held())
 
 
-func test_the_right_button_and_space_use_the_utility() -> void:
+func test_space_and_shift_use_the_movement() -> void:
+	var controls := _controls()
+	watch_signals(controls)
+
+	_key(KEY_SPACE)
+	_key(KEY_SHIFT)
+	await wait_process_frames(1)
+
+	assert_signal_emit_count(controls, "movement_requested", 2)
+	assert_signal_not_emitted(controls, "skill_requested")
+
+
+func test_the_right_button_uses_the_skill() -> void:
 	var controls := _controls()
 	watch_signals(controls)
 
 	_mouse(MOUSE_BUTTON_RIGHT, true)
 	_mouse(MOUSE_BUTTON_RIGHT, false)
-	_key(KEY_SPACE)
 	await wait_process_frames(1)
 
-	assert_signal_emit_count(controls, "utility_requested", 2)
+	assert_signal_emit_count(controls, "skill_requested", 1)
+	assert_signal_not_emitted(controls, "movement_requested")
 
 
 func test_number_keys_drink_the_potion_in_that_slot() -> void:

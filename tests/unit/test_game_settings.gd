@@ -54,12 +54,12 @@ func test_damage_saved_before_health_went_up_a_hundredfold_is_scaled_with_it() -
 
 func test_saving_tuning_keeps_the_saved_layout() -> void:
 	var layout := ControlLayout.new()
-	layout.set_diameter(ControlLayout.UTILITY, 222.0)
+	layout.set_diameter(ControlLayout.MOVEMENT, 222.0)
 	_settings().save_layout(layout)
 
 	_settings().save_tuning(GameTuning.create())
 
-	assert_eq(_settings().load_layout().diameter_of(ControlLayout.UTILITY), 222.0)
+	assert_eq(_settings().load_layout().diameter_of(ControlLayout.MOVEMENT), 222.0)
 
 
 func test_first_launch_uses_defaults() -> void:

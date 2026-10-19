@@ -1,7 +1,7 @@
 class_name KeyboardMouseControls
 extends Node
 ## Keyboard and mouse play: WASD or the arrow keys move, the mouse aims, the left button attacks (held, it
-## keeps attacking), the right button or Space uses the utility, 1-3 drink potions, E takes the item on the
+## keeps attacking), Space or Shift uses the movement, the right button the skill, 1-3 drink potions, E takes the item on the
 ## floor, M shows or hides the minimap and Q cycles weapons. Only reports what the player asked for; the composition root decides what it
 ## means. Also tells which kind of play (touch or keyboard and mouse) is in use, following the last one used.
 
@@ -9,7 +9,8 @@ signal mode_changed(mode: InputMode.Kind)
 signal attack_held_changed(held: bool)
 ## The attack button was let go (not: the game paused or the kind of play changed), for weapons that charge.
 signal attack_released
-signal utility_requested
+signal movement_requested
+signal skill_requested
 ## slot: 0 for the first kind of potion, in the order the potion belt shows them.
 signal potion_requested(slot: int)
 signal take_requested
@@ -73,8 +74,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _report(event: InputEvent) -> bool:
 	if event.is_action_pressed(&"attack"):
 		_set_attack_held(true)
-	elif event.is_action_pressed(&"use_utility"):
-		utility_requested.emit()
+	elif event.is_action_pressed(&"use_movement"):
+		movement_requested.emit()
+	elif event.is_action_pressed(&"use_skill"):
+		skill_requested.emit()
 	elif event.is_action_pressed(&"take_item"):
 		take_requested.emit()
 	elif event.is_action_pressed(&"switch_weapon"):

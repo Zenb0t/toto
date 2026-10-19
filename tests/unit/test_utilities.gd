@@ -40,6 +40,20 @@ func test_a_blink_jumps_its_distance_toward_the_aim() -> void:
 	assert_eq(blink.activate(Vector2(0, -5)).blink_offset, Vector2(0, -100))
 
 
+func test_a_blink_goes_as_far_as_the_aim_was_dragged() -> void:
+	var blink := Blink.new()
+	blink.distance = 100.0
+
+	assert_eq(blink.activate(Vector2.RIGHT, 0.25).blink_offset, Vector2(25, 0))
+
+
+func test_dash_and_blink_are_movements_the_rest_are_skills() -> void:
+	assert_eq(Dash.new().slot, Utility.Slot.MOVEMENT)
+	assert_eq(Blink.new().slot, Utility.Slot.MOVEMENT)
+	for skill: Utility in [Shield.new(), FrostNova.new(), Beckoning.new()]:
+		assert_eq(skill.slot, Utility.Slot.SKILL, skill.id)
+
+
 func test_a_frost_nova_lets_out_a_chilling_burst() -> void:
 	var frost := FrostNova.new()
 

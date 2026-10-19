@@ -30,7 +30,7 @@ func knobs() -> Array[Knob]:
 	return result
 
 
-func activate(_direction: Vector2) -> UtilityEffect:
+func activate(_direction: Vector2, _strength := 1.0) -> UtilityEffect:
 	return UtilityEffect.burst(Nova.new(radius, damage, slow_multiplier, slow_seconds, color))
 
 

@@ -20,5 +20,5 @@ func knobs() -> Array[Knob]:
 	return result
 
 
-func activate(_direction: Vector2) -> UtilityEffect:
+func activate(_direction: Vector2, _strength := 1.0) -> UtilityEffect:
 	return UtilityEffect.shield(duration)

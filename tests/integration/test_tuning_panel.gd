@@ -10,7 +10,7 @@ const WAND_WINDUP := "wand.windup"
 func _open_panel(tuning := GameTuning.create()) -> TuningPanel:
 	var panel: TuningPanel = PANEL_SCENE.instantiate()
 	add_child_autofree(panel)
-	panel.open(tuning, GameTuning.sections(GameTuning.DEFAULT_WEAPON_ID, GameTuning.DEFAULT_UTILITY_ID))
+	panel.open(tuning, GameTuning.sections(GameTuning.DEFAULT_WEAPON_ID, GameTuning.DEFAULT_MOVEMENT_ID))
 	return panel
 
 

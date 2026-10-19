@@ -3,7 +3,7 @@ extends GutTest
 
 
 func _hero_holding(weapon_id: String, kills: int) -> HeroState:
-	return HeroState.carrying(weapon_id, "blink", Health.restored(1400, 400), {"haste": 2}, 3000, kills)
+	return HeroState.carrying(weapon_id, "blink", "shield", Health.restored(1400, 400), {"haste": 2}, 3000, kills)
 
 
 func _seeded_rng(seed_value: int) -> RandomNumberGenerator:
@@ -19,7 +19,8 @@ func test_a_run_starts_on_the_plains_with_the_starting_kit() -> void:
 	assert_eq(run.current_map().recipe, MapSpec.Recipe.QUADRANT)
 	assert_eq(run.arrival_spot, WorldLayout.Spot.START)
 	assert_eq(run.hero.weapon_id, GameTuning.DEFAULT_WEAPON_ID)
-	assert_eq(run.hero.utility_id, GameTuning.DEFAULT_UTILITY_ID)
+	assert_eq(run.hero.movement_id, GameTuning.DEFAULT_MOVEMENT_ID)
+	assert_eq(run.hero.skill_id, GameTuning.NO_SKILL)
 	assert_eq(run.hero.health, run.hero.max_health)
 	assert_eq(run.hero.potions, HeroState.STARTING_POTIONS)
 	assert_eq(run.hero.kills, 0)
@@ -49,7 +50,8 @@ func test_the_crypt_entrance_leads_down_to_the_first_floor_with_everything_the_h
 	assert_eq(run.current_map().floor_number, 1)
 	assert_eq(run.arrival_spot, WorldLayout.Spot.STAIRS_UP)
 	assert_eq(run.hero.weapon_id, "sword")
-	assert_eq(run.hero.utility_id, "blink")
+	assert_eq(run.hero.movement_id, "blink")
+	assert_eq(run.hero.skill_id, "shield")
 	assert_eq(run.hero.health, 400)
 	assert_eq(run.hero.max_health, 1400)
 	assert_eq(run.hero.potions, {"haste": 2})

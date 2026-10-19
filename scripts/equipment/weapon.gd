@@ -64,17 +64,5 @@ func needs_line_of_sight() -> bool:
 	return true
 
 
-## aim_range() is the farthest this weapon reaches: a full-strength drag aims this far.
-## How far away a manual drag of the given strength (0..1) aims. Linear unless a weapon needs finer control.
-func aim_distance(strength: float) -> float:
-	return clampf(strength, 0.0, 1.0) * aim_range()
-
-
-## The strength (0..1) that aims this far away: the reverse of aim_distance(), for aiming at a spot (a mouse
-## cursor) rather than with a drag. Beyond the weapon's reach it is full strength.
-func strength_for_distance(distance: float) -> float:
-	return clampf(distance / aim_range(), 0.0, 1.0) if aim_range() > 0.0 else 1.0
-
-
 static func muzzle(origin: Vector2, direction: Vector2) -> Vector2:
 	return origin + direction.normalized() * MUZZLE_DISTANCE

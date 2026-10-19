@@ -125,7 +125,7 @@ func test_a_player_shield_blocks_an_enemy_shot() -> void:
 	player.equip_utility(Shield.new())
 	var enemy := _spawn_enemy_at(Vector2.ZERO, _wand(0.1))
 
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.SKILL, Vector2.RIGHT)
 	enemy.chase(player)
 	await wait_seconds(0.5)
 
