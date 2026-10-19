@@ -1,9 +1,11 @@
 extends GutTest
 ## The ambush roll of a campfire lighting: seeded by the map, the campfire and the lighting, so it can't be
-## re-rolled; likelier in the crypt; and who comes is taken from the monsters near the fire.
+## re-rolled; a campfire is ambushed once at most; likelier in the crypt; and who comes is taken from the monsters
+## near the fire.
 
 const SEEDS := 2000
 const FIRE := Vector2i(30, 20)
+const LIGHTINGS := 30
 
 var _ambush: Ambush
 
@@ -20,6 +22,15 @@ func _hits_over_seeds(rule: Ambush, outdoors: bool) -> float:
 	return float(hits) / SEEDS
 
 
+## The lightings (0 to LIGHTINGS - 1) of the campfire at FIRE that bring an ambush.
+func _ambushed_lightings(seed_value: int) -> Array[int]:
+	var ambushed: Array[int] = []
+	for lighting in LIGHTINGS:
+		if _ambush.hits(seed_value, FIRE, lighting, true):
+			ambushed.append(lighting)
+	return ambushed
+
+
 func _plains_map() -> DungeonMap:
 	return DungeonMapParser.new().parse(QuadrantGenerator.new().generate(QuadrantRecipe.plains(), 7))
 
@@ -30,12 +41,19 @@ func test_the_same_campfire_and_lighting_always_give_the_same_result() -> void:
 		assert_eq(Ambush.new().hits(seed_value, FIRE, 2, true), first, "seed %d" % seed_value)
 
 
-func test_other_lightings_of_one_campfire_roll_differently() -> void:
-	var results := {}
-	for lighting in 40:
-		results[_ambush.hits(1234, FIRE, lighting, true)] = true
+func test_a_campfire_is_ambushed_once_at_most() -> void:
+	for seed_value in 200:
+		assert_lte(_ambushed_lightings(seed_value).size(), 1, "seed %d" % seed_value)
 
-	assert_eq(results.size(), 2, "some lightings are ambushed and some are not")
+
+func test_a_campfire_spared_at_first_can_be_ambushed_on_a_later_lighting() -> void:
+	var later_ambushes := 0
+	for seed_value in 200:
+		var ambushed := _ambushed_lightings(seed_value)
+		if not ambushed.is_empty() and ambushed[0] > 0:
+			later_ambushes += 1
+
+	assert_gt(later_ambushes, 0)
 
 
 func test_other_campfires_roll_differently() -> void:
@@ -46,15 +64,15 @@ func test_other_campfires_roll_differently() -> void:
 	assert_eq(results.size(), 2)
 
 
-func test_about_three_in_ten_lightings_on_the_plains_are_ambushed() -> void:
-	assert_almost_eq(_hits_over_seeds(_ambush, true), 0.30, 0.04)
+func test_about_three_in_twenty_first_lightings_on_the_plains_are_ambushed() -> void:
+	assert_almost_eq(_hits_over_seeds(_ambush, true), 0.15, 0.03)
 
 
 func test_the_crypt_is_ambushed_more_often_than_the_plains() -> void:
 	var crypt := _hits_over_seeds(_ambush, false)
 
-	assert_gt(crypt, _hits_over_seeds(_ambush, true) + 0.08)
-	assert_almost_eq(crypt, 0.45, 0.04)
+	assert_gt(crypt, _hits_over_seeds(_ambush, true) + 0.05)
+	assert_almost_eq(crypt, 0.25, 0.03)
 
 
 func test_the_chances_are_the_rules_knobs() -> void:

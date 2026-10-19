@@ -753,12 +753,16 @@ risk-free-ish pause rather than a free refill. Rules are pure, nodes only carry 
   a monster that starts hunting mid-rest ends it only by hitting the hero.
 - **Campfire ambushes** (#44): resting in the wild is a gamble. Lighting a campfire (`RestSpot.rest()` succeeding;
   a refused rest rolls nothing, the inn never rolls) makes **one seeded roll**, `Ambush.hits(map_seed, campfire cell,
-  lighting, outdoors)`: **30% on the plains, 45% in the crypt**. The dice are seeded by the map's seed, the campfire's
+  lighting, outdoors)`: **15% on the plains, 25% in the crypt** (down from 30% / 45%: playtests met too many traps).
+  The dice are seeded by the map's seed, the campfire's
   cell and the **lighting number** (0 for the first time it is lit), so the same lighting always gives the same
   answer: no re-roll by leaving and returning, reloading or retrying (a new run with the same seed replays the same
   luck, like everything else the seed decides). `MapRecord.spend_lighting(cell)` returns the lighting's number and
   counts it, written the moment the fire is lit (not on leaving) and kept through the dictionary; the next
-  lighting (after the embers) is a new roll.
+  lighting (after the embers) is a new roll. **Once per campfire:** a lighting hits only if its roll hits and no
+  earlier lighting's roll of that campfire did, so after a campfire's trap is sprung it is safe to rest at. Because
+  the earlier rolls are re-derived from the same seeds, this needs nothing new in the record (a sprung roll whose
+  ambush found no ground outside the light still counts as that campfire's one trap).
   On a hit a floating "Something is coming..." warns the hero, and after `delay_seconds` (**4 s**, only while the
   hero is on the map: `AmbushParty.tick`) **3 monsters** arrive. **Who:** `Ambush.crew` draws from "the area's
   monsters": the monsters the map itself spawns nearest the campfire (its 6 nearest spawn cells), so the plains

@@ -1,7 +1,8 @@
 class_name Ambush
 extends RefCounted
 ## The gamble of resting in the wild: each lighting of a campfire makes one seeded roll, and a hit brings a few of
-## the area's monsters to the edge of the light, already hunting the hero. The inn never rolls.
+## the area's monsters to the edge of the light, already hunting the hero. A campfire ambushes at most once: after
+## its trap is sprung, its later lightings are safe. The inn never rolls.
 ##
 ## The roll depends on nothing but the map's seed, the campfire's cell and how many times it has been lit (the
 ## lighting, counted from 0, which the map record keeps): the same lighting always gives the same answer, so
@@ -20,9 +21,9 @@ const FIRST_BAND_ID := 3_000_000
 ## Tune keys are "<id>.<field>".
 var id := "ambush"
 ## The chance a lighting of a campfire on the open plains brings an ambush.
-var chance := 0.3
+var chance := 0.15
 ## The same in the crypt, where the dark is more dangerous.
-var crypt_chance := 0.45
+var crypt_chance := 0.25
 ## How many monsters arrive.
 var size := 3
 ## How long after the fire is lit they arrive, in seconds.
@@ -46,9 +47,11 @@ func chance_for(outdoors: bool) -> float:
 	return chance if outdoors else crypt_chance
 
 
-## Whether this lighting of the campfire at fire (0 for the first time it is lit) brings an ambush.
+## Whether this lighting of the campfire at fire (0 for the first time it is lit) brings an ambush: its own roll
+## hits and no earlier lighting of that campfire's did, so a campfire is ambushed once at most.
 func hits(map_seed: int, fire: Vector2i, lighting: int, outdoors: bool) -> bool:
-	return _rng_of("roll", map_seed, fire, lighting).randf() < chance_for(outdoors)
+	return _rolls_hit(map_seed, fire, lighting, outdoors) \
+		and not _was_ambushed_before(map_seed, fire, lighting, outdoors)
 
 
 ## The monsters (Bestiary ids) that come, picked from the area's: the ones the map spawns nearest the fire.
@@ -69,6 +72,17 @@ static func placement_rng(map_seed: int, fire: Vector2i, lighting: int) -> Rando
 ## The id of the band the ambushers of a campfire make: different for each campfire of a map.
 static func band_id(map: DungeonMap, fire: Vector2i) -> int:
 	return FIRST_BAND_ID + fire.y * map.size.x + fire.x
+
+
+func _was_ambushed_before(map_seed: int, fire: Vector2i, lighting: int, outdoors: bool) -> bool:
+	for earlier in lighting:
+		if _rolls_hit(map_seed, fire, earlier, outdoors):
+			return true
+	return false
+
+
+func _rolls_hit(map_seed: int, fire: Vector2i, lighting: int, outdoors: bool) -> bool:
+	return _rng_of("roll", map_seed, fire, lighting).randf() < chance_for(outdoors)
 
 
 func _area_monsters(map: DungeonMap, fire: Vector2i) -> Array[String]:
