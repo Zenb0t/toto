@@ -8,7 +8,7 @@ var _parser := DungeonMapParser.new()
 
 
 func _hero_holding(kills: int) -> HeroState:
-	return HeroState.carrying("sword", "blink", Health.restored(1400, 400), {"haste": 2}, 3000, kills)
+	return HeroState.carrying("sword", "blink", "shield", Health.restored(1400, 400), {"haste": 2}, 3000, kills)
 
 
 ## The map the run is on and the cell the hero lands on after warping to a place.

@@ -1,6 +1,6 @@
 class_name Dash
 extends Utility
-## The starter utility: a short burst of speed in the aimed direction.
+## The starter movement: a short burst of speed in the aimed direction.
 
 var dash_speed := 650.0
 var dash_duration := 0.18
@@ -13,6 +13,7 @@ func _init() -> void:
 	button_label = "DASH"
 	color = Color(0.45, 0.85, 1)
 	cooldown = 0.7
+	slot = Slot.MOVEMENT
 
 
 func knobs() -> Array[Knob]:
@@ -24,7 +25,7 @@ func knobs() -> Array[Knob]:
 	return result
 
 
-func activate(direction: Vector2) -> UtilityEffect:
+func activate(direction: Vector2, _strength := 1.0) -> UtilityEffect:
 	return UtilityEffect.dash(direction, dash_speed, dash_duration)
 
 

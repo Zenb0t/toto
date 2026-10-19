@@ -1,9 +1,10 @@
 extends GutTest
-## Blink hops past enemies but not through walls; Frost Nova hurts and slows the enemies around you.
+## Blink hops to a spot you pick, over water and past enemies but not through walls; Frost Nova hurts and slows the
+## enemies around you.
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
-const WALL_LAYER_BIT := 1
+const CELL := DungeonView.TILE_SIZE
 
 
 func _player_with(utility: Utility) -> Player:
@@ -20,18 +21,6 @@ func _enemy_at(position: Vector2) -> Enemy:
 	return enemy
 
 
-func _wall_at(position: Vector2, size: Vector2) -> void:
-	var wall := StaticBody2D.new()
-	wall.collision_layer = WALL_LAYER_BIT
-	var shape := CollisionShape2D.new()
-	var rectangle := RectangleShape2D.new()
-	rectangle.size = size
-	shape.shape = rectangle
-	wall.add_child(shape)
-	wall.position = position
-	add_child_autofree(wall)
-
-
 ## Carries out the player's attacks (the nova) like the game does.
 func _carry_out_attacks(player: Player) -> void:
 	player.attack_fired.connect(func(attacks: Array) -> void:
@@ -46,12 +35,30 @@ func _blink(distance: float) -> Blink:
 	return blink
 
 
+## A hero holding a blink, standing on the P of the map, whose blinks land as the game makes them (no door shut).
+func _blinker_on(ascii: String, distance: float) -> Player:
+	var map := DungeonMapParser.new().parse(ascii)
+	var player := _player_with(_blink(distance))
+	player.position = DungeonView.cell_center(map.player_spawn)
+	player.blink_landing = func(from: Vector2, to: Vector2) -> Vector2:
+		return BlinkLanding.find(from, to, map, func(_cell: Vector2i) -> bool: return false, Player.RADIUS)
+	return player
+
+
 func test_a_blink_moves_the_player_at_once() -> void:
 	var player := _player_with(_blink(120.0))
 
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.MOVEMENT, Vector2.RIGHT)
 
 	assert_almost_eq(player.position.x, 120.0, 0.5)
+
+
+func test_a_blink_dragged_halfway_hops_half_as_far() -> void:
+	var player := _player_with(_blink(120.0))
+
+	player.use_utility(Utility.Slot.MOVEMENT, Vector2.RIGHT, 0.5)
+
+	assert_almost_eq(player.position.x, 60.0, 0.5)
 
 
 func test_a_blink_passes_enemies() -> void:
@@ -59,20 +66,34 @@ func test_a_blink_passes_enemies() -> void:
 	_enemy_at(Vector2(60, 0))
 	await wait_physics_frames(1)
 
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.MOVEMENT, Vector2.RIGHT)
 
 	assert_almost_eq(player.position.x, 120.0, 0.5)
 
 
+func test_a_blink_crosses_a_moat_to_the_far_bank() -> void:
+	var player := _blinker_on("""
+########
+#P~~~..#
+########
+""", 4 * CELL)
+
+	player.use_utility(Utility.Slot.MOVEMENT, Vector2.RIGHT)
+
+	assert_eq(DungeonView.world_to_cell(player.position), Vector2i(5, 1))
+
+
 func test_a_wall_stops_a_blink_short() -> void:
-	var player := _player_with(_blink(200.0))
-	_wall_at(Vector2(100, 0), Vector2(20, 200))
-	await wait_physics_frames(1)
+	var player := _blinker_on("""
+########
+#P..#..#
+########
+""", 5 * CELL)
 
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.MOVEMENT, Vector2.RIGHT)
 
-	assert_lt(player.position.x, 90.0 - Player.RADIUS + 1.0)
-	assert_gt(player.position.x, 50.0)
+	assert_lt(player.position.x, 4 * CELL - Player.RADIUS + 1.0)
+	assert_gt(player.position.x, 2 * CELL)
 
 
 func test_a_frost_nova_hurts_and_slows_enemies_around_you() -> void:
@@ -81,7 +102,7 @@ func test_a_frost_nova_hurts_and_slows_enemies_around_you() -> void:
 	var near := _enemy_at(Vector2(60, 0))
 	var far := _enemy_at(Vector2(400, 0))
 
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.SKILL, Vector2.RIGHT)
 	await wait_process_frames(1)
 
 	assert_lt(near.health.current, near.health.maximum)

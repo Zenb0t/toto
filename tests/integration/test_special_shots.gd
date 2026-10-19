@@ -355,7 +355,7 @@ func test_a_shielded_player_takes_no_poison_and_is_ticked_again_once_the_shield_
 	var player: Player = PLAYER_SCENE.instantiate()
 	add_child_autofree(player)
 	player.equip_utility(Shield.new())
-	player.use_utility(Vector2.RIGHT)
+	player.use_utility(Utility.Slot.SKILL, Vector2.RIGHT)
 	add_child_autofree(_mephitic_cloud(true))
 
 	await wait_seconds(0.7)

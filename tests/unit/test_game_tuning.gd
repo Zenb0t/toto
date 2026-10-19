@@ -87,6 +87,33 @@ func test_every_knob_belongs_to_exactly_one_entry_of_the_tune_menu() -> void:
 		assert_eq(listed.count(param.group), 1, param.key)
 
 
+func test_movements_and_skills_each_have_their_own_section_with_the_equipped_ones_marked() -> void:
+	var sections := GameTuning.sections("dagger", "blink", "frost_nova")
+	var movement := _section("Movement", sections)
+	var skills := _section("Skills", sections)
+
+	assert_eq(movement.groups.size(), 2)
+	assert_eq(skills.groups.size(), 3)
+	assert_string_contains(movement.label_of(GameTuning.utility_group("blink")), "equipped")
+	assert_string_contains(skills.label_of(GameTuning.utility_group("frost_nova")), "equipped")
+	assert_eq(skills.label_of(GameTuning.utility_group("shield")), "Shield")
+
+
+func test_an_empty_or_unknown_skill_slot_builds_no_skill() -> void:
+	var tuning := GameTuning.create()
+
+	assert_null(GameTuning.skill(tuning, GameTuning.NO_SKILL))
+	assert_null(GameTuning.skill(tuning, "dash"))
+	assert_true(GameTuning.skill(tuning, "shield") is Shield)
+
+
+func test_a_movement_slot_never_holds_a_skill() -> void:
+	var tuning := GameTuning.create()
+
+	assert_true(GameTuning.movement(tuning, "shield") is Dash)
+	assert_true(GameTuning.movement(tuning, "blink") is Blink)
+
+
 func test_every_weapon_has_its_own_page_under_weapons_with_the_equipped_one_marked() -> void:
 	var weapons := _section("Weapons", GameTuning.sections("fireball", "shield"))
 

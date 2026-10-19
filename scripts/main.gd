@@ -26,13 +26,16 @@ const TOUCH_HELP := "Left side: move.  Buttons: tap = auto-aim, drag = aim, rele
 ## The attack button reads this, in this colour, while the hero can rest at a campfire or the inn's doorstep.
 const REST_LABEL := "REST"
 const REST_COLOR := Color(1.0, 0.6, 0.25)
+## The skill button while no skill is held.
+const EMPTY_SKILL_LABEL := "SKILL"
+const EMPTY_SKILL_COLOR := Color(0.5, 0.5, 0.55)
 const INN_RESTING_TEXT := "Resting..."
 const INN_RESTED_TEXT := "Fully rested"
 const INN_INTERRUPTED_TEXT := "Rest interrupted"
 const REST_REFUSED_COLOR := Color(1.0, 0.45, 0.4)
 ## Floats up when a lighting brings an ambush, before the ambushers arrive.
 const AMBUSH_WARNING_TEXT := "Something is coming..."
-const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Right click / Space: utility.  1-3: potions.  E: take item, or rest at a campfire or the inn.  Q: next weapon.  Esc: menu."
+const KEYBOARD_MOUSE_HELP := "WASD: move.  Mouse: aim; click or hold: attack.  Space / Shift: dash or blink.  Right click: skill.  1-3: potions.  E: take item, or rest at a campfire or the inn.  Q: next weapon.  Esc: menu."
 
 var _rng := RandomNumberGenerator.new()
 var _settings := GameSettings.new()
@@ -47,7 +50,8 @@ var _run: Run
 ## False while the run is over or the hero is leaving the map: no more attacks, potions or stairs.
 var _in_play := false
 var _weapon_id: String
-var _utility_id: String
+var _movement_id: String
+var _skill_id: String
 var _belt := PotionBelt.new()
 var _experience: Experience
 
@@ -109,7 +113,8 @@ var _mouse_held_seconds := 0.0
 @onready var _touch_controls: TouchControls = $TouchControls
 @onready var _move_stick: TouchStick = $TouchControls/MoveStick
 @onready var _attack_button: AimButton = $TouchControls/AttackButton
-@onready var _utility_button: AimButton = $TouchControls/UtilityButton
+@onready var _movement_button: AimButton = $TouchControls/MovementButton
+@onready var _skill_button: AimButton = $TouchControls/SkillButton
 @onready var _keyboard_mouse: KeyboardMouseControls = $KeyboardMouse
 @onready var _pause_menu: PauseMenu = $Overlay/PauseMenu
 @onready var _layout_editor: LayoutEditor = $Overlay/LayoutEditor
@@ -156,7 +161,8 @@ func _physics_process(delta: float) -> void:
 		_sight_update_left = SIGHT_UPDATE_SECONDS
 		_update_sight()
 	_attack_button.set_cooldown_ratio(_player.attack_cooldown_ratio())
-	_utility_button.set_cooldown_ratio(_player.utility_cooldown_ratio())
+	_movement_button.set_cooldown_ratio(_player.utility_cooldown_ratio(Utility.Slot.MOVEMENT))
+	_skill_button.set_cooldown_ratio(_player.utility_cooldown_ratio(Utility.Slot.SKILL))
 	_track_player_room()
 	_track_place()
 
@@ -174,7 +180,8 @@ func _start_run(run: Run) -> void:
 func _enter_map() -> void:
 	var hero := _run.hero
 	_weapon_id = hero.weapon_id
-	_utility_id = hero.utility_id
+	_movement_id = hero.movement_id
+	_skill_id = hero.skill_id
 	_experience = Experience.new(hero.experience)
 	_belt.load_dict(hero.potions)
 	_stage = MapStage.new(_run.current_map())
@@ -266,6 +273,7 @@ func _spawn_player(hero: HeroState, cell: Vector2i) -> Player:
 	player.attack_fired.connect(func(_attacks: Array) -> void: _make_noise(player.global_position))
 	player.health_changed.connect(func(_current: int, _maximum: int) -> void: _refresh_hud())
 	player.died.connect(func() -> void: _end_run(RunSummary.Ending.DIED))
+	player.blink_landing = _blink_landing
 	_stage.add_actor(player)
 	_stage.world.add_player(player)
 	return player
@@ -413,13 +421,14 @@ func _connect_controls() -> void:
 			if not _rest_offer:
 				_player.preview_aim(direction, _player.weapon.aim_shape(), strength))
 	_attack_button.aim_released.connect(_on_attack_released)
-	_utility_button.aim_changed.connect(
-		func(direction: Vector2, _strength: float) -> void:
-			_player.preview_aim(direction, _player.utility.aim_shape()))
 	_weapon_switch.pressed.connect(_on_weapon_switch_pressed)
-	_utility_button.aim_released.connect(_on_utility_released)
 	_attack_button.returned_to_dead_zone.connect(_buzz)
-	_utility_button.returned_to_dead_zone.connect(_buzz)
+	for slot: Utility.Slot in _utility_buttons():
+		var button: AimButton = _utility_buttons()[slot]
+		button.aim_changed.connect(
+			func(direction: Vector2, strength: float) -> void: _player.preview_utility(slot, direction, strength))
+		button.aim_released.connect(_on_utility_released.bind(slot))
+		button.returned_to_dead_zone.connect(_buzz)
 	_loot_card.take_pressed.connect(_on_take_pressed)
 	_loot_card.leave_pressed.connect(_close_offer)
 	_potion_bar.drink_requested.connect(_drink)
@@ -435,7 +444,8 @@ func _connect_keyboard_mouse() -> void:
 		if not held:
 			_player.preview_aim(Vector2.ZERO))
 	_keyboard_mouse.attack_released.connect(_release_charged_attack)
-	_keyboard_mouse.utility_requested.connect(_use_utility_toward_cursor)
+	_keyboard_mouse.movement_requested.connect(_use_utility_toward_cursor.bind(Utility.Slot.MOVEMENT))
+	_keyboard_mouse.skill_requested.connect(_use_utility_toward_cursor.bind(Utility.Slot.SKILL))
 	_keyboard_mouse.potion_requested.connect(func(slot: int) -> void: _drink(GameTuning.potion_ids()[slot]))
 	_keyboard_mouse.take_requested.connect(_on_interact_pressed)
 	_keyboard_mouse.weapon_switch_requested.connect(_on_weapon_switch_pressed)
@@ -515,9 +525,13 @@ func _update_charging() -> void:
 		_player.preview_charge(Charge.ratio(_attack_button.held_seconds(), weapon.charge_seconds()))
 
 
-func _use_utility_toward_cursor() -> void:
-	if _in_play:
-		_player.use_utility(MouseAim.direction(_player.global_position, _cursor_on_plane(), _player.facing))
+## A blink lands on the cursor, as far as it reaches; the other utilities only go its way.
+func _use_utility_toward_cursor(slot: Utility.Slot) -> void:
+	var used := _player.utility_in(slot)
+	if not _in_play or used == null:
+		return
+	var aim := MouseAim.toward(_player.global_position, _cursor_on_plane(), used, _player.facing)
+	_player.use_utility(slot, aim.direction, aim.strength)
 
 
 func _cursor_on_plane() -> Vector2:
@@ -550,11 +564,24 @@ func _buzz() -> void:
 		Input.vibrate_handheld(milliseconds)
 
 
-func _on_utility_released(release: AimGesture.Release) -> void:
+## A tap goes the way the hero faces, as far as it reaches; a drag goes where it was dragged.
+func _on_utility_released(release: AimGesture.Release, slot: Utility.Slot) -> void:
 	_player.preview_aim(Vector2.ZERO)
 	if release.is_cancelled:
 		return
-	_player.use_utility(release.direction if not release.is_auto else _player.facing)
+	if release.is_auto:
+		_player.use_utility(slot, _player.facing)
+	else:
+		_player.use_utility(slot, release.direction, release.strength)
+
+
+## A blink stops at walls and closed doors and lands only where the hero can stand (see BlinkLanding).
+func _blink_landing(from: Vector2, to: Vector2) -> Vector2:
+	return BlinkLanding.find(from, to, _stage.map, _stage.view.is_door_closed, Player.RADIUS)
+
+
+func _utility_buttons() -> Dictionary:
+	return {Utility.Slot.MOVEMENT: _movement_button, Utility.Slot.SKILL: _skill_button}
 
 
 ## Closest enemy the hero can see, at any distance. Null if none.
@@ -933,7 +960,7 @@ func _spawn_trap_chests() -> void:
 			_trap_chests[room] = _spawn_chest(room, _stage.map.locking_mark_cell(room), not _progress.is_cleared(room))
 
 
-## A chest holds a random weapon or utility the player doesn't already have, picked when it opens, and
+## A chest holds a random weapon, movement or skill the player doesn't already have, picked when it opens, and
 ## sometimes a potion beside it.
 func _open_chest(at: Vector2, chest_id: int) -> void:
 	_record.open_chest(chest_id)
@@ -952,7 +979,10 @@ func _spot_beside(at: Vector2) -> Vector2:
 
 
 func _held_ids() -> Array[String]:
-	return [_weapon_id, _utility_id]
+	var held: Array[String] = [_weapon_id, _movement_id]
+	if _skill_id != GameTuning.NO_SKILL:
+		held.append(_skill_id)
+	return held
 
 
 func _spawn_drop(at: Vector2, item_id: String) -> ItemDrop:
@@ -1002,8 +1032,9 @@ func _offer(drop: ItemDrop) -> void:
 	_loot_card.show_offer(drop.item, _held_in_same_slot(drop.item))
 
 
+## What the found item would replace: null when it goes into an empty skill slot.
 func _held_in_same_slot(found: Item) -> Item:
-	return _player.weapon if found is Weapon else _player.utility
+	return _player.weapon if found is Weapon else _player.utility_in((found as Utility).slot)
 
 
 func _on_drop_left(drop: ItemDrop) -> void:
@@ -1016,19 +1047,26 @@ func _close_offer() -> void:
 	_loot_card.hide()
 
 
-## Swap: the player takes the found item and leaves the one it replaces on the floor in its place. The card
-## only comes back after stepping off and on again, so a swap can be undone but never happens by accident.
+## Swap: the player takes the found item and leaves the one it replaces on the floor in its place (nothing, when
+## it fills an empty skill slot). The card only comes back after stepping off and on again, so a swap can be undone
+## but never happens by accident.
 func _on_take_pressed() -> void:
 	if _offered_drop == null:
 		return
 	var found := _offered_drop.item
+	var replaced := _held_in_same_slot(found)
 	_mark_taken(_offered_drop)
-	_offered_drop.item = _held_in_same_slot(found)
+	if replaced == null:
+		_offered_drop.queue_free()
+	else:
+		_offered_drop.item = replaced
 	_close_offer()
 	if found is Weapon:
 		_weapon_id = found.id
+	elif (found as Utility).slot == Utility.Slot.MOVEMENT:
+		_movement_id = found.id
 	else:
-		_utility_id = found.id
+		_skill_id = found.id
 	_apply_tuning(_tuning)
 
 
@@ -1040,13 +1078,16 @@ func _apply_tuning(tuning: Tuning) -> void:
 	_stage.world.framing = GameTuning.camera_framing(tuning)
 	_stage.world.set_wall_height(GameTuning.wall_height(tuning))
 	_weapon_switch.visible = GameTuning.shows_weapon_switch(tuning)
-	_equip(GameTuning.weapon(tuning, _weapon_id), GameTuning.utility(tuning, _utility_id))
+	_equip(
+		GameTuning.weapon(tuning, _weapon_id), GameTuning.movement(tuning, _movement_id),
+		GameTuning.skill(tuning, _skill_id))
 	_attack_button.dead_zone = GameTuning.weapon_dead_zone(tuning)
-	_utility_button.dead_zone = GameTuning.utility_dead_zone(tuning)
 	_attack_button.catch_scale = GameTuning.button_catch_scale(tuning)
-	_utility_button.catch_scale = GameTuning.button_catch_scale(tuning)
 	_attack_button.drag_reach = GameTuning.drag_reach(tuning)
-	_utility_button.drag_reach = GameTuning.drag_reach(tuning)
+	for button: AimButton in _utility_buttons().values():
+		button.dead_zone = GameTuning.utility_dead_zone(tuning)
+		button.catch_scale = GameTuning.button_catch_scale(tuning)
+		button.drag_reach = GameTuning.drag_reach(tuning)
 	for enemies: Array in _enemies_by_band.values():
 		for enemy: Enemy in enemies:
 			enemy.arm(GameTuning.monster_weapon(tuning, enemy.monster))
@@ -1085,14 +1126,20 @@ func _show_attack_button() -> void:
 	_touch_controls.offer_rest(_rest_offer)
 
 
-## The buttons always show what is equipped.
-func _equip(weapon: Weapon, utility: Utility) -> void:
+## The buttons always show what is equipped. skill: null for an empty skill slot.
+func _equip(weapon: Weapon, movement: Utility, skill: Utility) -> void:
 	_player.equip_weapon(weapon)
-	_player.equip_utility(utility)
+	_player.equip_utility(movement)
+	if skill == null:
+		_player.unequip_skill()
+	else:
+		_player.equip_utility(skill)
 	_show_attack_button()
 	_weapon_switch.text = "Weapon: %s" % weapon.button_label
-	_utility_button.label = utility.button_label
-	_utility_button.color = utility.color
+	_movement_button.label = movement.button_label
+	_movement_button.color = movement.color
+	_skill_button.label = EMPTY_SKILL_LABEL if skill == null else skill.button_label
+	_skill_button.color = EMPTY_SKILL_COLOR if skill == null else skill.color
 	if _offered_drop != null:
 		_loot_card.show_offer(_offered_drop.item, _held_in_same_slot(_offered_drop.item))
 
@@ -1121,7 +1168,7 @@ func _on_weapon_switch_pressed() -> void:
 
 func _on_tuning_requested() -> void:
 	_hud_layer.hide()
-	_tuning_panel.open(_tuning, GameTuning.sections(_weapon_id, _utility_id), _run.world_seed)
+	_tuning_panel.open(_tuning, GameTuning.sections(_weapon_id, _movement_id, _skill_id), _run.world_seed)
 
 
 func _on_tuning_finished(tuning: Tuning) -> void:
@@ -1204,7 +1251,7 @@ func _refresh_hud() -> void:
 ## The hero as they are now, to take onto the next map.
 func _carried_hero() -> HeroState:
 	return HeroState.carrying(
-		_weapon_id, _utility_id, _player.health, _belt.to_dict(), _experience.points, _run.hero.kills)
+		_weapon_id, _movement_id, _skill_id, _player.health, _belt.to_dict(), _experience.points, _run.hero.kills)
 
 
 ## Down (or up) to the next map with everything the player holds: from the plains into the crypt entrance and back,

@@ -21,7 +21,8 @@ and mouse, following whichever you used last.
 | Tap the **weapon** button | Auto-aim at the nearest enemy you can see and attack. Each weapon holds 3 shots of ammo (orange bar over your head) that reload one at a time |
 | Drag from the weapon button, then release | Aim manually and fire. The button floats like the stick: touch anywhere in the faint circle around it and it jumps under your finger; the aim is measured from where you touched. Dragging back to the middle buzzes (phones that support it); letting go there cancels, as in Brawl Stars |
 | Hold the weapon button (**Bow**) | Draws the bow: the longer you hold before letting go, the harder the arrow hits, up to a full charge at 1.5 s, which also pierces. You walk slower while drawing; the aim line fills up as it charges. A tap is a weak arrow |
-| **Utility** button (DASH, SHIELD, BLINK, FROST) | Same tap / drag gesture; Shield and Frost Nova don't need aiming |
+| **Movement** button (DASH, BLINK; lower left of the weapon button) | Same tap / drag gesture. A tap goes the way you face; Blink goes as far as you drag (a tap hops the whole way), over water and past enemies but never through a wall or a closed door, and the preview shows where you will land |
+| **Skill** button (SHIELD, FROST, BECKON; upper left of the weapon button) | Same tap / drag gesture, on its own cooldown; Shield and Frost Nova don't need aiming. Runs start without a skill: the button is grey until you find one |
 | **Potion** buttons (under the weapon switch) | Drink one: Healing, Haste or Might. Walk over potions to pick them up |
 | Weapon button reads **REST** (by an unlit campfire, when nothing is hunting you) | Light it: it burns about 10 s and heals you up to half your health while you stand in its light. Stepping out pauses the healing; a hit or an attack stops it. Then it lies in embers (a countdown shows) for about 90 s, counted only while you are on that map. Refused while a monster hunts you or an awake one is in sight (sleeping ones don't count); a camp's fire is theirs until the last monster dies. **Resting in the wild is a gamble:** each time you light a campfire there is a seeded chance (30% on the plains, 45% in the crypt) that 3 of the area's monsters arrive at the edge of the light a few seconds later, already hunting you. Leaving and coming back can't re-roll it |
 | Weapon button reads **REST** (on the village inn's doorstep, when nothing is hunting you) | Sit for 3 s: you are fully healed. Moving or a hit cancels it; the inn never has an ambush and no limit, so you can rest again at once. Refused while a monster hunts you or an awake one is in sight |
@@ -38,7 +39,8 @@ and mouse, following whichever you used last.
 | WASD or arrow keys | Move |
 | Mouse | Aim at the cursor (Fireball and Mephitic Cloud land on it) |
 | Left click | Attack; hold to keep attacking (with the Bow: hold to draw, release to shoot) |
-| Right click or Space | Utility, toward the cursor |
+| Space or Shift | Movement, toward the cursor (Blink lands on it, as far as it reaches) |
+| Right click | Skill, toward the cursor |
 | 1, 2, 3 | Drink a potion |
 | E | Take the item you're standing on; by a campfire or on the inn's doorstep, rest (or hear why not: monsters around, or still embers) |
 | M | Show or hide the minimap; closes the big map when it is open |
@@ -48,10 +50,10 @@ and mouse, following whichever you used last.
 **Customize controls** pauses the game and lets you drag the stick and buttons where you want them, and resize
 the one you picked with the slider. Done saves the layout on the device, so it survives restarts and reloads.
 
-**Tune gameplay** exposes the numbers that shape the feel, sorted into a menu: Player, Weapons, Utilities,
-Potions, Enemies, Lich, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light; ambush chances, size and delay; the inn's rest time and reach), Camera (tilt, distance, field of view,
+**Tune gameplay** exposes the numbers that shape the feel, sorted into a menu: Player, Weapons, Movement,
+Skills, Potions, Enemies, Lich, Loot, Controls (each button's aim dead zone), Rest (campfire heal, burn, embers, light; ambush chances, size and delay; the inn's rest time and reach), Camera (tilt, distance, field of view,
 look-ahead, wall height) and World (the plains' size, groves, ponds and the rest; they shape the next world, with
-**New world** and **Same seed again** buttons). Weapons, Utilities and Potions list every item, so any of them can be tuned (the equipped
+**New world** and **Same seed again** buttons). Weapons, Movement, Skills and Potions list every item, so any of them can be tuned (the equipped
 one is marked). Entries you changed show in gold; Reset resets the page you're on. Changes apply live and are
 saved on Done.
 **Send to Claude** (phone playtest page on claude.ai only) saves them as JSON where Claude can read them.
@@ -74,7 +76,7 @@ within 8 cells, even through walls, and a monster that notices you shouts, wakin
 so a careless fight can pull in a nearby band. You can escape a chase: a monster gives up after 5 seconds without
 seeing you, or when you are 24 cells from its home, checks where it last saw you and walks home, noticing you again if it sees you on the way. Ordinary rooms don't lock, so you
 can sneak past or pick your fight; only the Lich's arena and the **trap rooms** do (below). Loot is earned, not handed out:
-clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
+clearing a room leaves nothing, so new gear (a weapon, a movement: Dash or Blink, or a skill: Shield, Frost Nova, Lesser Beckoning) is found
 hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
 weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. About one in fifty drops
 its weapon. Rooms get tougher the deeper you go, and each level more than the last. Each level has one campfire in an ordinary room a few rooms from the stairs (a rest spot later). Find the gold stairs (in the room
@@ -82,12 +84,12 @@ farthest from the start, usable once it is clear) to go down, keeping your gear,
 third level has no stairs down: its farthest room is the **boss arena** (see below). On every level you arrive on silver stairs that lead back up, onto the gold
 stairs of the level above (the first level's onto the mausoleum). The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
 you took stay gone, items you dropped stay where they fell and the map stays explored (the plains too). Monsters you left hurt
-heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. The first two levels each hold one **trap room**: a room with a chest in the middle that looks like any other. Walking in seals it, a band tougher than the level's usual (Tune → World → Crypt trap room band) appears and fights to the death, and the chest stays shut until the last one falls; then it holds a weapon or utility you don't have. The third level's farthest room is the **boss arena**: a hall with four pillars that block shots and the **Lich**'s crypt at
+heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. The first two levels each hold one **trap room**: a room with a chest in the middle that looks like any other. Walking in seals it, a band tougher than the level's usual (Tune → World → Crypt trap room band) appears and fights to the death, and the chest stays shut until the last one falls; then it holds a weapon, movement or skill you don't have. The third level's farthest room is the **boss arena**: a hall with four pillars that block shots and the **Lich**'s crypt at
 its far end. It locks when you walk in and opens when he dies. The Lich, a dark purple skeleton mage with a crown, a robe and a
 staff, starts awake, never gives up, keeps his distance (back off as you close in) and casts one telegraphed spell at a time with a
 short pause between: the Mephitic Cloud and, as his rarest spell (every third cast), the Bone Spray: three waves of five bone shards in a half circle, each wave offset from the last, that pillars stop (Summon Undead follows). Hurt from a doorway before the arena locks, he withdraws into a nook of his crypt that no doorway can see, so you have to walk in. Killing him **wins the run**: a summary says
 "You killed the Lich", and **Keep exploring** carries on in the same world, with him still dead. Tune → Lich holds every number of his.
-If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash and a Potion of
+If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash, no skill and a Potion of
 Healing.
 
 ## Play on a phone
@@ -144,8 +146,8 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`, `MouseAim`, `TouchZones`) and `InputMode` (touch or
   keyboard and mouse)
 - `scripts/equipment` – what the buttons do, as plain data: `Item`s, which are a `Weapon` (`MagicMissile`, `Knuckles`, `LightningBolt`, `MephiticCloud`,
-  `Fireball`, `Crossbow`, `Bow`, or an `ArcWeapon` archetype: `Dagger`, `Sword`, `Battleaxe`) or a `Utility` (`Dash`, `Shield`, `Blink`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
-- `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `TickClock` for lingering effects, `PoisonStatus` so poison clouds don't stack, `ChainFalloff` for the Lightning Bolt's weaker jumps, `Charge`: seconds held to strength), when a weapon fires
+  `Fireball`, `Crossbow`, `Bow`, or an `ArcWeapon` archetype: `Dagger`, `Sword`, `Battleaxe`) or a `Utility`, held in one of two slots (`Utility.Slot`): a movement (`Dash`, `Blink`) or a skill (`Shield`, `FrostNova`, `Beckoning`). Each declares its own tunable `Knob`s
+- `scripts/combat` – what an attack or utility does (`Shot`, `Slash`, `Nova`, `UtilityEffect`, `BlinkLanding`: where a blink ends, `TickClock` for lingering effects, `PoisonStatus` so poison clouds don't stack, `ChainFalloff` for the Lightning Bolt's weaker jumps, `Charge`: seconds held to strength), when a weapon fires
   (`Wielder`: ammo and wind-up, for the player and enemies alike), how enemies fight (`EnemyTactics`: moving, flanking, aiming ahead, where to wander), when a calm monster
   notices the hero and who hears a noise or shout (`Awareness`), what they are doing (`EnemyBrain`, a small state machine: asleep, wander,
   noticing, idle, hunt, position, wind up, recover, check, return, retreat; `Awareness` also decides when a hunter gives up), which spell the Lich casts next (`SpellPicker`), how a band fights as a team (`Squad`: taking turns, flank

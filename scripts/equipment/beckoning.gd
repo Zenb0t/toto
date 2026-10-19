@@ -26,7 +26,7 @@ func knobs() -> Array[Knob]:
 
 
 ## The shot starts at its user, who sets its origin (see Player).
-func activate(direction: Vector2) -> UtilityEffect:
+func activate(direction: Vector2, _strength := 1.0) -> UtilityEffect:
 	var shot := Shot.new(Vector2.ZERO, direction, shot_speed, 0, shot_range)
 	shot.pulls = true
 	shot.size = 6.0

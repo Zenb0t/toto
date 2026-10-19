@@ -1,7 +1,8 @@
 class_name Player
 extends CharacterBody2D
 ## The hero. Contains no input code: whoever controls it calls move(), attack(), use_utility() and drink().
-## What those do comes from the equipped Weapon and Utility, and the Potion drunk.
+## What those do comes from the equipped Weapon, the two Utilities (a movement and a skill, see Utility.Slot) and the
+## Potion drunk.
 
 ## The Shots and Slashes of one attack, for the world to carry out.
 signal attack_fired(attacks: Array)
@@ -45,11 +46,20 @@ var charging := false
 var weapon: Weapon:
 	get:
 		return _wielder.weapon
-var utility: Utility = Dash.new()
+## The movement (Dash, Blink): runs start with the Dash.
+var movement: Utility = Dash.new()
+## The skill (Shield, Frost Nova...), or null: runs start without one.
+var skill: Utility = null
+## Where a blink from one spot toward another ends (see BlinkLanding), set by whoever knows the map. Without a map
+## it lands where it was aimed.
+var blink_landing := func(_from: Vector2, to: Vector2) -> Vector2: return to
 
 var _wielder := Wielder.new(Dagger.new())
 var _move_input := Vector2.ZERO
-var _utility_cooldown := Cooldown.new(utility.cooldown)
+var _cooldowns := {
+	Utility.Slot.MOVEMENT: Cooldown.new(movement.cooldown),
+	Utility.Slot.SKILL: Cooldown.new(0.0),
+}
 var _dash_direction := Vector2.ZERO
 var _dash_speed := 0.0
 var _dash_time_left := 0.0
@@ -60,7 +70,7 @@ var _might_bonus := 0
 var _might_time_left := 0.0
 var _aim_direction := Vector2.ZERO
 var _aim_shape: AimShape
-var _aim_strength := 1.0
+var _aim_distance := 0.0
 
 
 func _ready() -> void:
@@ -74,9 +84,24 @@ func equip_weapon(new_weapon: Weapon) -> void:
 	_wielder.equip(new_weapon)
 
 
+## Puts the utility in its slot (see Utility.Slot), in place of the one held there, with a fresh cooldown.
 func equip_utility(new_utility: Utility) -> void:
-	utility = new_utility
-	_utility_cooldown = Cooldown.new(new_utility.cooldown)
+	if new_utility.slot == Utility.Slot.MOVEMENT:
+		movement = new_utility
+	else:
+		skill = new_utility
+	_cooldowns[new_utility.slot] = Cooldown.new(new_utility.cooldown)
+
+
+## Leaves the skill button empty.
+func unequip_skill() -> void:
+	skill = null
+	_cooldowns[Utility.Slot.SKILL] = Cooldown.new(0.0)
+
+
+## What the slot holds, or null when it is empty.
+func utility_in(slot: Utility.Slot) -> Utility:
+	return movement if slot == Utility.Slot.MOVEMENT else skill
 
 
 ## strength: 0..1 vector from a stick or keys.
@@ -101,14 +126,15 @@ func attack(direction: Vector2, target: Node2D = null, strength := 1.0, held_sec
 		_release(_wielder.advance(0.0, global_position))
 
 
-## Uses the utility toward direction (dash, blink) or on the spot (shield, frost nova). Ignored during its
-## cooldown.
-func use_utility(direction: Vector2) -> void:
-	if direction == Vector2.ZERO or not _utility_cooldown.try_trigger():
+## Uses the utility in the slot toward direction (dash, blink) or on the spot (shield, frost nova). strength (0..1)
+## picks how far a blink goes. Ignored during its cooldown, and when the slot is empty.
+func use_utility(slot: Utility.Slot, direction: Vector2, strength := 1.0) -> void:
+	var used := utility_in(slot)
+	if used == null or direction == Vector2.ZERO or not _cooldowns[slot].try_trigger():
 		return
 	facing = direction.normalized()
-	_apply(utility.activate(facing))
-	utility_used.emit(utility.id)
+	_apply(used.activate(facing, strength))
+	utility_used.emit(used.id)
 
 
 ## Drinks a potion: its effect starts at once. Whoever holds the potion belt decides whether there is one.
@@ -116,13 +142,22 @@ func drink(potion: Potion) -> void:
 	_apply(potion.effect())
 
 
-## Shows where an ability will go, in the ability's own shape. Pass a zero direction or no shape to hide it.
+## Shows where an attack will go, in the weapon's own shape. Pass a zero direction or no shape to hide it.
 ## strength (0..1) places the landing spot of shapes that aim at a distance, as the weapon will when it fires.
 func preview_aim(direction: Vector2, shape: AimShape = null, strength := 1.0) -> void:
-	_aim_direction = direction.normalized()
-	_aim_shape = shape
-	_aim_strength = strength
-	queue_redraw()
+	_show_aim(direction, shape, weapon.aim_distance(strength))
+
+
+## Shows where the utility in the slot will go. A blink shows the spot it would really land on.
+func preview_utility(slot: Utility.Slot, direction: Vector2, strength := 1.0) -> void:
+	var used := utility_in(slot)
+	if used == null or direction == Vector2.ZERO:
+		_show_aim(Vector2.ZERO, null, 0.0)
+		return
+	var distance := used.aim_distance(strength)
+	if used.hops():
+		distance = global_position.distance_to(_blink_target(direction.normalized() * distance))
+	_show_aim(direction, used.aim_shape(), distance)
 
 
 ## Fills the preview line by how charged the shot is (0..1), for weapons that charge.
@@ -141,8 +176,8 @@ func ammo_fills() -> Array[float]:
 	return _wielder.ammo_fills()
 
 
-func utility_cooldown_ratio() -> float:
-	return _utility_cooldown.remaining_ratio()
+func utility_cooldown_ratio(slot: Utility.Slot) -> float:
+	return _cooldowns[slot].remaining_ratio()
 
 
 ## How far from its centre attacks hit it.
@@ -180,7 +215,8 @@ func take_poison(amount: int, source: String, now: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	_utility_cooldown.tick(delta)
+	for cooldown: Cooldown in _cooldowns.values():
+		cooldown.tick(delta)
 	_shield_time_left = maxf(_shield_time_left - delta, 0.0)
 	_haste_time_left = maxf(_haste_time_left - delta, 0.0)
 	_might_time_left = maxf(_might_time_left - delta, 0.0)
@@ -219,7 +255,7 @@ func _apply(effect: UtilityEffect) -> void:
 	_shield_time_left = maxf(_shield_time_left, effect.shield_seconds)
 	health.heal(effect.heal_amount)
 	if effect.blink_offset != Vector2.ZERO:
-		move_and_collide(effect.blink_offset)
+		global_position = _blink_target(effect.blink_offset)
 	# What a utility lets out starts at its user; shots, like a weapon's, just in front of the body.
 	for attack: Variant in effect.attacks:
 		attack.origin = global_position
@@ -234,11 +270,22 @@ func _apply(effect: UtilityEffect) -> void:
 		_might_time_left = effect.might_seconds
 
 
+func _show_aim(direction: Vector2, shape: AimShape, landing_distance: float) -> void:
+	_aim_direction = direction.normalized()
+	_aim_shape = shape
+	_aim_distance = landing_distance
+	queue_redraw()
+
+
+func _blink_target(offset: Vector2) -> Vector2:
+	return blink_landing.call(global_position, global_position + offset)
+
+
 func _draw() -> void:
 	if _wielder.is_winding_up():
 		draw_line(Vector2.ZERO, _wielder.aim_direction() * (RADIUS + 28.0), WINDUP_COLOR, RADIUS * 1.4)
 	if _aim_direction != Vector2.ZERO and _aim_shape != null:
-		AimPreview.draw(self, _aim_shape, _aim_direction, weapon.aim_distance(_aim_strength), AIM_PREVIEW_COLOR)
+		AimPreview.draw(self, _aim_shape, _aim_direction, _aim_distance, AIM_PREVIEW_COLOR)
 	draw_circle(Vector2.ZERO, RADIUS, Color(BODY_COLOR, BASE_FILL_ALPHA))
 	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, BODY_COLOR, BASE_RING_WIDTH, true)
 	if is_shielded():

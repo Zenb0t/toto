@@ -6,8 +6,10 @@ extends RefCounted
 
 const STICK := &"stick"
 const ATTACK := &"attack"
-const UTILITY := &"utility"
-const IDS: Array[StringName] = [STICK, ATTACK, UTILITY]
+## The movement button (Dash, Blink). Saved layouts know it by its old name, from before there was a skill button.
+const MOVEMENT := &"utility"
+const SKILL := &"skill"
+const IDS: Array[StringName] = [STICK, ATTACK, MOVEMENT, SKILL]
 const NONE := &""
 
 const MIN_DIAMETER := 80.0
@@ -22,12 +24,14 @@ const GRAB_SLOP := 24.0
 const _DEFAULT_CENTERS := {
 	STICK: Vector2(0.15, 0.74),
 	ATTACK: Vector2(0.86, 0.66),
-	UTILITY: Vector2(0.69, 0.82),
+	MOVEMENT: Vector2(0.69, 0.82),
+	SKILL: Vector2(0.72, 0.45),
 }
 const _DEFAULT_DIAMETERS := {
 	STICK: 190.0,
 	ATTACK: 190.0,
-	UTILITY: 140.0,
+	MOVEMENT: 140.0,
+	SKILL: 130.0,
 }
 
 var _centers := _DEFAULT_CENTERS.duplicate()

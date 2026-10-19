@@ -54,14 +54,14 @@ func test_dragging_a_control_moves_it_by_the_same_amount() -> void:
 func test_the_size_slider_resizes_the_picked_control() -> void:
 	var editor := _open_editor(ControlLayout.new())
 	watch_signals(editor)
-	var dash := ControlLayout.new().rect_in(ControlLayout.UTILITY, _screen()).get_center()
+	var dash := ControlLayout.new().rect_in(ControlLayout.MOVEMENT, _screen()).get_center()
 	_touch(dash, true)
 	_touch(dash, false)
 	await wait_process_frames(2)
 
 	editor.get_node("Bar/Size").value = 250.0
 
-	assert_eq(_last_layout(editor, "layout_changed").diameter_of(ControlLayout.UTILITY), 250.0)
+	assert_eq(_last_layout(editor, "layout_changed").diameter_of(ControlLayout.MOVEMENT), 250.0)
 
 
 func test_touching_empty_space_changes_nothing() -> void:

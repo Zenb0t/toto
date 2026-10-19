@@ -20,7 +20,7 @@ Anything that doesn't help answer that is deferred.
 | --- | --- | --- |
 | Platform | Mobile (landscape). Also playable with keyboard and mouse: the game follows whichever was used last (see Keyboard and mouse) | Brawl Stars-style touch play is the target; playtesting on a computer shouldn't feel like using a phone with a mouse |
 | Build identity | No heroes. Your build is your equipment, and equipment comes from RNG | DCSS-style "make do with what you find" |
-| Equipment slots | **Weapon** (attack button) + **Utility** (second button, on a cooldown) | Smallest set where builds feel different |
+| Equipment slots | **Weapon** (attack button) + **Movement** (Dash, Blink) + **Skill** (Shield, Frost Nova, Lesser Beckoning), each utility button on its own cooldown. Runs start with the Dash and no skill | Playtest: getting away (the dash) is too important to trade for a shield or a nova, so it gets a button of its own, like Brawl Stars' gadget next to the attack; with one slot, finding a skill meant giving up the dash. The skill slot starts empty so the first skill found is a moment |
 | Swap rule | Replace on pickup, with a quick compare. No inventory | Every drop is a decision, and it needs almost no UI |
 | Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
@@ -58,13 +58,16 @@ possible, then a wait. Attacking throws away the charge being reloaded, so a bur
 reload progress made between its shots (it used to fit about 4); waiting for a charge to finish pays. Over the hero's head (`HeroBars`): a green health bar with the number on it, and an orange
 segment per charge, the reloading one filling up in a darker orange. The attack button only darkens while empty.
 Enemies hold one charge that reloads 1.1× slower than the player's (Tune → Enemies: reload slowness), the pace the
-playtest settled on (1.6× the old cooldown, from before ammo). Utilities keep a cooldown.
+playtest settled on (1.6× the old cooldown, from before ammo). Utilities keep a cooldown, one per button.
 
-| Utility | Behaviour | Aim |
+| Movement | Behaviour | Aim |
 | --- | --- | --- |
 | Dash (starter) | A quick burst of speed where you aim | Line as long as one dash |
+| Blink | Like Dungeon Crawl's scroll of blinking: an instant hop to a spot you pick. Aimed like the Fireball: the drag distance picks how far (up to 140; a tap hops the whole way the hero faces; with the mouse it lands on the cursor). It crosses whatever the hero can see across (water, lava, boulders) and passes enemies, so it gets you out of a corner or over a moat, but a wall or a closed door stops it short, so it never skips a locked room. It lands on the farthest spot of its line, up to the one aimed at, where the hero's body fits on walkable ground (lava and shallow water count; deep water doesn't), never half in a wall (`BlinkLanding`) | The line to the spot it will land on, and the hero's footprint there |
+
+| Skill | Behaviour | Aim |
+| --- | --- | --- |
 | Shield | Blocks all damage (your own blasts included) for a moment | None: tap anywhere |
-| Blink | Like Dungeon Crawl's scroll of blinking: an instant hop (140) where you aim. Walls and water stop it short; enemies don't, so it gets you out of a corner | Line as long as the hop |
 | Lesser Beckoning | Like Gene's magic hand: a quick bolt that drags the first enemy it hits back to where it was cast, cancelling the attack it was winding up | Line |
 | Frost Nova | A burst around you: 100 damage to every enemy in reach, and they act at half speed (moving, winding up, recovering) for 2.5 s. An icy ring on the floor marks a slowed enemy | The burst's circle around you |
 
@@ -89,8 +92,11 @@ own class, so a new arc weapon is just new numbers.
 
 **Model (step 4).** `Weapon` and `Utility` are plain data objects (both `Item`s). Whoever wields a weapon owns
 *when* (a `Wielder`: ammo, wind-up, auto-aim tracking); the weapon owns *what* (it turns an aim into `Shot`s).
-A utility turns an aim into a `UtilityEffect` (dash, shield time, healing) that the player applies. The buttons show the equipped
-item's name and colour. The starter gear is the **Dagger** and a **Dash**. New behaviours
+A utility turns an aim into a `UtilityEffect` (dash, shield time, a blink's hop) that the player applies; its `slot`
+says which button holds it (movement or skill), and a found utility replaces only the one in its own slot. A blink's
+landing needs the map, which the player doesn't know: the composition root hands it the rule (`Player.blink_landing`,
+`BlinkLanding`). The buttons show the equipped item's name and colour (the empty skill button is grey). The starter
+gear is the **Dagger** and a **Dash**, with no skill. New behaviours
 (melee arc, explosions, spreads) are attack kinds: a weapon returns `Shot`s (projectiles, optionally
 explosive) and `Slash`es (melee arcs), and the world carries them out.
 
@@ -102,9 +108,9 @@ every weapon keeps its own settings. A HUD button (or Q) cycles weapons for test
 (`Weapon`, `Utility`, `Player`, `Enemy`), and the tuning screen reads them, so there is one source of truth.
 When a playtest settles on better values, they get copied into those defaults.
 
-**Tune screen menus.** The knobs are sorted into sections (`GameTuning.sections`): Player, Weapons, Utilities,
+**Tune screen menus.** The knobs are sorted into sections (`GameTuning.sections`): Player, Weapons, Movement, Skills,
 Potions, Enemies, Loot, Controls, Camera, World (see The plains). A section with one group of knobs opens straight onto them; Weapons,
-Utilities and Potions first list every item, so any of them can be tuned, not only the one equipped (which is
+Movement, Skills and Potions first list every item, so any of them can be tuned, not only the one equipped (which is
 marked). Back or Esc goes up a page. Entries holding changed knobs are marked in gold, and Reset resets what the
 page shows (Reset all, from the top menu).
 
@@ -117,7 +123,8 @@ Touch stays the target, but a computer gets its own controls rather than a mouse
 | WASD or arrow keys | Move |
 | Mouse | Aim: the attack goes toward the cursor, and spot-aimed weapons (Fireball, Mephitic Cloud) land on it |
 | Left button | Attack; held, it shows the aim and keeps attacking whenever the weapon is ready. A weapon that charges (the Bow) is drawn while the button is held and shoots when it is let go |
-| Right button or Space | Utility, toward the cursor |
+| Space or Shift | Movement, toward the cursor (a blink lands on it, as far as it reaches) |
+| Right button | Skill, toward the cursor |
 | 1, 2, 3 | Drink a potion (in the potion bar's order) |
 | E | Take the item on the floor |
 | M | Show or hide the minimap |
@@ -141,13 +148,13 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
   Walking onto one opens it and drops a find. The open chest stays, so you can see what you have looted.
 - **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot → "Enemy drop chance", default 2%) to drop
   its weapon. (Room chests used to set the pacing and drops were 5%.)
-- **What drops.** Chests hold a random weapon or utility you don't already hold (a duplicate is no choice).
+- **What drops.** Chests hold a random weapon, movement or skill you don't already hold (a duplicate is no choice).
   An enemy's rare drop is the weapon it fought with (or a random find if you already hold that one).
   On the floor, weapons are round and utilities square.
 - **Compare and swap.** Standing on a drop shows a card: the item's name and one-line description, what it
-  replaces (what you hold in the same slot), and **Take** / **Leave**. Taking it leaves your old item on the floor in its place, so a swap can be
+  replaces (what you hold in the same slot, or "Fills your empty skill slot"), and **Take** / **Leave**. Taking it leaves your old item on the floor in its place (nothing, when it fills the empty skill slot), so a swap can be
   undone; the card only returns after you step off and on again, so nothing is swapped by accident.
-- **Runs start with the Dagger and the Dash.** Loot is meant to be a grind, so the starter is good enough for the first fights
+- **Runs start with the Dagger and the Dash, and no skill.** Loot is meant to be a grind, so the starter is good enough for the first fights
   (it kills goblins in two stabs) but clearly weaker than found weapons. The HUD weapon switch is a testing aid for
   tuning each weapon: hidden by default, shown by Tune → Controls → "Show weapon switch" (the keyboard key always
   works). Magic Missile stays an enemy weapon and can be found. Known risk: a melee start leaves no ranged answer to
@@ -442,7 +449,7 @@ and the spot; `WorldLayout.arrival_cell` finds the spot on the parsed map). The 
 lead on once the hero has stepped off them. Dying, or restarting from the menu, starts over on the plains of a
 new world, with a new seed.
 
-Taking the stairs carries the hero (`HeroState`): the weapon and utility held, health as it is (no free
+Taking the stairs carries the hero (`HeroState`): the weapon, movement and skill held, health as it is (no free
 healing between floors: healing comes from potions and from resting at a campfire, see **Resting**), the potion belt, experience and kills. The HUD shows the
 floor; the pause menu shows the world seed and the floor.
 

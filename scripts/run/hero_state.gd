@@ -7,7 +7,9 @@ extends RefCounted
 const STARTING_POTIONS := {"healing": 1}
 
 var weapon_id := GameTuning.DEFAULT_WEAPON_ID
-var utility_id := GameTuning.DEFAULT_UTILITY_ID
+var movement_id := GameTuning.DEFAULT_MOVEMENT_ID
+## GameTuning.NO_SKILL until a skill is found.
+var skill_id := GameTuning.NO_SKILL
 var health := Player.MAX_HEALTH
 var max_health := Player.MAX_HEALTH
 var potions := STARTING_POTIONS.duplicate()
@@ -18,12 +20,13 @@ var kills := 0
 
 ## The hero as they are now, ready to take onto another map.
 static func carrying(
-		held_weapon_id: String, held_utility_id: String, hero_health: Health, held_potions: Dictionary,
-		experience_points: int, monsters_slain: int
+		held_weapon_id: String, held_movement_id: String, held_skill_id: String, hero_health: Health,
+		held_potions: Dictionary, experience_points: int, monsters_slain: int
 ) -> HeroState:
 	var hero := HeroState.new()
 	hero.weapon_id = held_weapon_id
-	hero.utility_id = held_utility_id
+	hero.movement_id = held_movement_id
+	hero.skill_id = held_skill_id
 	hero.health = hero_health.current
 	hero.max_health = hero_health.maximum
 	hero.potions = held_potions.duplicate()

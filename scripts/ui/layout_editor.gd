@@ -14,7 +14,8 @@ const STICK_ZONE_COLOR := Color(1, 1, 1, 0.06)
 const NAMES := {
 	ControlLayout.STICK: "MOVE",
 	ControlLayout.ATTACK: "ATTACK",
-	ControlLayout.UTILITY: "DASH",
+	ControlLayout.MOVEMENT: "DASH / BLINK",
+	ControlLayout.SKILL: "SKILL",
 }
 
 var _layout := ControlLayout.new()

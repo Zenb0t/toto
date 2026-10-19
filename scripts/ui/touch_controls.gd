@@ -5,13 +5,15 @@ extends CanvasLayer
 ## hides and the buttons only show what is equipped, its cooldown and the key that uses it.
 
 const ATTACK_KEY_HINT := "click"
-const UTILITY_KEY_HINT := "right click / space"
+const MOVEMENT_KEY_HINT := "space"
+const SKILL_KEY_HINT := "right click"
 ## The key that rests while the attack button reads REST.
 const REST_KEY_HINT := "E"
 
 @onready var move_stick: TouchStick = $MoveStick
 @onready var attack_button: AimButton = $AttackButton
-@onready var utility_button: AimButton = $UtilityButton
+@onready var movement_button: AimButton = $MovementButton
+@onready var skill_button: AimButton = $SkillButton
 
 var _layout := ControlLayout.new()
 var _touch := true
@@ -32,17 +34,20 @@ func apply_layout(layout: ControlLayout) -> void:
 func keep_touches_for(keepers: Array[Control]) -> void:
 	move_stick.blockers = keepers
 	attack_button.blockers = keepers
-	utility_button.blockers = keepers
+	movement_button.blockers = keepers
+	skill_button.blockers = keepers
 
 
 ## Off while playing with keyboard and mouse.
 func use_touch(enabled: bool) -> void:
 	move_stick.accepts_touch = enabled
 	attack_button.accepts_touch = enabled
-	utility_button.accepts_touch = enabled
+	movement_button.accepts_touch = enabled
+	skill_button.accepts_touch = enabled
 	_touch = enabled
 	_show_attack_hint()
-	utility_button.hint = "" if enabled else UTILITY_KEY_HINT
+	movement_button.hint = "" if enabled else MOVEMENT_KEY_HINT
+	skill_button.hint = "" if enabled else SKILL_KEY_HINT
 
 
 ## While the attack button reads REST, the key hint names the key that rests.
@@ -58,7 +63,8 @@ func _show_attack_hint() -> void:
 func _arrange() -> void:
 	var screen := get_viewport().get_visible_rect().size
 	_place_button(attack_button, _layout.rect_in(ControlLayout.ATTACK, screen))
-	_place_button(utility_button, _layout.rect_in(ControlLayout.UTILITY, screen))
+	_place_button(movement_button, _layout.rect_in(ControlLayout.MOVEMENT, screen))
+	_place_button(skill_button, _layout.rect_in(ControlLayout.SKILL, screen))
 	var zone := ControlLayout.stick_zone(screen)
 	move_stick.position = zone.position
 	move_stick.size = zone.size

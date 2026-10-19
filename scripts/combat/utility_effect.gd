@@ -9,7 +9,7 @@ var dash_seconds := 0.0
 ## Seconds during which the user takes no damage.
 var shield_seconds := 0.0
 var heal_amount := 0
-## Moves the user at once by this much (stopped short by whatever blocks walking).
+## Moves the user at once toward the spot this far away, landing where a blink can (see BlinkLanding).
 var blink_offset := Vector2.ZERO
 ## Attacks (like a Nova) the user lets out, centred on the user, for the world to carry out.
 var attacks: Array = []
