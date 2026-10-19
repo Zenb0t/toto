@@ -186,3 +186,32 @@ func test_skeletons_still_rising_when_the_lich_dies_never_stand_up() -> void:
 
 	assert_eq(_raised_at.size(), before, "nothing rises after his death")
 	assert_eq(_alive(), 0)
+
+
+func test_a_pulse_that_ends_in_the_frame_the_lich_dies_raises_nothing() -> void:
+	var hero := _hero()
+	var lich := _lich(hero)
+	var summoning: Summoning = get_children().filter(func(node: Node) -> bool: return node is Summoning)[0]
+	await wait_seconds(1.1)  # his wind-up is over, the first pulse is not
+	var before := _raised_at.size()
+
+	lich.take_damage(lich.health.maximum)
+	summoning._process(5.0)  # the rest of this frame, before anything queued is freed
+
+	assert_eq(_raised_at.size(), before, "nothing rises after his death")
+
+
+func test_with_the_hero_too_close_for_any_spot_he_casts_his_cloud_instead_of_an_empty_summon() -> void:
+	_hero_cell = _arena_cell_about(2.0)
+	assert_ne(_hero_cell, DungeonMap.NO_CELL, "a cell of the arena next to the Lich")
+	var hero := _hero()
+	var lich := _lich(hero)
+	var summons: Array[int] = []
+	lich.summon_telegraphed.connect(func(_caster: Enemy, count: int) -> void: summons.append(count))
+	var attacks: Array[int] = []
+	lich.attack_fired.connect(func(_attacks: Array) -> void: attacks.append(1))
+
+	await wait_seconds(1.5)
+
+	assert_eq(summons.size(), 0, "no summon with no ground between them")
+	assert_gt(attacks.size(), 0, "he attacks instead")

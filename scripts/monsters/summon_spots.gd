@@ -7,7 +7,8 @@ extends RefCounted
 ##
 ## "Between" means in front of the caster along the line to the hero (past MIN_FROM_CASTER_CELLS, short of the
 ## hero by MIN_FROM_HERO_CELLS) and no farther off that line than half the range, so the skeletons stand in the
-## hero's way and not in a ring round the Lich. A hero too close for any such spot gets no skeletons.
+## hero's way and not in a ring round the Lich. A hero too close for any such spot gets no skeletons
+## (and the Lich casts another spell, see Enemy.summon_ground).
 
 ## Skeletons rise at least this far from the caster, from the hero and from each other, in cells.
 const MIN_FROM_CASTER_CELLS := 1.5

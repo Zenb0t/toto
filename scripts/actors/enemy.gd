@@ -121,6 +121,9 @@ var is_summoned := false
 
 ## The skeletons it raised (see adopt()), which collapse when it dies.
 var _minions: Array[Enemy] = []
+## Whether its Summon Undead would find ground to raise a skeleton on now, () -> bool, set by whoever carries the
+## spell out (see Summoning). Unset, it always would. Without ground it casts another spell rather than an empty summon.
+var summon_ground := Callable()
 ## Skeletons whose spot is already pulsing, so as good as alive for the summon cap (see expect_minions()).
 var _expected_minions := 0
 
@@ -428,7 +431,8 @@ func _goal_of_giving_up() -> Vector2:
 func _start_attack() -> void:
 	if spell_picker != null:
 		var share := float(health.current) / health.maximum
-		var spell := spell_picker.pick(SpellPicker.Situation.new(living_minions(), share))
+		var ground: bool = not summon_ground.is_valid() or summon_ground.call()
+		var spell := spell_picker.pick(SpellPicker.Situation.new(living_minions(), share, ground))
 		spell_picker.begin(spell)
 		if spell_weapons.has(spell):
 			_wielder.equip(spell_weapons[spell])

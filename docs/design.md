@@ -420,8 +420,10 @@ The spell is over when the wind-up is, so the later waves fly during his pause. 
 spots within `summon_range_cells` (6) of him, in his own room (the arena), in front of him along the line to the hero (past 1.5
 cells from him, short of the hero by 1.5, no farther off that line than half the range), on standable ground (never a pillar, wall,
 water, lava, doorway or boulder), 1.5 cells apart, and not on a cell any monster or the hero stands on; seeded by the caller's
-generator. A hero too close for any such spot gets no skeletons (he keeps 8 cells away, so it is rare; he would just cast again after
-the pause). **How many rise per cast:** `skeletons_per_summon` (Knob, 3) but never more than the gap under the cap
+generator. A hero too close for any such spot (under 3 cells, easy for a hero faster than him) gets no skeletons, and then he doesn't
+cast Summon Undead at all but his Cloud/Spray cycle: `Summoning` tells the Lich whether there is ground (`Enemy.summon_ground`), which
+`SpellPicker.Situation.room_to_summon` carries (without it a hero hugging him would get an endless string of empty summons and
+never be attacked). **How many rise per cast:** `skeletons_per_summon` (Knob, 3) but never more than the gap under the cap
 (`SummonUndead.count_to_raise`), so the cap is never passed. **Carrying it out** is `Summoning`, a node the stage gets
 for the Lich: on `Enemy.summon_telegraphed` it picks the spots and draws a **glow**; on `Enemy.summon_cast` (wind-up over) the spots **pulse**
 one after another (`rise_seconds` 0.6 each, `rise_interval_seconds` 0.2 apart) and as each pulse ends a skeleton stands up there. The visuals are

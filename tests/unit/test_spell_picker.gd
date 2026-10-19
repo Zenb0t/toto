@@ -182,6 +182,12 @@ func test_a_skeleton_that_dies_frees_a_place_and_he_summons_again() -> void:
 	assert_eq(picker.pick(SpellPicker.Situation.new(picker.summon_cap - 1)), SPELL.SUMMON, "one fell")
 
 
+func test_with_no_ground_to_raise_a_skeleton_on_he_casts_another_spell() -> void:
+	var picker := _knowing_everything()
+
+	assert_eq(picker.pick(SpellPicker.Situation.new(0, 1.0, false)), SPELL.CLOUD)
+
+
 func test_in_phase_two_the_pause_is_shorter_and_the_cap_two_higher() -> void:
 	var picker := _knowing_everything()
 	picker.begin(SPELL.CLOUD)

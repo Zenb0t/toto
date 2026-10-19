@@ -10,7 +10,7 @@ extends RefCounted
 ## Below phase_two_health_share of his health (phase two) the pause is shorter and the cap goes up by
 ## phase_two_cap_bonus, never past MAX_SUMMON_CAP. A spell the caster doesn't know (known) is skipped: one that
 ## knows only the Cloud and Bone Spray casts Cloud, Cloud, Bone Spray round and round; the Lich knows Summon Undead
-## too, which comes first whenever the cap is not full.
+## too, which comes first whenever the cap is not full and there is ground to raise a skeleton on.
 ## Bone Spray is the rarest spell: once per clouds_per_spray + 1 casts; the rule has no dice.
 
 enum Spell { NONE, CLOUD, BONE_SPRAY, SUMMON }
@@ -32,10 +32,13 @@ class Situation:
 	var living_skeletons := 0
 	## His health as a share of his maximum (1 = untouched).
 	var health_share := 1.0
+	## Whether Summon Undead would find ground to raise a skeleton on (with the hero too close there is none).
+	var room_to_summon := true
 
-	func _init(skeletons := 0, health := 1.0) -> void:
+	func _init(skeletons := 0, health := 1.0, room := true) -> void:
 		living_skeletons = skeletons
 		health_share = health
+		room_to_summon = room
 
 
 ## Stable identifier; also the prefix of the tuning keys.
@@ -87,7 +90,7 @@ func is_casting() -> bool:
 func pick(situation: Situation) -> Spell:
 	if not is_ready():
 		return Spell.NONE
-	if Spell.SUMMON in known and situation.living_skeletons < cap(situation.health_share):
+	if Spell.SUMMON in known and situation.room_to_summon and situation.living_skeletons < cap(situation.health_share):
 		return Spell.SUMMON
 	if Spell.BONE_SPRAY in known and _clouds_since_spray >= clouds_per_spray:
 		return Spell.BONE_SPRAY

@@ -50,6 +50,7 @@ func _init(summoner: Enemy, target: Node2D, floor_map: DungeonMap, factory: Call
 	raise = factory
 	_rng.randomize()
 	z_index = 1
+	summoner.summon_ground = _has_ground
 	summoner.summon_telegraphed.connect(_on_telegraphed)
 	summoner.summon_cast.connect(_on_cast)
 	summoner.defeated.connect(_on_caster_defeated)
@@ -64,6 +65,8 @@ func marked_cells() -> Array[Vector2i]:
 
 
 func _process(delta: float) -> void:
+	if is_queued_for_deletion():
+		return  # the caster died earlier this frame: nothing more rises
 	_time += delta
 	for spot in _rising.duplicate():
 		if _time >= spot.pulse_end:
@@ -73,13 +76,21 @@ func _process(delta: float) -> void:
 
 
 func _on_telegraphed(_caster: Enemy, count: int) -> void:
-	var summon: SummonUndead = caster.weapon
 	_glowing.clear()
-	var cells := SummonSpots.spots(
+	for cell in _spots(count):
+		_glowing.append(Spot.new(cell))
+
+
+## Whether a skeleton could rise now (see Enemy.summon_ground): the hero may stand too close for any spot.
+func _has_ground() -> bool:
+	return not _spots(1).is_empty()
+
+
+func _spots(count: int) -> Array[Vector2i]:
+	var summon: SummonUndead = caster.spell_weapons.get(SpellPicker.Spell.SUMMON, SummonUndead.new())
+	return SummonSpots.spots(
 		map, DungeonView.world_to_cell(caster.global_position), DungeonView.world_to_cell(hero.global_position),
 		summon.summon_range_cells, count, _occupied_cells(), _rng)
-	for cell in cells:
-		_glowing.append(Spot.new(cell))
 
 
 ## The wind-up is over: the glowing spots start to pulse, one after another.
