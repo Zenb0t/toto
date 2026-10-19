@@ -334,7 +334,10 @@ an 8x3 recess in the middle of the north wall where he stands, whose back row re
 (`BossArena.NOOK_WIDTH`). No other monster and no loot is generated in it. The crypt **faces south instead (the plan is
 mirrored top to bottom, `BossArena.faces_south`) when the arena is linked to the room above it and not the one below**: a
 corridor from the north would otherwise open a door into the back of the crypt (28% of seeds), and the Lich could be
-shot from behind. Linked above and below (1 seed in 300) it stays north-facing and he has no hiding place (see below).
+shot from behind. Linked above and below (1 seed in 300) it stays north-facing and the corridor from the north comes down
+beside the crypt instead: corridors open into the arena only where `BossArena.admits_door` allows, never into the crypt or a
+nook and through a side wall only in the half of the hall away from the crypt (a doorway higher up looked across the crypt's
+mouth into the far nook on 2 seeds in 1500). With that, every one of 1500 seeds has a hideout no doorway sees (see below).
 Because every other room can be reached without passing through it, locking it never cuts the level in two.
 
 *Locking rooms.* A map marks a room that locks with one **mark letter** on a floor cell of it (`LockingRoom`: `A` the

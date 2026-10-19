@@ -7,7 +7,8 @@ extends RefCounted
 ## The back row of the crypt reaches a nook further to each side, which no doorway of the hall can see into: it is
 ## where he hides when hurt before the arena locks (see Hideout).
 ## The crypt faces north unless a corridor reaches the room from the north, which would open a door into the back of
-## the crypt: then the whole plan is mirrored and it faces south (see faces_south). The functions below describe the
+## the crypt: then the whole plan is mirrored and it faces south (see faces_south). Corridors open only where no
+## doorway sees into the nooks (see admits_door). The functions below describe the
 ## north-facing plan; room, lich_cell and mark_cell take `south` to mirror their answer.
 ## The arena is marked as a locking room (see LockingRoom): it locks when the hero walks in and opens when the Lich dies.
 ##
@@ -110,8 +111,21 @@ static func mark_cell(bounds: Rect2i, south := false) -> Vector2i:
 	return oriented(area.position + area.size / 2, bounds, south)
 
 
+## Whether a corridor may open into the arena next to this cell of it (the cell just inside the door; `sideways`
+## for a corridor from the room beside it): never into the crypt or its nooks, and through a side wall only in the
+## half of the hall away from the crypt. A doorway higher up the side wall looks across the crypt's mouth into the
+## far nook, and one into the crypt sees both: the Lich would have nowhere to hide (see Hideout).
+static func admits_door(cell: Vector2i, sideways: bool, bounds: Rect2i, south := false) -> bool:
+	var plan_cell := oriented(cell, bounds, south)
+	if crypt(bounds).has_point(plan_cell) or plan_cell in nook_cells(bounds):
+		return false
+	var area := hall(bounds)
+	return not sideways or plan_cell.y >= area.position.y + area.size.y / 2
+
+
 ## Whether the arena in this slot is drawn with its crypt on the south side: when it is linked to the room above
-## it and not to the one below. (Linked on both sides, it stays north-facing and that corridor reaches the crypt.)
+## it and not to the one below. (Linked on both sides, it stays north-facing and the corridor from the north comes
+## down beside the crypt, see admits_door.)
 static func faces_south(graph: RoomGraph, slot: Vector2i) -> bool:
 	return graph.is_linked(slot, slot + Vector2i.UP) and not graph.is_linked(slot, slot + Vector2i.DOWN)
 

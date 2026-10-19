@@ -19,25 +19,22 @@ func _lich_cell(map: DungeonMap) -> Vector2i:
 	return DungeonMap.NO_CELL
 
 
-## The rare level whose arena is linked to a room above and below: the crypt can't turn its back on both corridors.
-func _linked_above_and_below(map: DungeonMap) -> bool:
-	var room := map.locking_room_of_kind(LockingRoom.Kind.ARENA)
-	var cells := map.cells_of_room(room)
-	var low := cells[0].y
-	var high := cells[0].y
-	for cell in cells:
-		low = mini(low, cell.y)
-		high = maxi(high, cell.y)
-	var doors := map.doors_of_room(room)
-	return doors.any(func(door: Vector2i) -> bool: return door.y < low) \
-			and doors.any(func(door: Vector2i) -> bool: return door.y > high)
+## Seeds whose arena once left him nowhere to hide: linked above and below, so a corridor came into the back of the
+## crypt (28, 729), or with doorways high up the side walls that looked across the crypt's mouth into a nook (716, 1241).
+const AWKWARD_SEEDS: Array[int] = [28, 716, 729, 1241]
+
+
+func _seeds() -> Array[int]:
+	var seeds: Array[int] = []
+	for seed_value in SEEDS:
+		seeds.append(seed_value)
+	seeds.append_array(AWKWARD_SEEDS)
+	return seeds
 
 
 func test_on_many_seeds_no_doorway_of_the_arena_can_see_the_hideout() -> void:
-	for seed_value in SEEDS:
+	for seed_value in _seeds():
 		var map := _level(seed_value)
-		if _linked_above_and_below(map):
-			continue
 		var room := map.locking_room_of_kind(LockingRoom.Kind.ARENA)
 		var hideout := Hideout.cell_for(map, _lich_cell(map))
 
@@ -47,10 +44,8 @@ func test_on_many_seeds_no_doorway_of_the_arena_can_see_the_hideout() -> void:
 
 
 func test_the_hideout_is_in_the_back_row_of_his_crypt_on_every_seed() -> void:
-	for seed_value in SEEDS:
+	for seed_value in _seeds():
 		var map := _level(seed_value)
-		if _linked_above_and_below(map):
-			continue
 		var lich := _lich_cell(map)
 		var hideout := Hideout.cell_for(map, lich)
 
