@@ -23,6 +23,9 @@ enum Spot {
 	START,
 	STAIRS_DOWN,
 	STAIRS_UP,
+	## Beside the ruin's chest and just outside the arena's door: only warping lands here (see Warp).
+	RUIN,
+	ARENA_DOOR,
 }
 
 
@@ -73,6 +76,13 @@ static func has_stairs_down(map_id: String) -> bool:
 	return _floor_number(map_id) < FLOOR_COUNT
 
 
+## Whether the stairs down let the hero through. In the crypt they wait for their room to be clear; the crypt
+## entrance on the plains is always open (the plains have no rooms: all their monsters share one, so waiting for it
+## would mean clearing every camp first).
+static func stairs_down_open(map_id: String, room_cleared: bool) -> bool:
+	return map_id == PLAINS_ID or room_cleared
+
+
 ## The transition rule: where taking an exit from a map leads. Stairs lead to the matching stairs on the
 ## other floor, so going down and back up puts the hero where they were.
 static func destination(from_map_id: String, exit: Exit) -> Destination:
@@ -97,6 +107,10 @@ static func arrival_cell(map: DungeonMap, spot: Spot) -> Vector2i:
 			return map.exit_cell
 		Spot.STAIRS_UP:
 			return map.stairs_up_cell
+		Spot.RUIN:
+			return Warp.cell_beside_ruin(map)
+		Spot.ARENA_DOOR:
+			return Warp.cell_outside_arena(map)
 	return map.player_spawn
 
 

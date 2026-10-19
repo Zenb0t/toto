@@ -30,6 +30,7 @@ const CONTROLS_BUTTON_CATCH := "controls.button_catch"
 const CONTROLS_HAPTIC := "controls.haptic_ms"
 const CONTROLS_DRAG_REACH := "controls.drag_reach"
 const CONTROLS_SHOW_WEAPON_SWITCH := "controls.show_weapon_switch"
+const WORLD_WARP := "world.warp"
 ## A short buzz, in milliseconds, when an aim comes back into the dead zone.
 const DEFAULT_HAPTIC_MS := 20
 const LOOT_ENEMY_DROP_CHANCE := "loot.enemy_drop_chance"
@@ -139,6 +140,7 @@ static func create() -> Tuning:
 	params.append_array(_item_params(MonstersAround.new(), REST_GROUP))
 	params.append_array(_item_params(Ambush.new(), REST_GROUP))
 	params.append_array(_item_params(CryptRecipe.new(), WORLD_GROUP, true))
+	params.append(Tuning.Param.new(WORLD_WARP, "Warp (0 = off)", WORLD_GROUP, 0, 1, 1, 0))
 	params.append_array(_item_params(Lich.new(), LICH_GROUP))
 	params.append_array(_item_params(SpellPicker.new(), LICH_GROUP))
 	params.append_array(_item_params(BoneSpray.new(), LICH_GROUP))
@@ -436,6 +438,11 @@ static func haptic_ms(tuning: Tuning) -> int:
 ## Whether the HUD shows the weapon switch, a testing aid that cycles through every weapon.
 static func shows_weapon_switch(tuning: Tuning) -> bool:
 	return tuning.value(CONTROLS_SHOW_WEAPON_SWITCH) >= 1.0
+
+
+## Whether the World page lists the places to warp to, a playtest aid.
+static func warp_enabled(tuning: Tuning) -> bool:
+	return tuning.value(WORLD_WARP) >= 1.0
 
 
 static func camera_framing(tuning: Tuning) -> CameraFraming:

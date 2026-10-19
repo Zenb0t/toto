@@ -63,7 +63,7 @@ onto its stairs to go down into the **crypt**, 3 levels of tombs and undead (the
 Dungeon Crawl Stone Soup. The first level's silver stairs lead back out to the mausoleum. Six **camps** dot the plains, each a band of 2-4 goblins and kobolds round a campfire (asleep or wandering), bigger and tougher
 the farther they are from the middle, with goblin archers toward the edge; three more campfires burn alone. In one corner of the map (never the crypt entrance's) stands the **ruin**, a walled courtyard with two or three gaps in its wall, the map's toughest band (always wandering) and a guaranteed chest holding a piece of gear; it stays open once looted. Two 3-wide dirt roads wind from the village gates to two of the four exits (picked by the seed) to follow across the map; they only change the colour of the ground. Campfires
 show on the minimap once seen, and monsters killed on the plains stay dead. No monster lives in the village, and no camp stands in it or the grass round it.
-Tune → World holds the knobs of the plains (the village and the ruin's gaps and band among them) and of the crypt (how far its campfire lies from the stairs, how many bands wander) and starts a new world or the same seed again. The crypt's levels: oddly
+Tune → World holds the knobs of the plains (the village and the ruin's gaps and band among them) and of the crypt (how far its campfire lies from the stairs, how many bands wander) and starts a new world or the same seed again. **Warp** (a playtest aid, off by default: set "Warp (0 = off)" to 1) adds a button per place to the page: the village (by the inn, the start), the ruin (beside its chest), the crypt entrance (in front of the mausoleum), crypt levels 1 to 3 (on their stairs up) and the Lich's arena (just outside its door, so walking in still locks it). It keeps what you carry and every map's record. The crypt's levels: oddly
 shaped rooms, some with pillars for cover, mixed with hand-made vaults (moats, pools, lava rivers, a treasure
 closet). Deep water stops feet but not shots; lava burns. You only see what's in your line of sight; explored
 areas stay dimmed on the map, and a minimap (top left) charts what you've seen: the stairs, doors, water and
@@ -73,7 +73,7 @@ wandering; in the crypt most bands sleep, a few wander and none starts awake) or
 within 8 cells, even through walls, and a monster that notices you shouts, waking the rest of its band and anyone within 8 cells, who shout in turn,
 so a careless fight can pull in a nearby band. You can escape a chase: a monster gives up after 5 seconds without
 seeing you, or when you are 24 cells from its home, checks where it last saw you and walks home, noticing you again if it sees you on the way. Ordinary rooms don't lock, so you
-can sneak past or pick your fight; only the Lich's arena does. Loot is earned, not handed out:
+can sneak past or pick your fight; only the Lich's arena and the **trap rooms** do (below). Loot is earned, not handed out:
 clearing a room leaves nothing, so new gear (a weapon, or a utility: Dash, Shield, Blink, Frost Nova) is found
 hidden on the floor or, rarely, dropped. Enemies carry the same weapons you do and fight the way their
 weapon wants, as a team: they take turns to attack, spread out to flank you and aim ahead of where you run; a red preview shows where an attack is about to land, so you can step aside. About one in fifty drops
@@ -82,7 +82,7 @@ farthest from the start, usable once it is clear) to go down, keeping your gear,
 third level has no stairs down: its farthest room is the **boss arena** (see below). On every level you arrive on silver stairs that lead back up, onto the gold
 stairs of the level above (the first level's onto the mausoleum). The dungeon remembers: monsters you killed stay dead, opened chests stay open, items
 you took stay gone, items you dropped stay where they fell and the map stays explored (the plains too). Monsters you left hurt
-heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. The third level's farthest room is the **boss arena**: a hall with four pillars that block shots and the **Lich**'s crypt at
+heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. The first two levels each hold one **trap room**: a room with a chest in the middle that looks like any other. Walking in seals it, a band tougher than the level's usual (Tune → World → Crypt trap room band) appears and fights to the death, and the chest stays shut until the last one falls; then it holds a weapon or utility you don't have. The third level's farthest room is the **boss arena**: a hall with four pillars that block shots and the **Lich**'s crypt at
 its far end. It locks when you walk in and opens when he dies. The Lich, a dark purple skeleton mage with a crown, a robe and a
 staff, starts awake, never gives up, keeps his distance (back off as you close in) and casts one telegraphed spell at a time with a
 short pause between: the Mephitic Cloud and, as his rarest spell (every third cast), the Bone Spray: three waves of five bone shards in a half circle, each wave offset from the last, that pillars stop, and Summon Undead, which comes first whenever fewer than 5 skeletons (7 below half health) are alive: glowing floor spots between him and you pulse and raise skeletons that hunt you at once and all collapse when he dies. Hurt from a doorway before the arena locks, he withdraws into a nook of his crypt that no doorway can see, so you have to walk in. Killing him **wins the run**: a summary says
@@ -139,7 +139,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `QuadrantRecipe` (every number a Knob), stamping hand-made `SetPiece`s (`SetPieces`: the crypt entrance, camps and campfires, the ruin (`Ruins`: its drawing, gaps, band); `CampCrews` fills each camp by how far out it lies; `QuadrantRoads` lays the dirt roads round them)
 - `scripts/dungeon/generation` – the seeded generator (`DungeonGenerator`) and its pure parts: `Branch` and
   `BranchLook` (what each place is: the plains, Dungeon, Lair, Orcish Mines, Crypt, Depths), `RoomGraph`
-  (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces), `BossArena` (the Lich's room on crypt level 3), `CryptRecipe` and `CryptCampfire` (the crypt's Knobs; which room holds the campfire),
+  (which rooms and links), `RoomShapes` (floor plans, caves and pillars), `Vaults` (hand-made set pieces), `BossArena` (the Lich's room on crypt level 3), `TrapRoom` (which crypt room is the trap), `CryptRecipe` and `CryptCampfire` (the crypt's Knobs; which room holds the campfire),
   `DungeonDifficulty` (enemies by depth, out-of-depth rooms)
 - `scripts/controls` – pure input math (`StickMath`, `AimGesture`, `AutoAim`, `MouseAim`, `TouchZones`) and `InputMode` (touch or
   keyboard and mouse)

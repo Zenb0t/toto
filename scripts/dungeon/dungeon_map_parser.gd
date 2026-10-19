@@ -81,6 +81,7 @@ func parse(ascii: String) -> DungeonMap:
 		_cells_matching(rows, [CAMPFIRE]),
 		_locking_rooms(rows, room_by_cell),
 		ruin_cells[0] if not ruin_cells.is_empty() else DungeonMap.NO_CELL,
+		_locking_marks(rows, room_by_cell),
 	)
 
 
@@ -91,6 +92,14 @@ func _locking_rooms(rows: PackedStringArray, room_by_cell: Dictionary) -> Dictio
 		for cell in _cells_matching(rows, [mark]):
 			locking[room_by_cell[cell]] = LockingRoom.kind_of(mark)
 	return locking
+
+
+## Where each locking room's mark lies (room -> cell).
+func _locking_marks(rows: PackedStringArray, room_by_cell: Dictionary) -> Dictionary:
+	var marks := {}
+	for cell in _cells_matching(rows, LockingRoom.marks()):
+		marks[room_by_cell[cell]] = cell
+	return marks
 
 
 func _blockers_by_cell(rows: PackedStringArray) -> Dictionary:

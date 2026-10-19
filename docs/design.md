@@ -25,7 +25,7 @@ Anything that doesn't help answer that is deferred.
 | Loot sources | Earned, not handed out: hidden floor finds (dead ends, vaults), rare enemy drops (2%) and set-piece chests. Clearing a room leaves nothing | Loot is scarce, so new gear is a moment; a chest per cleared room made gear routine |
 | Dungeon | Generated each run from one world seed shown in the pause menu; every map's seed comes from it (see Dungeon generation) | Every run differs, and a map worth keeping (or a broken one) can be reported |
 | Goal | A run starts outdoors on the **plains**; find the crypt entrance (a small mausoleum out in the grass), go down the **crypt**'s 3 levels and kill the **Lich** in his boss arena at the bottom: that **wins** the run (a summary, "You killed the Lich"; dismissing it plays on in the same world, the Lich staying dead). Each level's stairs down sit in the room farthest from the start and only work once that room is clear; stairs up lead back (the first level's lead out to the mausoleum). **The last level has no stairs down: the arena is the end** (decided in #47: stairs that did nothing would be a trap for the player; the interim "last stairs lead out" win of #42 is gone). Other rooms are optional. The rest of the first zone (the ruin, trap rooms, the Lich's other spells) follows, see the first-zone spec (#29) | Rewards exploring for loot vs. heading for the exit; a boss at the bottom gives the descent an end, and the world stays open to explore afterwards |
-| Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`: the boss arena, and trap rooms later) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
+| Rooms | Ordinary rooms don't lock: their monsters are a **band** that sleeps or wanders at home until it notices the hero (see Enemies → Bands). Only rooms marked as locking (`DungeonProgress`: the boss arena, and the crypt's **trap rooms**, see "Trap rooms" in the crypt section) lock their doors on entering until their enemies are all defeated | Sneaking past or picking a fight is the hero's choice, as in Dungeon Crawl; a lock is kept for the fights that are meant to be forced |
 | Aiming | Brawl Stars style: **tap** = auto-aim at the nearest enemy, **drag** = manual aim with a preview, **release** = fire. Drag distance is the aim's strength, which weapons that target a spot use as distance. The buttons float like the move stick: a touch anywhere in a catch zone around a button (1.6× its size, Tune → Controls; the nearest button wins where zones overlap) grabs it, and the aim is measured from where the finger landed. Dragging from aiming back into the dead zone buzzes briefly (`Input.vibrate_handheld`, Tune → Controls, 0 = off) and the knob greys out: letting go there cancels, as in Brawl Stars. A plain tap still auto-aims | Proven on touch screens; floating buttons, like Brawl Stars', don't punish a thumb that lands a little off |
 | Movement | Floating stick: it appears wherever the left thumb lands, in the left half below the top third of the screen (`ControlLayout.stick_zone`), which is left to the status lines and the Map button; the map comes first: a touch on the minimap or the Map button is always theirs, never the stick's or an aim button's (`TouchControls.keep_touches_for`), and the HUD draws above the touch controls | Standard for mobile action games; the stick used to swallow taps on the Map button |
 | Look | 3D shown over a 2D game: a fixed, tilted Brawl Stars-style camera; fantasy characters (humans, goblins, dwarfs) later | Brawl Stars' readability, with the game rules untouched |
@@ -136,7 +136,7 @@ the same aim a touch drag gives, so weapons don't know how they were aimed.
 
 - **Earned loot.** Clearing a room leaves nothing: gear is scarce, so a new piece is a moment. It comes from
   the floor (dead ends and vaults hide finds, see Floors), from rare enemy drops and from chests.
-- **Chests.** Set pieces hold them: the ruin's is guaranteed (below, "The ruin"); trap rooms' come with the first zone. A chest is known in
+- **Chests.** Set pieces hold them: the ruin's is guaranteed (below, "The ruin"); the crypt's trap rooms' ("Trap rooms", crypt section) open only when their band is dead. A chest is known in
   the map record by the id of what holds it (a room number, or `Ruins.NUMBER`), so an opened one stays open on return.
   Walking onto one opens it and drops a find. The open chest stays, so you can see what you have looted.
 - **Rare drops.** A defeated enemy has a tunable chance (Tune → Loot → "Enemy drop chance", default 2%) to drop
@@ -319,7 +319,7 @@ Something stirs in the tombs."). The Dungeon itself has the odd cave (15% of its
 
 A run starts on the **plains** (next section), outdoors. The way on is a descent into the **crypt**: **3 levels**
 of today's `DungeonGenerator` in the Crypt branch (see Branches), each more dangerous than the last. The plains'
-**crypt entrance** (the mausoleum's stairs) leads down to level 1's stairs up, and those lead back out onto the
+**crypt entrance** (the mausoleum's stairs, always open: the plains have no rooms to clear) leads down to level 1's stairs up, and those lead back out onto the
 mausoleum (`WorldLayout`: the plains are map `plains`, the levels `crypt_1` to `crypt_3`; the map's depth picks
 the generator's danger, and the branch is always the crypt, see `MapSpec.branch`). Every level starts on its
 stairs up (`DungeonGenerator.VERSION` 4).
@@ -338,7 +338,7 @@ shot from behind. Linked above and below (1 seed in 300) it stays north-facing a
 Because every other room can be reached without passing through it, locking it never cuts the level in two.
 
 *Locking rooms.* A map marks a room that locks with one **mark letter** on a floor cell of it (`LockingRoom`: `A` the
-boss arena, `R` a trap room, for #46 to reuse), which the parser reads into `DungeonMap.locking_rooms`
+boss arena, `R` a trap room), which the parser reads into `DungeonMap.locking_rooms`
 (room -> kind; `locking_room_ids()` feeds `DungeonProgress`, whose lock rule was already there). The arena locks when
 the hero is a full tile inside and opens when its last monster, the Lich, dies. A locking room's band is **awake but
 inattentive** until it seals: `Band.start_of(..., locking)` makes it wander (never sleep), and `main.gd` does not
@@ -360,6 +360,25 @@ corner of the hall, nearest to where he stands: one of the crypt's two nooks, wh
 `main.gd` hands it to the Lich with `Enemy.retreat_to`. `test_hideout` checks on 40 generated crypts that no doorway sees it and that it is the
 back row of his crypt. To finish him the hero must walk in, which locks the arena. Trap rooms have no retreat spot
 (their band just stands), nothing else changes.
+
+**Trap rooms** (#46). Greed is tested: crypt levels 1 and 2 each get **one trap room** (`TrapRoom`, a pure generation step;
+none on level 3). It looks like any room with a chest: an ordinary room (never the start room, the stairs-down room, the
+campfire's room, a vault or the arena, so the stairs never lock) with the chest in its middle and no loose item. It is
+marked `R` there (a locking room), so entering it seals it like the arena; the chest stands on the mark
+(`DungeonMap.locking_mark_cell`), a cell the generator keeps free of monsters, not on `room_center`, which on the parsed
+room can land a cell off the generator's middle. Its band is picked **as if the room lay `trap_band_extra_depth` levels
+deeper** (a Knob on `CryptRecipe`, default 2, Tune -> World; deeper means tougher monsters and more of them, and no out-of-depth roll on top), wanders inside the room
+until the seal, then wakes and never gives up (the locking-room rules above). The chest stays shut and **ignores the
+hero** (`Chest.unlock`, called from `main.gd` on `room_cleared`) until the last of the band dies; walking onto it then
+opens it like any chest: one gear piece the hero doesn't hold (`LootTable.pick_item_id`) and sometimes a potion. Its
+chest id is the trap room's id (the ruin's is `Ruins.NUMBER`, so they never collide), so `MapRecord` keeps it opened.
+*Spawn on entry, decision.* The band is **in the map** (drawn as monster letters in the room, so each monster has a spawn
+cell that is its stable id in `MapRecord`) but **not in the world** until the room seals: `main.gd` holds the cells of a
+trap room's band back (`_hidden_trap_band`) and spawns them on `room_locked`, then wakes them. The room looks empty and
+its chest invites; `DungeonProgress` counts the held-back monsters, so the lock rule is unchanged. The lock is built from
+the survivors in the record: kills are recorded by spawn cell as usual, so a trap room cleared on an earlier visit
+spawns nobody, doesn't lock again, and has its chest ready at once; a half-cleared one (reachable only by leaving the
+level, which the seal prevents, or a future save) locks again on entry and brings back just the survivors. `DungeonGenerator.VERSION` is 5.
 
 *The Lich* (`Lich`, `Bestiary` entry `lich`, map letter `l`, a unique monster, not the Necromancer). A Skeleton Mage
 dressed in code (`LichDress`: 1.3x size, dark purple all over, a gold crown, glowing eyes, a long robe and a staff
@@ -477,6 +496,16 @@ parsed map, its floor, fog, 3D view, actors and loot) and builds the next one in
 composition root (`main.gd`) keeps the controls, HUD and menus wired once. Starting over does the same with
 `Run.next_world`. Rebuilding a floor takes about 0.3 s on a desktop (about 40 ms of it generating and parsing the
 map, the rest building the nodes), behind the "Down to…" message; on phones it is still to be measured.
+
+**Warp** (playtest aid, #50). Tune → World → "Warp (0 = off)", off by default, lists the village, the ruin, the crypt
+entrance, crypt levels 1-3 and the Lich's arena. A `Warp.Target` is a `WorldLayout.Destination` (map id and spot),
+the same pair an exit yields, and `Run.warp` applies it like `Run.travel` does; `main.gd` then leaves and enters the
+map exactly as for stairs, so the old map's record is written and the new one replayed, and the carried hero and all
+records are untouched. Landing spots reuse existing marks where there are some (the start by the inn; the crypt
+entrance's stairs down, where coming up from level 1 lands; each level's stairs up) and `Warp` finds two more as new
+`Spot`s: the nearest walkable cell to the ruin's chest, other than the chest's own (inside the walls or in a gap,
+never in a wall), and a standable cell beside the arena's first door, outside the room, so the arena still locks
+when the hero walks in. Stairs the hero lands on only trigger once left, as when arriving normally.
 
 **Experience** (`Experience`). Like Dungeon Crawl's experience levels (or Brawl Stars' power cubes),
 defeating monsters makes the hero tougher, so the descent stays winnable without free healing. A kill is worth
@@ -769,6 +798,13 @@ every half second; the Shield blocks it). Enemies path around water and avoid la
 **Fog of war** (`Exploration`, `FogView`). You see 16 cells around you (farther than any weapon reaches, so
 nothing hits you from the dark), through floor, water and lava but not walls or closed doors. What you have
 seen stays drawn, dimmed; what you haven't is dark. Enemies out of sight are hidden.
+Sight is worked out again each time the hero steps into another cell (or a door opens or closes). Each look reports
+the cells it changed (`Exploration.changed_cells`: those that came into view, a first sighting among them, and
+those that left it), and the fog, the minimap and the 3D walls redraw only those (the 3D walls also their
+neighbours, since a wall shows as seen when an open cell next to it is). Only the first look at a map draws
+everything, since restoring what was seen on an earlier visit reports nothing. Redrawing the whole 160x90 plains
+took about 39 ms a step on a desktop CPU, which stuttered on a phone; redrawing only what changed takes about
+3.5 ms, most of it the line of sight itself (#70).
 
 **Minimap** (`MinimapPainter`, `MinimapView`). Top left of the HUD, a picture with one pixel per cell (shown at
 2 px) of what `Exploration` has seen: floor, doors, water, lava and the stairs in their own colours (outdoors also
