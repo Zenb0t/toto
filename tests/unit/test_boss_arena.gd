@@ -185,3 +185,18 @@ func test_the_mirrored_arena_has_the_same_floor_with_the_crypt_at_the_other_end(
 	assert_lt(BossArena.lich_cell(bounds).y, bounds.position.y + bounds.size.y / 2)
 	assert_gt(BossArena.lich_cell(bounds, true).y, bounds.position.y + bounds.size.y / 2)
 	assert_true(south.has(BossArena.lich_cell(bounds, true)))
+
+
+func test_no_corridor_opens_into_the_crypt_nor_high_up_the_side_walls() -> void:
+	var bounds := Rect2i(2, 2, 24, 16)
+	var hall := BossArena.hall(bounds)
+	var beside_the_crypt := Vector2i(bounds.position.x + 1, hall.position.y)
+	var high_on_the_side := Vector2i(bounds.position.x, hall.position.y + 1)
+	var low_on_the_side := Vector2i(bounds.position.x, hall.end.y - 2)
+
+	assert_false(BossArena.admits_door(BossArena.lich_cell(bounds), false, bounds), "not into the crypt")
+	assert_false(BossArena.admits_door(BossArena.nook_cells(bounds)[0], false, bounds), "nor into a nook")
+	assert_true(BossArena.admits_door(beside_the_crypt, false, bounds), "from above, down beside the crypt")
+	assert_false(BossArena.admits_door(high_on_the_side, true, bounds), "a side door near the crypt sees a nook")
+	assert_true(BossArena.admits_door(low_on_the_side, true, bounds))
+	assert_true(BossArena.admits_door(BossArena.oriented(low_on_the_side, bounds, true), true, bounds, true), "mirrored")

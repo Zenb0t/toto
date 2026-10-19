@@ -14,7 +14,7 @@ extends RefCounted
 ## ordinary-looking room whose band is picked tougher and which carries the trap mark at its middle, where its chest goes.
 
 ## Bumped whenever the same seed would make a different map, so a saved MapRecord can tell it no longer fits.
-const VERSION := 5
+const VERSION := 6
 
 const GRID := Vector2i(4, 3)
 ## Every slot holds one room plus the gap around it, where corridors run.
@@ -144,7 +144,7 @@ func _connect(graph: RoomGraph, rooms: Dictionary, arena_slot: Vector2i, rng: Ra
 		var corridors := {}
 		var failed: Array = []
 		for link: Array in graph.links:
-			var corridor := _corridor(link[0], link[1], rooms)
+			var corridor := _corridor(link[0], link[1], rooms, graph, arena_slot)
 			if corridor.is_empty():
 				failed = link
 				break
@@ -158,17 +158,34 @@ func _connect(graph: RoomGraph, rooms: Dictionary, arena_slot: Vector2i, rng: Ra
 
 
 ## A three-wide corridor straight across the gap between two neighbouring rooms, or empty if there is no
-## spot where both rooms have a straight wall facing each other and the corridor touches no other floor.
-func _corridor(a: Vector2i, b: Vector2i, rooms: Dictionary) -> Dictionary:
+## spot where both rooms have a straight wall facing each other and the corridor touches no other floor. Into the
+## boss arena, only where BossArena.admits_door lets it open.
+func _corridor(a: Vector2i, b: Vector2i, rooms: Dictionary, graph: RoomGraph, arena_slot: Vector2i) -> Dictionary:
 	var horizontal := a.y == b.y
 	var a_comes_first := a.x < b.x if horizontal else a.y < b.y
 	var first: Dictionary = rooms[a] if a_comes_first else rooms[b]
 	var second: Dictionary = rooms[b] if a_comes_first else rooms[a]
 	for across in _shared_lines(first, second, horizontal):
 		var corridor := _corridor_at(across, first, second, horizontal, rooms)
-		if not corridor.is_empty():
-			return corridor
+		if corridor.is_empty():
+			continue
+		if arena_slot in [a, b] and not _arena_admits(corridor, rooms[arena_slot], arena_slot, graph, horizontal):
+			continue
+		return corridor
 	return {}
+
+
+## Whether every door of the corridor opens into the arena where the arena allows one.
+func _arena_admits(corridor: Dictionary, arena: Dictionary, arena_slot: Vector2i, graph: RoomGraph, horizontal: bool) -> bool:
+	var bounds := room_bounds(arena_slot)
+	var south := BossArena.faces_south(graph, arena_slot)
+	for cell: Vector2i in corridor:
+		if corridor[cell] != DOOR:
+			continue
+		for step: Vector2i in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			if arena.has(cell + step) and not BossArena.admits_door(cell + step, horizontal, bounds, south):
+				return false
+	return true
 
 
 ## Lines (rows for side-by-side rooms, columns for stacked ones) both rooms reach, middle ones first.
@@ -190,8 +207,8 @@ func _shared_lines(first: Dictionary, second: Dictionary, horizontal: bool) -> A
 
 func _corridor_at(across: int, first: Dictionary, second: Dictionary, horizontal: bool, rooms: Dictionary) -> Dictionary:
 	var lines := range(across - CORRIDOR_HALF_WIDTH, across + CORRIDOR_HALF_WIDTH + 1)
-	var start_edges := lines.map(func(line: int) -> int: return _far_edge(first, line, horizontal))
-	var end_edges := lines.map(func(line: int) -> int: return _near_edge(second, line, horizontal))
+	var start_edges := lines.map(func(line: int) -> Variant: return _far_edge(first, line, horizontal))
+	var end_edges := lines.map(func(line: int) -> Variant: return _near_edge(second, line, horizontal))
 	if start_edges.has(null) or end_edges.has(null):
 		return {}
 	if start_edges.min() != start_edges.max() or end_edges.min() != end_edges.max():

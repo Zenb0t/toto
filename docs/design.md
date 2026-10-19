@@ -322,7 +322,7 @@ of today's `DungeonGenerator` in the Crypt branch (see Branches), each more dang
 **crypt entrance** (the mausoleum's stairs, always open: the plains have no rooms to clear) leads down to level 1's stairs up, and those lead back out onto the
 mausoleum (`WorldLayout`: the plains are map `plains`, the levels `crypt_1` to `crypt_3`; the map's depth picks
 the generator's danger, and the branch is always the crypt, see `MapSpec.branch`). Every level starts on its
-stairs up (`DungeonGenerator.VERSION` 4).
+stairs up (`DungeonGenerator.VERSION` 6).
 The stairs down (gold, in the room farthest from the start, usable once that room is clear) lead down on the first
 two levels. **The third level has no stairs down**: its farthest room is the boss arena (next section).
 
@@ -334,7 +334,10 @@ an 8x3 recess in the middle of the north wall where he stands, whose back row re
 (`BossArena.NOOK_WIDTH`). No other monster and no loot is generated in it. The crypt **faces south instead (the plan is
 mirrored top to bottom, `BossArena.faces_south`) when the arena is linked to the room above it and not the one below**: a
 corridor from the north would otherwise open a door into the back of the crypt (28% of seeds), and the Lich could be
-shot from behind. Linked above and below (1 seed in 300) it stays north-facing and he has no hiding place (see below).
+shot from behind. Linked above and below (1 seed in 300) it stays north-facing and the corridor from the north comes down
+beside the crypt instead: corridors open into the arena only where `BossArena.admits_door` allows, never into the crypt or a
+nook and through a side wall only in the half of the hall away from the crypt (a doorway higher up looked across the crypt's
+mouth into the far nook on 2 seeds in 1500). With that, every one of 1500 seeds has a hideout no doorway sees (see below).
 Because every other room can be reached without passing through it, locking it never cuts the level in two.
 
 *Locking rooms.* A map marks a room that locks with one **mark letter** on a floor cell of it (`LockingRoom`: `A` the
@@ -359,7 +362,7 @@ a body's middle and four sides) **and the middle of the room cannot see either**
 corner of the hall, nearest to where he stands: one of the crypt's two nooks, whose side walls shade them from the hall.
 `main.gd` hands it to the Lich with `Enemy.retreat_to`. `test_hideout` checks on 40 generated crypts that no doorway sees it and that it is the
 back row of his crypt. To finish him the hero must walk in, which locks the arena. Trap rooms have no retreat spot
-(their band just stands), nothing else changes.
+(their band is not in the world until the seal, see below), nothing else changes.
 
 **Trap rooms** (#46). Greed is tested: crypt levels 1 and 2 each get **one trap room** (`TrapRoom`, a pure generation step;
 none on level 3). It looks like any room with a chest: an ordinary room (never the start room, the stairs-down room, the
@@ -378,7 +381,7 @@ trap room's band back (`_hidden_trap_band`) and spawns them on `room_locked`, th
 its chest invites; `DungeonProgress` counts the held-back monsters, so the lock rule is unchanged. The lock is built from
 the survivors in the record: kills are recorded by spawn cell as usual, so a trap room cleared on an earlier visit
 spawns nobody, doesn't lock again, and has its chest ready at once; a half-cleared one (reachable only by leaving the
-level, which the seal prevents, or a future save) locks again on entry and brings back just the survivors. `DungeonGenerator.VERSION` is 5.
+level, which the seal prevents, or a future save) locks again on entry and brings back just the survivors. `DungeonGenerator.VERSION` is 5 (6 since the arena's nooks and door rules, #48).
 
 *The Lich* (`Lich`, `Bestiary` entry `lich`, map letter `l`, a unique monster, not the Necromancer). A Skeleton Mage
 dressed in code (`LichDress`: 1.3x size, dark purple all over, a gold crown, glowing eyes, a long robe and a staff
