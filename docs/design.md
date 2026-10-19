@@ -371,12 +371,10 @@ chase. He casts **one spell at a time** by **`SpellPicker`**, a small rule like 
 else Cloud, Cloud, Bone Spray round and round; `begin`/`end` bracket a cast (the enemy calls `end` when the wind-up
 is over) and the pause (1.5 s, 0.8 s in phase two) starts at `end`. Phase two is below half his health: shorter
 pause, cap +2, the cap starting at 5 and never past 10. Each spell is telegraphed (a cast is the weapon's wind-up with
-its red preview). **Mephitic Cloud and Bone Spray ship** (the Cloud is his weapon, lobbed like the existing weapon, reload 0 because the
-pause is his pace): `SpellPicker.known` holds the Cloud and Bone Spray, so the picker skips Summon Undead, and with no
-skeletons to raise (the cap treated as full) he casts Cloud, Cloud, Bone Spray round and round, Bone Spray being the rarest
-(one cast in `clouds_per_spray + 1`, 2 by default); #49 (Summon Undead, the skeleton count in `SpellPicker.Situation` and phase two)
-adds its spell to `known` and carries it out in `Enemy._start_attack`, where it then comes first whenever the cap is not full and
-the Cloud/Spray cycle only runs while it is. A spell with a weapon of its own is carried out by swapping it in: `Enemy.spell_weapons`
+its red preview). **All three spells ship** (the Cloud is his weapon, lobbed like the existing weapon, reload 0 because the
+pause is his pace): `SpellPicker.known` holds the Cloud, Bone Spray and Summon Undead, and Summon Undead comes first whenever
+fewer skeletons live than the cap (`Enemy._start_attack` passes the real count, `Enemy.living_minions()`); with the cap full the Cloud/Spray cycle
+runs, Bone Spray being the rarest (one cast in `clouds_per_spray + 1`, 2 by default). A spell with a weapon of its own is carried out by swapping it in: `Enemy.spell_weapons`
 (spell -> weapon, set by `main.gd` from `GameTuning.lich_spell_weapons`) is equipped for that cast only and the enemy goes back to
 its own weapon when the wind-up is over. Every Lich number is a Knob (Tune → Lich: his health, speed, size and kept
 distance, the spell rule's pauses, phase threshold, cap, cap bonus and Clouds between sprays, and the Bone Spray's numbers below); health and size
@@ -394,6 +392,30 @@ it to the muzzle, which is what Knuckles wanted and still gets, since its shots 
 the arena's pillars stop them. The telegraph is the weapon's wind-up (0.5 s) with the cone preview over the half circle. Knobs (Tune → Lich):
 shards per wave, waves, spread, offset between waves, time between waves, start distance, shard speed, range, damage and the telegraph.
 The spell is over when the wind-up is, so the later waves fly during his pause. Defaults (80 damage, 200 speed) are guesses for play.
+
+*Summon Undead* (#49, he shields himself, so the target is him). `SummonUndead` is a `Weapon` like `BoneSpray`: its wind-up
+(0.8 s) is the telegraph and what it releases is a `SummonCast`, not shots. The rule for where is the pure **`SummonSpots`**: floor
+spots within `summon_range_cells` (6) of him, in his own room (the arena), in front of him along the line to the hero (past 1.5
+cells from him, short of the hero by 1.5, no farther off that line than half the range), on standable ground (never a pillar, wall,
+water, lava, doorway or boulder), 1.5 cells apart, and not on a cell any monster or the hero stands on; seeded by the caller's
+generator. A hero too close for any such spot gets no skeletons (he keeps 8 cells away, so it is rare; he would just cast again after
+the pause). **How many rise per cast:** `skeletons_per_summon` (Knob, 3) but never more than the gap under the cap
+(`SummonUndead.count_to_raise`), so the cap is never passed. **Carrying it out** is `Summoning`, a node the stage gets
+for the Lich: on `Enemy.summon_telegraphed` it picks the spots and draws a **glow**; on `Enemy.summon_cast` (wind-up over) the spots **pulse**
+one after another (`rise_seconds` 0.6 each, `rise_interval_seconds` 0.2 apart) and as each pulse ends a skeleton stands up there. The visuals are
+drawn in code. It makes the skeleton through a factory Callable (`main.gd._raise_skeleton`: the Bestiary skeleton, its tuning, its own
+band and squad `Summoning.BAND_ID`, so it never takes the Lich's turns), then makes it **hunt at once** (`Enemy.ambush`), **never give up**, and wander
+only in the arena, and hands it to the Lich (`Enemy.adopt`). **Counting:** only living skeletons count toward the summon cap
+(`living_minions`), plus those whose spot is already pulsing (`expect_minions`; without that a quick second cast would overshoot while
+the first batch rises). A dead skeleton frees a place and he summons again. **Phase two** (below `phase_two_health_share` 50%):
+the pause drops from 1.5 s to 0.8 s and the cap rises by 2 (5 to 7), never past `MAX_SUMMON_CAP` 10 (a constant: the cap Knob and the bonus
+are clamped to it). **His death:** every living skeleton **collapses** (`Enemy._on_died` -> `collapse()`), and what is still rising never stands
+up (`Summoning` frees itself). **Summoned skeletons give no experience, no kill and no drop**, whether the hero or the Lich's death kills them
+(otherwise a summon-capped Lich is a farm). **The map doesn't know them:** like ambushers they are no spawn of the map, so `main.gd._on_enemy_defeated`
+returns before the record (`MapRecord.kill`), `DungeonProgress.record_defeat` (the arena opens when the Lich dies, never waits for
+skeletons) and the hurt-monster record; they are never ambush candidates; they do count as monsters around for resting. Knobs
+(Tune → Lich): summon range, skeletons per summon, spot pulse time, time between spots, telegraph; the spell rule's pauses, phase
+threshold, cap and cap bonus were already there. `test_summoning` runs the real Lich, a real arena and `Summoning`.
 
 *The win.* When he dies `main.gd` tells the run (`Run.lich_killed()`: `Run.won`, and the map's `MapRecord` remembers
 `lich_dead`; his spawn cell is among the killed as for every monster, so he is still dead when the hero comes back and
