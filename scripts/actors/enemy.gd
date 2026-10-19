@@ -17,6 +17,11 @@ signal defeated(enemy: Enemy)
 signal noticed(enemy: Enemy)
 ## The Shots and Slashes of one attack, for the world to carry out. They hurt the player.
 signal attack_fired(attacks: Array)
+## It begins to cast Summon Undead (the wind-up): count skeletons are to rise, and whoever carries the spell out
+## marks their spots now (see Summoning).
+signal summon_telegraphed(caster: Enemy, count: int)
+## The Summon Undead wind-up is over: the skeletons rise.
+signal summon_cast(caster: Enemy)
 
 ## Every enemy is in this group, so area attacks can find them.
 const GROUP := &"enemies"
@@ -110,6 +115,17 @@ var spell_weapons := {}  # SpellPicker.Spell -> Weapon
 ## How far from its target it likes to stay, in cells; 0 keeps the distance its weapon likes (a kiter that backs
 ## off when the target comes closer sets this).
 var keep_distance_cells := 0.0
+## Whether it was raised by a caster's Summon Undead (see adopt()): a summoned skeleton gives no experience, no
+## kill and no drop, and is no spawn of the map, so nothing about it is recorded.
+var is_summoned := false
+
+## The skeletons it raised (see adopt()), which collapse when it dies.
+var _minions: Array[Enemy] = []
+## Whether its Summon Undead would find ground to raise a skeleton on now, () -> bool, set by whoever carries the
+## spell out (see Summoning). Unset, it always would. Without ground it casts another spell rather than an empty summon.
+var summon_ground := Callable()
+## Skeletons whose spot is already pulsing, so as good as alive for the summon cap (see expect_minions()).
+var _expected_minions := 0
 
 var _wielder := Wielder.new(Sword.new())
 ## The weapon it is armed with, which it goes back to after casting a spell with another.
@@ -164,6 +180,39 @@ func become(kind: Monster, health_multiplier := 1.0) -> void:
 ## How far from its centre attacks hit it.
 func body_radius() -> float:
 	return RADIUS * monster.size
+
+
+## A skeleton it raised joins it: it counts toward the summon cap while it lives and collapses when its summoner dies.
+func adopt(minion: Enemy) -> void:
+	minion.is_summoned = true
+	_minions.append(minion)
+	_expected_minions = maxi(_expected_minions - 1, 0)
+
+
+## count more skeletons are on their way up (their spots pulse): they already count toward the summon cap, so a
+## cast that follows quickly does not raise more than the cap allows. Each adopt() settles one.
+func expect_minions(count: int) -> void:
+	_expected_minions += count
+
+
+## How many of the skeletons it raised are still alive. Only living ones count toward the summon cap (and those
+## about to rise, see expect_minions()).
+func living_minions() -> int:
+	return _living_minions().size() + _expected_minions
+
+
+func _living_minions() -> Array[Enemy]:
+	var living: Array[Enemy] = []
+	for minion in _minions:
+		if is_instance_valid(minion) and not minion.is_queued_for_deletion():
+			living.append(minion)
+	_minions = living
+	return living
+
+
+## Falls apart at once, whatever its health (its summoner is dead).
+func collapse() -> void:
+	health.take_damage(health.current)
 
 
 ## Starts hurt, at current of its maximum health (back on a map it was left on hurt). Must be called after
@@ -378,13 +427,18 @@ func _goal_of_giving_up() -> Vector2:
 
 ## A caster picks its spell first (see SpellPicker); the Cloud is the weapon's own attack, a spell with a weapon of
 ## its own (spell_weapons: Bone Spray) is cast with that one until the cast is over. Summon Undead is carried out
-## here when it is built.
+## here: the wind-up is the telegraph (summon_telegraphed) and its end the rising (summon_cast).
 func _start_attack() -> void:
 	if spell_picker != null:
-		var spell := spell_picker.pick(SpellPicker.Situation.new(0, float(health.current) / health.maximum))
+		var share := float(health.current) / health.maximum
+		var ground: bool = not summon_ground.is_valid() or summon_ground.call()
+		var spell := spell_picker.pick(SpellPicker.Situation.new(living_minions(), share, ground))
 		spell_picker.begin(spell)
 		if spell_weapons.has(spell):
 			_wielder.equip(spell_weapons[spell])
+		if spell == SpellPicker.Spell.SUMMON and weapon is SummonUndead:
+			var summon: SummonUndead = weapon
+			summon_telegraphed.emit(self, summon.count_to_raise(living_minions(), spell_picker.cap(share)))
 	_start_weapon_attack()
 
 
@@ -497,6 +551,9 @@ func _path_direction(goal: Vector2) -> Vector2:
 func _release(attacks: Array) -> void:
 	if attacks.is_empty():
 		return
+	if attacks[0] is SummonCast:
+		summon_cast.emit(self)
+		return
 	for attack: Variant in attacks:
 		attack.hurts_player = true
 		attack.damage += monster.damage_bonus
@@ -514,6 +571,8 @@ func _draw() -> void:
 
 
 func _on_died() -> void:
+	for minion in _living_minions():
+		minion.collapse()
 	if squad != null:
 		squad.leave(get_instance_id())
 	defeated.emit(self)

@@ -87,7 +87,7 @@ you took stay gone, items you dropped stay where they fell and the map stays exp
 heal while you are away (Tune → Enemies → Heal while away). Defeating monsters earns experience; every level adds maximum health. The first two levels each hold one **trap room**: a room with a chest in the middle that looks like any other. Walking in seals it, a band tougher than the level's usual (Tune → World → Crypt trap room band) appears and fights to the death, and the chest stays shut until the last one falls; then it holds a weapon, movement or skill you don't have. The third level's farthest room is the **boss arena**: a hall with four pillars that block shots and the **Lich**'s crypt at
 its far end. It locks when you walk in and opens when he dies. The Lich, a dark purple skeleton mage with a crown, a robe and a
 staff, starts awake, never gives up, keeps his distance (back off as you close in) and casts one telegraphed spell at a time with a
-short pause between: the Mephitic Cloud and, as his rarest spell (every third cast), the Bone Spray: three waves of five bone shards in a half circle, each wave offset from the last, that pillars stop (Summon Undead follows). Hurt from a doorway before the arena locks, he withdraws into a nook of his crypt that no doorway can see, so you have to walk in. Killing him **wins the run**: a summary says
+short pause between: the Mephitic Cloud and, as his rarest spell (every third cast), the Bone Spray: three waves of five bone shards in a half circle, each wave offset from the last, that pillars stop, and Summon Undead, which comes first whenever fewer than 5 skeletons (7 below half health) are alive: glowing floor spots between him and you pulse and raise skeletons that hunt you at once and all collapse when he dies. Hurt from a doorway before the arena locks, he withdraws into a nook of his crypt that no doorway can see, so you have to walk in. Killing him **wins the run**: a summary says
 "You killed the Lich", and **Keep exploring** carries on in the same world, with him still dead. Tune → Lich holds every number of his.
 If you die, you start over on the plains of a new world (a new seed) with the Dagger, the Dash, no skill and a Potion of
 Healing.
@@ -130,7 +130,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
 - `scripts/core` – engine-agnostic building blocks (`Health`, `Cooldown`, `Ammo`)
 - `scripts/dungeon` – the ASCII map format (`DungeonMapParser`; enemy letters pick their monster, `>` stairs down
   (the exit), `<` stairs up, `~` water, `L` lava, `*` floor item, and outdoors `T` tree grove, `B` boulder, `=` barricade, and the village's `Y` palisade, `G` gate, `:` street, `U` well, `X` prop, `D` inn doorstep, `I C S M` inn, church, smithy, market, `1`-`4` houses, `@` start), enemy navigation (`Pathfinder`), fog of war (`Exploration`, `FogView`),
-  lava damage (`LavaBurn`), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
+  lava damage (`LavaBurn`), how the floor looks (`FloorPainter`, drawn in square `FloorChunk`s so the off-screen ones are skipped), how the dungeon dresses up (`DungeonDecor`: stone tints, cracks, pillars,
   torches and their light), moving liquids (`LiquidView`), room rules: enemies left per room, and the lock
   of rooms marked as locking (`DungeonProgress`; `LockingRoom`: the arena and trap marks; `Hideout`: where the Lich hides in the arena), and the rendering of floors, walls and doors (`DungeonView`, `Door`)
 - `scripts/dungeon/generation/village` – the village, stamped in the plains' middle: `VillageGenerator` runs `VillagePalisade`,
@@ -153,7 +153,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   noticing, idle, hunt, position, wind up, recover, check, return, retreat; `Awareness` also decides when a hunter gives up), which spell the Lich casts next (`SpellPicker`), how a band fights as a team (`Squad`: taking turns, flank
   spots),
   how aims are previewed (`AimShape`, `AimPreview`), and pure geometry (`HitShapes`, `Spread`, `ArcPolygon`)
-- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), `Lich` (the boss: his tunable numbers and Bestiary entry), `BoneSpray` (his spray of shards: the pattern and its numbers), the
+- `scripts/monsters` – `Monster` (a kind of enemy: race, weapon, health, speed, size, strength), `Lich` (the boss: his tunable numbers and Bestiary entry), `BoneSpray` (his spray of shards: the pattern and its numbers), `SummonUndead` and `SummonSpots` (his summons: numbers and where skeletons rise), the
   `Bestiary` that lists them with their map letters, and `Band` (which home a monster lives at, a campfire or its
   room, and how the monsters of one home start: asleep or wandering, from the map's seed) and `Camps` (which campfire a monster lives at)
 - `scripts/potions` – consumables: `Potion` (`HealingPotion`, `HastePotion`, `MightPotion`) and the `PotionBelt`
@@ -165,7 +165,7 @@ what ships in the game (`scripts/ui/credits.gd`); add new third-party assets the
   `SettingsStore` (sections in a ConfigFile)
 - `scripts/ui` – touch widgets (`TouchStick`, `AimButton`, `TouchControls`), `KeyboardMouseControls`, `PauseMenu`, `LayoutEditor`,
   `TuningPanel`, `TuningSender`, `LootCard`, `MinimapView` (with `MinimapPainter`, which paints the picture), `MapOverlay` (the big map)
-- `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `LingeringZone` (`PoisonCloud`, `BurningGround`), `SlashEffect`, and the loot on the floor
+- `scripts/actors` – `Player`, `Enemy`, `Projectile`, `Explosion`, `LingeringZone` (`PoisonCloud`, `BurningGround`), `SlashEffect`, `Summoning` (carries out the Lich's Summon Undead), and the loot on the floor
   (`PickupArea`, `Chest`, `ItemDrop`). The player holds no input code
 - `scripts/view3d` – how the game is shown: the 2D world runs the game and `WorldView3D` shows it in 3D.
   `GroundView` lays the 2D plane on the floor (floor, aim previews, telegraphs, fog), `MapView3D` stands walls

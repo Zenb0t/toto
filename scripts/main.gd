@@ -333,6 +333,8 @@ func _spawn_enemy(cell: Vector2i) -> void:
 	GameTuning.tune_squad(enemy.squad, _tuning)
 	_enemies_by_band.get_or_add(band.id, []).append(enemy)
 	_spawn_cells[enemy] = cell
+	if monster.id == Lich.ID:
+		_stage.add_effect(Summoning.new(enemy, _player, _stage.map, _raise_skeleton))
 
 
 ## A set of cells (cell -> true), for Enemy.wander_cells.
@@ -679,6 +681,8 @@ func _cells_of(enemies: Array[Enemy]) -> PackedVector2Array:
 
 func _on_enemy_defeated(enemy: Enemy, band: int) -> void:
 	_enemies_by_band[band].erase(enemy)
+	if enemy.is_summoned:
+		return  # nothing of the map: no record, no room to clear, no experience, kill or drop
 	if _ambushers.has(enemy):
 		_ambushers.erase(enemy)  # not a spawn of the map: nothing to record, no room to clear
 	else:
@@ -898,6 +902,28 @@ func _spawn_ambushers(party: AmbushParty) -> void:
 		_stage.world.add_enemy(enemy)
 		_enemies_by_band.get_or_add(band, []).append(enemy)
 		_ambushers[enemy] = true
+
+
+## A skeleton raised by the Lich's Summon Undead (see Summoning), at a cell: a band of its own that fights as a team.
+## Like an ambusher it is no spawn of the map, so it is never recorded and doesn't count toward clearing a room; the
+## Lich's death collapses it (see Enemy.adopt). It gives no experience, kill or drop (see _on_enemy_defeated).
+func _raise_skeleton(cell: Vector2i) -> Enemy:
+	var enemy: Enemy = ENEMY_SCENE.instantiate()
+	enemy.position = DungeonView.cell_center(cell)
+	var monster := Bestiary.by_id(Summoning.SKELETON_ID)
+	enemy.become(monster, GameTuning.enemy_health_multiplier(_tuning))
+	enemy.arm(GameTuning.monster_weapon(_tuning, monster))
+	var squad: Squad = _squads_by_band.get_or_add(Summoning.BAND_ID, Squad.new())
+	GameTuning.tune_squad(squad, _tuning)
+	enemy.squad = squad
+	_tune_enemy(enemy, _tuning)
+	enemy.attack_fired.connect(_spawn_attacks.bind(enemy))
+	enemy.noticed.connect(_on_enemy_noticed)
+	enemy.defeated.connect(_on_enemy_defeated.bind(Summoning.BAND_ID))
+	_stage.add_actor(enemy)
+	_stage.world.add_enemy(enemy)
+	_enemies_by_band.get_or_add(Summoning.BAND_ID, []).append(enemy)
+	return enemy
 
 
 ## Sits down at the inn: a 3 s rest that moving or a hit cancels (see InnRest). Nothing happens while already resting.
